@@ -502,25 +502,47 @@ code {
 .sidebar-space {
   flex: 1;
 }
+.desktop-history {
+  width: 240px;
+  flex: none;
+  min-height: 0;
+}
+.chat-history {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-right: 1px solid var(--line);
+  background: var(--s1);
+}
+.chat-history-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 56px;
+  padding: 0 12px 0 18px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+.chat-history-header h2 {
+  font-size: 13px;
+  font-weight: 500;
+}
 .sthreads {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 1px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-  overflow: auto;
+  padding: 8px;
+  overflow-y: auto;
 }
-.sth {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 4px 0 10px;
+.history-empty {
   color: var(--faint);
-  font-size: 12px;
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-size: 13px;
+  padding: 16px 10px;
+}
+.history-drawer {
+  width: min(320px, calc(100vw - 24px));
 }
 .grp {
   color: var(--faint);
@@ -556,9 +578,6 @@ code {
   width: 22px;
   height: 22px;
 }
-.collapsed-new {
-  display: none;
-}
 .sidebar-error {
   font-size: 12px;
   color: var(--red);
@@ -571,11 +590,55 @@ code {
   min-width: 300px;
   max-width: calc(100vw - 24px);
   padding: 6px;
-  border-radius: 12px;
-  background: var(--s2);
-  border: 1px solid var(--line2);
-  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.7);
+  border-radius: 16px;
+  background: #202024;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.7),
+    0 20px 48px -12px rgba(0, 0, 0, 0.8);
   z-index: 60;
+}
+@supports (backdrop-filter: blur(1px)) {
+  .product-menu {
+    background: linear-gradient(
+      155deg,
+      rgba(38, 38, 46, 0.78),
+      rgba(24, 24, 28, 0.82) 70%
+    );
+    -webkit-backdrop-filter: blur(28px) saturate(130%);
+    backdrop-filter: blur(28px) saturate(130%);
+  }
+}
+.select-trigger {
+  justify-content: space-between;
+  cursor: pointer;
+}
+.select-trigger > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.select-trigger > svg {
+  color: var(--faint);
+}
+.select-trigger:focus-visible,
+.select-trigger[data-state="open"] {
+  outline: none;
+  border-color: var(--muted);
+}
+.select-trigger:disabled {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+.select-option {
+  justify-content: space-between;
+  min-height: 36px;
+}
+.select-option > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .dropdown-label {
   display: block;
@@ -593,14 +656,14 @@ code {
   cursor: pointer;
 }
 .product-item[data-highlighted] {
-  background: var(--s3);
+  background: rgba(255, 255, 255, 0.08);
 }
 .product-menu-name {
   flex: 1;
 }
 .menu-separator {
   height: 1px;
-  background: var(--line);
+  background: rgba(255, 255, 255, 0.12);
   margin: 6px 0;
 }
 .account-menu p {
@@ -634,8 +697,7 @@ code {
 .side[data-mode="collapsed"] .sidebar-brand,
 .side[data-mode="collapsed"] .hide-collapsed,
 .side[data-mode="collapsed"] .pn,
-.side[data-mode="collapsed"] .lb,
-.side[data-mode="collapsed"] .sthreads {
+.side[data-mode="collapsed"] .lb {
   display: none;
 }
 .side[data-mode="collapsed"] .sidebar-heading {
@@ -666,10 +728,6 @@ code {
   align-items: center;
   width: 100%;
   margin-top: auto;
-}
-.side[data-mode="collapsed"] .collapsed-new {
-  display: flex;
-  margin-top: 14px;
 }
 /* Setup. */
 .setup-body {
@@ -815,8 +873,7 @@ code {
 }
 .input:focus {
   outline: none;
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px var(--blue-soft);
+  border-color: var(--muted);
 }
 .input.err {
   border-color: var(--red);
@@ -952,8 +1009,7 @@ code {
   color: var(--faint);
 }
 .search-input:focus-within {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px var(--blue-soft);
+  border-color: var(--muted);
 }
 .search-input input {
   width: 100%;
@@ -1037,27 +1093,55 @@ code {
   background: #844fba;
 }
 .branch {
+  width: 100%;
+  min-width: 0;
   height: 30px;
   border: 1px solid var(--line2);
   border-radius: 6px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding-left: 8px;
+  gap: 8px;
+  padding: 0 8px;
   background: var(--bg);
+  color: var(--text);
+  font:
+    13px var(--font-geist-mono),
+    monospace;
 }
 .branch svg {
   color: var(--faint);
 }
-.branch select {
-  background: transparent;
-  border: 0;
-  width: 100%;
-  padding: 0 6px;
+.branch-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.branch:hover:not(:disabled),
+.branch[data-state="open"] {
+  border-color: var(--muted);
+}
+.branch:focus-visible {
+  outline: 2px solid var(--muted);
+  outline-offset: 2px;
+}
+.branch:disabled {
+  color: var(--faint);
+  border-color: var(--line);
+}
+.branch-menu,
+.select-menu {
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 24px));
+  max-height: var(--radix-dropdown-menu-content-available-height);
+  overflow-y: auto;
+}
+.branch-option {
+  min-height: 36px;
   font:
     13px var(--font-geist-mono),
     monospace;
-  min-width: 0;
 }
 .repository-revision {
   font-size: 12px;
@@ -1692,7 +1776,7 @@ code {
   flex: none;
 }
 .composer:focus-within {
-  border-color: var(--blue);
+  border-color: var(--muted);
 }
 .composer textarea {
   width: 100%;
@@ -2031,22 +2115,48 @@ code {
   width: 44px;
   height: 44px;
 }
-.skeleton-stack {
-  padding: 32px;
+.loading-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  flex: 1;
+  min-height: 180px;
   width: 100%;
-  max-width: 780px;
+  padding: 32px;
+  color: var(--text);
 }
-.skeleton {
-  height: 68px;
-  background: var(--s2);
-  border-radius: 10px;
-  margin-bottom: 12px;
-  animation: pulse 1.5s ease-in-out infinite;
+body > .loading-mark {
+  min-height: 100dvh;
 }
-.skeleton.title {
-  width: 46%;
-  height: 28px;
-  margin-bottom: 24px;
+.loading-mark svg path {
+  animation: wing-sweep 1.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.loading-mark svg path:nth-child(2) {
+  animation-delay: 120ms;
+}
+.loading-mark svg path:nth-child(3) {
+  animation-delay: 240ms;
+}
+@keyframes wing-sweep {
+  0%,
+  70%,
+  100% {
+    opacity: 0.35;
+    transform: translateX(0);
+  }
+  25%,
+  40% {
+    opacity: 1;
+    transform: translateX(1.5px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-mark svg path {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 .error-state {
   padding: 28px;
@@ -2107,7 +2217,7 @@ code {
   flex: 1;
   color: var(--muted);
 }
-.settings-row select {
+.settings-row .select-trigger {
   width: 240px;
 }
 .settings-row .mono {
@@ -2141,8 +2251,7 @@ code {
   .side[data-mode="auto"] .sidebar-brand,
   .side[data-mode="auto"] .hide-collapsed,
   .side[data-mode="auto"] .pn,
-  .side[data-mode="auto"] .lb,
-  .side[data-mode="auto"] .sthreads {
+  .side[data-mode="auto"] .lb {
     display: none;
   }
   .side[data-mode="auto"] .sidebar-heading {
@@ -2174,12 +2283,14 @@ code {
     width: 100%;
     margin-top: auto;
   }
-  .side[data-mode="auto"] .collapsed-new {
-    display: flex;
-    margin-top: 14px;
+  .desktop-history {
+    width: 220px;
   }
   .chat-layout {
-    grid-template-columns: minmax(0, 1fr) 400px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .desktop-evidence {
+    display: none;
   }
   .status-workspace {
     padding: 28px 24px;
@@ -2192,9 +2303,6 @@ code {
   .status-layout {
     grid-template-columns: 212px minmax(0, 1fr);
   }
-  .chat-layout {
-    grid-template-columns: minmax(0, 1fr) 340px;
-  }
   .thread-area {
     padding: 24px 20px 0;
   }
@@ -2206,7 +2314,8 @@ code {
   .shell {
     flex-direction: column;
   }
-  .desktop-sidebar {
+  .desktop-sidebar,
+  .desktop-history {
     display: none;
   }
   .mobile-top {
@@ -2364,9 +2473,6 @@ code {
   .branch {
     height: 38px;
   }
-  .branch select {
-    height: 36px;
-  }
   .tfoot {
     font-size: 12px;
     padding: 10px 12px;
@@ -2417,7 +2523,7 @@ code {
     display: none;
   }
   .status-section-select {
-    display: block;
+    display: flex;
     height: 44px;
     width: 100%;
     font-size: 16px;
@@ -2574,7 +2680,7 @@ code {
     align-items: flex-start;
     gap: 8px;
   }
-  .settings-row select {
+  .settings-row .select-trigger {
     width: 100%;
   }
   .document-page {

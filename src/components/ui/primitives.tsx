@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { Mark } from "./brand";
 import { AlertTriangle, Info, LoaderCircle, XCircle } from "lucide-react";
 
 export function Button({
@@ -60,18 +61,14 @@ export function Alert({
     </div>
   );
 }
-export function Skeleton({
+export function LoadingMark({
   label = "Loading Product context",
 }: {
   label?: string;
 }) {
   return (
-    <div className="skeleton-stack" role="status" aria-label={label}>
-      <div className="skeleton title" />
-      <div className="skeleton" />
-      <div className="skeleton" />
-      <div className="skeleton" />
-      <span className="sr-only">{label}</span>
+    <div className="loading-mark" role="status" aria-label={label}>
+      <Mark size={48} />
     </div>
   );
 }

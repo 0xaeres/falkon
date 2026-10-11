@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
-import { GitBranch, Search } from "lucide-react";
+import { Check, ChevronDown, GitBranch, Search } from "lucide-react";
+import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import type { Repository } from "@/lib/contracts";
+import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/primitives";
 
 export default function RepositoryPicker({
@@ -14,6 +16,7 @@ export default function RepositoryPicker({
   onChange: (value: Record<string, string>) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [menuSide, setMenuSide] = useState<"right" | "bottom">("right");
   const [organization, setOrganization] = useState(
     repositories[0]?.organization ?? "acme-payments",
   );
@@ -42,17 +45,14 @@ export default function RepositoryPicker({
         <label className="sr-only" htmlFor="organization">
           Organization
         </label>
-        <select
+        <Select
           id="organization"
-          data-single={organizations.length === 1}
-          className="input organization-select"
+          label="Organization"
+          className="organization-select"
           value={organization}
-          onChange={(event) => setOrganization(event.target.value)}
-        >
-          {organizations.map((org) => (
-            <option key={org}>{org}</option>
-          ))}
-        </select>
+          onValueChange={setOrganization}
+          options={organizations.map((org) => ({ value: org, label: org }))}
+        />
         <label className="search-input">
           <Search size={16} />
           <input
@@ -137,21 +137,59 @@ export default function RepositoryPicker({
                   {repo.language}
                 </td>
                 <td className="repository-branch">
-                  <label className="branch">
-                    <GitBranch size={13} />
-                    <select
+                  <Dropdown.Root
+                    onOpenChange={(open) => {
+                      if (open)
+                        setMenuSide(
+                          window.matchMedia("(max-width: 767px)").matches
+                            ? "bottom"
+                            : "right",
+                        );
+                    }}
+                  >
+                    <Dropdown.Trigger
+                      className="branch"
                       aria-label={`Branch for ${repo.name}`}
-                      value={selected[repo.id] ?? repo.branch}
                       disabled={!selected[repo.id]}
-                      onChange={(event) =>
-                        onChange({ ...selected, [repo.id]: event.target.value })
-                      }
                     >
-                      {repo.branches.map((branch) => (
-                        <option key={branch}>{branch}</option>
-                      ))}
-                    </select>
-                  </label>
+                      <GitBranch size={13} aria-hidden="true" />
+                      <span className="branch-name">
+                        {selected[repo.id] ?? repo.branch}
+                      </span>
+                      <ChevronDown size={14} aria-hidden="true" />
+                    </Dropdown.Trigger>
+                    <Dropdown.Portal>
+                      <Dropdown.Content
+                        className="product-menu branch-menu"
+                        onClick={(event) => event.stopPropagation()}
+                        side={menuSide}
+                        align="start"
+                        sideOffset={8}
+                        collisionPadding={12}
+                        aria-label={`Branches for ${repo.name}`}
+                      >
+                        <Dropdown.RadioGroup
+                          value={selected[repo.id] ?? repo.branch}
+                          onValueChange={(branch) =>
+                            onChange({ ...selected, [repo.id]: branch })
+                          }
+                        >
+                          {repo.branches.map((branch) => (
+                            <Dropdown.RadioItem
+                              className="product-item branch-option"
+                              key={branch}
+                              value={branch}
+                            >
+                              <span className="branch-name">{branch}</span>
+                              <Dropdown.ItemIndicator>
+                                <Check size={14} aria-hidden="true" />
+                              </Dropdown.ItemIndicator>
+                            </Dropdown.RadioItem>
+                          ))}
+                        </Dropdown.RadioGroup>
+                      </Dropdown.Content>
+                    </Dropdown.Portal>
+                  </Dropdown.Root>
                 </td>
                 <td className="mono repository-revision">{repo.revision}</td>
               </tr>

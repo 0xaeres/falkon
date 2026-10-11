@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -21,12 +21,12 @@ import {
   Alert,
   Button,
   ErrorState,
-  Skeleton,
+  LoadingMark,
 } from "@/components/ui/primitives";
 import { api, keys } from "@/lib/api/client";
 import type { Answer } from "@/lib/contracts";
 const EvidencePanel = dynamic(() => import("./evidence-panel"), {
-  loading: () => <Skeleton label="Loading evidence" />,
+  loading: () => <LoadingMark label="Loading evidence" />,
 });
 const examples = [
   ["What calls POST /v1/refunds?", "Trace callers across repositories"],
@@ -50,7 +50,9 @@ function Prose({
         )
         .map((part, index) =>
           /^\[\d+\]$/.test(part) && citations[Number(part.slice(1, -1))] ? (
-            citations[Number(part.slice(1, -1))]
+            <Fragment key={index}>
+              {citations[Number(part.slice(1, -1))]}
+            </Fragment>
           ) : /^(POST |RefundService|RefundPostingService|CreateRefundDto|operatorId|@acme)/.test(
               part,
             ) ? (
@@ -118,7 +120,7 @@ export function ChatView({ threadId }: { threadId?: string }) {
   function cite(answer: Answer, id: number) {
     setSelection({ answerId: answer.id, sourceId: id });
     setClosed(false);
-    if (window.innerWidth < 768) setSheet(true);
+    if (window.innerWidth < 1280) setSheet(true);
   }
   async function send(value = question) {
     const text = value.trim();
@@ -203,7 +205,7 @@ export function ChatView({ threadId }: { threadId?: string }) {
       <ErrorState error={threadError} retry={() => void refreshThread()} />
     );
   if (!status || (threadId && !thread))
-    return <Skeleton label="Loading chat" />;
+    return <LoadingMark label="Loading chat" />;
   const evidence = selectedAnswer && (
     <EvidencePanel
       answer={selectedAnswer}

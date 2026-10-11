@@ -33,7 +33,7 @@ Tests run against a temporary store, never the app's demo data. `.data/mock.json
 - `src/lib/contracts.ts`: runtime Zod contracts and inferred TypeScript types.
 - `src/lib/api/client.ts`: endpoint paths, typed HTTP client, timeout/error handling, and NDJSON stream decoder.
 - `src/lib/mock`: server-only persistent store and deterministic source/answer fixtures.
-- `tests`: runnable checks for request validation, Product isolation, citation provenance, publication state, concurrent writes, and streamed-answer persistence.
+- `tests`: runnable checks for request validation, Product isolation, citation provenance, publication state, concurrent writes, streamed-answer persistence, and workspace route rendering with an empty client cache.
 
 ## Mock behavior
 
@@ -47,7 +47,7 @@ Append `[network-error]` or `[access-error]` to a question to preview those erro
 
 ## Replace the mock API
 
-Set `NEXT_PUBLIC_API_BASE_URL` to a compatible gateway, or replace `src/app/api` handlers with adapters to real services. UI components do not import mock fixtures or storage. All endpoint paths are centralized in `src/lib/api/client.ts`; contract mapping belongs there or in the gateway handlers.
+Set `NEXT_PUBLIC_API_BASE_URL` to a compatible gateway, or replace `src/app/api` handlers with adapters to real services. Client UI components do not import mock fixtures or storage. The asynchronous workspace layout loads the initial Product from the same local store used by the Product API and seeds SWR so route children render during SSR. Replace that server-side load with the real Product adapter when switching to a gateway. All endpoint paths are centralized in `src/lib/api/client.ts`; contract mapping belongs there or in the gateway handlers.
 
 | Endpoint                                         | Behavior                                            |
 | ------------------------------------------------ | --------------------------------------------------- |

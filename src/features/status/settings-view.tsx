@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useWorkspace } from "@/components/layout/workspace-shell";
+import { Select } from "@/components/ui/select";
 import { Alert } from "@/components/ui/primitives";
 import { api } from "@/lib/api/client";
 import { scenarioSchema, type Scenario } from "@/lib/contracts";
@@ -63,19 +64,17 @@ export function SettingsView() {
         </p>
         <div className="settings-row">
           <label htmlFor="scenario">Status scenario</label>
-          <select
-            className="input"
+          <Select
             id="scenario"
+            label="Status scenario"
             disabled={busy}
             value={status?.scenario ?? product.scenario}
-            onChange={(event) => void change(event.target.value)}
-          >
-            {scenarioSchema.options.map((value) => (
-              <option key={value} value={value}>
-                {scenarios[value]}
-              </option>
-            ))}
-          </select>
+            onValueChange={(value) => void change(value)}
+            options={scenarioSchema.options.map((value) => ({
+              value,
+              label: scenarios[value],
+            }))}
+          />
         </div>
         <p className="help settings-note">
           New Product builds publish after 15 seconds. Scenario previews remain

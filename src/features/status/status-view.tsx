@@ -20,8 +20,9 @@ import {
   Badge,
   Button,
   ErrorState,
-  Skeleton,
+  LoadingMark,
 } from "@/components/ui/primitives";
+import { Select } from "@/components/ui/select";
 import { ProviderLogo } from "@/components/ui/brand";
 import { api } from "@/lib/api/client";
 import type { Status } from "@/lib/contracts";
@@ -85,7 +86,7 @@ export function StatusView() {
     return (
       <ErrorState error={statusError} retry={() => void refreshStatus()} />
     );
-  if (!status) return <Skeleton />;
+  if (!status) return <LoadingMark />;
   const selected = chosen ?? (status.sync === "failed" ? "sync" : "generation");
   const count = product.repositories.length;
   const overlayTone =
@@ -245,23 +246,20 @@ export function StatusView() {
           <label className="sr-only" htmlFor="status-section">
             Status section
           </label>
-          <select
+          <Select
             id="status-section"
-            className="input status-section-select"
+            label="Status section"
+            className="status-section-select"
             value={selected}
-            onChange={(event) => {
-              const layer = layers.find(
-                (layer) => layer.id === event.target.value,
-              );
+            onValueChange={(value) => {
+              const layer = layers.find((layer) => layer.id === value);
               if (layer) setChosen(layer.id);
             }}
-          >
-            {navigationLayers.map((layer) => (
-              <option key={layer.id} value={layer.id}>
-                {names[layer.id]} · {layer.label}
-              </option>
-            ))}
-          </select>
+            options={navigationLayers.map((layer) => ({
+              value: layer.id,
+              label: `${names[layer.id]} · ${layer.label}`,
+            }))}
+          />
           <div className="status-nav-footer">
             <span>Active evidence</span>
             <strong className="mono">{status.generation ?? "None yet"}</strong>

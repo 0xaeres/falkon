@@ -17,6 +17,7 @@ import {
   Check,
   ChevronDown,
   FileText,
+  History,
   Layers,
   Menu,
   MessageCircle,
@@ -28,7 +29,7 @@ import {
 import { api, keys } from "@/lib/api/client";
 import type { Product, Status, ThreadSummary } from "@/lib/contracts";
 import { Logo } from "../ui/brand";
-import { ErrorState, Skeleton } from "../ui/primitives";
+import { ErrorState, LoadingMark } from "../ui/primitives";
 
 type Workspace = {
   product: Product;
@@ -63,9 +64,11 @@ const serverPreference = () => "auto";
 
 export function WorkspaceShell({
   productId,
+  initialProduct,
   children,
 }: {
   productId: string;
+  initialProduct: Product;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -75,7 +78,9 @@ export function WorkspaceShell({
     data: product,
     error,
     mutate: refreshProduct,
-  } = useSWR(keys.product(productId), api.product);
+  } = useSWR(keys.product(productId), api.product, {
+    fallbackData: initialProduct,
+  });
   const { data: products } = useSWR(keys.products, api.products);
   const {
     data: status,
@@ -84,13 +89,18 @@ export function WorkspaceShell({
   } = useSWR(keys.status(productId), api.status, {
     refreshInterval: (data) => (data?.scenario === "building" ? 2000 : 30000),
   });
-  const { data: threads } = useSWR(keys.threads(productId), api.threads);
+  const {
+    data: threads,
+    error: threadsError,
+    mutate: refreshThreads,
+  } = useSWR(keys.threads(productId), api.threads);
   const mode = useSyncExternalStore(
     subscribe,
     sidebarPreference,
     serverPreference,
   );
   const [drawer, setDrawer] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [actionError, setActionError] = useState("");
   const active = pathname.includes("/chat")
@@ -135,6 +145,7 @@ export function WorkspaceShell({
       const thread = await api.newThread(productId);
       await mutate(keys.threads(productId));
       setDrawer(false);
+      setHistoryOpen(false);
       router.push(`/${productId}/chat/${thread.id}`);
     } catch (error) {
       setActionError(
@@ -148,7 +159,7 @@ export function WorkspaceShell({
   }
   if (error)
     return <ErrorState error={error} retry={() => void refreshProduct()} />;
-  if (!product) return <Skeleton />;
+  if (!product) return <LoadingMark />;
   const context: Workspace = {
     product,
     status,
@@ -270,66 +281,7 @@ export function WorkspaceShell({
           </Link>
         ))}
       </div>
-      {active === "Chat" ? (
-        <>
-          <div className="sthreads">
-            <div className="sth">
-              <span>Threads</span>
-              <button
-                className="icon-btn"
-                onClick={() => void newThread()}
-                aria-label="New thread"
-                disabled={creating}
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-            {["Today", "Yesterday", "Previous"].map((day, group) => {
-              const items = (threads ?? []).filter((thread) => {
-                const elapsed = Date.now() - thread.updatedAt;
-                return group === 0
-                  ? elapsed < 86400000
-                  : group === 1
-                    ? elapsed >= 86400000 && elapsed < 172800000
-                    : elapsed >= 172800000;
-              });
-              return (
-                items.length > 0 && (
-                  <div key={day}>
-                    <div className="grp">{day}</div>
-                    {items.map((thread) => (
-                      <Link
-                        key={thread.id}
-                        href={`/${productId}/chat/${thread.id}`}
-                        className={`thread-item ${pathname.endsWith(`/${thread.id}`) ? "on" : ""}`}
-                        onClick={() => setDrawer(false)}
-                      >
-                        {thread.title}
-                      </Link>
-                    ))}
-                  </div>
-                )
-              );
-            })}
-          </div>
-          <button
-            className="nv collapsed-new"
-            onClick={() => void newThread()}
-            aria-label="New thread"
-            title="New thread"
-            disabled={creating}
-          >
-            <Plus size={17} />
-          </button>
-        </>
-      ) : (
-        <div className="sidebar-space" />
-      )}
-      {actionError && (
-        <p className="sidebar-error" role="alert">
-          {actionError}
-        </p>
-      )}
+      <div className="sidebar-space" />
       <div className="sfoot">
         <Link className="nv" href="/docs" aria-label="Docs" title="Docs">
           <FileText size={17} />
@@ -359,10 +311,82 @@ export function WorkspaceShell({
       </div>
     </nav>
   );
+  const history = (mobile = false) => (
+    <aside className="chat-history" aria-label="Chat history">
+      <header className="chat-history-header">
+        <h2>Chat history</h2>
+        <span className="sp" />
+        <button
+          className="icon-btn"
+          onClick={() => void newThread()}
+          aria-label="New thread"
+          disabled={creating}
+        >
+          <Plus size={16} />
+        </button>
+        {mobile && (
+          <Dialog.Close className="icon-btn" aria-label="Close chat history">
+            <X size={16} />
+          </Dialog.Close>
+        )}
+      </header>
+      <div className="sthreads">
+        {threadsError ? (
+          <ErrorState
+            error={threadsError}
+            retry={() => void refreshThreads()}
+          />
+        ) : !threads ? (
+          <LoadingMark label="Loading chat history" />
+        ) : threads.length === 0 ? (
+          <p className="history-empty">No conversations yet.</p>
+        ) : (
+          ["Today", "Yesterday", "Previous"].map((day, group) => {
+            const items = threads.filter((thread) => {
+              const elapsed = Date.now() - thread.updatedAt;
+              return group === 0
+                ? elapsed < 86400000
+                : group === 1
+                  ? elapsed >= 86400000 && elapsed < 172800000
+                  : elapsed >= 172800000;
+            });
+            return (
+              items.length > 0 && (
+                <div key={day}>
+                  <div className="grp">{day}</div>
+                  {items.map((thread) => (
+                    <Link
+                      key={thread.id}
+                      href={`/${productId}/chat/${thread.id}`}
+                      aria-current={
+                        pathname.endsWith(`/${thread.id}`) ? "page" : undefined
+                      }
+                      className={`thread-item ${pathname.endsWith(`/${thread.id}`) ? "on" : ""}`}
+                      onClick={() => setHistoryOpen(false)}
+                    >
+                      {thread.title}
+                    </Link>
+                  ))}
+                </div>
+              )
+            );
+          })
+        )}
+      </div>
+      {actionError && (
+        <p className="sidebar-error" role="alert">
+          {actionError}
+        </p>
+      )}
+    </aside>
+  );
   return (
     <WorkspaceContext.Provider value={context}>
       <div className="shell">
         <div className="desktop-sidebar">{navigation()}</div>
+        {active === "Chat" && (
+          <div className="desktop-history">{history()}</div>
+        )}
         <Dialog.Root open={drawer} onOpenChange={setDrawer}>
           <header className="mobile-top">
             <Dialog.Trigger className="icon-btn" aria-label="Open navigation">
@@ -370,6 +394,15 @@ export function WorkspaceShell({
             </Dialog.Trigger>
             <span>{active}</span>
             <span className="sp" />
+            {active === "Chat" && (
+              <button
+                className="icon-btn"
+                aria-label="Open chat history"
+                onClick={() => setHistoryOpen(true)}
+              >
+                <History size={18} />
+              </button>
+            )}
             <span className="pav">{product.initials}</span>
           </header>
           <Dialog.Portal>
@@ -379,12 +412,27 @@ export function WorkspaceShell({
                 Product navigation
               </Dialog.Title>
               <Dialog.Description className="sr-only">
-                Switch Product, view status, or open a chat thread.
+                Switch Product or navigate to status, chat, and settings.
               </Dialog.Description>
               {navigation(true)}
             </Dialog.Content>
           </Dialog.Portal>
         </Dialog.Root>
+        {active === "Chat" && (
+          <Dialog.Root open={historyOpen} onOpenChange={setHistoryOpen}>
+            <Dialog.Portal>
+              <Dialog.Overlay className="drawer-overlay" />
+              <Dialog.Content className="drawer history-drawer">
+                <Dialog.Title className="sr-only">Chat history</Dialog.Title>
+                <Dialog.Description className="sr-only">
+                  Open a saved conversation or start a new thread for this
+                  Product.
+                </Dialog.Description>
+                {history(true)}
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
+        )}
         <main id="main" className="main">
           {children}
         </main>

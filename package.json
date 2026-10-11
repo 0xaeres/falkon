@@ -8,9 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "NODE_OPTIONS=--conditions=react-server tsx --test tests/*.test.mts",
+    "test": "NODE_OPTIONS=--conditions=react-server tsx --test tests/*.test.mts && npm run test:ui",
     "format": "prettier --write src tests *.ts *.mjs *.json",
-    "format:check": "prettier --check src tests *.ts *.mjs *.json"
+    "format:check": "prettier --check src tests *.ts *.mjs *.json",
+    "test:ui": "tsx --test tests/*.test.tsx"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.2.0",

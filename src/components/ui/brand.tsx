@@ -9,7 +9,9 @@ export function Mark({ size = 24 }: { size?: number }) {
       fill="currentColor"
       aria-hidden="true"
     >
-      <path d="M5 5h22l-4.5 6H5zM5 13.5h15l-4.5 6H5zM5 22h8l-4.5 5H5z" />
+      <path d="M5 5h22l-4.5 6H5z" />
+      <path d="M5 13.5h15l-4.5 6H5z" />
+      <path d="M5 22h8l-4.5 5H5z" />
     </svg>
   );
 }

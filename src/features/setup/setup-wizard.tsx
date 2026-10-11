@@ -20,12 +20,12 @@ import {
   Badge,
   Button,
   ErrorState,
-  Skeleton,
+  LoadingMark,
 } from "@/components/ui/primitives";
 import { api, keys } from "@/lib/api/client";
 import type { Product, Provider } from "@/lib/contracts";
 const RepositoryPicker = dynamic(() => import("./repository-picker"), {
-  loading: () => <Skeleton label="Loading repository picker" />,
+  loading: () => <LoadingMark label="Loading repository picker" />,
 });
 const providers: {
   id: Provider;
@@ -98,7 +98,7 @@ export function SetupWizard() {
     mutate,
   } = useSWR(editId ? keys.product(editId) : null, api.product);
   if (error) return <ErrorState error={error} retry={() => void mutate()} />;
-  if (editId && !edit) return <Skeleton label="Loading Product setup" />;
+  if (editId && !edit) return <LoadingMark label="Loading Product setup" />;
   return <Wizard key={editId ?? "new"} edit={edit} />;
 }
 function Wizard({ edit }: { edit?: Product }) {
@@ -456,7 +456,7 @@ function Wizard({ edit }: { edit?: Product }) {
                     onChange={setSelected}
                   />
                 ) : (
-                  <Skeleton label="Loading repositories" />
+                  <LoadingMark label="Loading repositories" />
                 ))}
               {step === 3 && (
                 <>
