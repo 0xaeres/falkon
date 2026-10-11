@@ -1,0 +1,170 @@
+import { z } from "zod";
+
+export const productIdSchema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+export const providerSchema = z.enum([
+  "github",
+  "github-enterprise",
+  "gitlab",
+  "bitbucket",
+  "azuredevops",
+]);
+export const scenarioSchema = z.enum([
+  "partly-behind",
+  "current",
+  "updating",
+  "building",
+  "behind",
+  "failed",
+  "overlay-unavailable",
+]);
+export const repositorySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  organization: z.string(),
+  language: z.string(),
+  structural: z.boolean(),
+  revision: z.string(),
+  updated: z.string(),
+  branches: z.array(z.string()),
+  branch: z.string(),
+});
+export const productSchema = z.object({
+  id: productIdSchema,
+  name: z.string().min(1).max(80),
+  initials: z.string(),
+  provider: providerSchema,
+  host: z.string(),
+  repositories: z.array(repositorySchema),
+  activeGeneration: z.string().nullable(),
+  scenario: scenarioSchema,
+  queuedAt: z.number().nullable(),
+  dismissed: z.boolean(),
+});
+export const gapSchema = z.object({
+  count: z.number(),
+  title: z.string(),
+  detail: z.string(),
+});
+export const statusSchema = z.object({
+  productId: productIdSchema,
+  verdict: z.string(),
+  sentence: z.string(),
+  generation: z.string().nullable(),
+  generationAge: z.string(),
+  nextGeneration: z.string().nullable(),
+  build: z.enum(["idle", "building", "failed"]),
+  stage: z.number().min(0).max(4),
+  progress: z.number(),
+  sync: z.enum(["current", "failed", "pinned"]),
+  overlay: z.enum(["current", "catching-up", "waiting", "unavailable"]),
+  overlayPercent: z.number(),
+  gaps: z.array(gapSchema),
+  scenario: scenarioSchema,
+});
+export const evidenceSchema = z.object({
+  id: z.number().int().positive(),
+  productId: productIdSchema,
+  generation: z.string(),
+  repository: z.string(),
+  path: z.string(),
+  revision: z.string(),
+  startLine: z.number(),
+  sourceUrl: z
+    .string()
+    .url()
+    .refine((url) => new URL(url).protocol === "https:")
+    .optional(),
+  code: z.array(z.string()),
+  highlightedLines: z.array(z.number()),
+});
+// Inline [N] markers attach claims to sources; citations lists the permitted IDs.
+export const paragraphSchema = z
+  .object({
+    text: z.string(),
+    citations: z.array(z.number().int().positive()),
+  })
+  .superRefine((paragraph, context) => {
+    for (const marker of paragraph.text.matchAll(/\[(\d+)\]/g)) {
+      if (!paragraph.citations.includes(Number(marker[1]))) {
+        context.addIssue({
+          code: "custom",
+          message: "Inline citation is not declared in this paragraph",
+          path: ["text"],
+        });
+      }
+    }
+  });
+export const answerSchema = z.object({
+  id: z.string(),
+  productId: productIdSchema,
+  question: z.string(),
+  generation: z.string(),
+  kind: z.enum(["grounded", "partial", "abstention"]),
+  paragraphs: z.array(paragraphSchema),
+  evidence: z.array(evidenceSchema),
+  gaps: z.array(z.string()),
+  partialReasons: z.array(z.string()),
+  abstention: z.string().nullable(),
+  suggestions: z.array(z.string()),
+});
+export const threadSchema = z.object({
+  id: z.string(),
+  productId: productIdSchema,
+  title: z.string(),
+  updatedAt: z.number(),
+  answers: z.array(answerSchema),
+});
+export const threadSummarySchema = threadSchema.omit({ answers: true });
+export const connectionRequestSchema = z.object({
+  provider: providerSchema,
+  method: z.enum(["app", "token"]),
+  host: z
+    .string()
+    .url()
+    .max(200)
+    .refine(
+      (value) => new URL(value).protocol === "https:",
+      "Use an HTTPS server URL.",
+    ),
+  token: z.string().max(200).optional(),
+});
+export const connectionSchema = z.object({
+  id: z.string(),
+  host: z.string(),
+  provider: providerSchema,
+});
+export const setupRequestSchema = z.object({
+  id: productIdSchema,
+  name: z.string().trim().min(1).max(80),
+  provider: providerSchema,
+  host: z.string().min(1).max(200),
+  repositories: z
+    .array(z.object({ id: z.string(), branch: z.string().min(1).max(100) }))
+    .min(1)
+    .max(100),
+});
+export const queryRequestSchema = z.object({
+  threadId: z.string().min(1).max(100),
+  question: z.string().trim().min(1).max(4000),
+});
+export const streamEventSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("start"), answer: answerSchema }),
+  z.object({ type: z.literal("delta"), text: z.string() }),
+  z.object({ type: z.literal("done"), thread: threadSchema }),
+  z.object({ type: z.literal("error"), message: z.string() }),
+]);
+export type Provider = z.infer<typeof providerSchema>;
+export type Repository = z.infer<typeof repositorySchema>;
+export type Product = z.infer<typeof productSchema>;
+export type Status = z.infer<typeof statusSchema>;
+export type Scenario = z.infer<typeof scenarioSchema>;
+export type Evidence = z.infer<typeof evidenceSchema>;
+export type Answer = z.infer<typeof answerSchema>;
+export type Thread = z.infer<typeof threadSchema>;
+export type ThreadSummary = z.infer<typeof threadSummarySchema>;
+export type SetupRequest = z.infer<typeof setupRequestSchema>;
+export type StreamEvent = z.infer<typeof streamEventSchema>;
