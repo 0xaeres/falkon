@@ -57,6 +57,28 @@ Same architecture as Sourcebot 5.x, written independently:
 
 Sourcebot v5.1.16 (the last open source release) is under FSL-1.1-ALv2, not MIT: no "Competing Use" as a commercial product or service, with `ee/` under a separate license. v6 is closed source. None of its code was copied here: the parser, IR, gRPC client and indexer glue are original. The Zoekt `.proto` files come from the Apache-2.0 Zoekt lineage. I did read Sourcebot's source while building this, so this is not a formal clean-room.
 
+## Knowledge base
+
+Generated, citation-backed architecture docs per repo (`knowledgeBase` in `config.json`; off by default). A multi-stage LLM pipeline writes them:
+
+| Stage | What it does |
+| --- | --- |
+| Territories | Splits the file tree into weight-bounded slices (deterministic, no LLM) |
+| Scouts | One agent per territory finds load-bearing systems; a too-big territory is re-carved at half size |
+| Reconciler | Merges duplicates into at most 24 canonical systems and assigns existing docs |
+| Surveyors | One per system: dispositions for existing docs (keep/merge/delete) and up to 6 proposals, each with claims that name proving files |
+| Merge agent | One validated work list (coverage, path rules, sources, absorb caps, at most 120 creates) |
+| Doc agents | One per item, confined to its own path. `finish_doc` refuses frontmatter, stubs, over 20k chars, and any `@file:{repo::path}` that does not resolve at the scanned commit |
+| README | Narrative from the LLM; the index and dependency list are composed by code |
+
+- **Storage.** A bare git repo per source repo, named `<repo>::knowledge`, committed per document and indexed by Zoekt like any repo, so search, MCP tools and Ask find the docs with no new tools. They rank first in non-streaming results. A knowledge repo is visible exactly when its owner repo is.
+- **Delta scans.** A citation index (doc to cited files and commits) selects only docs whose cited files changed or were renamed; changed files no doc cites go to surveyors. It escalates to a full scan when there was never one, the last is over 7 days old, over 500 files changed, or over half the cited files changed.
+- **Cost control.** Hard `tokenBudget` per scan (cache hits are free); old tool output is elided from agent prompts; agents are warned, then forced to call their finishing tool near the step cap. A small repo costs about 50k tokens, a 144-file repo about 1.6M.
+- **Safety.** Agents read only the repo being documented unless `citeRepos` lists others: repo text could steer an agent, and a knowledge base is readable by anyone who can read its owner.
+- **Operate.** `/knowledge` page and `POST /api/knowledge {repo, action: scan|delete|include}` (unrestricted key only). Needs `LLM_*` env vars (OpenAI-compatible).
+
+Design is from Sourcebot's public docs and my reading of its `ee/` code in the v6 image, implemented independently; that code is under a commercial license (see the licensing note above).
+
 ## MCP
 
 ```json

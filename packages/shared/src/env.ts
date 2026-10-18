@@ -34,3 +34,8 @@ export function repoDirName(name: string): string {
 export function repoGitDir(name: string): string {
   return path.join(env.reposDir, `${repoDirName(name)}.git`);
 }
+
+/** A knowledge repo is named after its owner so visibility can follow the owner's. */
+export const KB_SUFFIX = "::knowledge";
+export const knowledgeRepoName = (owner: string) => `${owner}${KB_SUFFIX}`;
+export const ownerOfKnowledgeRepo = (name: string): string | undefined => (name.endsWith(KB_SUFFIX) ? name.slice(0, -KB_SUFFIX.length) : undefined);

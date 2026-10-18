@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
-import { env } from "./env";
+import { env, KB_SUFFIX } from "./env";
 import { isBranchQ, qAnd, qBranch, someQ, type Q } from "./ir";
 import { parseQuery } from "./queryParser";
 
@@ -303,7 +303,17 @@ export function transformResponse(res: WSearchResponse, started: number): Search
 export async function searchIR(query: Q, opts: SearchOptions = {}, scope: Q[] = []): Promise<SearchResponse> {
   const started = Date.now();
   const req = buildRequest(query, opts, scope);
-  return transformResponse(await transport.search(req), started);
+  return rankKnowledgeFirst(transformResponse(await transport.search(req), started));
+}
+
+/**
+ * Generated knowledge documents answer "how does this work" better than raw code, so on the non-streaming
+ * surfaces (API, tools, agents) they come first. The sort is stable: relative order within each group is zoekt's.
+ */
+export function rankKnowledgeFirst(r: SearchResponse): SearchResponse {
+  const isKb = (f: SearchFile) => f.repo.endsWith(KB_SUFFIX);
+  if (!r.files.some(isKb)) return r;
+  return { ...r, files: [...r.files.filter(isKb), ...r.files.filter((f) => !isKb(f))] };
 }
 
 /** Streaming variant: yields one transformed chunk per zoekt flush. */

@@ -31,7 +31,7 @@ test("an empty allowlist allows nothing", () => {
 
 test("repo filter is an anchored regex over the allowlist with metacharacters escaped", () => {
   const s = scopeFor(["github.com/acme/app.v2", "github.com/openmrs/*"]);
-  assert.equal(s.repoFilter, "^(?:github\\x2ecom/acme/app\\x2ev2|github\\x2ecom/openmrs/.*)$");
+  assert.equal(s.repoFilter, "^(?:github\\x2ecom/acme/app\\x2ev2(?:::knowledge)?|github\\x2ecom/openmrs/.*)$");
 });
 
 test("authenticate resolves a key to its scope, rejects unknown, empty and near-miss keys", () => {
@@ -71,4 +71,15 @@ test("repo directory names are collision-free", async () => {
   assert.notEqual(repoDirName("github.com/acme/app"), repoDirName("github.com_2Facme_2Fapp"));
   assert.notEqual(repoDirName("a_b"), repoDirName("a/b"));
   assert.equal(repoDirName("x"), "x");
+});
+
+test("a knowledge base is visible exactly when its owner repo is", () => {
+  const s = scopeFor(["github.com/acme/app", "github.com/openmrs/*"]);
+  assert.ok(s.allows("github.com/acme/app::knowledge"));
+  assert.ok(s.allows("github.com/openmrs/core::knowledge"));
+  assert.ok(!s.allows("github.com/acme/other::knowledge"));
+  assert.ok(!s.allows("github.com/acme/app2::knowledge"));
+  assert.ok(!s.allows("::knowledge"));
+  const re = new RegExp(s.repoFilter!);
+  assert.ok(re.test("github.com/acme/app::knowledge") && re.test("github.com/acme/app") && !re.test("github.com/acme/other::knowledge"));
 });

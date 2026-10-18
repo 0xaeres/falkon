@@ -57,5 +57,13 @@ export async function syncRepo(dir: string, url: string, token?: string) {
   } catch {
     /* empty repo */
   }
-  return { defaultBranch, branches, tags, pushedAt };
+  let headCommit: string | null = null;
+  if (defaultBranch) {
+    try {
+      headCommit = await git(["--git-dir", dir, "rev-parse", `refs/heads/${defaultBranch}`], env);
+    } catch {
+      /* unborn branch */
+    }
+  }
+  return { defaultBranch, branches, tags, headCommit, pushedAt };
 }

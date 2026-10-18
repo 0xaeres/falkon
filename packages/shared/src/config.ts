@@ -37,8 +37,36 @@ const githubConn = z.object({
   revisions,
 });
 
+export const knowledgeBaseSchema = z.object({
+  enabled: z.boolean().default(false),
+  /** "all" = every code repo, or a list of exact names / trailing-* prefixes. */
+  repos: z.union([z.literal("all"), z.array(z.string())]).default("all"),
+  refreshIntervalHours: z.number().positive().default(24),
+  scanMode: z.enum(["delta", "full"]).default("delta"),
+  /** Hard stop: total tokens (prompt + completion) one scan may spend. */
+  tokenBudget: z.number().int().positive().default(2_000_000),
+  parallelism: z.number().int().min(1).max(16).default(4),
+  /**
+   * Other repos an agent may read and cite while documenting a repo (exact names or trailing-* prefixes).
+   * Default: none. A knowledge base is readable by anyone who can read its owner repo, so letting agents read
+   * more than that, steered by text inside the repo, would leak the extra repos into it.
+   */
+  citeRepos: z.array(z.string()).default([]),
+  /** Per-stage model overrides; unset stages use LLM_MODEL. */
+  models: z
+    .object({
+      discovery: z.string().optional(),
+      survey: z.string().optional(),
+      document: z.string().optional(),
+      overview: z.string().optional(),
+    })
+    .default({}),
+});
+export type KnowledgeBaseConfig = z.infer<typeof knowledgeBaseSchema>;
+
 export const configSchema = z.object({
   resyncIntervalMinutes: z.number().positive().default(60),
+  knowledgeBase: knowledgeBaseSchema.default({}),
   connections: z.array(z.discriminatedUnion("type", [gitConn, localConn, githubConn])),
 });
 

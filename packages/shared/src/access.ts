@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import fs from "node:fs";
 import { z } from "zod";
+import { KB_SUFFIX, ownerOfKnowledgeRepo } from "./env";
 
 /** What one API key may see: a set of repo names, each exact or a trailing-`*` prefix. */
 export interface Scope {
@@ -23,9 +24,11 @@ export function scopeFor(patterns: string[]): Scope {
   if (patterns.includes("*")) return { allows: () => true, repoFilter: null };
   const exact = new Set(patterns.filter((p) => !p.endsWith("*")));
   const prefixes = patterns.filter((p) => p.endsWith("*")).map((p) => p.slice(0, -1));
-  const alts = [...exact].map(hex).concat(prefixes.map((p) => hex(p) + ".*"));
+  // a repo's knowledge base is visible exactly when the repo is
+  const alts = [...exact].map((e) => `${hex(e)}(?:${hex(KB_SUFFIX)})?`).concat(prefixes.map((p) => hex(p) + ".*"));
+  const allowsName = (repo: string) => exact.has(repo) || prefixes.some((p) => repo.startsWith(p));
   return {
-    allows: (repo) => exact.has(repo) || prefixes.some((p) => repo.startsWith(p)),
+    allows: (repo) => allowsName(repo) || (ownerOfKnowledgeRepo(repo) !== undefined && allowsName(ownerOfKnowledgeRepo(repo)!)),
     // an empty allowlist matches nothing: `$^` cannot match any repo name
     repoFilter: `^(?:${alts.length ? alts.join("|") : "$^"})$`,
   };

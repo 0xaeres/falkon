@@ -7,6 +7,24 @@ datasource db {
   provider = "postgresql"
 }
 
+enum RepoKind {
+  CODE
+  KNOWLEDGE // managed repo holding generated docs for an owner repo
+}
+
+enum ScanMode {
+  FULL
+  DELTA
+}
+
+enum ScanStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+  BUDGET_EXHAUSTED
+  SKIPPED
+}
+
 enum RepoStatus {
   PENDING
   SYNCING
@@ -28,6 +46,14 @@ model Repo {
   isPublic       Boolean    @default(false)
   webUrl         String?
   displayName    String?
+  kind           RepoKind   @default(CODE)
+  ownerRepoId    Int?       @unique // set when kind = KNOWLEDGE
+  kbExcluded     Boolean    @default(false) // docs deleted; skip until re-included
+  headCommit     String? // default-branch commit after the last sync; what scans pin to
+  kbRequest      String? // "scan" | "delete" | "include": set by the web app, handled by the backend
+  kbRequestedAt  DateTime?
+  kbScannedCommit String? // commit the last successful scan covered
+  kbLastFullScanAt DateTime?
   status         RepoStatus @default(PENDING)
   error          String?
   pushedAt       DateTime?
@@ -43,4 +69,38 @@ model ChatSession {
   steps      Json     @default("[]")
   visibility String   @default("PRIVATE")
   createdAt  DateTime @default(now())
+}
+
+model KnowledgeScan {
+  id         Int        @id @default(autoincrement())
+  repoId     Int // owner repo
+  mode       ScanMode
+  status     ScanStatus @default(RUNNING)
+  baseCommit String?
+  headCommit String
+  tokensUsed Int        @default(0)
+  docsWritten Int       @default(0)
+  docsRemoved Int       @default(0)
+  error      String?
+  startedAt  DateTime   @default(now())
+  finishedAt DateTime?
+
+  @@index([repoId, startedAt])
+}
+
+/// One generated document plus the citations it was verified against: the index delta scans consult.
+model KnowledgeDoc {
+  id                Int      @id @default(autoincrement())
+  repoId            Int // owner repo
+  path              String // relative to the knowledge repo root, e.g. knowledge-base/<system>/<concept>.md
+  title             String
+  summary           String
+  /// [{ repo: string, path: string, commit: string }]: every file the doc cites and the commit it was checked at
+  citations         Json     @default("[]")
+  model             String
+  generatedAtCommit String // owner commit this doc was written against
+  scanId            Int // scan that last wrote it
+  updatedAt         DateTime @updatedAt
+
+  @@unique([repoId, path])
 }
