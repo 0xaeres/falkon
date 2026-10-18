@@ -15,7 +15,7 @@ config.json ──► backend (BullMQ worker) ──► bare git clones + zoekt 
 | --- | --- |
 | `packages/db` | Prisma schema: `Repo`, `ChatSession` |
 | `packages/shared` | config schema, query parser + IR, gRPC Zoekt client, git readers, access scopes, **tool registry** (one definition used by MCP and Ask) |
-| `packages/backend` | resolves connections (git / local / github), clone/fetch (bare), `zoekt-git-index`, periodic resync, removes repos dropped from config |
+| `packages/backend` | syncs config `connections` (GitHub, generic git URL, `file://` in place), clone/fetch (bare), `zoekt-git-index`, reindex/resync on `settings` schedules and on config change, orphan cleanup, search contexts |
 | `packages/web` | search UI, repos page, Ask page, REST API |
 | `packages/mcp` | stdio MCP server proxying every tool to the web API, plus `ask_codebase` |
 
@@ -95,9 +95,15 @@ OpenAI-compatible chat completions with tool calling: set `LLM_BASE_URL`, `LLM_A
 
 Set `SOURCEBOT_API_KEY` to require `Authorization: Bearer <key>` on `/api/*`. The browser UI then also needs a cookie `sbc_key=<key>`. There is no user model, permission sync, or SSO.
 
+## Config
+
+`config.json` is Sourcebot's v3 format, validated against its published JSON Schema (`packages/shared/schemas/v3/index.json`), so the same file works for both. Comments are allowed and `CONFIG_PATH` may be an http(s) URL. Honoured: `connections`, `settings` (index limits, reindex/resync intervals, concurrency, timeouts), `contexts` (`context:` in queries), `environmentOverrides`, tokens as `{ "env" }` or `{ "googleCloudSecret" }`. The one extra key is `knowledgeBase`.
+
+Connectors: `github` (cloud and Enterprise: `orgs`, `repos`, `users`, `topics`, `exclude.*`, `revisions`) and `git` (an http(s) remote, or a `file://` glob of local repos indexed in place and named after their origin). Other Sourcebot connection types validate but fail the sync with "not supported". Repo identity, names, URLs and the `zoekt.*` git config match Sourcebot's (checked by `parity/connectors`).
+
 ## Not implemented (vs Sourcebot)
 
-Users/orgs/SSO, permission syncing, GitLab/Bitbucket/Azure connectors, Knowledge Base, skills tools, `list_language_models`, streaming Ask, file viewer UI, symbol navigation UI.
+Users/orgs/SSO, permission syncing, GitHub Apps, GitLab/Gitea/Gerrit/Bitbucket/Azure DevOps connectors, Knowledge Base, skills tools, `list_language_models`, streaming Ask, file viewer UI, symbol navigation UI.
 
 ## Verified vs not
 

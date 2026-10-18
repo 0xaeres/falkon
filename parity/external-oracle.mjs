@@ -57,7 +57,8 @@ const out = path.join(here, ".gen/external");
 fs.mkdirSync(out, { recursive: true });
 fs.writeFileSync(
   path.join(out, "clone.config.json"),
-  JSON.stringify({ resyncIntervalMinutes: 1440, connections: repos.map((r) => ({ type: "local", name: r.name, path: r.container })) }, null, 2),
+  // Same shape as the v6 config: one file:// connection per mounted repo (v6 itself uses a glob).
+  JSON.stringify({ connections: Object.fromEntries(repos.map((r, i) => [`repo-${i}`, { type: "git", url: `file://${r.container}` }])) }, null, 2),
 );
 
 const vol = repos.map((r) => `      - ${r.host}:${r.container}:ro`).join("\n");

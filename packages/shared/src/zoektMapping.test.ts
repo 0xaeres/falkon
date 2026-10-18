@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { transformResponse, buildRequest, createStreamSummary, type WSearchResponse } from "./zoekt";
+import { MAX_MATCHES, transformResponse, buildRequest, createStreamSummary, type WSearchResponse } from "./zoekt";
 import { globToRegex } from "./tools";
 
 const loc = (line: number, column: number, byte = 0) => ({ byte_offset: byte, line_number: line, column });
@@ -94,7 +94,7 @@ test("an empty stream is exhaustive with zero matches", () => {
 test("limits are clamped: zero, negative and NaN never reach zoekt as 'unbounded'", () => {
   for (const bad of [0, -2, NaN, 1e9]) {
     const o = buildRequest({ const: true }, { matches: bad }).opts as any;
-    assert.ok(o.max_match_display_count >= 1 && o.max_match_display_count <= 5000, String(bad));
+    assert.ok(o.max_match_display_count >= 1 && o.max_match_display_count <= MAX_MATCHES, String(bad));
     assert.equal(o.total_max_match_count, o.max_match_display_count + 1);
   }
 });

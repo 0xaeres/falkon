@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { QuerySyntaxError, SearchContextNotFoundError, createStreamSummary, parseQuery, qRepo, streamIR } from "@sbc/shared";
 import { scopeOf, unauthorized } from "@/lib/auth";
+import { loadContexts } from "@/lib/repos";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
   const p = req.nextUrl.searchParams;
   let ir;
   try {
-    ir = parseQuery(p.get("q") ?? "", { regex: p.get("regex") === "1", caseSensitive: p.get("case") === "1" });
+    ir = parseQuery(p.get("q") ?? "", { regex: p.get("regex") === "1", caseSensitive: p.get("case") === "1", contexts: await loadContexts() });
   } catch (e) {
     const status = e instanceof QuerySyntaxError ? 400 : e instanceof SearchContextNotFoundError ? 404 : 500;
     return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status });

@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (!scope) return unauthorized();
   let cfg;
   try {
-    cfg = loadConfig(env.configPath).knowledgeBase;
+    cfg = (await loadConfig(env.configPath)).knowledgeBase;
   } catch {
     cfg = undefined;
   }

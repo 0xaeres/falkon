@@ -45,7 +45,13 @@ export async function writeZoektGitConfig(gitDir: string, m: ZoektRepoMeta) {
 }
 
 /** Build/refresh the zoekt shards for one bare repo. `revisions` are full refs, e.g. refs/heads/main. */
-export async function indexRepo(repoId: number, gitDir: string, revisions: string[], signal?: AbortSignal) {
+export async function indexRepo(
+  repoId: number,
+  gitDir: string,
+  revisions: string[],
+  signal?: AbortSignal,
+  settings: { maxFileSize: number; maxTrigramCount: number } = DEFAULT_SETTINGS,
+) {
   fs.mkdirSync(env.indexDir, { recursive: true });
   const largeFiles = (process.env.ALWAYS_INDEX_FILE_PATTERNS ?? "")
     .split(",")
@@ -54,8 +60,8 @@ export async function indexRepo(repoId: number, gitDir: string, revisions: strin
   const args = [
     "-allow_missing_branches",
     "-index", env.indexDir,
-    "-max_trigram_count", String(DEFAULT_SETTINGS.maxTrigramCount),
-    "-file_limit", String(DEFAULT_SETTINGS.maxFileSize),
+    "-max_trigram_count", String(settings.maxTrigramCount),
+    "-file_limit", String(settings.maxFileSize),
     "-branches", revisions.join(","),
     "-tenant_id", String(TENANT_ID),
     "-repo_id", String(repoId),

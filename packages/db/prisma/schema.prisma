@@ -32,34 +32,94 @@ enum RepoStatus {
   FAILED
 }
 
+enum CodeHostType {
+  github
+  gitlab
+  gitea
+  gerrit
+  bitbucketServer @map("bitbucket-server")
+  bitbucketCloud  @map("bitbucket-cloud")
+  genericGitHost  @map("generic-git-host")
+  azuredevops
+}
+
+enum ConnectionType {
+  github
+  gitlab
+  gitea
+  gerrit
+  bitbucket
+  azuredevops
+  git
+}
+
+/// One entry of config.json `connections`, keyed by its name there.
+model Connection {
+  id             Int                @id @default(autoincrement())
+  name           String             @unique
+  connectionType ConnectionType
+  config         Json
+  syncedAt       DateTime?
+  syncError      String?
+  repos          RepoToConnection[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model RepoToConnection {
+  repo         Repo       @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  repoId       Int
+  connection   Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  connectionId Int
+  addedAt      DateTime   @default(now())
+
+  @@id([repoId, connectionId])
+}
+
 model Repo {
-  id             Int        @id @default(autoincrement())
-  name           String     @unique // display name, e.g. github.com/org/repo
-  cloneUrl       String
-  tokenEnv       String? // env var holding a git token, never the token itself
-  defaultBranch  String?
-  branches       String[]
-  indexBranches  String[] // branch globs requested in config, beyond the default branch
-  indexTags      String[] // tag globs requested in config
-  isFork         Boolean    @default(false)
-  isArchived     Boolean    @default(false)
-  isPublic       Boolean    @default(false)
-  webUrl         String?
-  displayName    String?
-  kind           RepoKind   @default(CODE)
-  ownerRepoId    Int?       @unique // set when kind = KNOWLEDGE
-  kbExcluded     Boolean    @default(false) // docs deleted; skip until re-included
-  headCommit     String? // default-branch commit after the last sync; what scans pin to
-  kbRequest      String? // "scan" | "delete" | "include": set by the web app, handled by the backend
-  kbRequestedAt  DateTime?
-  kbScannedCommit String? // commit the last successful scan covered
-  kbLastFullScanAt DateTime?
-  status         RepoStatus @default(PENDING)
-  error          String?
-  pushedAt       DateTime?
-  lastIndexedAt  DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  id                    Int                @id @default(autoincrement())
+  name                  String             @unique // e.g. github.com/org/repo
+  displayName           String?
+  cloneUrl              String
+  webUrl                String?
+  imageUrl              String?
+  defaultBranch         String?
+  branches              String[]
+  isFork                Boolean            @default(false)
+  isArchived            Boolean            @default(false)
+  isPublic              Boolean            @default(false)
+  isAutoCleanupDisabled Boolean            @default(false)
+  /// { gitConfig?: Record<string,string>, branches?: string[], tags?: string[], codeHostMetadata?: {...} }
+  metadata              Json               @default("{}")
+  external_id           String
+  external_codeHostType CodeHostType
+  external_codeHostUrl  String
+  connections           RepoToConnection[]
+  kind                  RepoKind           @default(CODE)
+  ownerRepoId           Int?               @unique // set when kind = KNOWLEDGE
+  kbExcluded            Boolean            @default(false) // docs deleted; skip until re-included
+  headCommit            String? // default-branch commit after the last sync; what scans pin to
+  kbRequest             String? // "scan" | "delete" | "include": set by the web app, handled by the backend
+  kbRequestedAt         DateTime?
+  kbScannedCommit       String? // commit the last successful scan covered
+  kbLastFullScanAt      DateTime?
+  status                RepoStatus         @default(PENDING)
+  error                 String?
+  pushedAt              DateTime?
+  lastIndexedAt         DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@unique([external_id, external_codeHostUrl])
+}
+
+/// config.json `contexts`, resolved to repo names at sync time.
+model SearchContext {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  repoNames   String[]
+  updatedAt   DateTime @updatedAt
 }
 
 model ChatSession {
@@ -72,18 +132,18 @@ model ChatSession {
 }
 
 model KnowledgeScan {
-  id         Int        @id @default(autoincrement())
-  repoId     Int // owner repo
-  mode       ScanMode
-  status     ScanStatus @default(RUNNING)
-  baseCommit String?
-  headCommit String
-  tokensUsed Int        @default(0)
-  docsWritten Int       @default(0)
-  docsRemoved Int       @default(0)
-  error      String?
-  startedAt  DateTime   @default(now())
-  finishedAt DateTime?
+  id          Int        @id @default(autoincrement())
+  repoId      Int // owner repo
+  mode        ScanMode
+  status      ScanStatus @default(RUNNING)
+  baseCommit  String?
+  headCommit  String
+  tokensUsed  Int        @default(0)
+  docsWritten Int        @default(0)
+  docsRemoved Int        @default(0)
+  error       String?
+  startedAt   DateTime   @default(now())
+  finishedAt  DateTime?
 
   @@index([repoId, startedAt])
 }

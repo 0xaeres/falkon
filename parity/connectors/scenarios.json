@@ -1,0 +1,89 @@
+{
+  "_doc": "GitHub connection configs compiled by both v6 and the clone against mock.mjs. Tokens come from MOCK_TOKEN.",
+  "github-org": {
+    "type": "github",
+    "url": "http://mockhost:8080",
+    "token": {
+      "env": "MOCK_TOKEN"
+    },
+    "orgs": [
+      "acme"
+    ]
+  },
+  "github-org-missing": {
+    "type": "github",
+    "url": "http://mockhost:8080",
+    "token": {
+      "env": "MOCK_TOKEN"
+    },
+    "orgs": [
+      "acme",
+      "missing"
+    ]
+  },
+  "github-mixed-dupes": {
+    "type": "github",
+    "url": "http://mockhost:8080/",
+    "token": {
+      "env": "MOCK_TOKEN"
+    },
+    "orgs": [
+      "acme"
+    ],
+    "repos": [
+      "acme/app",
+      "bob/dots",
+      "acme/nope"
+    ],
+    "users": [
+      "bob"
+    ]
+  },
+  "github-excludes": {
+    "type": "github",
+    "url": "http://mockhost:8080",
+    "token": {
+      "env": "MOCK_TOKEN"
+    },
+    "orgs": [
+      "acme"
+    ],
+    "exclude": {
+      "forks": true,
+      "archived": true,
+      "private": true,
+      "repos": [
+        "acme/bulk-1*"
+      ],
+      "topics": [
+        "front*"
+      ],
+      "size": {
+        "min": 1000,
+        "max": 1000000000
+      }
+    }
+  },
+  "github-topics": {
+    "type": "github",
+    "url": "http://mockhost:8080",
+    "token": {
+      "env": "MOCK_TOKEN"
+    },
+    "orgs": [
+      "acme"
+    ],
+    "topics": [
+      "back*"
+    ],
+    "revisions": {
+      "branches": [
+        "main",
+        "release/*"
+      ],
+      "tags": [
+        "v*"
+      ]
+    }
+  }
+}

@@ -1,69 +1,120 @@
 import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import fs from "node:fs";
 import path from "node:path";
+import { promisify } from "node:util";
 
 const run = promisify(execFile);
 
-function gitEnv(token?: string): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: "0" };
-  if (token) {
-    // pass credentials via config env so they never land in .git/config or argv
-    const basic = Buffer.from(`x-access-token:${token}`).toString("base64");
-    env.GIT_CONFIG_COUNT = "1";
-    env.GIT_CONFIG_KEY_0 = "http.extraHeader";
-    env.GIT_CONFIG_VALUE_0 = `Authorization: Basic ${basic}`;
+/** HTTP credentials for one clone URL. Never written to disk or argv. */
+export interface GitCredentials {
+  username: string;
+  password: string;
+}
+
+/**
+ * Credentials ride in GIT_CONFIG_* env as a basic-auth header scoped to the clone URL, so they
+ * never land in .git/config, argv or the process list. Prompts are disabled.
+ */
+function gitEnv(cloneUrl?: string, creds?: GitCredentials): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_ASKPASS: "/bin/false", SSH_ASKPASS: "/bin/false" };
+  const entries: [string, string][] = [];
+  if (creds && cloneUrl && /^https?:/.test(cloneUrl)) {
+    for (const v of [creds.username, creds.password]) if (/[\r\n\0]/.test(v)) throw new Error("git credentials contain a control character");
+    const u = new URL(cloneUrl);
+    const basic = Buffer.from(`${creds.username}:${creds.password}`).toString("base64");
+    entries.push([`http.${u.origin}/.extraHeader`, `Authorization: Basic ${basic}`]);
   }
+  // Keep whatever GIT_CONFIG_* the process already has (e.g. safe.directory) and append ours.
+  const base = Number(process.env.GIT_CONFIG_COUNT ?? 0);
+  entries.forEach(([k, v], i) => {
+    env[`GIT_CONFIG_KEY_${base + i}`] = k;
+    env[`GIT_CONFIG_VALUE_${base + i}`] = v;
+  });
+  env.GIT_CONFIG_COUNT = String(base + entries.length);
   return env;
 }
 
-async function git(args: string[], env: NodeJS.ProcessEnv, cwd?: string) {
-  const { stdout } = await run("git", args, { env, cwd, maxBuffer: 16 * 1024 * 1024 });
+export async function git(dir: string | undefined, args: string[], opts: { cloneUrl?: string; creds?: GitCredentials; signal?: AbortSignal } = {}) {
+  const { stdout } = await run("git", dir ? ["-C", dir, ...args] : args, {
+    env: gitEnv(opts.cloneUrl, opts.creds),
+    maxBuffer: 64 * 1024 * 1024,
+    signal: opts.signal,
+  });
   return stdout.trim();
 }
 
-/** Clone bare on first sync, else fetch all heads. Returns repo metadata. */
-export async function syncRepo(dir: string, url: string, token?: string) {
-  const env = gitEnv(token);
-  if (!fs.existsSync(path.join(dir, "HEAD"))) {
-    fs.mkdirSync(path.dirname(dir), { recursive: true });
-    await git(["clone", "--bare", "--", url, dir], env);
+/** Root of a work tree or bare repo. */
+export async function isRepoRoot(p: string) {
+  if (!fs.existsSync(p)) return false;
+  try {
+    const d = await git(p, ["rev-parse", "--git-dir"]);
+    return d === "." || d === ".git";
+  } catch {
+    return false;
+  }
+}
+
+async function remoteDefaultBranch(cloneUrl: string, creds?: GitCredentials, signal?: AbortSignal) {
+  try {
+    const out = await git(undefined, ["ls-remote", "--symref", "--", cloneUrl, "HEAD"], { cloneUrl, creds, signal });
+    return /^ref: refs\/heads\/(\S+)\s+HEAD$/m.exec(out)?.[1];
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Bare clone on first sync (origin URL removed afterwards: it may hold credentials and is never
+ * needed), else fetch all heads with prune, then point HEAD at the remote's current default branch.
+ * A path that exists but is not a repo is wiped first.
+ */
+export async function cloneOrFetch(dir: string, cloneUrl: string, creds?: GitCredentials, signal?: AbortSignal) {
+  if (fs.existsSync(dir) && !(await isRepoRoot(dir))) fs.rmSync(dir, { recursive: true, force: true });
+  const o = { cloneUrl, creds, signal };
+  if (fs.existsSync(dir)) {
+    await git(dir, ["config", "--unset-all", "remote.origin.url"]).catch(() => {});
+    await git(dir, ["fetch", "--prune", "--", cloneUrl, "+refs/heads/*:refs/heads/*"], o);
+    const head = await remoteDefaultBranch(cloneUrl, creds, signal);
+    if (head) await git(dir, ["symbolic-ref", "HEAD", `refs/heads/${head}`]);
   } else {
-    await git(["--git-dir", dir, "fetch", "--prune", "--", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*"], env);
+    fs.mkdirSync(path.dirname(dir), { recursive: true });
+    await git(undefined, ["clone", "--bare", "--", cloneUrl, dir], o);
+    await git(dir, ["config", "--unset-all", "remote.origin.url"]).catch(() => {});
   }
-  // `fetch` with explicit refspecs never moves a bare clone's HEAD, so follow the remote's default branch.
+  await git(dir, ["commit-graph", "write", "--reachable", "--changed-paths"]).catch(() => {});
+}
+
+export async function upsertGitConfig(dir: string, entries: Record<string, string>) {
+  for (const [k, v] of Object.entries(entries)) await git(dir, ["config", k, v]);
+}
+
+export async function localDefaultBranch(dir: string) {
   try {
-    const out = await git(["ls-remote", "--symref", "--", url, "HEAD"], env);
-    const m = /^ref: refs\/heads\/(\S+)\s+HEAD$/m.exec(out);
-    if (m) await git(["--git-dir", dir, "symbolic-ref", "HEAD", `refs/heads/${m[1]}`], env);
+    return /^refs\/heads\/(.+)$/.exec(await git(dir, ["symbolic-ref", "HEAD"]))?.[1];
   } catch {
-    /* empty remote or no symref support: keep the existing HEAD */
+    return undefined;
   }
-  let defaultBranch: string | null = null;
-  try {
-    defaultBranch = await git(["--git-dir", dir, "symbolic-ref", "--short", "HEAD"], env);
-  } catch {
-    /* detached or empty repo */
-  }
-  const branches = (await git(["--git-dir", dir, "for-each-ref", "--format=%(refname:short)", "refs/heads"], env))
-    .split("\n")
-    .filter(Boolean);
-  const tags = (await git(["--git-dir", dir, "for-each-ref", "--format=%(refname:short)", "refs/tags"], env))
-    .split("\n")
-    .filter(Boolean);
+}
+
+/** Branches newest-commit first, tags newest first: the order revisions are picked in. */
+export async function sortedRefs(dir: string, ns: "refs/heads" | "refs/tags") {
+  const sort = ns === "refs/heads" ? "-committerdate" : "-creatordate";
+  const out = await git(dir, ["for-each-ref", `--sort=${sort}`, "--format=%(refname:short)", ns]);
+  return out.split("\n").map((s) => s.trim()).filter(Boolean);
+}
+
+export async function repoStats(dir: string, defaultBranch: string | undefined) {
   let pushedAt: Date | null = null;
+  let headCommit: string | null = null;
   try {
-    pushedAt = new Date(await git(["--git-dir", dir, "log", "-1", "--format=%cI", "--all"], env));
+    pushedAt = new Date(await git(dir, ["log", "-1", "--format=%cI", "--all"]));
   } catch {
     /* empty repo */
   }
-  let headCommit: string | null = null;
-  if (defaultBranch) {
-    try {
-      headCommit = await git(["--git-dir", dir, "rev-parse", `refs/heads/${defaultBranch}`], env);
-    } catch {
-      /* unborn branch */
-    }
+  try {
+    headCommit = await git(dir, ["rev-parse", defaultBranch ? `refs/heads/${defaultBranch}` : "HEAD"]);
+  } catch {
+    /* unborn branch */
   }
-  return { defaultBranch, branches, tags, headCommit, pushedAt };
+  return { pushedAt, headCommit, branches: await sortedRefs(dir, "refs/heads").catch(() => []) };
 }

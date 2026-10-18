@@ -1,7 +1,17 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import fs from "node:fs";
-import { repoGitDir } from "./env";
+import { gitDirOf } from "./env";
+
+/**
+ * Maps a repo name to its git directory. The web app installs one backed by the database
+ * (see setRepoResolver); without one there is nothing to read.
+ */
+type RepoResolver = (repo: string) => Promise<string | undefined>;
+let resolveRepo: RepoResolver = async () => undefined;
+export const setRepoResolver = (r: RepoResolver) => {
+  resolveRepo = r;
+};
 
 const run = promisify(execFile);
 
@@ -10,8 +20,9 @@ function assertSafeRef(ref: string) {
 }
 
 async function git(repo: string, args: string[], maxBuffer = 64 * 1024 * 1024) {
-  const dir = repoGitDir(repo);
-  if (!fs.existsSync(dir)) throw new Error(`repo not found: ${repo}`);
+  const p = await resolveRepo(repo);
+  if (!p || !fs.existsSync(p)) throw new Error(`repo not found: ${repo}`);
+  const dir = gitDirOf(p);
   const { stdout } = await run("git", ["--git-dir", dir, ...args], {
     maxBuffer,
     encoding: "buffer",

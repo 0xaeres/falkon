@@ -1,5 +1,6 @@
 import { prisma } from "@sbc/db";
 import { createToolRunner } from "@sbc/shared";
+import "./repos";
 
 export const runTool = createToolRunner({
   async listRepos({ query, sort, direction }) {

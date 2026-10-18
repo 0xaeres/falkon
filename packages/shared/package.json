@@ -11,10 +11,13 @@
     "gen:parser": "lezer-generator src/query/query.grammar -o src/query/parser.ts --typeScript --names"
   },
   "dependencies": {
+    "@google-cloud/secret-manager": "6.1.1",
     "@grpc/grpc-js": "^1.14.6",
     "@grpc/proto-loader": "^0.7.15",
     "@lezer/common": "^1.5.3",
     "@lezer/lr": "^1.4.11",
+    "ajv": "^8.20.0",
+    "strip-json-comments": "^5.0.3",
     "zod": "^3.24.0",
     "zod-to-json-schema": "^3.24.0"
   },

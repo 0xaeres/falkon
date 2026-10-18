@@ -9,13 +9,18 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
+    "@octokit/rest": "21.1.1",
     "@sbc/db": "workspace:*",
     "@sbc/shared": "workspace:*",
     "bullmq": "^5.34.0",
+    "git-url-parse": "16.1.0",
+    "glob": "^11.1.0",
     "ioredis": "^5.4.0",
-    "micromatch": "^4.0.8"
+    "micromatch": "^4.0.8",
+    "p-limit": "^7.3.3"
   },
   "devDependencies": {
+    "@types/git-url-parse": "^16.0.2",
     "@types/micromatch": "^4.0.10",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",

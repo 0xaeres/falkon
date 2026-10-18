@@ -3,95 +3,110 @@ import micromatch from "micromatch";
 import { Queue, Worker } from "bullmq";
 import { Redis } from "ioredis";
 import { prisma, RepoKind, RepoStatus, ScanStatus } from "@sbc/db";
-import { env, KB_SUFFIX, loadConfig, ownerOfKnowledgeRepo, repoGitDir } from "@sbc/shared";
-import { resolveConnections } from "./connections";
-import { syncRepo } from "./git";
+import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, repoGitDir, repoPath, resolveEnvironmentOverrides, type Config } from "@sbc/shared";
+import type { RepoMetadata } from "./connectors";
+import { credentialsFor } from "./credentials";
+import { cloneOrFetch, localDefaultBranch, repoStats, sortedRefs, upsertGitConfig } from "./git";
+import { deleteKnowledge, removeOrphans, syncConnection, syncConnectionRows, syncSearchContexts } from "./sync";
 import { indexRepo, removeShards, writeZoektGitConfig } from "./zoekt";
 import { kbSelected, runKnowledgeScan } from "./kb/scan";
 
-const QUEUE = "repo-sync";
 const connection = new Redis(env.redisUrl, { maxRetriesPerRequest: null });
-const queue = new Queue<{ repoId: number }>(QUEUE, {
+
+let cfg: Config | undefined;
+let settings = DEFAULT_SETTINGS;
+
+async function reloadConfig() {
+  cfg = await loadConfig(env.configPath);
+  settings = cfg.settings;
+  Object.assign(process.env, await resolveEnvironmentOverrides(cfg));
+  // BullMQ applies a new concurrency to the running worker.
+  connWorker.concurrency = settings.maxConnectionSyncJobConcurrency;
+  worker.concurrency = settings.maxRepoIndexingJobConcurrency;
+  return cfg;
+}
+
+// ---- connection sync -----------------------------------------------------------------
+
+const connQueue = new Queue<{ name: string }>("connection-sync", {
+  connection,
+  defaultJobOptions: { removeOnComplete: 100, removeOnFail: 100, attempts: 1 },
+});
+const indexQueue = new Queue<{ repoId: number }>("repo-index", {
   connection,
   defaultJobOptions: { removeOnComplete: 100, removeOnFail: 100, attempts: 2, backoff: { type: "exponential", delay: 10_000 } },
 });
 
-/** Reconcile DB with config.json, then enqueue a sync for every repo. */
-async function reconcile() {
-  const cfg = loadConfig(env.configPath);
-  const specs = await resolveConnections(cfg.connections);
-  const names = new Set(specs.map((s) => s.name));
+const enqueueIndex = (repoId: number) =>
+  // jobId dedupes: a repo already waiting is not queued twice
+  indexQueue.add("index", { repoId }, { jobId: `index-${repoId}-${Math.floor(Date.now() / 60_000)}` });
 
-  for (const s of specs) {
-    if (ownerOfKnowledgeRepo(s.name) !== undefined) {
-      console.warn(`ignoring repo "${s.name}": names ending in "${KB_SUFFIX}" are reserved for knowledge bases`);
-      continue;
-    }
-    const data = {
-      cloneUrl: s.cloneUrl,
-      tokenEnv: s.tokenEnv,
-      indexBranches: s.branches,
-      indexTags: s.tags,
-      isFork: s.isFork ?? false,
-      isArchived: s.isArchived ?? false,
-      isPublic: s.isPublic ?? false,
-      webUrl: s.webUrl,
-    };
-    const repo = await prisma.repo.upsert({
-      where: { name: s.name },
-      create: { name: s.name, ...data },
-      update: data,
-    });
-    // jobId dedupes: a repo already queued is not queued twice
-    await queue.add("sync", { repoId: repo.id }, { jobId: `sync-${repo.id}-${Math.floor(Date.now() / 60_000)}` });
-  }
+let pendingConnections = 0;
+const connWorker = new Worker<{ name: string }>(
+  "connection-sync",
+  async (job) => {
+    const ids = await syncConnection(job.data.name);
+    // New repos index right away; known ones wait for the reindex schedule (as in Sourcebot).
+    const fresh = await prisma.repo.findMany({ where: { id: { in: ids }, lastIndexedAt: null }, select: { id: true } });
+    for (const r of fresh) await enqueueIndex(r.id);
+  },
+  { connection, concurrency: DEFAULT_SETTINGS.maxConnectionSyncJobConcurrency },
+);
+connWorker.on("failed", (job, err) => console.error(`connection ${job?.data.name} sync failed: ${err.message}`));
+connWorker.on("completed", () => afterConnectionJob());
+connWorker.on("failed", () => afterConnectionJob());
 
-  for (const r of await prisma.repo.findMany({ where: { kind: RepoKind.CODE, name: { notIn: [...names] } } })) {
-    await deleteKnowledge(r.id);
-    removeShards(r.id);
-    fs.rmSync(repoGitDir(r.name), { recursive: true, force: true });
-    await prisma.knowledgeScan.deleteMany({ where: { repoId: r.id } });
-    await prisma.repo.delete({ where: { id: r.id } });
-    console.log(`removed ${r.name}`);
+/** Once a round of connection syncs drains: drop orphaned repos and recompute contexts. */
+async function afterConnectionJob() {
+  if (--pendingConnections > 0 || !cfg) return;
+  try {
+    await removeOrphans();
+    await syncSearchContexts(cfg);
+  } catch (e) {
+    console.error("post-sync cleanup failed:", e);
   }
-  return cfg.resyncIntervalMinutes;
 }
 
-/** Remove a repo's generated knowledge base: its git repo, shards and citation index. */
-async function deleteKnowledge(ownerRepoId: number) {
-  const k = await prisma.repo.findFirst({ where: { kind: RepoKind.KNOWLEDGE, ownerRepoId } });
-  if (k) {
-    removeShards(k.id);
-    fs.rmSync(repoGitDir(k.name), { recursive: true, force: true });
-    await prisma.repo.delete({ where: { id: k.id } });
+async function syncAllConnections() {
+  const c = await reloadConfig();
+  await syncConnectionRows(c);
+  const names = Object.keys(c.connections);
+  if (names.length === 0) {
+    pendingConnections = 1;
+    return afterConnectionJob();
   }
-  await prisma.knowledgeDoc.deleteMany({ where: { repoId: ownerRepoId } });
+  pendingConnections += names.length;
+  for (const name of names) await connQueue.add("sync", { name }, { jobId: `sync-${name}-${Date.now()}` });
 }
 
-// zoekt indexes at most 64 branches/tags per repo.
-const MAX_REVISIONS = 64;
+// ---- repo indexing -------------------------------------------------------------------
 
-/** Default branch first (searchable as HEAD), then branches/tags matching the configured globs. */
-function pickRevisions(meta: { defaultBranch: string | null; branches: string[]; tags: string[] }, branchGlobs: string[], tagGlobs: string[]) {
-  const revs = [meta.defaultBranch ? `refs/heads/${meta.defaultBranch}` : "HEAD"];
-  if (branchGlobs.length) revs.push(...micromatch(meta.branches, branchGlobs).map((b) => `refs/heads/${b}`));
-  if (tagGlobs.length) revs.push(...micromatch(meta.tags, tagGlobs).map((t) => `refs/tags/${t}`));
-  const unique = [...new Set(revs)];
-  if (unique.length > MAX_REVISIONS) console.warn(`truncating ${unique.length} revisions to ${MAX_REVISIONS}`);
-  return unique.slice(0, MAX_REVISIONS);
+const MAX_REVISIONS = 64; // zoekt's limit per repo
+
+/** Default branch first (searchable as HEAD), then matching branches newest first, then matching tags. */
+async function pickRevisions(dir: string, meta: RepoMetadata) {
+  const def = await localDefaultBranch(dir);
+  let revs = [def ? (def.startsWith("refs/") ? def : `refs/heads/${def}`) : "HEAD"];
+  if (meta.branches) revs.push(...(await sortedRefs(dir, "refs/heads")).filter((b) => micromatch.isMatch(b, meta.branches!)).map((b) => `refs/heads/${b}`));
+  if (meta.tags) revs.push(...(await sortedRefs(dir, "refs/tags")).filter((t) => micromatch.isMatch(t, meta.tags!)).map((t) => `refs/tags/${t}`));
+  revs = [...new Set(revs)];
+  if (revs.length > MAX_REVISIONS) console.warn(`truncating ${revs.length} revisions to ${MAX_REVISIONS}`);
+  return { revisions: revs.slice(0, MAX_REVISIONS), defaultBranch: def };
 }
 
 const worker = new Worker<{ repoId: number }>(
-  QUEUE,
+  "repo-index",
   async (job) => {
-    const repo = await prisma.repo.findUniqueOrThrow({ where: { id: job.data.repoId } });
+    const repo = await prisma.repo.findUnique({ where: { id: job.data.repoId }, include: { connections: { include: { connection: true } } } });
+    if (!repo) return;
     await prisma.repo.update({ where: { id: repo.id }, data: { status: "SYNCING", error: null } });
+    const signal = AbortSignal.timeout(settings.repoIndexTimeoutMs);
     try {
-      const dir = repoGitDir(repo.name);
       if (repo.kind === RepoKind.KNOWLEDGE) {
         // generated locally: nothing to clone or fetch, just (re)index main
+        const dir = repoGitDir(repo.name);
         await writeZoektGitConfig(dir, repo);
-        await indexRepo(repo.id, dir, ["refs/heads/main"]);
+        await indexRepo(repo.id, dir, ["refs/heads/main"], signal, settings);
         if (!(await prisma.repo.findUnique({ where: { id: repo.id }, select: { id: true } }))) {
           removeShards(repo.id);
           return;
@@ -100,38 +115,56 @@ const worker = new Worker<{ repoId: number }>(
         console.log(`indexed ${repo.name}`);
         return;
       }
-      const token = repo.tokenEnv ? process.env[repo.tokenEnv] : undefined;
-      const meta = await syncRepo(dir, repo.cloneUrl, token);
-      const revisions = pickRevisions(meta, repo.indexBranches, repo.indexTags);
-      await writeZoektGitConfig(dir, repo);
-      await indexRepo(repo.id, dir, revisions);
-      // The repo may have been removed from config while we were indexing. Its row is gone, so
-      // reconcile will never clean up the shards we just wrote; do it here.
+      const meta = (repo.metadata ?? {}) as RepoMetadata;
+      const { path, isReadOnly } = repoPath(repo);
+      if (!isReadOnly) {
+        const creds = await credentialsFor(repo.external_codeHostType, repo.connections.map((c) => c.connection));
+        await cloneOrFetch(path, repo.cloneUrl, creds, signal);
+        if (meta.gitConfig) await upsertGitConfig(path, meta.gitConfig);
+      }
+      const dir = gitDirOf(path);
+      const { revisions, defaultBranch } = await pickRevisions(dir, meta);
+      await indexRepo(repo.id, dir, revisions, signal, settings);
+      // The repo may have been dropped from config while we were indexing. Its row is gone, so
+      // cleanup will never find the shards we just wrote; do it here.
       if (!(await prisma.repo.findUnique({ where: { id: repo.id }, select: { id: true } }))) {
         removeShards(repo.id);
-        fs.rmSync(dir, { recursive: true, force: true });
+        if (!isReadOnly) fs.rmSync(path, { recursive: true, force: true });
         return;
       }
+      const stats = await repoStats(dir, defaultBranch);
       await prisma.repo.update({
         where: { id: repo.id },
         data: {
           status: "INDEXED",
-          defaultBranch: meta.defaultBranch,
-          headCommit: meta.headCommit,
-          branches: meta.branches,
-          pushedAt: meta.pushedAt,
+          defaultBranch: defaultBranch ?? repo.defaultBranch,
+          headCommit: stats.headCommit,
+          branches: stats.branches,
+          pushedAt: stats.pushedAt,
           lastIndexedAt: new Date(),
         },
       });
       console.log(`indexed ${repo.name}`);
     } catch (e) {
-      await prisma.repo.update({ where: { id: repo.id }, data: { status: "FAILED", error: String(e).slice(0, 2000) } });
+      await prisma.repo.update({ where: { id: repo.id }, data: { status: "FAILED", error: String(e).slice(0, 2000) } }).catch(() => {});
       throw e;
     }
   },
-  { connection, concurrency: 2 },
+  { connection, concurrency: DEFAULT_SETTINGS.maxRepoIndexingJobConcurrency },
 );
-worker.on("failed", (job, err) => console.error(`job ${job?.id} failed: ${err.message}`));
+worker.on("failed", (job, err) => console.error(`index job ${job?.id} failed: ${err.message}`));
+
+/** Reindex repos whose last index is older than reindexIntervalMs; resync connections past resyncConnectionIntervalMs. */
+async function scheduleTick() {
+  const now = Date.now();
+  const due = await prisma.repo.findMany({
+    where: { kind: RepoKind.CODE, OR: [{ lastIndexedAt: null }, { lastIndexedAt: { lt: new Date(now - settings.reindexIntervalMs) } }] },
+    select: { id: true },
+  });
+  for (const r of due) await enqueueIndex(r.id);
+  const stale = await prisma.connection.findFirst({ where: { OR: [{ syncedAt: null }, { syncedAt: { lt: new Date(now - settings.resyncConnectionIntervalMs) } }] } });
+  if (stale && pendingConnections <= 0) await syncAllConnections();
+}
 
 // ---- knowledge base ---------------------------------------------------------------
 
@@ -147,7 +180,7 @@ const kbWorker = new Worker<{ repoId: number; manual: boolean }>(
     const result = await runKnowledgeScan(job.data.repoId, { manual: job.data.manual, log: (m) => console.log(`[kb ${job.data.repoId}] ${m}`) });
     if (!result) return;
     console.log(`[kb ${job.data.repoId}] scan ${result.scanId} ${result.status}`);
-    if (result.needsIndex) await queue.add("sync", { repoId: result.knowledgeRepoId }, { jobId: `sync-${result.knowledgeRepoId}-${Date.now()}` });
+    if (result.needsIndex) await indexQueue.add("index", { repoId: result.knowledgeRepoId }, { jobId: `index-${result.knowledgeRepoId}-${Date.now()}` });
   },
   { connection, concurrency: 1, lockDuration: 10 * 60_000 },
 );
@@ -155,16 +188,12 @@ kbWorker.on("failed", (job, err) => console.error(`kb job ${job?.id} failed: ${e
 
 /** Applies web-app requests (scan now / delete / re-include) and schedules due scans. */
 async function kbTick() {
-  let cfg;
-  try {
-    cfg = loadConfig(env.configPath).knowledgeBase;
-  } catch {
-    return;
-  }
+  if (!cfg) return;
+  const kbCfg = cfg.knowledgeBase;
   const now = Date.now();
   // knowledge repos whose new commits were never indexed (e.g. a crash between a scan and its hand-off)
   for (const k of await prisma.repo.findMany({ where: { kind: RepoKind.KNOWLEDGE, status: RepoStatus.PENDING } })) {
-    await queue.add("sync", { repoId: k.id }, { jobId: `sync-${k.id}-${Math.floor(now / 60_000)}` });
+    await enqueueIndex(k.id);
   }
   for (const r of await prisma.repo.findMany({ where: { kind: RepoKind.CODE } })) {
     if (r.kbRequest) {
@@ -179,30 +208,39 @@ async function kbTick() {
         await prisma.repo.update({ where: { id: r.id }, data: { kbExcluded: true, kbScannedCommit: null, kbLastFullScanAt: null } });
       } else if (req === "include") {
         await prisma.repo.update({ where: { id: r.id }, data: { kbExcluded: false } });
-      } else if (req === "scan" && kbSelected(cfg, r)) {
+      } else if (req === "scan" && kbSelected(kbCfg, r)) {
         await kbQueue.add("scan", { repoId: r.id, manual: true }, { jobId: `kb-${r.id}-manual-${now}` });
       }
       continue;
     }
-    if (!kbSelected(cfg, r) || r.status !== RepoStatus.INDEXED || !r.headCommit || r.kbScannedCommit === r.headCommit) continue;
+    if (!kbSelected(kbCfg, r) || r.status !== RepoStatus.INDEXED || !r.headCommit || r.kbScannedCommit === r.headCommit) continue;
     const last = await prisma.knowledgeScan.findFirst({ where: { repoId: r.id }, orderBy: { startedAt: "desc" } });
     if (last?.status === ScanStatus.RUNNING) continue;
-    if (last && now - last.startedAt.getTime() < cfg.refreshIntervalHours * 3_600_000) continue;
+    if (last && now - last.startedAt.getTime() < kbCfg.refreshIntervalHours * 3_600_000) continue;
     await kbQueue.add("scan", { repoId: r.id, manual: false }, { jobId: `kb-${r.id}-${r.headCommit}` });
   }
 }
 
-async function loop() {
-  let minutes = 60;
+let configTimer: NodeJS.Timeout | undefined;
+/** A changed config.json triggers a resync, debounced: editors write in several steps. */
+function watchConfig() {
+  if (/^https?:\/\//.test(env.configPath)) return;
   try {
-    minutes = await reconcile();
+    fs.watch(env.configPath, () => {
+      clearTimeout(configTimer);
+      configTimer = setTimeout(() => syncAllConnections().catch((e) => console.error("config resync failed:", e)), 1000);
+    });
   } catch (e) {
-    console.error("reconcile failed:", e);
+    console.warn(`not watching ${env.configPath}: ${e}`);
   }
-  setTimeout(loop, minutes * 60_000);
 }
 
-loop();
+syncAllConnections()
+  .catch((e) => console.error("initial sync failed:", e))
+  .finally(() => {
+    watchConfig();
+    setInterval(() => scheduleTick().catch((e) => console.error("schedule tick failed:", e)), 30_000);
+  });
 // a scan interrupted by a crash or restart never finishes; close it out so the scheduler can retry
 prisma.knowledgeScan
   .updateMany({ where: { status: ScanStatus.RUNNING }, data: { status: ScanStatus.FAILED, error: "interrupted by restart", finishedAt: new Date() } })
@@ -212,8 +250,10 @@ setInterval(() => kbTick().catch((e) => console.error("kb tick failed:", e)), 30
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
   process.on(sig, async () => {
     await worker.close();
+    await connWorker.close();
+    await connQueue.close();
     await kbWorker.close();
-    await queue.close();
+    await indexQueue.close();
     await kbQueue.close();
     await prisma.$disconnect();
     process.exit(0);

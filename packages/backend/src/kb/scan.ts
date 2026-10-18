@@ -1,5 +1,5 @@
 import { prisma, RepoKind, RepoStatus, ScanMode, ScanStatus, type Repo } from "@sbc/db";
-import { env, kb, knowledgeRepoName, loadConfig, repoGitDir, scopeFor, type KnowledgeBaseConfig } from "@sbc/shared";
+import { env, gitDirOf, kb, knowledgeRepoName, loadConfig, repoGitDir, repoPath, scopeFor, type KnowledgeBaseConfig } from "@sbc/shared";
 import { GitDocStore } from "./gitStore";
 
 /** Whether the config selects this repo for a knowledge base. */
@@ -15,7 +15,18 @@ export async function ensureKnowledgeRepo(owner: Repo): Promise<Repo> {
   if (clash && (clash.kind !== RepoKind.KNOWLEDGE || clash.ownerRepoId !== owner.id)) throw new Error(`name ${name} is already used by another repository`);
   return prisma.repo.upsert({
     where: { name },
-    create: { name, cloneUrl: "", kind: RepoKind.KNOWLEDGE, ownerRepoId: owner.id, isPublic: owner.isPublic, status: RepoStatus.PENDING },
+    create: {
+      name,
+      cloneUrl: "",
+      kind: RepoKind.KNOWLEDGE,
+      ownerRepoId: owner.id,
+      isPublic: owner.isPublic,
+      status: RepoStatus.PENDING,
+      // Generated locally, so its identity is the owner's, not a code host's.
+      external_id: `knowledge:${owner.id}`,
+      external_codeHostType: "genericGitHost",
+      external_codeHostUrl: "sourcebot-clone://knowledge",
+    },
     update: { isPublic: owner.isPublic },
   });
 }
@@ -31,7 +42,7 @@ export interface ScanResult {
 /** Run one knowledge scan for a code repo. Returns undefined when the repo does not qualify right now. */
 export async function runKnowledgeScan(repoId: number, opts: { manual: boolean; log?: (m: string) => void }): Promise<ScanResult | undefined> {
   const log = opts.log ?? (() => {});
-  const cfg = loadConfig(env.configPath).knowledgeBase;
+  const cfg = (await loadConfig(env.configPath)).knowledgeBase;
   const owner = await prisma.repo.findUnique({ where: { id: repoId } });
   if (!owner || !kbSelected(cfg, owner) || owner.status !== RepoStatus.INDEXED || !owner.headCommit) return undefined;
   if (!opts.manual && owner.kbScannedCommit === owner.headCommit) return undefined;
@@ -73,11 +84,11 @@ export async function runKnowledgeScan(repoId: number, opts: { manual: boolean; 
       if (!mayCite(name)) return undefined;
       if (!sources.has(name)) {
         const r = await prisma.repo.findFirst({ where: { name, kind: RepoKind.CODE } });
-        sources.set(name, r?.headCommit ? kb.gitSource(r.name, repoGitDir(r.name), r.headCommit) : undefined);
+        sources.set(name, r?.headCommit ? kb.gitSource(r.name, gitDirOf(repoPath(r).path), r.headCommit) : undefined);
       }
       return sources.get(name);
     };
-    const ownerSrc = kb.gitSource(owner.name, repoGitDir(owner.name), owner.headCommit);
+    const ownerSrc = kb.gitSource(owner.name, gitDirOf(repoPath(owner).path), owner.headCommit);
 
     const triage = await kb.computeTriage({
       requested, owner: ownerSrc, existing, lastScanCommit: owner.kbScannedCommit, lastFullScanAt: owner.kbLastFullScanAt, now, resolveRepo,

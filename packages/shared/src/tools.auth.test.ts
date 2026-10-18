@@ -13,6 +13,8 @@ const { setZoektTransport } = await import("./zoekt");
 const { someQ } = await import("./ir");
 const { scopeFor } = await import("./access");
 const { repoGitDir } = await import("./env");
+const { setRepoResolver } = await import("./git");
+setRepoResolver(async (name) => repoGitDir(name));
 
 const ALLOWED = "github.com/acme/app";
 const SECRET = "github.com/acme/secret";

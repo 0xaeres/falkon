@@ -22,15 +22,8 @@ const v6 = {
     ]),
   ),
 };
-const clone = {
-  resyncIntervalMinutes: 1440,
-  connections: repos.map((r) => ({
-    type: "local",
-    name: r.name,
-    path: `/corpus/${r.name}`,
-    ...(r.revisions ? { revisions: r.revisions } : {}),
-  })),
-};
+// The clone reads the same v3 format; only the knowledge-base key is its own.
+const clone = v6;
 
 fs.mkdirSync(path.join(here, ".gen"), { recursive: true });
 fs.writeFileSync(path.join(here, ".gen/v6.config.json"), JSON.stringify(v6, null, 2));

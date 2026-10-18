@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 
 export const env = {
@@ -29,6 +30,24 @@ export const env = {
  */
 export function repoDirName(name: string): string {
   return encodeURIComponent(name.replace(/_/g, "_5F")).replace(/%/g, "_");
+}
+
+/** Where a repo's git data lives. File-URL generic-git repos are read in place and never written to. */
+export function repoPath(repo: { id: number; cloneUrl: string; external_codeHostType: string; kind?: string; name: string }): {
+  path: string;
+  isReadOnly: boolean;
+} {
+  if (repo.kind === "KNOWLEDGE") return { path: repoGitDir(repo.name), isReadOnly: false };
+  if (repo.external_codeHostType === "genericGitHost" && repo.cloneUrl.startsWith("file:")) {
+    return { path: decodeURIComponent(new URL(repo.cloneUrl).pathname), isReadOnly: true };
+  }
+  return { path: path.join(env.reposDir, String(repo.id)), isReadOnly: false };
+}
+
+/** The directory to pass as --git-dir: `<path>/.git` for a working tree, else the path (bare). */
+export function gitDirOf(p: string): string {
+  const dotGit = path.join(p, ".git");
+  return fs.existsSync(dotGit) ? dotGit : p;
 }
 
 export function repoGitDir(name: string): string {

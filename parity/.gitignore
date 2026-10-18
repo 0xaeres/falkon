@@ -3,3 +3,4 @@
 .oracle/
 .env
 reports/
+connectors/out/

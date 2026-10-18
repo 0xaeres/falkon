@@ -1,30 +1,25 @@
 {
-  "resyncIntervalMinutes": 60,
-  "connections": [
-    {
-      "type": "git",
-      "name": "example/hello",
-      "url": "https://github.com/octocat/Hello-World.git"
-    },
-    {
-      "type": "local",
-      "name": "local/self",
-      "path": "/absolute/path/to/some/repo"
-    },
-    {
+  // Sourcebot v3 config format (https://docs.sourcebot.dev/docs/configuration/config-file); comments allowed.
+  "$schema": "https://raw.githubusercontent.com/sourcebot-dev/sourcebot/main/schemas/v3/index.json",
+  "settings": {
+    "reindexIntervalMs": 3600000,
+    "resyncConnectionIntervalMs": 86400000
+  },
+  "connections": {
+    "github": {
       "type": "github",
-      "tokenEnv": "GITHUB_TOKEN",
+      "token": { "env": "GITHUB_TOKEN" },
+      "repos": ["sourcebot-dev/sourcebot"],
       "orgs": [],
-      "users": [],
-      "repos": [
-        "sourcebot-dev/sourcebot"
-      ],
-      "exclude": {
-        "forks": true,
-        "archived": true
-      }
-    }
-  ],
+      "exclude": { "forks": true, "archived": true }
+    },
+    "hello": { "type": "git", "url": "https://github.com/octocat/Hello-World.git" },
+    "local": { "type": "git", "url": "file:///absolute/path/to/repos/*" }
+  },
+  "contexts": {
+    "web": { "include": ["github.com/sourcebot-dev/*"], "description": "Web repos" }
+  },
+  // Clone-only: generated architecture docs (off by default).
   "knowledgeBase": {
     "enabled": false,
     "repos": "all",

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { MAX_MATCHES, qRepo, search } from "@sbc/shared";
 import { searchError, serviceError } from "@/lib/serviceError";
 import { scopeOf, unauthorized } from "@/lib/auth";
+import { loadContexts } from "@/lib/repos";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
       caseSensitive: p.get("case") === "1",
       matches,
       scope: scope.repoFilter ? [qRepo(scope.repoFilter)] : [],
+      contexts: await loadContexts(),
     });
     // The scope node narrows the query; filtering the hits is the guarantee.
     const files = r.files.filter((f) => scope.allows(f.repo));
@@ -51,6 +53,7 @@ export async function POST(req: NextRequest) {
       matches,
       contextLines: typeof body.contextLines === "number" ? body.contextLines : undefined,
       scope: scope.repoFilter ? [qRepo(scope.repoFilter)] : [],
+      contexts: await loadContexts(),
     });
     const files = r.files.filter((f) => scope.allows(f.repo));
     return NextResponse.json(
