@@ -7,13 +7,13 @@ import fs from "node:fs";
 import path from "node:path";
 import grpc from "@grpc/grpc-js";
 import protoLoader from "@grpc/proto-loader";
-import { parseQuery } from "../packages/shared/src/queryParser.ts";
-import { buildRequest } from "../packages/shared/src/zoekt.ts";
+import { parseQuery } from "../../packages/shared/src/queryParser.ts";
+import { buildRequest } from "../../packages/shared/src/zoekt.ts";
 
 const here = path.dirname(new URL(import.meta.url).pathname);
 const args = process.argv.slice(2);
 const only = args.includes("--only") ? args[args.indexOf("--only") + 1] : undefined;
-const protoDir = path.join(here, "../packages/shared/proto");
+const protoDir = path.join(here, "../../packages/shared/proto");
 const def = protoLoader.loadSync(path.join(protoDir, "zoekt/webserver/v1/webserver.proto"), {
   keepCase: true, longs: Number, enums: String, defaults: true, oneofs: true, includeDirs: [protoDir],
 });

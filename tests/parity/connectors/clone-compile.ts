@@ -1,6 +1,6 @@
 // Runs inside the clone image: compiles each scenario with the clone's connectors and prints JSON.
 import fs from "node:fs";
-import { compileConnection } from "../../packages/backend/src/connectors";
+import { compileConnection } from "../../../packages/backend/src/connectors";
 const scenarios = JSON.parse(fs.readFileSync("/m/scenarios.json", "utf8"));
 const out: Record<string, unknown> = {};
 for (const [name, cfg] of Object.entries<any>(scenarios)) {

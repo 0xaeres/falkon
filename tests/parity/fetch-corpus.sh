@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Materialize the parity corpus under parity/.corpus/<host>/<path>, pinned by parity/corpus.lock.
+# Materialize the parity corpus under tests/parity/.corpus/<host>/<path>, pinned by tests/parity/corpus.lock.
 # First run pins each repo's current HEAD into the lock; later runs check out exactly those commits.
 # Also (re)builds the synthetic edge-case repo at example.test/fixtures/edge.
 set -euo pipefail

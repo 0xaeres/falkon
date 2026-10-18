@@ -1,6 +1,6 @@
 // Scripted OpenAI-compatible LLM for the Ask differential. Both instances point at it under their
 // own path prefix (/v6/..., /clone/...), get the same scripted turns, and every request body is
-// recorded to parity/ask/out/<prefix>.jsonl so prompts, tool schemas and tool results can be diffed.
+// recorded to tests/parity/ask/out/<prefix>.jsonl so prompts, tool schemas and tool results can be diffed.
 //
 // Script per conversation (decided by how many tool results the request already carries):
 //   0 results -> call grep, 1 -> call read_file, 2+ -> final answer with @file: references.

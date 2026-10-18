@@ -1,7 +1,7 @@
 # Differential parity stack: real Sourcebot v6 (oracle) and this clone, indexing the same
 # read-only corpus. Oracle UI/API on :3100, clone on :3200.
-#   ./parity/up.sh        # fetch corpus, generate configs, start, seed the v6 API key
-#   node parity/run.mjs   # replay parity/queries.json against both, write parity/reports/
+#   ./tests/parity/up.sh        # fetch corpus, generate configs, start, seed the v6 API key
+#   node tests/parity/run.mjs   # replay tests/parity/queries.json against both, write tests/parity/reports/
 name: sbc-parity
 
 x-v6-env: &v6env
@@ -45,7 +45,7 @@ services:
     healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 3s, retries: 30 }
   sbc-backend: &sbc
     image: sourcebot-clone-app
-    build: { context: .., dockerfile: docker/Dockerfile }
+    build: { context: ../.., dockerfile: docker/Dockerfile }
     command: sh -c "pnpm --filter @sbc/db push && pnpm --filter @sbc/backend start"
     environment: &sbcenv
       DATABASE_URL: postgresql://sbc:sbc@sbc-postgres:5432/sbc

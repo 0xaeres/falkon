@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Connector differential: v6's compile*Config (inside the v6 image) vs the clone's connectors
 # (inside the clone image), both against mock.mjs on a private network. No internet access.
-#   ./parity/connectors/run.sh            (rebuild the clone image first if connectors changed)
+#   ./tests/parity/connectors/run.sh            (rebuild the clone image first if connectors changed)
 set -euo pipefail
 cd "$(dirname "$0")"
 V6_IMAGE=${V6_IMAGE:-docker.sourcebot.dev/sourcebot-dev/sourcebot:v6.0.1}
@@ -17,5 +17,6 @@ sleep 1
 ENVS=(-e MOCK_TOKEN=mock-token -e SKIP_ENV_VALIDATION=1 -e DATABASE_URL=postgresql://x:y@localhost/z -e REDIS_URL=redis://localhost
       -e SOURCEBOT_ENCRYPTION_KEY=parity-encryption-key-32-bytes!! -e AUTH_SECRET=x -e SOURCEBOT_LOG_LEVEL=error -e CONFIG_PATH=/out/empty-config.json)
 docker run --rm --network "$NET" "${ENVS[@]}" -v "$PWD:/m:ro" -v "$PWD/out:/out" --entrypoint node "$V6_IMAGE" /m/v6-compile.mjs
-docker run --rm --network "$NET" "${ENVS[@]}" -v "$PWD:/m:ro" -v "$PWD/out:/out" -w /app "$CLONE_IMAGE" packages/backend/node_modules/.bin/tsx parity/connectors/clone-compile.ts
+# tests/ is not in the image; mount tests/parity where its package.json (ESM) and relative import of packages/backend resolve.
+docker run --rm --network "$NET" "${ENVS[@]}" -v "$PWD:/m:ro" -v "$(dirname "$PWD"):/app/tests/parity:ro" -v "$PWD/out:/out" -w /app "$CLONE_IMAGE" packages/backend/node_modules/.bin/tsx tests/parity/connectors/clone-compile.ts
 node diff.mjs

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Replays parity/queries.json against Sourcebot v6 (oracle) and the clone, and diffs the results.
-//   node parity/run.mjs [--only <id-substring>] [--queries <file>] [--v6 <url>] [--clone <url>]
-// Env: V6_URL, V6_API_KEY or V6_API_KEY_FILE (default: parity/.gen/keys.env), SOURCEBOT_API_KEY for the clone.
-// Writes parity/reports/<timestamp>.json (full) and parity/reports/latest.md (summary).
+// Replays tests/parity/queries.json against Sourcebot v6 (oracle) and the clone, and diffs the results.
+//   node tests/parity/run.mjs [--only <id-substring>] [--queries <file>] [--v6 <url>] [--clone <url>]
+// Env: V6_URL, V6_API_KEY or V6_API_KEY_FILE (default: tests/parity/.gen/keys.env), SOURCEBOT_API_KEY for the clone.
+// Writes tests/parity/reports/<timestamp>.json (full) and tests/parity/reports/latest.md (summary).
 import fs from "node:fs";
 import path from "node:path";
 
@@ -150,14 +150,19 @@ for (const q of spec.queries) {
     if (verdict === "match" && ex6 !== exC) verdict = "exhaustive";
     d.exhaustive = { v6: ex6, clone: exC };
   }
-  // Truncated results cannot be compared exactly, so compare the complete result instead.
+  // Truncated results cannot be compared exactly (zoekt stops early across parallel shards, so even
+  // v6 against itself differs), so compare the complete result instead: re-run uncapped, raising the
+  // limit above both observed totals until both are exhaustive. Never complete -> "truncated".
   let full;
   if (d && d.exhaustive.v6 === false && !args.includes("--no-probe")) {
-    const probe = { ...body, matches: Math.min(Math.max((v6.json.stats?.totalMatchCount ?? 0) * 2, 10000), 1_000_000), contextLines: 0 };
-    const [p6, pC] = await Promise.all([post(V6, V6_KEY, probe), post(CLONE, CLONE_KEY, probe)]);
-    if (p6.status === 200 && pC.status === 200) {
+    let limit = Math.max(v6.json.stats?.totalMatchCount ?? 0, clone.json.stats?.totalMatchCount ?? 0) * 2;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const probe = { ...body, matches: Math.min(Math.max(limit, 10000), 1_000_000), contextLines: 0 };
+      const [p6, pC] = await Promise.all([post(V6, V6_KEY, probe), post(CLONE, CLONE_KEY, probe)]);
+      if (p6.status !== 200 || pC.status !== 200) break;
       const fd = diff(normalize(p6.json), normalize(pC.json));
       full = {
+        limit: probe.matches,
         complete: p6.json.isSearchExhaustive && pC.json.isSearchExhaustive,
         same: !fd.missing.length && !fd.extra.length && !fd.rangeDiffs.length && !fd.langDiffs.length,
         missing: fd.missing.slice(0, 10),
@@ -165,8 +170,11 @@ for (const q of spec.queries) {
         rangeDiffs: fd.rangeDiffs.slice(0, 3),
         counts: fd.counts,
       };
-      if (full.complete) verdict = full.same ? "match" : "full-differs";
+      if (full.complete || probe.matches >= 1_000_000) break;
+      limit = Math.max(fd.counts.v6Total, fd.counts.cloneTotal) * 2;
     }
+    if (full?.complete) verdict = full.same ? "match" : "full-differs";
+    else if (verdict !== "match") verdict = "truncated";
   }
   results.push({
     id,
@@ -178,11 +186,11 @@ for (const q of spec.queries) {
     diff: d,
   });
   if (full) process.stdout.write(`  [complete: ${full.complete ? (full.same ? "same" : "DIFFERS") : "incomplete"} files ${full.counts.v6Files}/${full.counts.cloneFiles} total ${full.counts.v6Total}/${full.counts.cloneTotal}]\n`);
-  process.stdout.write(`${verdict === "match" ? "✓" : verdict === "unstable" ? "~" : "✗"} ${id.padEnd(24)} ${verdict}${d ? `  files ${d.counts.v6Files}/${d.counts.cloneFiles}  total ${d.counts.v6Total}/${d.counts.cloneTotal}` : `  status ${v6.status}/${clone.status}`}\n`);
+  process.stdout.write(`${verdict === "match" ? "✓" : verdict === "unstable" || verdict === "truncated" ? "~" : "✗"} ${id.padEnd(24)} ${verdict}${d ? `  files ${d.counts.v6Files}/${d.counts.cloneFiles}  total ${d.counts.v6Total}/${d.counts.cloneTotal}` : `  status ${v6.status}/${clone.status}`}\n`);
 }
 
 const by = (v) => results.filter((r) => r.verdict === v).length;
-const verdicts = ["match", "full-differs", "unstable", "exhaustive", "order", "language", "chunks", "ranges", "files", "status"];
+const verdicts = ["match", "full-differs", "unstable", "truncated", "exhaustive", "order", "language", "chunks", "ranges", "files", "status"];
 const stamp = new Date().toISOString().replace(/[:.]/g, "-");
 fs.mkdirSync(path.join(here, "reports"), { recursive: true });
 fs.writeFileSync(path.join(here, `reports/${stamp}.json`), JSON.stringify({ v6: V6, clone: CLONE, results }, null, 2));
@@ -190,13 +198,13 @@ fs.writeFileSync(path.join(here, `reports/${stamp}.json`), JSON.stringify({ v6: 
 const md = [
   `# Parity report ${stamp}`,
   "",
-  `${by("match")}/${results.length} queries match exactly; ${by("unstable")} are unstable on v6 itself (not counted as failures).`,
+  `${by("match")}/${results.length} queries match exactly; ${by("unstable")} are unstable on v6 itself and ${by("truncated")} truncated with no complete result to compare (neither counted as failures).`,
   "",
   "| verdict | count |",
   "| --- | --- |",
   ...verdicts.map((v) => `| ${v} | ${by(v)} |`),
   "",
-  "Verdict is the first difference found, in order: status, files, ranges, chunks, language, order, exhaustive. Truncated results are re-run uncapped (contextLines 0) and judged on the complete result: `match` or `full-differs`. `unstable` = v6 returned a different result for the same request twice (truncated searches), so exact equality is not expected.",
+  "Verdict is the first difference found, in order: status, files, ranges, chunks, language, order, exhaustive. Truncated results are re-run uncapped (contextLines 0) and judged on the complete result: `match` or `full-differs`. `unstable` = v6 returned a different result for the same request twice (truncated searches), so exact equality is not expected. `truncated` = the complete result stayed out of reach (limit 1,000,000), so the capped results cannot be held to equality.",
   "",
   "## Differences",
   "",
@@ -226,4 +234,4 @@ const md = [
     ]),
 ].join("\n");
 fs.writeFileSync(path.join(here, "reports/latest.md"), md);
-console.log(`\n${by("match")}/${results.length} match, ${by("unstable")} unstable on v6, ${results.length - by("match") - by("unstable")} differ. Report: parity/reports/latest.md`);
+console.log(`\n${by("match")}/${results.length} match, ${by("unstable")} unstable on v6, ${by("truncated")} truncated, ${results.length - by("match") - by("unstable") - by("truncated")} differ. Report: tests/parity/reports/latest.md`);

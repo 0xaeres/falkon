@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // MCP differential: tools/list and a tools/call corpus against v6 and the clone over streamable HTTP.
-//   V6_URL=http://localhost:3000 V6_API_KEY_FILE=... node parity/mcp/run.mjs [--only <id>] [--calls <file>]
+//   V6_URL=http://localhost:3000 V6_API_KEY_FILE=... node tests/parity/mcp/run.mjs [--only <id>] [--calls <file>]
 // Clone at CLONE_URL (default http://localhost:3200), key from CLONE_API_KEY_FILE / SOURCEBOT_API_KEY.
 // Outputs are compared as text after normalizing the instance base URL and indexedAt timestamps.
 import fs from "node:fs";

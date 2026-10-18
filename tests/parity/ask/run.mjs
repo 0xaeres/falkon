@@ -2,7 +2,7 @@
 // Ask differential: the same question through POST /api/chat/blocking and MCP ask_codebase on v6 and
 // the clone, both driven by mock-llm.mjs (which records every LLM request). Compares the LLM requests
 // step by step and the final answers, after normalizing ids and instance base URLs.
-//   V6_URL=http://localhost:3000 V6_API_KEY_FILE=... node parity/ask/run.mjs
+//   V6_URL=http://localhost:3000 V6_API_KEY_FILE=... node tests/parity/ask/run.mjs
 // Needs: mock-llm.mjs running on :9100 and both instances configured by setup.mjs.
 import fs from "node:fs";
 import path from "node:path";
@@ -53,7 +53,7 @@ async function mcp(side) {
   return { isError: !!r.isError, text: r.content?.map((x) => x.text).join("\n") ?? "" };
 }
 
-const report = [`# Ask parity\n\nquery ${JSON.stringify(QUERY)}, repos [${REPO}]; LLM scripted by parity/ask/mock-llm.mjs\n`];
+const report = [`# Ask parity\n\nquery ${JSON.stringify(QUERY)}, repos [${REPO}]; LLM scripted by tests/parity/ask/mock-llm.mjs\n`];
 const log = (s) => {
   report.push(s);
   console.log(s);

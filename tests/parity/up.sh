@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bring up the parity stack and write parity/.gen/keys.env with the v6 API key the runner uses.
+# Bring up the parity stack and write tests/parity/.gen/keys.env with the v6 API key the runner uses.
 set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p .gen
@@ -35,4 +35,4 @@ docker compose exec -T v6-postgres psql -U sb -d sb -c "update \"User\" set \"ha
 mkdir -p .gen
 printf 'V6_API_KEY=sbk_%s\nV6_OWNER_EMAIL=parity@example.test\nV6_OWNER_PASSWORD=%s\n' "$SECRET" "$PW" > .gen/keys.env
 echo "If v6 answers DEPLOYMENT_RESTRICTED: sign in at http://localhost:3100 with the owner in .gen/keys.env and register."
-echo "v6: http://localhost:3100  clone: http://localhost:3200  (key in parity/.gen/keys.env)"
+echo "v6: http://localhost:3100  clone: http://localhost:3200  (key in tests/parity/.gen/keys.env)"

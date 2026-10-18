@@ -1,10 +1,10 @@
-// v6 oracle for the query language: v6's compiled Lezer parser (from parity/.oracle) plus a
+// v6 oracle for the query language: v6's compiled Lezer parser (from tests/parity/.oracle) plus a
 // transcription of v6's parse-tree -> IR transform (web: parseQuerySyntaxIntoIR), with the DB
 // lookups stubbed: repo: regexes expand to no knowledge repos, reposet: passes names through,
 // and context:<name> resolves through a fixed map.
 const path = require("node:path");
 const ql = require(path.join(__dirname, "../.oracle/packages/queryLanguage/dist/index.js"));
-const languages = require("../../packages/shared/src/linguistLanguages.json");
+const languages = require("../../../packages/shared/src/linguistLanguages.json");
 
 const LANG = new Map(languages.map((l) => [l.toLowerCase(), l]));
 const strict = ql.parser.configure({ strict: true });

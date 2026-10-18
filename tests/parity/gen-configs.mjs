@@ -1,4 +1,4 @@
-// Writes parity/.gen/v6.config.json and parity/.gen/clone.config.json for the same corpus.
+// Writes tests/parity/.gen/v6.config.json and tests/parity/.gen/clone.config.json for the same corpus.
 // Inside both containers the corpus is mounted read-only at /corpus.
 import fs from "node:fs";
 import path from "node:path";

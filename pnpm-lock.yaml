@@ -183,7 +183,7 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
-  parity:
+  tests/parity:
     dependencies:
       '@grpc/grpc-js':
         specifier: ^1.14.6
@@ -193,7 +193,7 @@ importers:
         version: 0.7.15
       '@sbc/shared':
         specifier: workspace:*
-        version: link:../packages/shared
+        version: link:../../packages/shared
     devDependencies:
       tsx:
         specifier: ^4.19.0

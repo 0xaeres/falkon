@@ -1,7 +1,7 @@
 // Points v6 (an external compose stack) and the clone's external stack at mock-llm.mjs:
-//   node parity/ask/setup.mjs <v6 compose dir>      writes parity/.gen/ask/{v6.config.json,v6.override.yml}
-// and adds the same model to parity/.gen/external/clone.config.json. The v6 stack's own files are untouched;
-// apply with: docker compose -f <dir>/compose.yml -f parity/.gen/ask/v6.override.yml up -d
+//   node tests/parity/ask/setup.mjs <v6 compose dir>      writes tests/parity/.gen/ask/{v6.config.json,v6.override.yml}
+// and adds the same model to tests/parity/.gen/external/clone.config.json. The v6 stack's own files are untouched;
+// apply with: docker compose -f <dir>/compose.yml -f tests/parity/.gen/ask/v6.override.yml up -d
 import fs from "node:fs";
 import path from "node:path";
 

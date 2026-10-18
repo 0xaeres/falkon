@@ -17,6 +17,7 @@ config.json ──► backend (BullMQ worker) ──► bare git clones + zoekt 
 | `packages/shared` | config schema, query parser + IR, gRPC Zoekt client, git readers, access scopes, **tool registry** (one definition used by MCP and Ask) |
 | `packages/backend` | syncs config `connections` (GitHub, generic git URL, `file://` in place), clone/fetch (bare), `zoekt-git-index`, reindex/resync on `settings` schedules and on config change, orphan cleanup, search contexts |
 | `packages/web` | search UI, repos page, Ask page, REST API |
+| `tests/parity` | differential tests against a running Sourcebot v6 (not shipped; kept until parity is done) |
 
 ## Run (Docker)
 
@@ -80,7 +81,7 @@ Design is from Sourcebot's public docs and my reading of its `ee/` code in the v
 
 ## MCP
 
-Streamable HTTP at `/api/mcp` (and `/api/ee/mcp`, Sourcebot's path), stateful sessions owned by the caller, API key via `X-Sourcebot-Api-Key` or `Authorization: Bearer`. No OAuth. Tools match Sourcebot v6's names, input schemas, descriptions, annotations, registration order and output text: `grep`, `glob`, `get_diff`, `list_commits`, `list_branches`, `list_repos`, `read_file`, `list_tree`, `find_symbol_definitions`, `find_symbol_references`, `list_language_models`, and `ask_codebase` when a model is configured (checked by `parity/mcp`). Not yet: the skills tools (`create_skill`, `update_skill`, `list_skills`), which need per-user storage.
+Streamable HTTP at `/api/mcp` (and `/api/ee/mcp`, Sourcebot's path), stateful sessions owned by the caller, API key via `X-Sourcebot-Api-Key` or `Authorization: Bearer`. No OAuth. Tools match Sourcebot v6's names, input schemas, descriptions, annotations, registration order and output text: `grep`, `glob`, `get_diff`, `list_commits`, `list_branches`, `list_repos`, `read_file`, `list_tree`, `find_symbol_definitions`, `find_symbol_references`, `list_language_models`, and `ask_codebase` when a model is configured (checked by `tests/parity/mcp`). Not yet: the skills tools (`create_skill`, `update_skill`, `list_skills`), which need per-user storage.
 
 ```json
 { "mcpServers": { "sourcebot-clone": { "type": "http", "url": "http://localhost:3000/api/mcp",
@@ -95,7 +96,7 @@ Sourcebot v6's Ask agent on the AI SDK (`ai` 6): its static and per-chat system 
 - `POST /api/ee/chat` streams one turn as an AI SDK UI message stream; `GET /api/ee/chats` lists and reads stored chats.
 - MCP `ask_codebase` and `list_language_models` return v6's text.
 
-`parity/ask` drives both v6 and the clone with a scripted LLM and finds the LLM requests (system messages, tool schemas, tool results, params) and the answers identical. Not yet: skills tools, external MCP servers inside Ask, attachments, prompt caching options.
+`tests/parity/ask` drives both v6 and the clone with a scripted LLM and finds the LLM requests (system messages, tool schemas, tool results, params) and the answers identical. Not yet: skills tools, external MCP servers inside Ask, attachments, prompt caching options.
 
 ## Auth
 
@@ -105,7 +106,7 @@ Set `SOURCEBOT_API_KEY` to require `Authorization: Bearer <key>` on `/api/*`. Th
 
 `config.json` is Sourcebot's v3 format, validated against its published JSON Schema (`packages/shared/schemas/v3/index.json`), so the same file works for both. Comments are allowed and `CONFIG_PATH` may be an http(s) URL. Honoured: `connections`, `settings` (index limits, reindex/resync intervals, concurrency, timeouts), `contexts` (`context:` in queries), `environmentOverrides`, tokens as `{ "env" }` or `{ "googleCloudSecret" }`. The one extra key is `knowledgeBase`.
 
-Connectors: `github` (cloud and Enterprise: `orgs`, `repos`, `users`, `topics`, `exclude.*`, `revisions`) and `git` (an http(s) remote, or a `file://` glob of local repos indexed in place and named after their origin). Other Sourcebot connection types validate but fail the sync with "not supported". Repo identity, names, URLs and the `zoekt.*` git config match Sourcebot's (checked by `parity/connectors`).
+Connectors: `github` (cloud and Enterprise: `orgs`, `repos`, `users`, `topics`, `exclude.*`, `revisions`) and `git` (an http(s) remote, or a `file://` glob of local repos indexed in place and named after their origin). Other Sourcebot connection types validate but fail the sync with "not supported". Repo identity, names, URLs and the `zoekt.*` git config match Sourcebot's (checked by `tests/parity/connectors`).
 
 ## Not implemented (vs Sourcebot)
 

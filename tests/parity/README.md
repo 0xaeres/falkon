@@ -6,9 +6,9 @@ Differential tests against real Sourcebot v6. Six layers, each isolating one sou
 | --- | --- | --- | --- |
 | Grammar | `pnpm parity:grammar` | v6's compiled query parser + its parse-tree→IR transform (`grammar/oracle.cjs`) vs the clone's `parseQuery`, over v6's own grammar fixtures, `queries.json` and seeded fuzz, in both dialects | `./setup-oracle.sh` once (copies the parser out of the v6 image) |
 | Engine | `pnpm parity:engine` | the same zoekt request sent over gRPC to v6's zoekt (`127.0.0.1:16070`) and the clone's (`127.0.0.1:16071`): indexed repos/branches/doc counts, files, ranges, languages, chunk text, order | the compose stack |
-| Connectors | `./parity/connectors/run.sh` | v6's compiled `compileGithubConfig` (in the v6 image) vs the clone's GitHub connector (in the clone image), both against `connectors/mock.mjs` on an internal network: repo set and every field incl. the `zoekt.*` git config | the clone image built from this tree |
-| MCP | `node parity/mcp/run.mjs` | `tools/list` (descriptions, JSON schemas, annotations, order) and the `tools/call` corpus in `mcp/calls.openmrs.json`, text for text (base URL and `indexedAt` normalized; `~` = same lines in a different tie order) | a registered v6 with the mcp entitlement |
-| Ask | `node parity/ask/run.mjs` | `POST /api/chat/blocking`, MCP `ask_codebase` and `list_language_models` on both, driven by `ask/mock-llm.mjs` (a scripted OpenAI-compatible LLM on `:9100` that records every request): each step's LLM request (system messages, tool JSON schemas and order, tool results, params), the title request, and the answer (ids and base URLs normalized) | `node parity/ask/setup.mjs <v6 compose dir>`, v6 restarted with `.gen/ask/v6.override.yml`, the mock running |
+| Connectors | `./tests/parity/connectors/run.sh` | v6's compiled `compileGithubConfig` (in the v6 image) vs the clone's GitHub connector (in the clone image), both against `connectors/mock.mjs` on an internal network: repo set and every field incl. the `zoekt.*` git config | the clone image built from this tree |
+| MCP | `node tests/parity/mcp/run.mjs` | `tools/list` (descriptions, JSON schemas, annotations, order) and the `tools/call` corpus in `mcp/calls.openmrs.json`, text for text (base URL and `indexedAt` normalized; `~` = same lines in a different tie order) | a registered v6 with the mcp entitlement |
+| Ask | `node tests/parity/ask/run.mjs` | `POST /api/chat/blocking`, MCP `ask_codebase` and `list_language_models` on both, driven by `ask/mock-llm.mjs` (a scripted OpenAI-compatible LLM on `:9100` that records every request): each step's LLM request (system messages, tool JSON schemas and order, tool results, params), the title request, and the answer (ids and base URLs normalized) | `node tests/parity/ask/setup.mjs <v6 compose dir>`, v6 restarted with `.gen/ask/v6.override.yml`, the mock running |
 | API | `pnpm parity:search` | `POST /api/search` on both, normalized | a registered v6 (see below) |
 
 Reports land in `reports/` (`latest.md`, `engine-latest.md`, `grammar-latest.json`, `mcp-latest.md`, `ask-latest.md`).
@@ -16,7 +16,7 @@ Reports land in `reports/` (`latest.md`, `engine-latest.md`, `grammar-latest.jso
 ## Local stack
 
 ```bash
-./parity/up.sh
+./tests/parity/up.sh
 ```
 
 Fetches the pinned corpus (`corpus.json` + `corpus.lock`, plus a synthetic edge-case repo from `make-edge-repo.sh`),
@@ -29,9 +29,9 @@ and engine layers work immediately while the API layer needs that one-time regis
 Point the harness at a v6 deployment that is already registered, and run the clone over the same repos:
 
 ```bash
-node parity/external-oracle.mjs /path/to/v6/compose.yml
-docker compose -f parity/.gen/external/compose.yml up -d --build
-V6_URL=http://localhost:3000 V6_API_KEY_FILE=/path/to/api-key node parity/run.mjs --queries parity/queries.openmrs.json
+node tests/parity/external-oracle.mjs /path/to/v6/compose.yml
+docker compose -f tests/parity/.gen/external/compose.yml up -d --build
+V6_URL=http://localhost:3000 V6_API_KEY_FILE=/path/to/api-key node tests/parity/run.mjs --queries tests/parity/queries.openmrs.json
 ```
 
 The key is read from the file by the runner, never from a shell variable.
@@ -39,11 +39,11 @@ The key is read from the file by the runner, never from a shell variable.
 Ask layer against the same oracle (restore v6 afterwards with a plain `docker compose up -d sourcebot`):
 
 ```bash
-node parity/ask/mock-llm.mjs &
-node parity/ask/setup.mjs /path/to/v6
-docker compose -f /path/to/v6/compose.yml -f parity/.gen/ask/v6.override.yml up -d sourcebot
-docker compose -f parity/.gen/external/compose.yml up -d --build
-V6_API_KEY_FILE=/path/to/api-key node parity/ask/run.mjs
+node tests/parity/ask/mock-llm.mjs &
+node tests/parity/ask/setup.mjs /path/to/v6
+docker compose -f /path/to/v6/compose.yml -f tests/parity/.gen/ask/v6.override.yml up -d sourcebot
+docker compose -f tests/parity/.gen/external/compose.yml up -d --build
+V6_API_KEY_FILE=/path/to/api-key node tests/parity/ask/run.mjs
 ```
 
 ## Known non-differences

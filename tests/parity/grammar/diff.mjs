@@ -1,11 +1,11 @@
 // Offline grammar differential: v6 parser + transform (oracle.cjs) vs the clone's parseQuery.
 //   pnpm parity:grammar [--fuzz 20000] [--seed 1] [--show 20]
-// Inputs: v6's own grammar fixtures, parity/queries.json, and seeded random queries, each in
+// Inputs: v6's own grammar fixtures, tests/parity/queries.json, and seeded random queries, each in
 // normal and regex mode. Exit code 1 if any input disagrees.
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { parseQuery } from "../../packages/shared/src/queryParser.ts";
+import { parseQuery } from "../../../packages/shared/src/queryParser.ts";
 
 const here = path.dirname(new URL(import.meta.url).pathname);
 const require = createRequire(import.meta.url);
