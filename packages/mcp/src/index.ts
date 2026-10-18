@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { toolSpecs, toolNames } from "@sbc/shared";
+import { toolDefinitions, toolNames, type AnyToolDefinition } from "@sbc/shared";
 
 const BASE = (process.env.SOURCEBOT_URL ?? "http://localhost:3000").replace(/\/$/, "");
 const KEY = process.env.SOURCEBOT_API_KEY;
@@ -25,14 +25,18 @@ const server = new McpServer({ name: "sourcebot-clone", version: "0.0.1" });
 
 // Every shared tool is a thin proxy to the web app so auth, limits and git access live in one place.
 for (const name of toolNames) {
-  const spec = toolSpecs[name];
-  server.tool(name, spec.description, spec.shape as z.ZodRawShape, async (args: Record<string, unknown>) => {
-    try {
-      return text(await call(`/api/tools/${name}`, args));
-    } catch (e) {
-      return fail(e);
-    }
-  });
+  const d = toolDefinitions[name] as unknown as AnyToolDefinition;
+  server.registerTool(
+    name,
+    { description: d.description, inputSchema: d.inputSchema.shape, annotations: { readOnlyHint: d.isReadOnly, idempotentHint: d.isIdempotent } },
+    async (args: Record<string, unknown>) => {
+      try {
+        return text(await call(`/api/tools/${name}`, args));
+      } catch (e) {
+        return { ...text(`Tool "${name}" failed: ${e instanceof Error ? e.message : String(e)}`), isError: true };
+      }
+    },
+  );
 }
 
 server.tool(

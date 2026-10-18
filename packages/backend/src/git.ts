@@ -103,16 +103,18 @@ export async function sortedRefs(dir: string, ns: "refs/heads" | "refs/tags") {
   return out.split("\n").map((s) => s.trim()).filter(Boolean);
 }
 
-export async function repoStats(dir: string, defaultBranch: string | undefined) {
+/** pushedAt is the newest author date on any branch; headCommit is what HEAD points at. */
+export async function repoStats(dir: string) {
   let pushedAt: Date | null = null;
   let headCommit: string | null = null;
   try {
-    pushedAt = new Date(await git(dir, ["log", "-1", "--format=%cI", "--all"]));
+    const d = new Date(await git(dir, ["log", "--all", "-1", "--format=%aI"]));
+    pushedAt = Number.isNaN(d.getTime()) ? null : d;
   } catch {
     /* empty repo */
   }
   try {
-    headCommit = await git(dir, ["rev-parse", defaultBranch ? `refs/heads/${defaultBranch}` : "HEAD"]);
+    headCommit = await git(dir, ["rev-parse", "HEAD"]);
   } catch {
     /* unborn branch */
   }

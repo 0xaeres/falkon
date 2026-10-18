@@ -1,13 +1,34 @@
-import { prisma } from "@sbc/db";
-import { createToolRunner } from "@sbc/shared";
+import { prisma, RepoKind, type Repo } from "@sbc/db";
+import { createToolRunner, gitDirOf, repoPath, type ToolDeps, type ToolRepo } from "@sbc/shared";
 import "./repos";
 
-export const runTool = createToolRunner({
-  async listRepos({ query, sort, direction }) {
-    return prisma.repo.findMany({
-      where: query ? { name: { contains: query, mode: "insensitive" } } : undefined,
-      orderBy: sort === "pushed" ? { pushedAt: direction } : { name: direction },
-      select: { name: true, defaultBranch: true, status: true, pushedAt: true },
-    });
-  },
+const toToolRepo = (r: Repo): ToolRepo => ({
+  name: r.name,
+  displayName: r.displayName,
+  codeHostType: r.external_codeHostType,
+  webUrl: r.webUrl,
+  defaultBranch: r.defaultBranch,
+  isFork: r.isFork,
+  isArchived: r.isArchived,
+  pushedAt: r.pushedAt,
+  indexedAt: r.lastIndexedAt,
+  indexedRevisions: ((r.metadata as { indexedRevisions?: string[] } | null)?.indexedRevisions ?? []),
+  path: gitDirOf(repoPath(r).path),
 });
+
+export const toolDeps: ToolDeps = {
+  async getRepo(name) {
+    const r = await prisma.repo.findUnique({ where: { name } });
+    return r ? toToolRepo(r) : undefined;
+  },
+  async listRepos({ query, sort, direction }) {
+    const rows = await prisma.repo.findMany({
+      where: { kind: RepoKind.CODE, ...(query ? { name: { contains: query, mode: "insensitive" } } : {}) },
+      orderBy: { [sort === "pushed" ? "pushedAt" : "name"]: direction },
+    });
+    return rows.map(toToolRepo);
+  },
+  baseUrl: (process.env.AUTH_URL ?? "http://localhost:3000").replace(/\/$/, ""),
+};
+
+export const runTool = createToolRunner(toolDeps);

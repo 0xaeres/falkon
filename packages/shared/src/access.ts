@@ -5,6 +5,8 @@ import { KB_SUFFIX, ownerOfKnowledgeRepo } from "./env";
 
 /** What one API key may see: a set of repo names, each exact or a trailing-`*` prefix. */
 export interface Scope {
+  /** Who is calling: an access key's name, "admin" for SOURCEBOT_API_KEY, "anonymous" when the API is open. */
+  principal?: string;
   allows(repo: string): boolean;
   /** RE2 regexp over repo names restricting a search to the scope; null when unrestricted. */
   repoFilter: string | null;
@@ -43,12 +45,12 @@ const same = (a: Buffer, b: Buffer) => timingSafeEqual(a, b);
  * `restricted` says an access file was configured: then an empty or missing list denies everyone.
  */
 export function authenticate(presented: string | undefined, keys: AccessKey[], legacyKey?: string, restricted = false): Scope | null {
-  if (!keys.length && !legacyKey && !restricted) return scopeFor(["*"]);
+  if (!keys.length && !legacyKey && !restricted) return { ...scopeFor(["*"]), principal: "anonymous" };
   if (!presented) return null;
   const d = digest(presented);
-  if (legacyKey && same(d, digest(legacyKey))) return scopeFor(["*"]);
+  if (legacyKey && same(d, digest(legacyKey))) return { ...scopeFor(["*"]), principal: "admin" };
   const key = keys.find((k) => same(d, Buffer.from(k.sha256, "hex")));
-  return key ? scopeFor(key.repos) : null;
+  return key ? { ...scopeFor(key.repos), principal: `key:${key.name}` } : null;
 }
 
 /** Throws when `file` is set but unreadable or malformed: a broken access file must not mean open access. */

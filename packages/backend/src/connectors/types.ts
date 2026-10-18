@@ -7,6 +7,8 @@ export interface RepoMetadata {
   /** Branch / tag globs (from `revisions`) indexed besides the default branch. */
   branches?: string[];
   tags?: string[];
+  /** Refs the last index covered; written by the index job. */
+  indexedRevisions?: string[];
   codeHostMetadata?: {
     github?: { topics: string[] };
     gitlab?: { topics: string[] };

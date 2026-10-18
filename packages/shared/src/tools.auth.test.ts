@@ -53,8 +53,11 @@ before(() => {
 });
 after(() => { setZoektTransport(undefined); fs.rmSync(dataDir, { recursive: true, force: true }); });
 
-const rows = [ALLOWED, SECRET].map((name) => ({ name, defaultBranch: "main", status: "INDEXED", pushedAt: null }));
-const run = createToolRunner({ listRepos: async () => rows });
+const rows = [ALLOWED, SECRET].map((name) => ({
+  name, displayName: null, codeHostType: "genericGitHost", webUrl: null, defaultBranch: "main", isFork: false, isArchived: false,
+  pushedAt: null, indexedAt: null, indexedRevisions: ["refs/heads/main"], path: repoGitDir(name),
+}));
+const run = createToolRunner({ getRepo: async (n) => rows.find((r) => r.name === n), listRepos: async () => rows, baseUrl: "http://localhost:3000" });
 const scope = scopeFor([ALLOWED]);
 
 test("repo-bound tools refuse a repo outside the scope with the same error as a missing repo", async () => {
@@ -69,8 +72,12 @@ test("repo-bound tools refuse a repo outside the scope with the same error as a 
     ["grep", { pattern: "needle", repo: SECRET }],
     ["glob", { pattern: "*.ts", repo: SECRET }],
   ];
-  for (const [name, args] of calls) await assert.rejects(run(name, args, scope), new RegExp(`repo not found: ${SECRET}`), name);
-  await assert.rejects(run("read_file", { repo: "github.com/acme/none", path: "x" }, scopeFor(["*"])), /repo not found: github.com\/acme\/none/);
+  // list_branches reports every failure as "Failed to list branches." (as Sourcebot does): still no difference between hidden and missing.
+  for (const [name, args] of calls) {
+    await assert.rejects(run(name, args, scope), name === "list_branches" ? /^Error: Failed to list branches\.$/ : new RegExp(`Repository "${SECRET}" not found`), name);
+  }
+  await assert.rejects(run("list_branches", { repo: "github.com/acme/none" }, scopeFor(["*"])), /Failed to list branches\./);
+  await assert.rejects(run("read_file", { repo: "github.com/acme/none", path: "x" }, scopeFor(["*"])), /Repository "github.com\/acme\/none" not found/);
 });
 
 test("an allowed repo still reads", async () => {

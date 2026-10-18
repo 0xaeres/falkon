@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MAX_MATCHES, transformResponse, buildRequest, createStreamSummary, type WSearchResponse } from "./zoekt";
-import { globToRegex } from "./tools";
 
 const loc = (line: number, column: number, byte = 0) => ({ byte_offset: byte, line_number: line, column });
 const file = (content: string, ranges: [number, number, number, number][], extra: Partial<WSearchResponse["files"][0]> = {}) => ({
@@ -106,16 +105,3 @@ test("default branch HEAD is added unless the query names a branch", () => {
   assert.ok(!q2.and.children.some((c: any) => c.branch?.pattern === "HEAD"));
 });
 
-test("globs: globstar needs a path boundary, basename globs match at any depth", () => {
-  const m = (glob: string, path: string) => new RegExp(globToRegex(glob)).test(path);
-  assert.ok(m("src/**/test.ts", "src/test.ts"));
-  assert.ok(m("src/**/test.ts", "src/a/b/test.ts"));
-  assert.ok(!m("src/**/test.ts", "src/contest.ts"));
-  assert.ok(m("*.ts", "a/b/c.ts"));
-  assert.ok(m("*.ts", "c.ts"));
-  assert.ok(!m("*.ts", "c.tsx"));
-  assert.ok(!m("src/*.ts", "src/a/b.ts"));
-  assert.ok(!m("src/*.ts", "x/src/b.ts"));
-  assert.ok(m("**/*.md", "README.md"));
-  assert.ok(m("a?c", "abc"));
-});

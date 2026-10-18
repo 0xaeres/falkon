@@ -90,6 +90,7 @@ services:
       DATA_DIR: /data
       CONFIG_PATH: /config/config.json
       ZOEKT_URL: http://sbc-zoekt:6070
+      AUTH_URL: http://localhost:3200
     volumes:
       - sbcdata:/data
       - ${path.join(out, "clone.config.json")}:/config/config.json:ro

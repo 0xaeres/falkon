@@ -1,30 +1,20 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import type { z } from "zod";
-import { toolSpecs, toolNames } from "@sbc/shared";
-import { runTool } from "@/lib/tools";
+import { handleMcpDelete, handleMcpPost } from "@/lib/mcp";
 import { scopeOf, unauthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
-/** Stateless streamable-HTTP MCP endpoint (scoped per API key): one server per request. */
-async function handle(req: Request): Promise<Response> {
+/** MCP over streamable HTTP, at the same paths as Sourcebot (/api/mcp and /api/ee/mcp). */
+export async function POST(req: Request) {
   const scope = scopeOf(req);
-  if (!scope) return unauthorized();
-  const server = new McpServer({ name: "sourcebot-clone", version: "0.0.1" });
-  for (const name of toolNames) {
-    const spec = toolSpecs[name];
-    server.tool(name, spec.description, spec.shape as unknown as z.ZodRawShape, async (args: Record<string, unknown>) => {
-      try {
-        return { content: [{ type: "text" as const, text: await runTool(name, args, scope) }] };
-      } catch (e) {
-        return { content: [{ type: "text" as const, text: e instanceof Error ? e.message : String(e) }], isError: true };
-      }
-    });
-  }
-  const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-  await server.connect(transport);
-  return transport.handleRequest(req);
+  return scope ? handleMcpPost(req, scope) : unauthorized();
 }
 
-export { handle as GET, handle as POST, handle as DELETE };
+export async function DELETE(req: Request) {
+  const scope = scopeOf(req);
+  return scope ? handleMcpDelete(req, scope) : unauthorized();
+}
+
+export async function GET() {
+  return new Response(null, { status: 405, headers: { Allow: "POST, DELETE" } });
+}

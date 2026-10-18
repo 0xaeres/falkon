@@ -17,12 +17,17 @@
     "@lezer/common": "^1.5.3",
     "@lezer/lr": "^1.4.11",
     "ajv": "^8.20.0",
+    "escape-string-regexp": "5.0.0",
+    "glob-to-regexp": "0.4.1",
+    "parse-diff": "0.11.1",
+    "simple-git": "4.0.2",
     "strip-json-comments": "^5.0.3",
     "zod": "^3.24.0",
     "zod-to-json-schema": "^3.24.0"
   },
   "devDependencies": {
     "@lezer/generator": "^1.8.1",
+    "@types/glob-to-regexp": "^0.4.4",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"

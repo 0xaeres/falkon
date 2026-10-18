@@ -1,12 +1,13 @@
 # Parity harness
 
-Differential tests against real Sourcebot v6. Four layers, each isolating one source of difference.
+Differential tests against real Sourcebot v6. Five layers, each isolating one source of difference.
 
 | Layer | Command | Compares | Needs |
 | --- | --- | --- | --- |
 | Grammar | `pnpm parity:grammar` | v6's compiled query parser + its parse-tree→IR transform (`grammar/oracle.cjs`) vs the clone's `parseQuery`, over v6's own grammar fixtures, `queries.json` and seeded fuzz, in both dialects | `./setup-oracle.sh` once (copies the parser out of the v6 image) |
 | Engine | `pnpm parity:engine` | the same zoekt request sent over gRPC to v6's zoekt (`127.0.0.1:16070`) and the clone's (`127.0.0.1:16071`): indexed repos/branches/doc counts, files, ranges, languages, chunk text, order | the compose stack |
 | Connectors | `./parity/connectors/run.sh` | v6's compiled `compileGithubConfig` (in the v6 image) vs the clone's GitHub connector (in the clone image), both against `connectors/mock.mjs` on an internal network: repo set and every field incl. the `zoekt.*` git config | the clone image built from this tree |
+| MCP | `node parity/mcp/run.mjs` | `tools/list` (descriptions, JSON schemas, annotations, order) and the `tools/call` corpus in `mcp/calls.openmrs.json`, text for text (base URL and `indexedAt` normalized; `~` = same lines in a different tie order) | a registered v6 with the mcp entitlement |
 | API | `pnpm parity:search` | `POST /api/search` on both, normalized | a registered v6 (see below) |
 
 Reports land in `reports/` (`latest.md`, `engine-latest.md`, `grammar-latest.json`).
@@ -35,6 +36,8 @@ V6_URL=http://localhost:3000 V6_API_KEY_FILE=/path/to/api-key node parity/run.mj
 The key is read from the file by the runner, never from a shell variable.
 
 ## Known non-differences
+
+- v6's connection resync rewrites repo metadata and drops `indexedRevisions` until the next index, so `list_branches` `isIndexed` depends on which happened last; the clone does the same, on its own schedule.
 
 - Result order among equal-score files can vary run to run on both engines (parallel shard search); an "order"
   verdict on a large truncated result is usually that.

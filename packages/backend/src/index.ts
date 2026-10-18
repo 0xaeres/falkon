@@ -132,16 +132,19 @@ const worker = new Worker<{ repoId: number }>(
         if (!isReadOnly) fs.rmSync(path, { recursive: true, force: true });
         return;
       }
-      const stats = await repoStats(dir, defaultBranch);
+      const stats = await repoStats(dir);
       await prisma.repo.update({
         where: { id: repo.id },
         data: {
           status: "INDEXED",
-          defaultBranch: defaultBranch ?? repo.defaultBranch,
+          // From the clone's HEAD, as Sourcebot does: null for a detached HEAD.
+          defaultBranch: defaultBranch ?? null,
           headCommit: stats.headCommit,
           branches: stats.branches,
           pushedAt: stats.pushedAt,
           lastIndexedAt: new Date(),
+          // list_branches reports which branches search can see.
+          metadata: { ...meta, indexedRevisions: revisions } as object,
         },
       });
       console.log(`indexed ${repo.name}`);
