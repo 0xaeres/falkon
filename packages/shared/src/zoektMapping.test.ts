@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { transformResponse, buildRequest, type WSearchResponse } from "./zoekt";
+import { transformResponse, buildRequest, createStreamSummary, type WSearchResponse } from "./zoekt";
 import { globToRegex } from "./tools";
 
 const loc = (line: number, column: number, byte = 0) => ({ byte_offset: byte, line_number: line, column });
@@ -43,6 +43,52 @@ test("a crashed shard or skipped files make the result non-exhaustive even when 
   assert.equal(transformResponse({ files: [f], stats: { match_count: 1, crashes: 1 } }, 0).isSearchExhaustive, false);
   assert.equal(transformResponse({ files: [f], stats: { match_count: 1, files_skipped: 2 } }, 0).isSearchExhaustive, false);
   assert.equal(transformResponse({ files: [f], stats: { match_count: 2 } }, 0).isSearchExhaustive, false);
+});
+
+test("complete-looking stream chunks exceeding the display limit are non-exhaustive", () => {
+  const summary = createStreamSummary(3);
+  const chunk = transformResponse({ files: [file("a a\n", [[1, 1, 1, 2], [1, 3, 1, 4]])], stats: { match_count: 2 } }, 0);
+  assert.equal(chunk.isSearchExhaustive, true);
+  summary.add(chunk);
+  summary.add(chunk);
+  assert.deepEqual(summary.result(), { fileCount: 2, matchCount: 3, isSearchExhaustive: false });
+});
+
+test("stream exhaustiveness compares accumulated raw counts with displayed occurrences", () => {
+  const summary = createStreamSummary();
+  const f = file("a\n", [[1, 1, 1, 2]]);
+  summary.add(transformResponse({ files: [f], stats: { match_count: 1 } }, 0));
+  summary.add(transformResponse({ files: [f], stats: { match_count: 2 } }, 0));
+  assert.deepEqual(summary.result(), { fileCount: 2, matchCount: 2, isSearchExhaustive: false });
+});
+
+test("complete stream chunks are exhaustive at the display limit", () => {
+  const summary = createStreamSummary(3);
+  summary.add(transformResponse({ files: [file("a a\n", [[1, 1, 1, 2], [1, 3, 1, 4]])], stats: { match_count: 2, file_count: 10 } }, 0));
+  summary.add(transformResponse({ files: [file("a\n", [[1, 1, 1, 2]])], stats: { match_count: 1 } }, 0));
+  assert.deepEqual(summary.result(), { fileCount: 2, matchCount: 3, isSearchExhaustive: true });
+});
+
+test("stream summary uses accumulated counts instead of per-chunk flags", () => {
+  const summary = createStreamSummary();
+  const f = file("a\n", [[1, 1, 1, 2]]);
+  summary.add(transformResponse({ files: [f], stats: { match_count: 2 } }, 0));
+  summary.add(transformResponse({ files: [f], stats: { match_count: 0 } }, 0));
+  assert.deepEqual(summary.result(), { fileCount: 2, matchCount: 2, isSearchExhaustive: true });
+});
+
+test("a crash or skipped files in any stream chunk make the stream non-exhaustive", () => {
+  for (const stats of [{ crashes: 1 }, { files_skipped: 1 }]) {
+    const summary = createStreamSummary();
+    const f = file("a\n", [[1, 1, 1, 2]]);
+    summary.add(transformResponse({ files: [], stats }, 0));
+    summary.add(transformResponse({ files: [f], stats: { match_count: 1 } }, 0));
+    assert.deepEqual(summary.result(), { fileCount: 1, matchCount: 1, isSearchExhaustive: false });
+  }
+});
+
+test("an empty stream is exhaustive with zero matches", () => {
+  assert.deepEqual(createStreamSummary().result(), { fileCount: 0, matchCount: 0, isSearchExhaustive: true });
 });
 
 test("limits are clamped: zero, negative and NaN never reach zoekt as 'unbounded'", () => {

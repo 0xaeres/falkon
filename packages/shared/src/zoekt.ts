@@ -47,9 +47,31 @@ export interface SearchResponse {
   files: SearchFile[];
   fileCount: number;
   matchCount: number;
+  rawMatchCount: number;
+  crashes: number;
+  filesSkipped: number;
   durationMs: number;
   /** false when zoekt stopped at the match limit and more results exist */
   isSearchExhaustive: boolean;
+}
+
+/** Accumulate per-flush stats, counting only occurrences within the display limit. */
+export function createStreamSummary(maxMatches = 5000) {
+  let fileCount = 0;
+  let matchCount = 0;
+  let rawMatchCount = 0;
+  let incomplete = false;
+  return {
+    add(chunk: SearchResponse) {
+      fileCount += chunk.files.length;
+      matchCount = Math.min(maxMatches, matchCount + chunk.files.reduce((n, f) => n + f.occurrences, 0));
+      rawMatchCount += chunk.rawMatchCount;
+      incomplete = incomplete || chunk.crashes > 0 || chunk.filesSkipped > 0;
+    },
+    result() {
+      return { fileCount, matchCount, isSearchExhaustive: !incomplete && rawMatchCount <= matchCount };
+    },
+  };
 }
 
 // ---- wire shapes (subset of zoekt/webserver/v1/webserver.proto) -----------
@@ -268,6 +290,9 @@ export function transformResponse(res: WSearchResponse, started: number): Search
     files,
     fileCount: res.stats?.file_count ?? files.length,
     matchCount: total,
+    rawMatchCount: total,
+    crashes: res.stats?.crashes ?? 0,
+    filesSkipped: res.stats?.files_skipped ?? 0,
     durationMs: Date.now() - started,
     // A crashed shard or skipped files means results may be missing even when the counts line up.
     isSearchExhaustive: total <= actual && !(res.stats?.crashes) && !(res.stats?.files_skipped),
