@@ -7,8 +7,8 @@ config.json ──► backend (BullMQ worker) ──► bare git clones + zoekt 
                   │ state                                   │
                Postgres (Prisma)                     zoekt-webserver :6070 (internal only)
                                                             │ gRPC
-        MCP (stdio) ──HTTP──► web (Next.js) ◄──────────────┘
-                              /api/search[/stream]  /api/tools/:name  /api/chat/blocking  /api/ee/chat  UI
+        MCP clients ──HTTP──► web (Next.js) ◄──────────────┘
+                              /api/search[/stream]  /api/mcp  /api/chat/blocking  /api/ee/chat  UI
 ```
 
 | Package | Role |
@@ -17,7 +17,6 @@ config.json ──► backend (BullMQ worker) ──► bare git clones + zoekt 
 | `packages/shared` | config schema, query parser + IR, gRPC Zoekt client, git readers, access scopes, **tool registry** (one definition used by MCP and Ask) |
 | `packages/backend` | syncs config `connections` (GitHub, generic git URL, `file://` in place), clone/fetch (bare), `zoekt-git-index`, reindex/resync on `settings` schedules and on config change, orphan cleanup, search contexts |
 | `packages/web` | search UI, repos page, Ask page, REST API |
-| `packages/mcp` | stdio MCP server proxying every tool to the web API, plus `ask_codebase` |
 
 ## Run (Docker)
 
@@ -87,8 +86,6 @@ Streamable HTTP at `/api/mcp` (and `/api/ee/mcp`, Sourcebot's path), stateful se
 { "mcpServers": { "sourcebot-clone": { "type": "http", "url": "http://localhost:3000/api/mcp",
   "headers": { "X-Sourcebot-Api-Key": "<key>" } } } }
 ```
-
-A stdio proxy is also available (`pnpm mcp`, env `SOURCEBOT_URL`, `SOURCEBOT_API_KEY`).
 
 ## Ask
 

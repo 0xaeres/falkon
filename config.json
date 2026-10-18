@@ -1,1 +1,0 @@
-{ "resyncIntervalMinutes": 60, "connections": [ { "type": "git", "name": "example/is-plain-obj", "url": "https://github.com/sindresorhus/is-plain-obj.git" } ] }

@@ -10,7 +10,7 @@ import type { Scope } from "./access";
 import text from "./toolText.json" with { type: "json" };
 
 /**
- * The tools behind MCP, the Ask agent and /api/tools, defined like Sourcebot's: same names,
+ * The tools behind MCP and the Ask agent, defined like Sourcebot's: same names,
  * input schemas, descriptions and output text (parity/mcp checks them against v6). Each
  * returns `{ output }`, the text an agent sees.
  */
