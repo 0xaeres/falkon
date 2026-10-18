@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment: { POSTGRES_USER: sbc, POSTGRES_PASSWORD: sbc, POSTGRES_DB: sbc }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U sbc"], interval: 3s, retries: 20 }
+
+  redis:
+    image: redis:7-alpine
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 3s, retries: 20 }
+
+  app-base: &app
+    image: sourcebot-clone-app
+    build: { context: ., dockerfile: docker/Dockerfile }
+    profiles: [build-only]
+
+  backend:
+    <<: *app
+    profiles: []
+    command: sh -c "pnpm --filter @sbc/db push && pnpm --filter @sbc/backend start"
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://sbc:sbc@postgres:5432/sbc
+      REDIS_URL: redis://redis:6379
+      DATA_DIR: /data
+      CONFIG_PATH: /config/config.json
+    volumes: [data:/data, "./config.json:/config/config.json:ro"]
+    depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy } }
+
+  zoekt:
+    <<: *app
+    profiles: []
+    command: zoekt-webserver -index /data/index -rpc -listen :6070
+    volumes: [data:/data]
+    ports: ["6070:6070"]
+    depends_on: [backend]
+
+  web:
+    <<: *app
+    profiles: []
+    command: pnpm --filter @sbc/web start
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://sbc:sbc@postgres:5432/sbc
+      DATA_DIR: /data
+      ZOEKT_URL: http://zoekt:6070
+    volumes: [data:/data]
+    ports: ["3000:3000"]
+    depends_on: [backend, zoekt]
+
+volumes:
+  pgdata:
+  data:

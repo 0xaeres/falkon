@@ -1,0 +1,15 @@
+{
+  "resyncIntervalMinutes": 60,
+  "connections": [
+    { "type": "git", "name": "example/hello", "url": "https://github.com/octocat/Hello-World.git" },
+    { "type": "local", "name": "local/self", "path": "/absolute/path/to/some/repo" },
+    {
+      "type": "github",
+      "tokenEnv": "GITHUB_TOKEN",
+      "orgs": [],
+      "users": [],
+      "repos": ["sourcebot-dev/sourcebot"],
+      "exclude": { "forks": true, "archived": true }
+    }
+  ]
+}

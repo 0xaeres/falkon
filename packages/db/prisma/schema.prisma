@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  url      = env("DATABASE_URL")
+  provider = "postgresql"
+}
+
+enum RepoStatus {
+  PENDING
+  SYNCING
+  INDEXED
+  FAILED
+}
+
+model Repo {
+  id             Int        @id @default(autoincrement())
+  name           String     @unique // display name, e.g. github.com/org/repo
+  cloneUrl       String
+  tokenEnv       String? // env var holding a git token, never the token itself
+  defaultBranch  String?
+  branches       String[]
+  indexBranches  String[] // revisions handed to zoekt
+  status         RepoStatus @default(PENDING)
+  error          String?
+  pushedAt       DateTime?
+  lastIndexedAt  DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model ChatSession {
+  id         String   @id @default(uuid())
+  query      String
+  answer     String?
+  steps      Json     @default("[]")
+  visibility String   @default("PRIVATE")
+  createdAt  DateTime @default(now())
+}

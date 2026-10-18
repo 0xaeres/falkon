@@ -1,0 +1,16 @@
+{
+  "name": "sourcebot-clone",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "db:generate": "pnpm --filter @sbc/db generate",
+    "db:push": "pnpm --filter @sbc/db push",
+    "dev:backend": "pnpm --filter @sbc/backend dev",
+    "dev:web": "pnpm --filter @sbc/web dev",
+    "mcp": "pnpm --filter @sbc/mcp start"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "prisma", "esbuild"]
+  }
+}
