@@ -1,0 +1,5 @@
+.corpus/
+.gen/
+.oracle/
+.env
+reports/

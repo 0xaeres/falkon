@@ -8,9 +8,18 @@
     "db:push": "pnpm --filter @sbc/db push",
     "dev:backend": "pnpm --filter @sbc/backend dev",
     "dev:web": "pnpm --filter @sbc/web dev",
-    "mcp": "pnpm --filter @sbc/mcp start"
+    "mcp": "pnpm --filter @sbc/mcp start",
+    "parity:up": "pnpm --filter @sbc/parity up",
+    "parity:grammar": "pnpm --filter @sbc/parity grammar",
+    "parity:engine": "pnpm --filter @sbc/parity engine",
+    "parity:search": "pnpm --filter @sbc/parity search"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "prisma", "esbuild"]
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "esbuild"
+    ]
   }
 }

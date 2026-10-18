@@ -1,0 +1,66 @@
+// Search syntax. Juxtaposition is AND, `or` is OR (looser), `-` negates a filter or a group.
+// Words, `(`, `)`, `or` and `-` come from context-sensitive tokenizers in tokens.ts, which decide
+// whether a parenthesis is grouping or part of a term. The `regex` dialect changes those rules
+// so regex atoms like (a|b) stay terms.
+
+@external tokens negateTok from "./tokens" { negate }
+@external tokens openParenTok from "./tokens" { openParen }
+@external tokens wordTok from "./tokens" { word }
+@external tokens closeParenTok from "./tokens" { closeParen }
+@external tokens orTok from "./tokens" { or }
+
+@dialects { regex }
+
+@top Program { query }
+
+@precedence { negate, and, or @left }
+
+query { OrExpr | AndExpr | expr }
+OrExpr { andExpr (or andExpr)+ }
+AndExpr { expr expr+ }
+andExpr { AndExpr | expr }
+
+expr { NegateExpr | ParenExpr | PrefixExpr | QuotedTerm | Term }
+
+NegateExpr { !negate negate (PrefixExpr | ParenExpr) }
+ParenExpr { openParen query? closeParen }
+
+PrefixExpr {
+  ArchivedExpr | RevisionExpr | ContentExpr | ContextExpr | FileExpr | ForkExpr |
+  VisibilityExpr | RepoExpr | LangExpr | SymExpr | RepoSetExpr
+}
+
+RevisionExpr { revisionKw value }
+ContentExpr { contentKw value }
+ContextExpr { contextKw value }
+FileExpr { fileKw value }
+RepoExpr { repoKw value }
+LangExpr { langKw value }
+SymExpr { symKw value }
+RepoSetExpr { reposetKw value }
+ArchivedExpr { archivedKw ("yes" | "no" | "only") }
+ForkExpr { forkKw ("yes" | "no" | "only") }
+VisibilityExpr { visibilityKw ("public" | "private" | "any") }
+
+QuotedTerm { quoted }
+Term { word }
+value { quoted | word }
+
+@skip { space }
+
+@tokens {
+  archivedKw { "archived:" }
+  revisionKw { "rev:" }
+  contentKw { "content:" | "c:" }
+  contextKw { "context:" }
+  fileKw { "file:" | "f:" }
+  forkKw { "fork:" }
+  visibilityKw { "visibility:" }
+  repoKw { "repo:" | "r:" }
+  langKw { "lang:" }
+  symKw { "sym:" }
+  reposetKw { "reposet:" }
+  quoted { '"' (!["\\\n] | "\\" _)* '"' }
+  space { $[ \t\n]+ }
+  @precedence { quoted, archivedKw, revisionKw, contentKw, contextKw, fileKw, forkKw, visibilityKw, repoKw, langKw, symKw, reposetKw }
+}

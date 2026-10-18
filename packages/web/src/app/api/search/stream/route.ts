@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { QuerySyntaxError, createStreamSummary, parseQuery, qRepo, streamIR } from "@sbc/shared";
+import { QuerySyntaxError, SearchContextNotFoundError, createStreamSummary, parseQuery, qRepo, streamIR } from "@sbc/shared";
 import { scopeOf, unauthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -15,10 +15,9 @@ export async function GET(req: NextRequest) {
   try {
     ir = parseQuery(p.get("q") ?? "", { regex: p.get("regex") === "1", caseSensitive: p.get("case") === "1" });
   } catch (e) {
-    const status = e instanceof QuerySyntaxError ? 400 : 500;
+    const status = e instanceof QuerySyntaxError ? 400 : e instanceof SearchContextNotFoundError ? 404 : 500;
     return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status });
   }
-  if ("const" in ir && ir.const === false) return Response.json({ error: "empty query" }, { status: 400 });
 
   const matches = Math.min(Math.max(Math.trunc(Number(p.get("limit") ?? 500)) || 500, 1), 5000);
   const gen = streamIR(ir, { matches }, scope.repoFilter ? [qRepo(scope.repoFilter)] : []);

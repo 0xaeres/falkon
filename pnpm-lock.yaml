@@ -85,6 +85,12 @@ importers:
       '@grpc/proto-loader':
         specifier: ^0.7.15
         version: 0.7.15
+      '@lezer/common':
+        specifier: ^1.5.3
+        version: 1.5.3
+      '@lezer/lr':
+        specifier: ^1.4.11
+        version: 1.4.11
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -92,6 +98,9 @@ importers:
         specifier: ^3.24.0
         version: 3.25.2(zod@3.25.76)
     devDependencies:
+      '@lezer/generator':
+        specifier: ^1.8.1
+        version: 1.8.1
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.5
@@ -138,6 +147,22 @@ importers:
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
+
+  parity:
+    dependencies:
+      '@grpc/grpc-js':
+        specifier: ^1.14.6
+        version: 1.14.6
+      '@grpc/proto-loader':
+        specifier: ^0.7.15
+        version: 0.7.15
+      '@sbc/shared':
+        specifier: workspace:*
+        version: link:../packages/shared
+    devDependencies:
+      tsx:
+        specifier: ^4.19.0
+        version: 4.23.15
 
 packages:
 
@@ -471,6 +496,16 @@ packages:
 
   '@js-sdsl/ordered-map@4.4.2':
     resolution: {integrity: sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==}
+
+  '@lezer/common@1.5.3':
+    resolution: {integrity: sha512-H0iErY4e43LpXbYDyBci5W4v/RwTgGV3YzYOlJPiGZ8RY8w51kVE+xLn1tg3Z6UmSfyETvtsUK3r7YsgDQEI7Q==}
+
+  '@lezer/generator@1.8.1':
+    resolution: {integrity: sha512-7q7szXqT7EPTs6SODBl58Qoz/4OrhNvm5pW4lbu1ZDnG5e0nn7drLzeN9Nxkm8j/1iMs5QZ9j3i4SV+W4Z6SQA==}
+    hasBin: true
+
+  '@lezer/lr@1.4.11':
+    resolution: {integrity: sha512-UwgZcl1R66H2hDzBrA7kWyYmX6s8p5TQ+e/t7CuvgCtBEPxbEPaHYHu+pJBvTvDotEJpuQkJjbXuHiw5Cixxgw==}
 
   '@modelcontextprotocol/sdk@1.32.1':
     resolution: {integrity: sha512-2DdE+SJDtzLEEWzY1ZjY7Q+VcPhcV1KisD3zI4u0XZyktsjHum1mwbMI+JaulUBi2OZk+KJAi2uPXzxichPkdw==}
@@ -1589,6 +1624,17 @@ snapshots:
   '@ioredis/commands@1.10.0': {}
 
   '@js-sdsl/ordered-map@4.4.2': {}
+
+  '@lezer/common@1.5.3': {}
+
+  '@lezer/generator@1.8.1':
+    dependencies:
+      '@lezer/common': 1.5.3
+      '@lezer/lr': 1.4.11
+
+  '@lezer/lr@1.4.11':
+    dependencies:
+      '@lezer/common': 1.5.3
 
   '@modelcontextprotocol/sdk@1.32.1(zod@3.25.76)':
     dependencies:

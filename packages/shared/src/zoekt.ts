@@ -178,6 +178,12 @@ export const setZoektTransport = (t: ZoektTransport | undefined) => {
 
 // ---- request -------------------------------------------------------------
 
+/**
+ * Upper bound on `matches`. Sourcebot passes the requested count straight to zoekt; this only
+ * stops a typo from asking for billions. Non-positive values would mean "unbounded" to zoekt.
+ */
+export const MAX_MATCHES = 1_000_000;
+
 export interface SearchOptions {
   /** Maximum matches returned. Default 5000. */
   matches?: number;
@@ -190,7 +196,7 @@ export interface SearchOptions {
  */
 export function buildRequest(query: Q, opts: SearchOptions = {}, scope: Q[] = []): WSearchRequest {
   // Non-positive limits mean "unbounded" to zoekt, so clamp to a sane window.
-  const matches = Math.min(Math.max(Math.trunc(Number(opts.matches ?? 5000)) || 5000, 1), 5000);
+  const matches = Math.min(Math.max(Math.trunc(Number(opts.matches ?? 5000)) || 5000, 1), MAX_MATCHES);
   const hasRev = someQ(query, isBranchQ);
   return {
     query: qAnd(query, ...(hasRev ? [] : [qBranch("HEAD", true)]), ...scope),
@@ -326,9 +332,8 @@ export async function* streamIR(query: Q, opts: SearchOptions = {}, scope: Q[] =
 /** Search syntax string in, results out. Throws QuerySyntaxError on bad syntax. */
 export function search(
   q: string,
-  opts: SearchOptions & { regex?: boolean; caseSensitive?: boolean; scope?: Q[] } = {},
+  opts: SearchOptions & { regex?: boolean; caseSensitive?: boolean; scope?: Q[]; contexts?: Record<string, string[]> } = {},
 ): Promise<SearchResponse> {
-  const ir = parseQuery(q, { regex: opts.regex, caseSensitive: opts.caseSensitive });
-  if ("const" in ir && ir.const === false) return Promise.reject(new Error("empty query"));
+  const ir = parseQuery(q, { regex: opts.regex, caseSensitive: opts.caseSensitive, contexts: opts.contexts });
   return searchIR(ir, opts, opts.scope);
 }

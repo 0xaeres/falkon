@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { QuerySyntaxError, qRepo, search } from "@sbc/shared";
+import { MAX_MATCHES, qRepo, search } from "@sbc/shared";
+import { searchError, serviceError } from "@/lib/serviceError";
 import { scopeOf, unauthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +26,39 @@ export async function GET(req: NextRequest) {
         : { ...r, files, fileCount: files.length, matchCount: files.reduce((n, f) => n + f.occurrences, 0) },
     );
   } catch (e) {
-    const status = e instanceof QuerySyntaxError || (e as Error).message === "empty query" ? 400 : 502;
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status });
+    return searchError(e);
+  }
+}
+
+/** Sourcebot's public request shape: `{ query, matches, contextLines?, whole?, isRegexEnabled?, isCaseSensitivityEnabled? }`. */
+export async function POST(req: NextRequest) {
+  const scope = scopeOf(req);
+  if (!scope) return unauthorized();
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return serviceError(400, "INVALID_REQUEST_BODY", "invalid JSON body");
+  }
+  if (typeof body.query !== "string" || typeof body.matches !== "number") {
+    return serviceError(400, "INVALID_REQUEST_BODY", "`query` (string) and `matches` (number) are required");
+  }
+  const matches = Math.min(Math.max(Math.trunc(body.matches) || 500, 1), MAX_MATCHES);
+  try {
+    const r = await search(body.query, {
+      regex: body.isRegexEnabled === true,
+      caseSensitive: body.isCaseSensitivityEnabled === true,
+      matches,
+      contextLines: typeof body.contextLines === "number" ? body.contextLines : undefined,
+      scope: scope.repoFilter ? [qRepo(scope.repoFilter)] : [],
+    });
+    const files = r.files.filter((f) => scope.allows(f.repo));
+    return NextResponse.json(
+      files.length === r.files.length
+        ? r
+        : { ...r, files, fileCount: files.length, matchCount: files.reduce((n, f) => n + f.occurrences, 0) },
+    );
+  } catch (e) {
+    return searchError(e);
   }
 }

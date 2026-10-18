@@ -7,15 +7,19 @@
   "types": "src/index.ts",
   "scripts": {
     "typecheck": "tsc -p .",
-    "test": "node --import tsx --test src/*.test.ts"
+    "test": "node --import tsx --test src/*.test.ts",
+    "gen:parser": "lezer-generator src/query/query.grammar -o src/query/parser.ts --typeScript --names"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.6",
     "@grpc/proto-loader": "^0.7.15",
+    "@lezer/common": "^1.5.3",
+    "@lezer/lr": "^1.4.11",
     "zod": "^3.24.0",
     "zod-to-json-schema": "^3.24.0"
   },
   "devDependencies": {
+    "@lezer/generator": "^1.8.1",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
