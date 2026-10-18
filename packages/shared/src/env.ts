@@ -21,9 +21,14 @@ export const env = {
   },
 };
 
-/** Filesystem-safe, reversible-enough directory name for a repo. */
+/**
+ * Filesystem-safe directory name for a repo. Injective: `_` is itself escaped (to `_5F`) before
+ * `%` becomes `_`, so "a/b" (`a_2Fb`) and a repo literally named "a_2Fb" (`a_5F2Fb`) cannot share a
+ * directory. The git tools authorize by name and then read by directory, so a collision would let
+ * one allowed repo read another's clone.
+ */
 export function repoDirName(name: string): string {
-  return encodeURIComponent(name).replace(/%/g, "_");
+  return encodeURIComponent(name.replace(/_/g, "_5F")).replace(/%/g, "_");
 }
 
 export function repoGitDir(name: string): string {

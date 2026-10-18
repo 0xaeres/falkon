@@ -5,8 +5,8 @@ import { z } from "zod";
 /** What one API key may see: a set of repo names, each exact or a trailing-`*` prefix. */
 export interface Scope {
   allows(repo: string): boolean;
-  /** Zoekt query atom restricting a search to the scope; null when the scope is unrestricted. */
-  zoektFilter: string | null;
+  /** RE2 regexp over repo names restricting a search to the scope; null when unrestricted. */
+  repoFilter: string | null;
 }
 
 export const accessKeySchema = z.object({
@@ -20,14 +20,14 @@ const meta = /[.+?^${}()|[\]\\]/g;
 const hex = (s: string) => s.replace(meta, (c) => "\\x" + c.charCodeAt(0).toString(16).padStart(2, "0"));
 
 export function scopeFor(patterns: string[]): Scope {
-  if (patterns.includes("*")) return { allows: () => true, zoektFilter: null };
+  if (patterns.includes("*")) return { allows: () => true, repoFilter: null };
   const exact = new Set(patterns.filter((p) => !p.endsWith("*")));
   const prefixes = patterns.filter((p) => p.endsWith("*")).map((p) => p.slice(0, -1));
   const alts = [...exact].map(hex).concat(prefixes.map((p) => hex(p) + ".*"));
   return {
     allows: (repo) => exact.has(repo) || prefixes.some((p) => repo.startsWith(p)),
     // an empty allowlist matches nothing: `$^` cannot match any repo name
-    zoektFilter: `repo:^(?:${alts.length ? alts.join("|") : "$^"})$`,
+    repoFilter: `^(?:${alts.length ? alts.join("|") : "$^"})$`,
   };
 }
 
@@ -36,10 +36,11 @@ const same = (a: Buffer, b: Buffer) => timingSafeEqual(a, b);
 
 /**
  * Resolve a presented key to a scope, or null for no access.
- * With no keys and no legacy key configured, access is open (local development).
+ * With no keys and no legacy key configured, access is open (local development), unless
+ * `restricted` says an access file was configured: then an empty or missing list denies everyone.
  */
-export function authenticate(presented: string | undefined, keys: AccessKey[], legacyKey?: string): Scope | null {
-  if (!keys.length && !legacyKey) return scopeFor(["*"]);
+export function authenticate(presented: string | undefined, keys: AccessKey[], legacyKey?: string, restricted = false): Scope | null {
+  if (!keys.length && !legacyKey && !restricted) return scopeFor(["*"]);
   if (!presented) return null;
   const d = digest(presented);
   if (legacyKey && same(d, digest(legacyKey))) return scopeFor(["*"]);
@@ -47,7 +48,8 @@ export function authenticate(presented: string | undefined, keys: AccessKey[], l
   return key ? scopeFor(key.repos) : null;
 }
 
+/** Throws when `file` is set but unreadable or malformed: a broken access file must not mean open access. */
 export function loadAccessKeys(file: string | undefined): AccessKey[] {
-  if (!file || !fs.existsSync(file)) return [];
+  if (!file) return [];
   return z.object({ keys: z.array(accessKeySchema) }).parse(JSON.parse(fs.readFileSync(file, "utf8"))).keys;
 }

@@ -32,7 +32,8 @@ services:
     profiles: []
     command: zoekt-webserver -index /data/index -rpc -listen :6070
     volumes: [data:/data]
-    ports: ["6070:6070"]
+    # Not published to the host: zoekt has no auth, so it must only be reachable by web inside the compose network.
+    expose: ["6070"]
     depends_on: [backend]
 
   web:

@@ -5,7 +5,12 @@ export interface RepoSpec {
   name: string;
   cloneUrl: string;
   tokenEnv?: string;
-  branches: string[]; // extra branches to index beyond HEAD
+  branches: string[]; // branch globs to index beyond the default branch
+  tags: string[]; // tag globs to index
+  isFork?: boolean;
+  isArchived?: boolean;
+  isPublic?: boolean;
+  webUrl?: string;
 }
 
 interface GhRepo {
@@ -13,6 +18,8 @@ interface GhRepo {
   clone_url: string;
   fork: boolean;
   archived: boolean;
+  private: boolean;
+  html_url: string;
 }
 
 async function gh<T>(apiUrl: string, route: string, token?: string): Promise<T> {
@@ -41,11 +48,11 @@ async function ghPaged(apiUrl: string, route: string, token?: string): Promise<G
 export async function resolveConnections(conns: Connection[]): Promise<RepoSpec[]> {
   const out = new Map<string, RepoSpec>();
   for (const c of conns) {
-    const branches = c.revisions.branches;
+    const { branches, tags } = c.revisions;
     if (c.type === "git") {
-      out.set(c.name, { name: c.name, cloneUrl: c.url, tokenEnv: c.tokenEnv, branches });
+      out.set(c.name, { name: c.name, cloneUrl: c.url, tokenEnv: c.tokenEnv, branches, tags });
     } else if (c.type === "local") {
-      out.set(c.name, { name: c.name, cloneUrl: path.resolve(c.path), branches });
+      out.set(c.name, { name: c.name, cloneUrl: path.resolve(c.path), branches, tags });
     } else {
       const token = c.tokenEnv ? process.env[c.tokenEnv] : undefined;
       const repos: GhRepo[] = [];
@@ -61,6 +68,11 @@ export async function resolveConnections(conns: Connection[]): Promise<RepoSpec[
           cloneUrl: r.clone_url,
           tokenEnv: c.tokenEnv,
           branches,
+          tags,
+          isFork: r.fork,
+          isArchived: r.archived,
+          isPublic: !r.private,
+          webUrl: r.html_url,
         });
       }
     }

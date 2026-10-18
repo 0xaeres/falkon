@@ -46,7 +46,8 @@ export default function SearchPage() {
       {err && <p className="err">{err}</p>}
       {res && (
         <p className="muted">
-          {res.matchCount} matches in {res.fileCount} files · {res.durationMs} ms
+          {res.matchCount}
+          {res.isSearchExhaustive ? "" : "+"} matches in {res.fileCount} files · {res.durationMs} ms
         </p>
       )}
       {res?.files.map((f) => (

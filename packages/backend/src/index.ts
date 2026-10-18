@@ -1,11 +1,12 @@
 import fs from "node:fs";
+import micromatch from "micromatch";
 import { Queue, Worker } from "bullmq";
 import { Redis } from "ioredis";
 import { prisma } from "@sbc/db";
 import { env, loadConfig, repoGitDir } from "@sbc/shared";
 import { resolveConnections } from "./connections";
 import { syncRepo } from "./git";
-import { indexRepo, removeShards } from "./zoekt";
+import { indexRepo, removeShards, writeZoektGitConfig } from "./zoekt";
 
 const QUEUE = "repo-sync";
 const connection = new Redis(env.redisUrl, { maxRetriesPerRequest: null });
@@ -21,23 +22,45 @@ async function reconcile() {
   const names = new Set(specs.map((s) => s.name));
 
   for (const s of specs) {
-    const indexBranches = ["HEAD", ...s.branches];
+    const data = {
+      cloneUrl: s.cloneUrl,
+      tokenEnv: s.tokenEnv,
+      indexBranches: s.branches,
+      indexTags: s.tags,
+      isFork: s.isFork ?? false,
+      isArchived: s.isArchived ?? false,
+      isPublic: s.isPublic ?? false,
+      webUrl: s.webUrl,
+    };
     const repo = await prisma.repo.upsert({
       where: { name: s.name },
-      create: { name: s.name, cloneUrl: s.cloneUrl, tokenEnv: s.tokenEnv, indexBranches },
-      update: { cloneUrl: s.cloneUrl, tokenEnv: s.tokenEnv, indexBranches },
+      create: { name: s.name, ...data },
+      update: data,
     });
     // jobId dedupes: a repo already queued is not queued twice
     await queue.add("sync", { repoId: repo.id }, { jobId: `sync-${repo.id}-${Math.floor(Date.now() / 60_000)}` });
   }
 
   for (const r of await prisma.repo.findMany({ where: { name: { notIn: [...names] } } })) {
-    removeShards(r.name);
+    removeShards(r.id);
     fs.rmSync(repoGitDir(r.name), { recursive: true, force: true });
     await prisma.repo.delete({ where: { id: r.id } });
     console.log(`removed ${r.name}`);
   }
   return cfg.resyncIntervalMinutes;
+}
+
+// zoekt indexes at most 64 branches/tags per repo.
+const MAX_REVISIONS = 64;
+
+/** Default branch first (searchable as HEAD), then branches/tags matching the configured globs. */
+function pickRevisions(meta: { defaultBranch: string | null; branches: string[]; tags: string[] }, branchGlobs: string[], tagGlobs: string[]) {
+  const revs = [meta.defaultBranch ? `refs/heads/${meta.defaultBranch}` : "HEAD"];
+  if (branchGlobs.length) revs.push(...micromatch(meta.branches, branchGlobs).map((b) => `refs/heads/${b}`));
+  if (tagGlobs.length) revs.push(...micromatch(meta.tags, tagGlobs).map((t) => `refs/tags/${t}`));
+  const unique = [...new Set(revs)];
+  if (unique.length > MAX_REVISIONS) console.warn(`truncating ${unique.length} revisions to ${MAX_REVISIONS}`);
+  return unique.slice(0, MAX_REVISIONS);
 }
 
 const worker = new Worker<{ repoId: number }>(
@@ -49,8 +72,16 @@ const worker = new Worker<{ repoId: number }>(
       const token = repo.tokenEnv ? process.env[repo.tokenEnv] : undefined;
       const dir = repoGitDir(repo.name);
       const meta = await syncRepo(dir, repo.cloneUrl, token);
-      const wanted = repo.indexBranches.filter((b) => b === "HEAD" || meta.branches.includes(b));
-      await indexRepo(repo.name, dir, wanted);
+      const revisions = pickRevisions(meta, repo.indexBranches, repo.indexTags);
+      await writeZoektGitConfig(dir, repo);
+      await indexRepo(repo.id, dir, revisions);
+      // The repo may have been removed from config while we were indexing. Its row is gone, so
+      // reconcile will never clean up the shards we just wrote; do it here.
+      if (!(await prisma.repo.findUnique({ where: { id: repo.id }, select: { id: true } }))) {
+        removeShards(repo.id);
+        fs.rmSync(dir, { recursive: true, force: true });
+        return;
+      }
       await prisma.repo.update({
         where: { id: repo.id },
         data: {

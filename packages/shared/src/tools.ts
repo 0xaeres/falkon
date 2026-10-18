@@ -1,11 +1,9 @@
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import * as git from "./git";
-import { escapeLiteral, protectRegex } from "./query";
-import { zoektSearch, type SearchResponse } from "./zoekt";
+import { escapeRegex, qAnd, qBranch, qFileName, qOr, qRepo, qSymbol, reExact, type Q } from "./ir";
+import { searchIR, type SearchResponse } from "./zoekt";
 import type { Scope } from "./access";
-
-const reExact = (s: string) => protectRegex(`^${s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
 
 export interface ToolDeps {
   /** Every repo matching the query, ordered; the runner applies scope and paging. */
@@ -117,29 +115,48 @@ export function openAiTools(names: ToolName[] = toolNames) {
   }));
 }
 
-function globToRegex(glob: string): string {
+/**
+ * Glob to RE2. A double star crosses directories, a single star and `?` do not. A double star followed by a
+ * slash matches zero or more whole directories, so the glob src, double star, slash, test.ts matches
+ * `src/test.ts` and `src/a/test.ts` but not `src/contest.ts`.
+ * A glob without a slash matches the file name at any depth; one with a slash is anchored at the repo root.
+ */
+export function globToRegex(glob: string): string {
   let re = "";
   for (let i = 0; i < glob.length; i++) {
-    const c = glob[i];
+    const c = glob[i]!;
     if (c === "*") {
       if (glob[i + 1] === "*") {
-        re += ".*";
         i++;
-        if (glob[i + 1] === "/") i++;
+        if (glob[i + 1] === "/") {
+          i++;
+          re += "(?:.*/)?";
+        } else re += ".*";
       } else re += "[^/]*";
     } else if (c === "?") re += "[^/]";
     else re += c.replace(/[.+^${}()|[\]\\]/g, "\\$&");
   }
-  return `^${re}$`;
+  return `${glob.includes("/") ? "^" : "(?:^|/)"}${re}$`;
 }
 
-function scopeTerms(a: { repo?: string; ref?: string; path?: string }): string[] {
-  const p: string[] = [];
-  if (a.repo) p.push(`repo:${reExact(a.repo)}`);
-  if (a.ref) p.push(`branch:${protectRegex(a.ref)}`);
-  if (a.path) p.push(`file:${protectRegex(a.path)}`);
+/** Indexed revisions are full refs (refs/heads/x, refs/tags/x); accept a short name or a full ref. */
+const refNode = (ref: string): Q =>
+  ref.startsWith("refs/") || ref === "HEAD"
+    ? qBranch(ref, true)
+    : qOr(qBranch(ref, true), qBranch(`refs/heads/${ref}`, true), qBranch(`refs/tags/${ref}`, true));
+
+/** Narrowing nodes from tool arguments. Each argument is a leaf value, never query syntax. */
+function argNodes(a: { repo?: string; ref?: string; path?: string }): Q[] {
+  const p: Q[] = [];
+  if (a.repo) p.push(qRepo(reExact(a.repo)));
+  if (a.ref) p.push(refNode(a.ref));
+  if (a.path) p.push(qFileName(a.path, true));
   return p;
 }
+
+const contentRegex = (regexp: string, caseSensitive = true): Q => ({
+  regexp: { regexp, file_name: false, content: true, case_sensitive: caseSensitive },
+});
 
 function formatMatches(r: SearchResponse, limit: number): string {
   if (!r.files.length) return "No matches.";
@@ -156,7 +173,7 @@ function formatMatches(r: SearchResponse, limit: number): string {
     if (lines.length) out.push(`${f.repo}:${f.path}\n${lines.join("\n")}`);
     if (n >= limit) break;
   }
-  return out.join("\n\n") + (r.matchCount > n ? `\n\n(${r.matchCount} total matches, showing ${n})` : "");
+  return out.join("\n\n") + (r.matchCount > n || !r.isSearchExhaustive ? `\n\n(${r.matchCount}${r.isSearchExhaustive ? "" : "+"} total matches, showing ${n})` : "");
 }
 
 /** Same wording as a repo that does not exist, so a scoped key cannot probe for hidden repos. */
@@ -169,23 +186,22 @@ export function createToolRunner(deps: ToolDeps) {
     const a = z.object(spec.shape).parse(rawArgs ?? {}) as any;
     if (typeof a.repo === "string" && !scope.allows(a.repo)) throw notFound(a.repo);
 
-    // The injected filter narrows the query; filtering the hits is the guarantee.
-    const find = async (q: string[], opts: { maxMatches?: number; maxFiles?: number }) => {
-      const r = await zoektSearch([...q, ...(scope.zoektFilter ? [scope.zoektFilter] : [])].join(" "), opts);
+    // The scope node narrows the query; filtering the hits is the guarantee.
+    const find = async (q: Q, opts: { matches?: number }) => {
+      const r = await searchIR(q, opts, scope.repoFilter ? [qRepo(scope.repoFilter)] : []);
       const files = r.files.filter((f) => scope.allows(f.repo));
       if (files.length === r.files.length) return r;
-      return { ...r, files, fileCount: files.length, matchCount: files.reduce((n, f) => n + f.matches.length, 0) };
+      return { ...r, files, fileCount: files.length, matchCount: files.reduce((n, f) => n + f.occurrences, 0) };
     };
 
     switch (name as ToolName) {
       case "grep": {
-        const q = ["case:yes", protectRegex(a.pattern), ...scopeTerms(a)];
-        if (a.include) q.push(`file:${protectRegex(globToRegex(a.include).replace(/^\^/, ""))}`);
-        return formatMatches(await find(q, { maxMatches: 5000 }), a.limit ?? 100);
+        const q = qAnd(contentRegex(a.pattern), ...argNodes(a), ...(a.include ? [qFileName(globToRegex(a.include), true)] : []));
+        return formatMatches(await find(q, { matches: 5000 }), a.limit ?? 100);
       }
       case "glob": {
-        const r = await find([`file:${protectRegex(globToRegex(a.pattern).replace(/^\^/, ""))}`, ...scopeTerms(a)], {
-          maxFiles: a.limit ?? 100,
+        const r = await find(qAnd(qFileName(globToRegex(a.pattern), true), ...argNodes(a)), {
+          matches: a.limit ?? 100,
         });
         const byRepo = new Map<string, string[]>();
         for (const f of r.files) byRepo.set(f.repo, [...(byRepo.get(f.repo) ?? []), f.path]);
@@ -238,11 +254,11 @@ export function createToolRunner(deps: ToolDeps) {
       case "get_diff":
         return (await git.diff(a.repo, a.base, a.head)) || "No differences.";
       case "find_symbol_definitions": {
-        const r = await find([`sym:${reExact(a.symbol)}`, ...scopeTerms(a)], { maxMatches: 200 });
+        const r = await find(qAnd(qSymbol(contentRegex(reExact(a.symbol))), ...argNodes(a)), { matches: 200 });
         return formatMatches(r, 100);
       }
       case "find_symbol_references": {
-        const r = await find(["case:yes", protectRegex(`\\b${escapeLiteral(a.symbol)}\\b`), ...scopeTerms(a)], { maxMatches: 500 });
+        const r = await find(qAnd(contentRegex(`\\b${escapeRegex(a.symbol)}\\b`), ...argNodes(a)), { matches: 500 });
         return formatMatches(r, 100);
       }
     }

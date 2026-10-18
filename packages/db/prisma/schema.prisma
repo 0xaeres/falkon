@@ -21,7 +21,13 @@ model Repo {
   tokenEnv       String? // env var holding a git token, never the token itself
   defaultBranch  String?
   branches       String[]
-  indexBranches  String[] // revisions handed to zoekt
+  indexBranches  String[] // branch globs requested in config, beyond the default branch
+  indexTags      String[] // tag globs requested in config
+  isFork         Boolean    @default(false)
+  isArchived     Boolean    @default(false)
+  isPublic       Boolean    @default(false)
+  webUrl         String?
+  displayName    String?
   status         RepoStatus @default(PENDING)
   error          String?
   pushedAt       DateTime?

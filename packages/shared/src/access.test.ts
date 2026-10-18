@@ -18,10 +18,10 @@ test("exact names and trailing-star prefixes", () => {
   assert.ok(!s.allows("xgithub.com/openmrs/core"));
 });
 
-test("a star alone allows everything and adds no zoekt filter", () => {
+test("a star alone allows everything and adds no repo filter", () => {
   const s = scopeFor(["*"]);
   assert.ok(s.allows("anything"));
-  assert.equal(s.zoektFilter, null);
+  assert.equal(s.repoFilter, null);
 });
 
 test("an empty allowlist allows nothing", () => {
@@ -29,10 +29,9 @@ test("an empty allowlist allows nothing", () => {
   assert.ok(!s.allows("github.com/acme/app"));
 });
 
-test("zoekt filter is an anchored regex over the allowlist with metacharacters escaped", () => {
+test("repo filter is an anchored regex over the allowlist with metacharacters escaped", () => {
   const s = scopeFor(["github.com/acme/app.v2", "github.com/openmrs/*"]);
-  assert.equal(s.zoektFilter, "repo:^(?:github\\x2ecom/acme/app\\x2ev2|github\\x2ecom/openmrs/.*)$");
-  assert.ok(!/\s/.test(s.zoektFilter!));
+  assert.equal(s.repoFilter, "^(?:github\\x2ecom/acme/app\\x2ev2|github\\x2ecom/openmrs/.*)$");
 });
 
 test("authenticate resolves a key to its scope, rejects unknown, empty and near-miss keys", () => {
@@ -52,4 +51,24 @@ test("the legacy single key grants full access; with no keys at all access is op
 
 test("configured keys with no presented key are rejected even without a legacy key", () => {
   assert.equal(authenticate(undefined, keys), null);
+});
+
+test("a configured access file with no keys denies everyone instead of opening access", () => {
+  assert.equal(authenticate("anything", [], undefined, true), null);
+  assert.equal(authenticate(undefined, [], undefined, true), null);
+  // the legacy key still works as an admin key
+  assert.ok(authenticate("legacy", [], "legacy", true)?.allows("any"));
+});
+
+test("loadAccessKeys throws on a missing file rather than returning no keys", async () => {
+  const { loadAccessKeys } = await import("./access");
+  assert.throws(() => loadAccessKeys("/nonexistent/keys.json"));
+  assert.deepEqual(loadAccessKeys(undefined), []);
+});
+
+test("repo directory names are collision-free", async () => {
+  const { repoDirName } = await import("./env");
+  assert.notEqual(repoDirName("github.com/acme/app"), repoDirName("github.com_2Facme_2Fapp"));
+  assert.notEqual(repoDirName("a_b"), repoDirName("a/b"));
+  assert.equal(repoDirName("x"), "x");
 });

@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import { z } from "zod";
 
+// Globs (micromatch) over branch and tag names, indexed in addition to the default branch.
 const revisions = z
-  .object({ branches: z.array(z.string()).default([]) })
+  .object({ branches: z.array(z.string()).default([]), tags: z.array(z.string()).default([]) })
   .default({});
 
 const gitConn = z.object({
