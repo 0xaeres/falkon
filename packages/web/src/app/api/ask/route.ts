@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { ask } from "@/lib/ask";
+import { scopeOf, unauthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -12,10 +13,12 @@ const body = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const scope = scopeOf(req);
+  if (!scope) return unauthorized();
   const parsed = body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.message }, { status: 400 });
   try {
-    return NextResponse.json(await ask(parsed.data.query, parsed.data));
+    return NextResponse.json(await ask(parsed.data.query, { ...parsed.data, scope }));
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }

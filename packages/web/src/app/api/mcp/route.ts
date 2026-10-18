@@ -3,17 +3,20 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import type { z } from "zod";
 import { toolSpecs, toolNames } from "@sbc/shared";
 import { runTool } from "@/lib/tools";
+import { scopeOf, unauthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-/** Stateless streamable-HTTP MCP endpoint (auth is enforced by middleware): one server per request. */
+/** Stateless streamable-HTTP MCP endpoint (scoped per API key): one server per request. */
 async function handle(req: Request): Promise<Response> {
+  const scope = scopeOf(req);
+  if (!scope) return unauthorized();
   const server = new McpServer({ name: "sourcebot-clone", version: "0.0.1" });
   for (const name of toolNames) {
     const spec = toolSpecs[name];
     server.tool(name, spec.description, spec.shape as unknown as z.ZodRawShape, async (args: Record<string, unknown>) => {
       try {
-        return { content: [{ type: "text" as const, text: await runTool(name, args) }] };
+        return { content: [{ type: "text" as const, text: await runTool(name, args, scope) }] };
       } catch (e) {
         return { content: [{ type: "text" as const, text: e instanceof Error ? e.message : String(e) }], isError: true };
       }

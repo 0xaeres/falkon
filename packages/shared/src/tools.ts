@@ -3,11 +3,13 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import * as git from "./git";
 import { escapeLiteral, protectRegex } from "./query";
 import { zoektSearch, type SearchResponse } from "./zoekt";
+import type { Scope } from "./access";
 
 const reExact = (s: string) => protectRegex(`^${s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
 
 export interface ToolDeps {
-  listRepos(o: { query?: string; page: number; perPage: number; sort: "name" | "pushed"; direction: "asc" | "desc" }): Promise<{ name: string; defaultBranch: string | null; status: string; pushedAt: Date | null }[]>;
+  /** Every repo matching the query, ordered; the runner applies scope and paging. */
+  listRepos(o: { query?: string; sort: "name" | "pushed"; direction: "asc" | "desc" }): Promise<{ name: string; defaultBranch: string | null; status: string; pushedAt: Date | null }[]>;
 }
 
 /** Shared tool specs: used by the MCP server (zod shapes) and the Ask agent (JSON schema). */
@@ -131,7 +133,7 @@ function globToRegex(glob: string): string {
   return `^${re}$`;
 }
 
-function scope(a: { repo?: string; ref?: string; path?: string }): string[] {
+function scopeTerms(a: { repo?: string; ref?: string; path?: string }): string[] {
   const p: string[] = [];
   if (a.repo) p.push(`repo:${reExact(a.repo)}`);
   if (a.ref) p.push(`branch:${protectRegex(a.ref)}`);
@@ -157,20 +159,32 @@ function formatMatches(r: SearchResponse, limit: number): string {
   return out.join("\n\n") + (r.matchCount > n ? `\n\n(${r.matchCount} total matches, showing ${n})` : "");
 }
 
+/** Same wording as a repo that does not exist, so a scoped key cannot probe for hidden repos. */
+const notFound = (repo: string) => new Error(`repo not found: ${repo}`);
+
 export function createToolRunner(deps: ToolDeps) {
-  return async function runTool(name: string, rawArgs: unknown): Promise<string> {
+  return async function runTool(name: string, rawArgs: unknown, scope: Scope): Promise<string> {
     if (!(name in toolSpecs)) throw new Error(`unknown tool: ${name}`);
     const spec = toolSpecs[name as ToolName];
     const a = z.object(spec.shape).parse(rawArgs ?? {}) as any;
+    if (typeof a.repo === "string" && !scope.allows(a.repo)) throw notFound(a.repo);
+
+    // The injected filter narrows the query; filtering the hits is the guarantee.
+    const find = async (q: string[], opts: { maxMatches?: number; maxFiles?: number }) => {
+      const r = await zoektSearch([...q, ...(scope.zoektFilter ? [scope.zoektFilter] : [])].join(" "), opts);
+      const files = r.files.filter((f) => scope.allows(f.repo));
+      if (files.length === r.files.length) return r;
+      return { ...r, files, fileCount: files.length, matchCount: files.reduce((n, f) => n + f.matches.length, 0) };
+    };
 
     switch (name as ToolName) {
       case "grep": {
-        const q = ["case:yes", protectRegex(a.pattern), ...scope(a)];
+        const q = ["case:yes", protectRegex(a.pattern), ...scopeTerms(a)];
         if (a.include) q.push(`file:${protectRegex(globToRegex(a.include).replace(/^\^/, ""))}`);
-        return formatMatches(await zoektSearch(q.join(" "), { maxMatches: 5000 }), a.limit ?? 100);
+        return formatMatches(await find(q, { maxMatches: 5000 }), a.limit ?? 100);
       }
       case "glob": {
-        const r = await zoektSearch([`file:${protectRegex(globToRegex(a.pattern).replace(/^\^/, ""))}`, ...scope(a)].join(" "), {
+        const r = await find([`file:${protectRegex(globToRegex(a.pattern).replace(/^\^/, ""))}`, ...scopeTerms(a)], {
           maxFiles: a.limit ?? 100,
         });
         const byRepo = new Map<string, string[]>();
@@ -180,13 +194,9 @@ export function createToolRunner(deps: ToolDeps) {
           : "No files.";
       }
       case "list_repos": {
-        const rows = await deps.listRepos({
-          query: a.query,
-          page: a.page ?? 1,
-          perPage: a.perPage ?? 50,
-          sort: a.sort ?? "name",
-          direction: a.direction ?? "asc",
-        });
+        const all = (await deps.listRepos({ query: a.query, sort: a.sort ?? "name", direction: a.direction ?? "asc" })).filter((r) => scope.allows(r.name));
+        const perPage = a.perPage ?? 50;
+        const rows = all.slice(((a.page ?? 1) - 1) * perPage, (a.page ?? 1) * perPage);
         return JSON.stringify({ repos: rows.map((r) => ({ name: r.name, defaultBranch: r.defaultBranch, status: r.status })) });
       }
       case "read_file": {
@@ -228,11 +238,11 @@ export function createToolRunner(deps: ToolDeps) {
       case "get_diff":
         return (await git.diff(a.repo, a.base, a.head)) || "No differences.";
       case "find_symbol_definitions": {
-        const r = await zoektSearch([`sym:${reExact(a.symbol)}`, ...scope(a)].join(" "), { maxMatches: 200 });
+        const r = await find([`sym:${reExact(a.symbol)}`, ...scopeTerms(a)], { maxMatches: 200 });
         return formatMatches(r, 100);
       }
       case "find_symbol_references": {
-        const r = await zoektSearch(["case:yes", protectRegex(`\\b${escapeLiteral(a.symbol)}\\b`), ...scope(a)].join(" "), { maxMatches: 500 });
+        const r = await find(["case:yes", protectRegex(`\\b${escapeLiteral(a.symbol)}\\b`), ...scopeTerms(a)], { maxMatches: 500 });
         return formatMatches(r, 100);
       }
     }

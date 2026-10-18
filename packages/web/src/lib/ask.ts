@@ -1,5 +1,5 @@
 import { prisma } from "@sbc/db";
-import { openAiTools, type ToolName } from "@sbc/shared";
+import { openAiTools, type Scope, type ToolName } from "@sbc/shared";
 import { runTool } from "./tools";
 
 const MAX_STEPS = 12;
@@ -35,7 +35,7 @@ export function llmConfig() {
   return { apiKey, baseUrl: baseUrl.replace(/\/$/, ""), model };
 }
 
-export async function ask(query: string, opts: { repos?: string[]; visibility?: "PRIVATE" | "PUBLIC" } = {}) {
+export async function ask(query: string, opts: { scope: Scope; repos?: string[]; visibility?: "PRIVATE" | "PUBLIC" }) {
   const cfg = llmConfig();
   const scopeNote = opts.repos?.length ? `\nRestrict your investigation to these repos: ${opts.repos.join(", ")}.` : "";
   const messages: Msg[] = [
@@ -66,7 +66,7 @@ export async function ask(query: string, opts: { repos?: string[]; visibility?: 
       let args: unknown = {};
       try {
         args = JSON.parse(call.function.arguments || "{}");
-        output = await runTool(call.function.name as ToolName, args);
+        output = await runTool(call.function.name as ToolName, args, opts.scope);
       } catch (e) {
         output = `error: ${e instanceof Error ? e.message : String(e)}`;
       }

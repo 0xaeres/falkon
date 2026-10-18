@@ -104,10 +104,10 @@ export async function zoektSearch(
 }
 
 /** Sourcebot-syntax search. */
-export function search(q: string, opts: { regex?: boolean; maxMatches?: number; maxFiles?: number } = {}) {
+export function search(q: string, opts: { regex?: boolean; maxMatches?: number; maxFiles?: number; filter?: string } = {}) {
   const zq = translateQuery(q, { regex: opts.regex });
   if (!zq.trim()) throw new Error("empty query");
-  return zoektSearch(zq, opts);
+  return zoektSearch(opts.filter ? `${zq} ${opts.filter}` : zq, opts);
 }
 
 export const reAnchored = (s: string) => `^${s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`;

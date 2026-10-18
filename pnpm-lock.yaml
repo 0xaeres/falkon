@@ -92,6 +92,9 @@ importers:
 
   packages/web:
     dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.18.0
+        version: 1.32.1(zod@3.25.76)
       '@sbc/db':
         specifier: workspace:*
         version: link:../db
