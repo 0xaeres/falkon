@@ -1,7 +1,0 @@
-.corpus/
-.gen/
-.oracle/
-.env
-reports/
-connectors/out/
-ask/out/

@@ -183,22 +183,6 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
-  tests/parity:
-    dependencies:
-      '@grpc/grpc-js':
-        specifier: ^1.14.6
-        version: 1.14.6
-      '@grpc/proto-loader':
-        specifier: ^0.7.15
-        version: 0.7.15
-      '@sbc/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-    devDependencies:
-      tsx:
-        specifier: ^4.19.0
-        version: 4.23.15
-
 packages:
 
   '@ai-sdk/anthropic@3.0.70':
