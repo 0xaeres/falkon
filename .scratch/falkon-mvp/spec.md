@@ -37,7 +37,7 @@ Anything v6 does that these checks do not cover is a named non-goal in this spec
 
 ## Roles
 
-Opus is architect and coordinator for the whole cycle (the main session stays on Opus; this is an exception to the usual switch to Sonnet at gate 1): it owns design, slicing, keep, fix and revert decisions. Codex `gpt-6.1-sol` implements `agent: codex` slices and reviews Claude-built ones read-only. Sonnet implements slices needing live Docker, API or LLM access (Codex's sandbox cannot). A Haiku verifier runs checks. The reviewer is always the other model family from the builder; Opus makes the final call.
+Opus is architect and coordinator for the whole cycle (the main session stays on Opus; this is an exception to the usual switch to Sonnet at gate 1): it owns design, slicing, keep, fix and revert decisions. Codex `gpt-6.1-sol` at high reasoning effort (`-c model_reasoning_effort="high"`; human instruction 2026-10-18) implements all major work and `agent: codex` slices and reviews Claude-built ones read-only. Sonnet implements slices needing live Docker, API or LLM access (Codex's sandbox cannot). A Haiku verifier runs checks. The reviewer is always the other model family from the builder; Opus makes the final call.
 
 ## Operating rules learned from earlier cycles
 
