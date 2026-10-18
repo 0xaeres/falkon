@@ -37,7 +37,7 @@ export default function AskPage() {
         <>
           <pre style={{ whiteSpace: "pre-wrap" }}>{res.answer}</pre>
           <p className="muted">
-            {res.languageModel.model} · <a href={`/api/ee/chats?id=${res.chatId}`}>chat {res.chatId}</a>
+            {res.languageModel.model} · <a href={`/chat/${res.chatId}`}>chat {res.chatId}</a>
           </p>
         </>
       )}

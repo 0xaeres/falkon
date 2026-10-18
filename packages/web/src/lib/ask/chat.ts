@@ -44,10 +44,15 @@ export async function chatName(question: string, m: LanguageModelConfig) {
   return (await generateText({ model, prompt: CHAT_NAME_PROMPT(question) })).text;
 }
 
-/** Drains a stream, keeping nothing: the work happens in its onFinish. */
-async function drain(s: ReadableStream<unknown>) {
+/**
+ * Drains a UI message stream: the work happens in its onFinish. An error chunk (a provider or
+ * agent failure) fails the ask as Sourcebot's 500 UNEXPECTED_ERROR rather than a partial answer.
+ */
+export async function drain(s: ReadableStream<{ type: string; errorText?: string }>) {
   const r = s.getReader();
-  while (!(await r.read()).done);
+  let error: string | undefined;
+  for (let c = await r.read(); !c.done; c = await r.read()) if (c.value.type === "error") error ??= c.value.errorText ?? "Unknown error";
+  if (error !== undefined) throw new AskError(500, "UNEXPECTED_ERROR", error);
 }
 
 /**
