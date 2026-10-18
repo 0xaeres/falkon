@@ -12,9 +12,10 @@ async function call(path: string, body: unknown): Promise<string> {
     headers: { "content-type": "application/json", ...(KEY ? { authorization: `Bearer ${KEY}` } : {}) },
     body: JSON.stringify(body),
   });
-  const json = (await res.json()) as { output?: string; answer?: string; id?: string; error?: string };
-  if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
-  if (json.answer !== undefined) return `${json.answer}\n\nSession: ${BASE}/ask#${json.id}`;
+  const json = (await res.json()) as { output?: string; answer?: string; chatUrl?: string; languageModel?: { model: string }; error?: string; message?: string };
+  if (!res.ok) throw new Error(json.error ?? json.message ?? `HTTP ${res.status}`);
+  // Same text as Sourcebot's (and the web app's) ask_codebase.
+  if (json.answer !== undefined) return `${json.answer}\n\n---\n**View full research session:** ${json.chatUrl}\n**Model used:** ${json.languageModel?.model}`;
   return json.output ?? "";
 }
 
@@ -49,7 +50,7 @@ server.tool(
   },
   async (args) => {
     try {
-      return text(await call("/api/ask", args));
+      return text(await call("/api/chat/blocking", args));
     } catch (e) {
       return fail(e);
     }

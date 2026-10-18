@@ -2,9 +2,10 @@
 import { useState, type FormEvent } from "react";
 
 interface Result {
-  id: string;
+  chatId: string;
+  chatUrl: string;
   answer: string;
-  steps: { tool: string; args: unknown; output: string }[];
+  languageModel: { model: string };
 }
 
 export default function AskPage() {
@@ -18,9 +19,9 @@ export default function AskPage() {
     setBusy(true);
     setErr("");
     setRes(null);
-    const r = await fetch("/api/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: q }) });
+    const r = await fetch("/api/chat/blocking", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: q }) });
     const j = await r.json();
-    if (!r.ok) setErr(j.error ?? "ask failed");
+    if (!r.ok) setErr(j.message ?? j.error ?? "ask failed");
     else setRes(j);
     setBusy(false);
   }
@@ -35,17 +36,9 @@ export default function AskPage() {
       {res && (
         <>
           <pre style={{ whiteSpace: "pre-wrap" }}>{res.answer}</pre>
-          <details>
-            <summary className="muted">{res.steps.length} tool calls</summary>
-            {res.steps.map((s, i) => (
-              <details key={i}>
-                <summary>
-                  {s.tool}({JSON.stringify(s.args)})
-                </summary>
-                <pre>{s.output}</pre>
-              </details>
-            ))}
-          </details>
+          <p className="muted">
+            {res.languageModel.model} · <a href={`/api/ee/chats?id=${res.chatId}`}>chat {res.chatId}</a>
+          </p>
         </>
       )}
     </>

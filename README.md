@@ -8,12 +8,12 @@ config.json ──► backend (BullMQ worker) ──► bare git clones + zoekt 
                Postgres (Prisma)                     zoekt-webserver :6070 (internal only)
                                                             │ gRPC
         MCP (stdio) ──HTTP──► web (Next.js) ◄──────────────┘
-                              /api/search[/stream]  /api/tools/:name  /api/ask  UI
+                              /api/search[/stream]  /api/tools/:name  /api/chat/blocking  /api/ee/chat  UI
 ```
 
 | Package | Role |
 | --- | --- |
-| `packages/db` | Prisma schema: `Repo`, `ChatSession` |
+| `packages/db` | Prisma schema: `Repo`, `Chat` |
 | `packages/shared` | config schema, query parser + IR, gRPC Zoekt client, git readers, access scopes, **tool registry** (one definition used by MCP and Ask) |
 | `packages/backend` | syncs config `connections` (GitHub, generic git URL, `file://` in place), clone/fetch (bare), `zoekt-git-index`, reindex/resync on `settings` schedules and on config change, orphan cleanup, search contexts |
 | `packages/web` | search UI, repos page, Ask page, REST API |
@@ -92,7 +92,13 @@ A stdio proxy is also available (`pnpm mcp`, env `SOURCEBOT_URL`, `SOURCEBOT_API
 
 ## Ask
 
-OpenAI-compatible chat completions with tool calling: set `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. The agent loops (max 12 steps) over the same tools as MCP and must cite `[repo:path#Lx-Ly]`.
+Sourcebot v6's Ask agent on the AI SDK (`ai` 6): its static and per-chat system prompts word for word, the same ten tools in the same order as MCP (scoped to the chat's selected repos), up to `SOURCEBOT_CHAT_MAX_STEP_COUNT` steps (default 100), lowercase tool-name repair, an answer after the `<!--answer-->` tag with `@file:{repo::path:a-b}` citations, and a chat title from Sourcebot's naming prompt. Models come from config `models` (providers `openai-compatible`, `openai`, `anthropic`; `temperature` or `SOURCEBOT_CHAT_MODEL_TEMPERATURE`), else one openai-compatible model from `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. Input capabilities are looked up on models.dev, as v6 does.
+
+- `POST /api/chat/blocking` `{ query, repos?, languageModel?, visibility? }` → `{ answer, chatId, chatUrl, languageModel }`, the answer as portable markdown (citations become browse links with `highlightRange`). `/api/ask` is an alias.
+- `POST /api/ee/chat` streams one turn as an AI SDK UI message stream; `GET /api/ee/chats` lists and reads stored chats.
+- MCP `ask_codebase` and `list_language_models` return v6's text.
+
+`parity/ask` drives both v6 and the clone with a scripted LLM and finds the LLM requests (system messages, tool schemas, tool results, params) and the answers identical. Not yet: skills tools, external MCP servers inside Ask, attachments, prompt caching options.
 
 ## Auth
 
@@ -106,9 +112,9 @@ Connectors: `github` (cloud and Enterprise: `orgs`, `repos`, `users`, `topics`, 
 
 ## Not implemented (vs Sourcebot)
 
-Users/orgs/SSO, permission syncing, GitHub Apps, GitLab/Gitea/Gerrit/Bitbucket/Azure DevOps connectors, Knowledge Base, skills tools, `list_language_models`, streaming Ask, file viewer UI, symbol navigation UI.
+Users/orgs/SSO, permission syncing, GitHub Apps, GitLab/Gitea/Gerrit/Bitbucket/Azure DevOps connectors, Knowledge Base, skills tools, Ask attachments and external MCP servers, file viewer UI, symbol navigation UI.
 
 ## Verified vs not
 
-Verified: 40 unit tests (parser, IR mapping, auth scope, glob); typecheck; `docker compose up --build` with the Zoekt fork; gRPC search, streaming (SSE), every tool and Ask against a real LLM; repo removal; zoekt port not published.
+Verified: 61 unit tests (parser, IR mapping, config, auth scope, tools, Ask answer formatting); typecheck; `docker compose up --build` with the Zoekt fork; gRPC search, streaming (SSE), every tool and Ask against a real LLM; repo removal; zoekt port not published.
 Not verified: GitHub connector, multi-branch/tag indexing against a large repo, ACCESS_FILE fail-closed path end to end (unit-tested only), search contexts (unsupported).

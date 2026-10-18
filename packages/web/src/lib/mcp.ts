@@ -1,20 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { z } from "zod";
-import { env, loadConfig, toolDefinitions, toolNames, type AnyToolDefinition, type Scope } from "@sbc/shared";
-import { ask } from "./ask";
+import { toolDefinitions, toolNames, type AnyToolDefinition, type Scope } from "@sbc/shared";
+import { askCodebase } from "./ask/chat";
+import { configuredLanguageModels, languageModelsInfo } from "./ask/models";
+import { languageModelInfo } from "./ask/http";
 import { toolDeps } from "./tools";
 
 export const MCP_SERVER_NAME = "sourcebot-mcp-server";
-
-/** Models the Ask agent can use: config `models` when set, else the LLM_* environment. */
-export async function configuredLanguageModels(): Promise<{ provider: string; model: string; displayName?: string }[]> {
-  const fromConfig = await loadConfig(env.configPath)
-    .then((c) => (c.models ?? []) as { provider: string; model: string; displayName?: string }[])
-    .catch(() => []);
-  if (fromConfig.length) return fromConfig.map(({ provider, model, displayName }) => ({ provider, model, ...(displayName ? { displayName } : {}) }));
-  return process.env.LLM_MODEL && process.env.LLM_BASE_URL && process.env.LLM_API_KEY ? [{ provider: "openai-compatible", model: process.env.LLM_MODEL }] : [];
-}
 
 const ASK_DESCRIPTION = `DO NOT USE THIS TOOL UNLESS EXPLICITLY ASKED TO. THE PROMPT MUST SPECIFICALLY ASK TO USE THE ask_codebase TOOL.
 
@@ -56,7 +49,7 @@ export async function createMcpServer(scope: Scope) {
       description: "Lists the available language models configured on the Sourcebot instance. Use this to discover which models can be specified when calling ask_codebase.",
       annotations: { readOnlyHint: true, idempotentHint: true },
     },
-    async () => ({ content: [{ type: "text" as const, text: JSON.stringify(await configuredLanguageModels()) }] }),
+    async () => ({ content: [{ type: "text" as const, text: JSON.stringify(await languageModelsInfo()) }] }),
   );
   if (models.length > 0) {
     server.registerTool(
@@ -66,8 +59,7 @@ export async function createMcpServer(scope: Scope) {
         inputSchema: {
           query: z.string().describe("The query to ask about the codebase."),
           repos: z.array(z.string()).optional().describe("The repositories accessible to the agent. If not provided, all repositories are accessible."),
-          languageModel: z
-            .object({ provider: z.string(), model: z.string(), displayName: z.string().optional() })
+          languageModel: languageModelInfo
             .optional()
             .describe("The language model to use. If not provided, defaults to the first model in the config."),
           visibility: z.enum(["PRIVATE", "PUBLIC"]).optional().describe("The visibility of the chat session. Defaults to PRIVATE for authenticated users."),
@@ -76,9 +68,8 @@ export async function createMcpServer(scope: Scope) {
       },
       async (a) => {
         try {
-          const r = await ask(a.query, { scope, repos: a.repos, visibility: a.visibility });
-          const base = (process.env.AUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
-          return { content: [{ type: "text" as const, text: `${r.answer}\n\n---\n**View full research session:** ${base}/ask#${r.id}\n**Model used:** ${models[0]!.model}` }] };
+          const r = await askCodebase({ query: a.query, repos: a.repos, languageModel: a.languageModel, visibility: a.visibility, scope });
+          return { content: [{ type: "text" as const, text: `${r.answer}\n\n---\n**View full research session:** ${r.chatUrl}\n**Model used:** ${r.languageModel.model}` }] };
         } catch (e) {
           return { content: [{ type: "text" as const, text: `Failed to ask codebase: ${e instanceof Error ? e.message : String(e)}` }] };
         }

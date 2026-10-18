@@ -43,6 +43,22 @@ export interface ToolDeps {
 export interface ToolContext {
   deps: ToolDeps;
   scope: Scope;
+  /** Repos an Ask chat is limited to; search tools default to them when no `repo` is given. */
+  selectedRepos?: string[];
+}
+
+/** A file a tool result points at; the Ask agent resolves @file: references against these. */
+export interface ToolSource {
+  type: "file";
+  repo: string;
+  path: string;
+  name: string;
+  revision: string;
+}
+
+export interface ToolResult {
+  output: string;
+  sources?: ToolSource[];
 }
 
 interface ToolDefinition<S extends z.ZodRawShape> {
@@ -51,7 +67,7 @@ interface ToolDefinition<S extends z.ZodRawShape> {
   inputSchema: z.ZodObject<S>;
   isReadOnly: boolean;
   isIdempotent: boolean;
-  execute(args: z.infer<z.ZodObject<S>>, ctx: ToolContext): Promise<{ output: string }>;
+  execute(args: z.infer<z.ZodObject<S>>, ctx: ToolContext): Promise<ToolResult>;
 }
 
 const t = text as Record<string, { description: string; params: Record<string, string> }>;
@@ -116,7 +132,12 @@ const and = (nodes: (Q | undefined)[]): Q => {
   const n = nodes.filter((x): x is Q => x !== undefined);
   return n.length === 1 ? n[0]! : { and: { children: n } };
 };
-const repoSet = (repo?: string): Q | undefined => (repo ? { repo_set: { set: { [repo]: true } } } : undefined);
+/** `repo`, else the chat's selected repos, as a repo set; nothing when neither is given. */
+const repoSet = (repo: string | undefined, ctx: ToolContext): Q | undefined => {
+  const names = repo ? [repo] : ctx.selectedRepos;
+  return names?.length ? { repo_set: { set: Object.fromEntries(names.map((n) => [n, true])) } } : undefined;
+};
+const fileSource = (repo: string, path: string, revision: string): ToolSource => ({ type: "file", repo, path, name: path.split("/").pop() ?? path, revision });
 const branch = (ref?: string): Q | undefined => (ref ? { branch: { pattern: ref === "*" ? "" : ref, exact: false } } : undefined);
 
 /** Runs a search for a tool: the caller's scope narrows the query and filters the hits. */
@@ -146,7 +167,7 @@ const grep = define({
     groupByRepo: z.boolean().optional().describe(p("grep", "groupByRepo")),
   }),
   async execute({ pattern, path, include, repo, ref, limit, groupByRepo = false }, ctx) {
-    const q = and([re(pattern, false), path ? re(escapePath(path), true) : undefined, include ? re(globRe(include), true) : undefined, repoSet(repo), branch(ref)]);
+    const q = and([re(pattern, false), path ? re(escapePath(path), true) : undefined, include ? re(globRe(include), true) : undefined, repoSet(repo, ctx), branch(ref)]);
     const r = await toolSearch(ctx, q, limit ?? (groupByRepo ? 10_000 : 100));
     if (repo) await repoOrThrow(ctx, repo);
     if (r.files.length === 0) return { output: "No files found" };
@@ -174,7 +195,7 @@ const grep = define({
       }
     }
     if (!r.isSearchExhaustive) out.push("", TRUNCATED_GREP);
-    return { output: out.join("\n") };
+    return { output: out.join("\n"), sources: r.files.map((f) => fileSource(f.repo, f.path, ref ?? "HEAD")) };
   },
 });
 
@@ -191,7 +212,7 @@ const glob = define({
     limit: z.number().describe(p("glob", "limit")).optional(),
   }),
   async execute({ pattern, path, repo, ref, limit }, ctx) {
-    const q = and([re(globRe(pattern), true), path ? re(escapePath(path), true) : undefined, repoSet(repo), branch(ref)]);
+    const q = and([re(globRe(pattern), true), path ? re(escapePath(path), true) : undefined, repoSet(repo, ctx), branch(ref)]);
     const r = await toolSearch(ctx, q, limit ?? 100);
     if (repo) await repoOrThrow(ctx, repo);
     if (r.files.length === 0) return { output: "No files found" };
@@ -203,7 +224,7 @@ const glob = define({
       for (const fp of paths) out.push(`  ${fp}`);
     }
     if (!r.isSearchExhaustive) out.push("", TRUNCATED_GLOB);
-    return { output: out.join("\n") };
+    return { output: out.join("\n"), sources: r.files.map((f) => fileSource(f.repo, f.path, ref ?? "HEAD")) };
   },
 });
 
@@ -228,7 +249,7 @@ async function symbolSearch(ctx: ToolContext, symbol: string, repo: string, kind
     out.push("", `[${f.repository}] ${f.fileName}:`);
     for (const m of f.matches) out.push(`  ${m.range.start.lineNumber}: ${truncateLine(m.lineContent.trimEnd())}`);
   }
-  return { output: out.join("\n") };
+  return { output: out.join("\n"), sources: files.map((f) => fileSource(f.repository, f.fileName, "HEAD")) };
 }
 
 const findSymbolDefinitions = define({
@@ -304,7 +325,7 @@ const readFile = define({
     if (capped) out += `\n\n(Output capped at 5KB. Showing lines ${first}-${last} of ${lines.length}. Use offset=${last + 1} to continue.)`;
     else if (more) out += `\n\n(Showing lines ${first}-${last} of ${lines.length}. Use offset=${last + 1} to continue.)`;
     else out += `\n\n(End of file - ${lines.length} lines total)`;
-    return { output: out + "\n</content>" };
+    return { output: out + "\n</content>", sources: [fileSource(r.name, path, ref)] };
   },
 });
 
@@ -446,7 +467,7 @@ const listTree = define({
     print(base);
     if (sorted.length === 0) out.push("  (no entries found)");
     if (truncated) out.push("", `(truncated — showing first ${max} entries)`);
-    return { output: out.join("\n") };
+    return { output: out.join("\n"), sources: sorted.filter((e) => e.type === "blob").map((e) => ({ type: "file" as const, repo, path: e.path, name: e.name, revision: ref })) };
   },
 });
 
@@ -652,9 +673,14 @@ const getDiff = define({
       throw unexpected(`Failed to compute diff for ${repo}: ${m}`);
     }
     let out = "";
+    const sources: ToolSource[] = [];
     for (const f of parseDiff(raw)) {
       const oldPath = f.from && f.from !== "/dev/null" ? f.from : null;
       const newPath = f.to && f.to !== "/dev/null" ? f.to : null;
+      if (newPath === null) {
+        if (oldPath) sources.push(fileSource(r.name, oldPath, base));
+      } else if (oldPath && oldPath !== newPath) sources.push(fileSource(r.name, oldPath, base), fileSource(r.name, newPath, head));
+      else sources.push(fileSource(r.name, newPath, head));
       out += oldPath ? `--- a/${oldPath}\n` : "--- /dev/null\n";
       out += newPath ? `+++ b/${newPath}\n` : "+++ /dev/null\n";
       for (const h of f.chunks) {
@@ -663,7 +689,7 @@ const getDiff = define({
         out += `@@ -${h.oldStart},${h.oldLines} +${h.newStart},${h.newLines} @@${heading ? ` ${heading}` : ""}\n${body}${body.endsWith("\n") ? "" : "\n"}`;
       }
     }
-    return { output: out };
+    return { output: out, sources };
   },
 });
 
@@ -697,10 +723,10 @@ export function openAiTools(names: ToolName[] = toolNames) {
 
 /** Runs a tool by name with raw arguments; returns its output text and throws its error. */
 export function createToolRunner(deps: ToolDeps) {
-  return async function runTool(name: string, rawArgs: unknown, scope: Scope): Promise<string> {
+  return async function runTool(name: string, rawArgs: unknown, scope: Scope, selectedRepos?: string[]): Promise<string> {
     const d = toolDefinitions[name as ToolName] as unknown as AnyToolDefinition | undefined;
     if (!d) throw new Error(`unknown tool: ${name}`);
-    return (await d.execute(d.inputSchema.parse(rawArgs ?? {}), { deps, scope })).output;
+    return (await d.execute(d.inputSchema.parse(rawArgs ?? {}), { deps, scope, selectedRepos })).output;
   };
 }
 
