@@ -53,7 +53,28 @@ enum ConnectionType {
   git
 }
 
-/// One entry of config.json `connections`, keyed by its name there.
+enum ConnectionSource {
+  config // mirrored from config.json by the backend sync
+  api // created through the admin API; the config mirror never touches it
+}
+
+/// A code-host token, AES-256-GCM sealed (packages/shared/src/credentialStore.ts, the only reader of `ciphertext`).
+model Credential {
+  id            String       @id // 16 random bytes, base64url
+  kind          String // "github-token"
+  host          String
+  keyId         String
+  nonce         Bytes
+  ciphertext    Bytes
+  scopes        String[]
+  createdAt     DateTime     @default(now())
+  rotatedAt     DateTime?
+  lastCheckedAt DateTime?
+  lastError     String?
+  connections   Connection[]
+}
+
+/// One entry of config.json `connections`, keyed by its name there, or an api-created one.
 model Connection {
   id             Int                @id @default(autoincrement())
   name           String             @unique
@@ -61,6 +82,10 @@ model Connection {
   config         Json
   syncedAt       DateTime?
   syncError      String?
+  source         ConnectionSource   @default(config)
+  credential     Credential?        @relation(fields: [credentialId], references: [id], onDelete: SetNull)
+  credentialId   String?
+  syncRequestedAt DateTime? // set by the api, claimed by the backend tick
   repos          RepoToConnection[]
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
@@ -101,6 +126,7 @@ model Repo {
   headCommit            String? // default-branch commit after the last sync; what scans pin to
   kbRequest             String? // "scan" | "delete" | "include": set by the web app, handled by the backend
   kbRequestedAt         DateTime?
+  indexRequestedAt      DateTime? // set by the api (retry), claimed by the backend tick
   kbScannedCommit       String? // commit the last successful scan covered
   kbLastFullScanAt      DateTime?
   status                RepoStatus         @default(PENDING)

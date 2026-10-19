@@ -16,7 +16,8 @@ import {
 const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 export const keys = {
   products: `${base}/products`,
-  repositories: `${base}/repositories`,
+  repositories: (connectionId: string, q = "") =>
+    `${base}/repositories?connection=${encodeURIComponent(connectionId)}&q=${encodeURIComponent(q)}`,
   product: (id: string) => `${base}/products/${encodeURIComponent(id)}`,
   status: (id: string) => `${base}/products/${encodeURIComponent(id)}/status`,
   threads: (id: string) => `${base}/products/${encodeURIComponent(id)}/threads`,
@@ -61,8 +62,19 @@ async function request<T>(
 export const api = {
   products: (url = keys.products) => request(url, z.array(productSchema)),
   product: (url: string) => request(url, productSchema),
-  repositories: (url = keys.repositories) =>
-    request(url, z.array(repositorySchema)),
+  // The engine returns 100 matches per page (at most 3); the mock returns one short page.
+  async repositories(url: string) {
+    const all: z.infer<typeof repositorySchema>[] = [];
+    for (let page = 1; page <= 3; page++) {
+      const rows = await request(
+        `${url}&page=${page}`,
+        z.array(repositorySchema),
+      );
+      all.push(...rows);
+      if (rows.length < 100) break;
+    }
+    return all;
+  },
   status: (url: string) => request(url, statusSchema),
   threads: (url: string) => request(url, z.array(threadSummarySchema)),
   thread: (url: string) => request(url, threadSchema),

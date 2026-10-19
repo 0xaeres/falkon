@@ -12,7 +12,12 @@ import { z } from "zod";
  * One clone-only key sits beside the schema: `knowledgeBase` (Sourcebot keeps that in the database).
  */
 
-export type Token = { env: string } | { googleCloudSecret: string };
+/** `{ stored }` names a Credential row; only `source=api` connections carry it (the config file schema rejects it). */
+export type Token = { env: string } | { googleCloudSecret: string } | { stored: string };
+
+let credentialResolver: ((id: string) => Promise<string>) | undefined;
+/** Injected by the process that has a database handle (backend): opens the Credential row with this id. */
+export const setCredentialResolver = (fn: (id: string) => Promise<string>) => void (credentialResolver = fn);
 
 export interface GitRevisions {
   branches?: string[];
@@ -241,8 +246,12 @@ export async function loadConfig(configPath: string): Promise<Config> {
   return parseConfig(await fs.readFile(configPath, "utf8"), configPath);
 }
 
-/** Resolves a `{ env }` or `{ googleCloudSecret }` token to its value. */
+/** Resolves a `{ env }`, `{ googleCloudSecret }` or `{ stored }` token to its value. */
 export async function getTokenFromConfig(token: Token): Promise<string> {
+  if ("stored" in token) {
+    if (!credentialResolver) throw new Error("No credential resolver is set.");
+    return credentialResolver(token.stored);
+  }
   if ("env" in token) {
     const v = process.env[token.env];
     if (!v) throw new Error(`Environment variable ${token.env} not found.`);
