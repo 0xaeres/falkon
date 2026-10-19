@@ -129,7 +129,7 @@ Note on the S24 done condition: the heap figures above do not reach resident mem
 
 ## Ask-quality check on Haiku against the real v6, cycle 4 (S23), 2026-10-19
 
-Client model claude-haiku-5-5. Reference: the real v6.0.1 instance run through the same harness (`v6-tools`), paired per question id, pooled dev+hidden (n=80), rule D25 (lower 95% bound >= -0.10 and losses <= 2x wins, zero failed/malformed/leaked). 400 runs total including the pilot (4 arms x 80 questions + pilot), spend about $3 (cap $6), zero failed or malformed. Full report: `eval-results/report-haiku.md`; raw runs: `eval-results/runs-cycle4-haiku.tar.gz`.
+Client model claude-haiku-5-5. Reference: the real v6.0.1 instance run through the same harness (`v6-tools`), paired per question id, pooled dev+hidden (n=80), rule D25 (lower 95% bound >= -0.10 and losses <= 2x wins, zero failed/malformed/leaked). 320 runs (4 arms x 80 questions; the pilot runs are part of them), spend $2.28 (cap $6), zero failed or malformed. Full report: `eval-results/report-haiku.md`; raw runs: `eval-results/runs-cycle4-haiku.tar.gz`.
 
 | Arm | Recall (arm / v6) | Difference [95% CI] | Wins / losses | D25 |
 |---|---|---|---|---|
