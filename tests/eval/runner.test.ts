@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execute, runTasks, type Task } from "./runner.js";
+import { execute, runTasks, spentSoFar, type Task } from "./runner.js";
 import { hasRaw, readRaw, type Raw } from "./data.js";
 
 const task = (id: string, dataset = "openmrs-xrepo"): Task => ({ id, dataset, split: "dev", question: "Q" });
@@ -62,7 +62,7 @@ const fake = (cost: number, calls: string[] = []) => async (t: Task, arm: string
 test("runTasks writes one raw file per task and arm, then skips what is already recorded", async () => {
   const root = tmp(); const calls: string[] = [];
   try {
-    const opts = { runsRoot: root, arms: ["clone-tools", "clone-research"] as const, concurrency: 2, perRunCap: 1, spendCap: 15, run: fake(0.1, calls) };
+    const opts = { runsRoot: root, ledger: join(root, "ledger.jsonl"), arms: ["clone-tools", "clone-research"] as const, concurrency: 2, perRunCap: 1, spendCap: 15, run: fake(0.1, calls) };
     await runTasks([task("a"), task("b"), task("a", "openmrs-xrepo-unnamed")], { ...opts, arms: [...opts.arms] });
     assert.equal(calls.length, 6);
     assert.ok(hasRaw(join(root, "openmrs-xrepo-unnamed"), "clone-research", "a"));
@@ -75,7 +75,7 @@ test("runTasks writes one raw file per task and arm, then skips what is already 
 test("the spend cap spans datasets and arms, and stops new runs before it is exceeded", async () => {
   const root = tmp(); const calls: string[] = [];
   try {
-    const opts = { runsRoot: root, arms: ["clone-tools"], concurrency: 1, perRunCap: 1, spendCap: 2.5, run: fake(1, calls) };
+    const opts = { runsRoot: root, ledger: join(root, "ledger.jsonl"), arms: ["clone-tools"], concurrency: 1, perRunCap: 1, spendCap: 2.5, run: fake(1, calls) };
     await assert.rejects(runTasks([task("a"), task("b"), task("c", "openmrs-xrepo-unnamed"), task("d")], opts), /spend cap/i);
     assert.ok(calls.length < 4 && calls.length >= 2);
     const spent = ["openmrs-xrepo", "openmrs-xrepo-unnamed"].flatMap((d) => readRaw(join(root, d))).reduce((s, r) => s + r.total_cost_usd, 0);
@@ -98,8 +98,20 @@ test("concurrent runs reserve their full cap, so the ledger cannot overshoot", a
   const root = tmp();
   try {
     const slow = async (t: Task, arm: string): Promise<Raw> => { await new Promise((r) => setTimeout(r, 20)); return fake(1)(t, arm); };
-    await assert.rejects(runTasks([task("a"), task("b"), task("c"), task("d")], { runsRoot: root, arms: ["clone-tools"], concurrency: 3, perRunCap: 1, spendCap: 2.5, run: slow }), /spend cap/i);
+    await assert.rejects(runTasks([task("a"), task("b"), task("c"), task("d")], { runsRoot: root, ledger: join(root, "ledger.jsonl"), arms: ["clone-tools"], concurrency: 3, perRunCap: 1, spendCap: 2.5, run: slow }), /spend cap/i);
     const spent = readRaw(join(root, "openmrs-xrepo")).reduce((s, r) => s + r.total_cost_usd, 0);
     assert.ok(spent <= 2.5, String(spent));
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("one ledger caps spend across models: runs of two model directories share it", async () => {
+  const root = tmp(); const ledger = join(root, "ledger.jsonl");
+  try {
+    const opts = (dir: string) => ({ runsRoot: join(root, dir), ledger, arms: ["clone-tools"], concurrency: 1, perRunCap: 1, spendCap: 2.5, run: fake(1) });
+    await runTasks([task("a"), task("b")], opts("haiku"));
+    assert.equal(spentSoFar(ledger), 2);
+    await assert.rejects(runTasks([task("a")], opts("sonnet")), /spend cap/i);
+    assert.equal(readRaw(join(root, "sonnet", "openmrs-xrepo")).length, 0);
+    assert.equal(spentSoFar(join(root, "none.jsonl")), 0);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

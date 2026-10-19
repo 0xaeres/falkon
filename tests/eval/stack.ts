@@ -3,10 +3,10 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadProduct } from "./data.js";
 
-type Stack = { o3Dir: string; repoRoot: string; port: number; project: string };
+type Stack = { o3Dir: string; repoRoot: string; port: number; project: string; instructions?: "off" };
 
 /** The clone's config and an isolated compose project that indexes every product repository in place, read-only. */
-export function stackFiles({ o3Dir, repoRoot, port, project }: Stack) {
+export function stackFiles({ o3Dir, repoRoot, port, project, instructions }: Stack) {
   const repos = loadProduct().repositories;
   const config = {
     knowledgeBase: { enabled: false },
@@ -22,7 +22,7 @@ export function stackFiles({ o3Dir, repoRoot, port, project }: Stack) {
       redis: { image: "redis:7-alpine", healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: "3s", retries: 30 } },
       backend: { ...app, build: { context: repoRoot, dockerfile: "docker/Dockerfile" }, command: ["sh", "-c", "pnpm --filter @sbc/db push && pnpm --filter @sbc/backend start"], depends_on: { postgres: { condition: "service_healthy" }, redis: { condition: "service_healthy" } } },
       zoekt: { ...app, command: ["zoekt-webserver", "-index", "/data/index", "-rpc", "-listen", ":6070"], depends_on: ["backend"] },
-      web: { ...app, command: ["pnpm", "--filter", "@sbc/web", "start"], ports: [`127.0.0.1:${port}:3000`], depends_on: ["backend", "zoekt"] },
+      web: { ...app, environment: { ...environment, ...(instructions ? { MCP_INSTRUCTIONS: instructions } : {}) }, command: ["pnpm", "--filter", "@sbc/web", "start"], ports: [`127.0.0.1:${port}:3000`], depends_on: ["backend", "zoekt"] },
     },
     volumes: { pgdata: {}, data: {} },
   };

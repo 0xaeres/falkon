@@ -30,3 +30,13 @@ test("the stack uses its own project and port, binds loopback only and sets no k
   for (const s of ["backend", "zoekt", "web"] as const) assert.equal(compose.services[s].image, "falkon-eval-app");
   assert.deepEqual(compose.services.backend.build, { context: "/repo", dockerfile: "docker/Dockerfile" });
 });
+
+test("--instructions off sets MCP_INSTRUCTIONS on the web service only, in its own project and port", () => {
+  const off = stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3401, project: "falkon-eval-noinstr", instructions: "off" });
+  assert.equal(off.compose.name, "falkon-eval-noinstr");
+  assert.deepEqual(off.compose.services.web.ports, ["127.0.0.1:3401:3000"]);
+  assert.equal(off.compose.services.web.environment.MCP_INSTRUCTIONS, "off");
+  for (const s of ["backend", "zoekt"] as const) assert.ok(!("MCP_INSTRUCTIONS" in off.compose.services[s].environment), s);
+  assert.equal(off.compose.services.web.environment.AUTH_URL, "http://127.0.0.1:3401");
+  assert.ok(!JSON.stringify(files().compose).includes("MCP_INSTRUCTIONS"));
+});

@@ -9,8 +9,21 @@ export const REPO_ROOT = join(EVAL_DIR, "../..");
 export const FLOOR_DIR = join(REPO_ROOT, ".scratch/falkon-mvp/eval-floor");
 /** Both O3 question sets, scored and reported together. */
 export const DATASETS = ["openmrs-xrepo", "openmrs-xrepo-unnamed"] as const;
-export type Arm = "clone-tools" | "clone-research";
+export const ALL_ARMS = ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr"] as const;
+export type Arm = typeof ALL_ARMS[number];
+/** The arms run when --arms is not given. */
 export const ARMS: Arm[] = ["clone-tools", "clone-research"];
+export const MODELS = { sonnet: "claude-sonnet-5-5", haiku: "claude-haiku-5-5" } as const;
+export type ModelAlias = keyof typeof MODELS;
+/** Accepts an alias or its full id; the default is Sonnet. */
+export function resolveModel(flag = "sonnet"): { alias: ModelAlias; id: string } {
+  const alias = (Object.keys(MODELS) as ModelAlias[]).find((a) => a === flag || MODELS[a] === flag);
+  if (!alias) throw new Error(`--model must be one of ${Object.entries(MODELS).map(([a, id]) => `${a} (${id})`).join(", ")}`);
+  return { alias, id: MODELS[alias] };
+}
+/** Runs live in <runs root>/<model alias>/; Sonnet runs stored in the cycle 3 layout (datasets directly under the root) are still read and extended there. */
+export const modelDir = (runsRoot: string, alias: ModelAlias): string =>
+  alias === "sonnet" && !existsSync(join(runsRoot, alias)) && DATASETS.some((d) => existsSync(join(runsRoot, d))) ? runsRoot : join(runsRoot, alias);
 export const SEED = 20261017;
 
 const span = z.strictObject({ path: z.string().min(1), startLine: z.int().positive(), endLine: z.int().positive() });

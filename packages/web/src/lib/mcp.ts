@@ -28,11 +28,19 @@ When using this in shared environments (e.g., Slack), you can set the visibility
 
 const RESEARCH_DESCRIPTION = "Prepare a repository-scoped research brief for your model to answer a code question with Falkon's search and read tools. Returns a workflow and citation guidance without calling a server model.";
 
+let warnedMode = false;
+
 /** One MCP server per session, retaining the existing tool order, annotations and error text. */
 export async function createMcpServer(scope: Scope) {
+  // MCP_INSTRUCTIONS=off drops the server instructions (eval ablation); unset or "default" keeps them.
+  const mode = process.env.MCP_INSTRUCTIONS;
+  if (mode !== undefined && mode !== "default" && mode !== "off" && !warnedMode) {
+    warnedMode = true;
+    console.warn(`MCP_INSTRUCTIONS="${mode.replace(/\s+/g, " ").slice(0, 40)}" is not default or off; using default.`);
+  }
   const server = new McpServer(
     { name: MCP_SERVER_NAME, version: process.env.SOURCEBOT_CLONE_VERSION ?? "0.0.1" },
-    { instructions: CLIENT_RESEARCH_INSTRUCTIONS },
+    mode === "off" ? undefined : { instructions: CLIENT_RESEARCH_INSTRUCTIONS },
   );
   const registered: { name: string; tool: RegisteredTool }[] = [];
   // Every tool must go through add so registration and listing stay together.

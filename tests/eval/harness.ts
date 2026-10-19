@@ -3,12 +3,11 @@ import type { Arm } from "./data.js";
 import type { Span } from "./score.js";
 
 export const SERVER = "falkon";
-export const MODEL = "claude-sonnet-5-5";
 /** The seven approved tools of the reference runs. */
 export const TOOLS = ["grep", "glob", "read_file", "list_tree", "list_repos", "find_symbol_definitions", "find_symbol_references"];
 const DENIED_TOOLS = ["ask_codebase", "create_skill", "update_skill", "list_skills", "list_commits", "list_branches", "get_diff", "list_language_models"];
 const mcp = (name: string) => `mcp__${SERVER}__${name}`;
-/** MCP tool names an arm may call. */
+/** MCP tool names an arm may call; only the research arm has research_codebase, the other arms are denied it. */
 const toolsFor = (arm: Arm) => arm === "clone-research" ? [...TOOLS, "research_codebase"] : TOOLS;
 
 export function prompt(arm: Arm, question: string): string {
@@ -18,18 +17,18 @@ export function prompt(arm: Arm, question: string): string {
   return `${common}\n\n${product}${research}`;
 }
 
-export type CommandOptions = { question: string; tree: string; env: NodeJS.ProcessEnv; configPath: string; port: number; perRunCap: number; apiKey?: string; denyPaths: string[] };
+export type CommandOptions = { question: string; tree: string; env: NodeJS.ProcessEnv; configPath: string; url: string; model: string; perRunCap: number; apiKey?: string; denyPaths: string[] };
 
-/** The key reaches the child only through EVAL_MCP_KEY, which the MCP config references; it is never inherited. */
+/** `url` is the arm's MCP endpoint. The key reaches the child only through EVAL_MCP_KEY, which the MCP config references; it is never inherited. */
 export function buildCommand(arm: Arm, o: CommandOptions): { command: string; args: string[]; cwd: string; env: NodeJS.ProcessEnv; mcpConfig: string } {
   const fsTools = ["Read", "Grep", "Glob"];
   const outside = ["./eval", "./.local", "//Users", "//private/tmp/claude-501", ...o.denyPaths.map((p) => `/${p}`)];
-  const denied = [...fsTools.flatMap((t) => outside.map((p) => `${t}(${p}/**)`)), ...[...DENIED_TOOLS, ...(arm === "clone-tools" ? ["research_codebase"] : [])].map(mcp)];
-  const server = { type: "http", url: `http://127.0.0.1:${o.port}/api/mcp`, ...(o.apiKey ? { headers: { Authorization: "Bearer ${EVAL_MCP_KEY}" } } : {}) };
+  const denied = [...fsTools.flatMap((t) => outside.map((p) => `${t}(${p}/**)`)), ...[...DENIED_TOOLS, ...(arm !== "clone-research" ? ["research_codebase"] : [])].map(mcp)];
+  const server = { type: "http", url: o.url, ...(o.apiKey ? { headers: { Authorization: "Bearer ${EVAL_MCP_KEY}" } } : {}) };
   const { EVAL_MCP_KEY: _inherited, ...env } = o.env;
   return {
     command: "claude",
-    args: ["-p", prompt(arm, o.question), "--model", MODEL, "--output-format", "stream-json", "--verbose", "--max-budget-usd", String(o.perRunCap),
+    args: ["-p", prompt(arm, o.question), "--model", o.model, "--output-format", "stream-json", "--verbose", "--max-budget-usd", String(o.perRunCap),
       "--tools", fsTools.join(","), "--allowedTools", [...fsTools.map((t) => `${t}(./**)`), ...toolsFor(arm).map(mcp)].join(","),
       "--disallowedTools", denied.join(","), "--strict-mcp-config", "--setting-sources", "", "--no-session-persistence", "--mcp-config", o.configPath],
     cwd: o.tree,
@@ -54,7 +53,7 @@ export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] 
     if (item.type === "tool_use" && typeof item.name === "string") {
       out.firstTool ??= item.name.replace(`mcp__${SERVER}__`, "");
       // The plain arm may try the tool it was denied; that is counted, not a leak.
-      if (arm === "clone-tools" && item.name === mcp("research_codebase")) out.deniedAttempts++;
+      if (arm !== "clone-research" && item.name === mcp("research_codebase")) out.deniedAttempts++;
       else if (!allowed.includes(item.name)) out.leak = true;
       else if (item.name.startsWith(`mcp__${SERVER}__`)) { const short = item.name.slice(mcp("").length); out.toolCalls[short] = (out.toolCalls[short] ?? 0) + 1; }
       if (Object.hasOwn(pathFields, item.name)) {
