@@ -9,3 +9,4 @@ export * from "./tools";
 export { toolJsonSchema } from "./toolJsonSchema";
 export * from "./access";
 export * as kb from "./kb";
+export * from "./accessPolicy";

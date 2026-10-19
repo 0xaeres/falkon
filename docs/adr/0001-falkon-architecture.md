@@ -214,6 +214,15 @@ Edge vocabulary and derivation follow *earlier ADR* 4.4: `CALLS` (an AST call ex
 | B. Product as a request parameter | None | Yes | Yes, but every tool schema changes, which breaks the tool contract ([9](#9-regression-gate)) |
 | **C. Product in the path, `AccessPolicy` port, `none` default, `apiKey` kept** | **None by default** | **Yes** | **Yes** |
 
+**As built (S4, 2026-10-19).**
+
+- **Policy.** The `AccessPolicy` port lives in `packages/shared/src/accessPolicy.ts` beside `access.ts`, whose exports are unchanged. The environment variable `AUTH_MODE` selects it until the Falkon config schema takes it over (S13): `none` (the default when unset) or `apiKey`; any other value stops the service at start. `none` gives every caller the principal `anonymous` and the Product's whole set. `apiKey` accepts only `Authorization: Bearer <key>` on `/mcp/<product>` (no other header, no cookie), checks it with `authenticate` and `loadAccessKeys` against `ACCESS_FILE` (re-read when the file changes), and fails closed: an unset, missing, unreadable, malformed or empty access file denies everyone. The effective set is the Product's repository names that the key allows, passed to `scopeFor` as explicit names; a name containing `*` is dropped so a stored name can never act as a prefix pattern. A key with `*` is still limited to the Product.
+- **Request order on `/mcp/<product>`.** Product name syntax (`^[a-z0-9][a-z0-9-]{0,62}$`, else 404); authentication (401 with one body for a missing or a wrong key, and no Product lookup); Product lookup (404); effective set (under `apiKey` an empty intersection is the same 404 as an unknown Product, so the response is no oracle for Product existence); session binding. `GET` is 405; every other method or path is 404.
+- **Listeners.** One process, two Nest applications. The product listener binds `API_HOST:API_PORT` (default `127.0.0.1:3001`) and serves only `POST`, `DELETE` and `GET` on `/mcp/:product`. The admin listener binds `API_ADMIN_HOST:API_ADMIN_PORT` (default `127.0.0.1:3002`) and serves only `GET|POST /products` and `GET|PUT|DELETE /products/:slug`, with no authentication. Compose publishes both on host loopback only. Both answer only a `Host` on loopback (plus `API_ALLOWED_HOSTS`), so a web page that rebinds its DNS name to loopback cannot reach them. Knowledge base scan and resync stay on their current routes for now.
+- **Registry.** Products are `Product` rows in Postgres (`slug` unique and immutable, `source` `config` or `api`, `definition` in the shape of a config context, resolved `repoNames`). The backend sync imports config `contexts` as `source=config` rows in the same step as `SearchContext`, deletes config rows no longer in config, never writes an `api` row except to re-resolve its own definition, and skips with a log line a context whose name is not a valid slug or whose slug an `api` row holds (the `api` row wins). Writes are conditioned on `source`, so a concurrent admin create cannot become a config row. The admin API creates, replaces and deletes `api` rows only (config rows answer 409; slug and source cannot change), resolves membership at write time, and validates bodies with strict Zod objects (JSON only, 64 KiB). The product path reads the registry on every request with no cache, so a membership change applies to the next request.
+- **Sessions (P11).** The Nest layer keeps its own map from MCP session id to the Product's row id, the principal and the sha256 fingerprint of the sorted effective set at creation. A request carrying a session id is checked against it before `mcp.ts` sees the request: an id it never bound, one bound to another Product or principal, or one whose fingerprint no longer matches (membership or key scope changed) is a 404 `Session not found.`, and starts no session. A fingerprint mismatch also closes the session in `mcp.ts`. Only a request without a session id reaches `mcp.ts` unbound; the id in its response is bound then. The map holds at most 1,000 sessions and closes the least recently used one past that.
+- **Known gap.** A Product's scope keeps today's knowledge base rule: a knowledge repository is visible when its owner is. The citation rule of [7.1](#71-knowledge-base-isolation) (P6) is not built yet and waits for the knowledge base cycle.
+
 ### 4.6 NestJS strangler boundary (D7)
 
 **Decision.** A NestJS application serves `/mcp/<product>` and the admin listener. It delegates to the existing tool runners (`createToolRunner` in `tools.ts`) with a `Scope` built from the Product and the access policy. New capabilities go in new packages and additive tools. The old Next.js routes stay until the contract and golden tests pass against the Nest boundary; then they are removed. The sync path and the Zoekt path are not modified by any MVP slice.
@@ -413,19 +422,19 @@ Rules:
 
 A Product path must not read, search, list, or diff outside its repository set. Each point below applies the Product's effective repository set and fails closed; tests prove each one (spec S4).
 
-| # | Point | Where | Rule |
-|---|---|---|---|
-| P1 | Product resolution | NestJS boundary | Unknown Product returns not-found with no data; there is no fallback to all repositories. |
-| P2 | Access policy | `AccessPolicy` adapter | `none`: the Product's set. `apiKey`: the Product's set intersected with the key's scope. The caller may narrow, never widen. |
-| P3 | Tool layer | `repoOrThrow` and `scope.allows` in `tools.ts` | Every repo-named argument is checked before any read; an out-of-set repo returns the same error as a missing one. `list_repos` filters by scope. |
-| P4 | Zoekt query | `searchIR` call in `tools.ts`, web search routes | The repo filter is AND-ed into the query IR server side, and hits are post-filtered by `scope.allows`. User text cannot widen it (IR leaves only). |
-| P5 | Git readers | `read_file`, `list_tree`, `list_commits`, `list_branches`, `get_diff` through `git.ts` | Run only on a repo returned by P3; refs and paths stay validated against traversal and option injection. |
-| P6 | Knowledge base | KB scan (`citeRepos`) and `scopeFor` in `access.ts` | Rule in [7.1](#71-knowledge-base-isolation). |
-| P7 | Graph queries | `GraphStore` adapter | Head builds of the effective set only, at every hop of a recursive CTE, not only at the start; coverage scoped to the same set. |
-| P8 | Map | Map tool | Built only from the effective set's registry rows, trees, and graph rows. |
-| P9 | Ask | `ask_codebase` and the chat routes | Selected repositories are intersected with the effective set before the agent loop runs. |
-| P10 | Admin operations | Admin listener | Scan, delete, include, rebuild, and resync are not reachable on the Product listener. |
-| P11 | MCP sessions and continuation state | Session store in the NestJS boundary (today `sessions` in [`packages/web/src/lib/mcp.ts`](../../packages/web/src/lib/mcp.ts), keyed by principal only) | A session and any continuation state are bound to the `productId` and a fingerprint of the effective scope at creation. A request that presents the session under another Product path, or with a different effective scope, is rejected, and starts no new session in its place. Under `none` every caller shares one principal, so the principal alone cannot serve as the binding. |
+| # | Point | Where | Rule | Status (S4) |
+|---|---|---|---|---|
+| P1 | Product resolution | NestJS boundary | Unknown Product returns not-found with no data; there is no fallback to all repositories. | Tested: `packages/api/src/app.test.ts` (unknown, malformed and lookalike names; no lookup before the syntax check) |
+| P2 | Access policy | `AccessPolicy` adapter | `none`: the Product's set. `apiKey`: the Product's set intersected with the key's scope. The caller may narrow, never widen. | Tested: `packages/shared/src/accessPolicy.test.ts`, `app.test.ts` (apiKey order, 401 and 404 bodies) |
+| P3 | Tool layer | `repoOrThrow` and `scope.allows` in `tools.ts` | Every repo-named argument is checked before any read; an out-of-set repo returns the same error as a missing one. `list_repos` filters by scope. | Tested through the Nest listener: `packages/api/src/isolation.test.ts` |
+| P4 | Zoekt query | `searchIR` call in `tools.ts`, web search routes | The repo filter is AND-ed into the query IR server side, and hits are post-filtered by `scope.allows`. User text cannot widen it (IR leaves only). | Tested at the tool level (query IR and post-filter, against a Zoekt fake that returns out-of-set hits): `isolation.test.ts`. The web search routes are not on the Product path until S20 (D16) |
+| P5 | Git readers | `read_file`, `list_tree`, `list_commits`, `list_branches`, `get_diff` through `git.ts` | Run only on a repo returned by P3; refs and paths stay validated against traversal and option injection. | Tested: `isolation.test.ts` (the core checks still apply on the Product path) |
+| P6 | Knowledge base | KB scan (`citeRepos`) and `scopeFor` in `access.ts` | Rule in [7.1](#71-knowledge-base-isolation). | Out of scope until the knowledge base cycle; Product scopes keep the owner rule (known gap) |
+| P7 | Graph queries | `GraphStore` adapter | Head builds of the effective set only, at every hop of a recursive CTE, not only at the start; coverage scoped to the same set. | Out of scope: no graph yet (S6 to S9) |
+| P8 | Map | Map tool | Built only from the effective set's registry rows, trees, and graph rows. | Out of scope: no map yet |
+| P9 | Ask | `ask_codebase` and the chat routes | Selected repositories are intersected with the effective set before the agent loop runs. | Out of scope: `ask_codebase` already receives the session scope; the chat routes wait for S20 and S21 |
+| P10 | Admin operations | Admin listener | Scan, delete, include, rebuild, and resync are not reachable on the Product listener. | Tested over real sockets: `app.test.ts`, `admin.test.ts` (neither listener serves the other's routes); KB scan and resync are not moved yet |
+| P11 | MCP sessions and continuation state | Session store in the NestJS boundary (today `sessions` in [`packages/web/src/lib/mcp.ts`](../../packages/web/src/lib/mcp.ts), keyed by principal only) | A session and any continuation state are bound to the `productId` and a fingerprint of the effective scope at creation. A request that presents the session under another Product path, or with a different effective scope, is rejected, and starts no new session in its place. Under `none` every caller shares one principal, so the principal alone cannot serve as the binding. | Tested: `app.test.ts` (binding, replay, fingerprint, cap), `isolation.test.ts` (real MCP handlers, two Products at once) |
 
 ### 7.1 Knowledge base isolation
 
@@ -508,8 +517,8 @@ New capabilities also pass the D8 rule ([4.7](#47-capabilities-earn-their-place-
 
 Open questions:
 
-1. Do the browser UI and its REST routes get Product scoping, or only MCP? D6 names MCP only.
-2. Where does Product config live: `config.json` alongside `contexts`, or the Falkon config schema introduced in S13?
+1. Do the browser UI and its REST routes get Product scoping, or only MCP? D6 names MCP only. **Answered (S4):** only MCP for now. The REST routes and the engine's own pages stay unscoped until the NestJS boundary replaces them for the Falkon UI (S20, D16).
+2. Where does Product config live: `config.json` alongside `contexts`, or the Falkon config schema introduced in S13? **Answered (S4; D17, D21):** in Postgres (`Product` rows), managed through the admin API; config `contexts` are an import path into `source=config` rows.
 3. Which hop, count, and deadline limits? To be set from the S9 evaluation, as the earlier design did (*earlier ADR* 4.10, rule 5).
 4. Is the map served as a tool, an MCP resource, or both (*earlier:* `.scratch/retrieval-eval/clone-migration-plan.md`, phase 2 step 1)?
 

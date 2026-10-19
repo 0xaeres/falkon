@@ -50,6 +50,28 @@ services:
     ports: ["3000:3000"]
     depends_on: [backend, zoekt]
 
+  # NestJS boundary (strangler): serves /mcp/<product> beside web's untouched /api/mcp, and the Product
+  # registry admin API on a second listener (3002). Both are published on host loopback only; the 0.0.0.0
+  # binds are inside the container. The admin listener has no authentication: never publish it further.
+  # AUTH_MODE=apiKey needs ACCESS_FILE pointing at a mounted access file, or it denies everyone.
+  api:
+    <<: *app
+    profiles: []
+    # The esbuild bundle under plain node: tsx would add ~90 MB of loader and esbuild service.
+    command: node packages/api/dist/main.js
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://sbc:sbc@postgres:5432/sbc
+      DATA_DIR: /data
+      ZOEKT_URL: http://zoekt:6070
+      CONFIG_PATH: /config/config.json
+      API_HOST: 0.0.0.0
+      API_ADMIN_HOST: 0.0.0.0
+      AUTH_MODE: ${AUTH_MODE:-none}
+    volumes: [data:/data, "./config.json:/config/config.json:ro"]
+    ports: ["127.0.0.1:3001:3001", "127.0.0.1:3002:3002"]
+    depends_on: [backend, zoekt]
+
 volumes:
   pgdata:
   data:

@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "lib": ["esnext"], "experimentalDecorators": true },
+  "include": ["src", "../web/src/lib/mcp.ts", "../web/src/lib/tools.ts", "../web/src/lib/repos.ts", "../backend/src/productResolve.ts", "../backend/src/productTable.fake.ts"]
+}

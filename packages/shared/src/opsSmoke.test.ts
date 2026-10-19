@@ -34,20 +34,35 @@ if (command === 'date') {
   console.log(next);
 } else if (command === 'docker') {
   if (args[0] === 'stats') {
-    for (const [i, name] of ['backend', 'web', 'zoekt', 'postgres', 'redis'].entries()) {
-      const usage = scenario === 'memory-fail' ? (i ? '100MB' : '254.01MB') :
-        scenario === 'memory-edge' ? (i ? '100MB' : '254MB') :
-        ['100MiB', '0.1GB', '100MB', '50000kB', '50000KiB'][i];
+    for (const [i, name] of ['backend', 'web', 'zoekt', 'postgres', 'redis', 'api'].entries()) {
+      const usage = scenario === 'memory-fail' ? (i ? '100MB' : '154.01MB') :
+        scenario === 'memory-edge' ? (i ? '100MB' : '154MB') :
+        ['100MiB', '0.1GB', '100MB', '50000kB', '50000KiB', '100MB'][i];
       console.log(JSON.stringify({ Name: name, MemUsage: usage + ' / 2GiB' }));
     }
-  } else if (args.includes('ps')) console.log('backend\\nweb\\nzoekt\\npostgres\\nredis');
+  } else if (args.includes('ps')) console.log('backend\\nweb\\nzoekt\\npostgres\\nredis\\napi');
   else if (args.includes('logs')) console.log('fixture compose failure logs');
 } else if (command === 'pnpm') {
   if (args.includes('exec')) process.exit(scenario === 'deps' ? 1 : 0);
   const record = args.indexOf('golden:record');
-  if (record >= 0) fs.writeFileSync(args[record + 1], JSON.stringify({ capture: scenario === 'unstable' && args[record + 1].endsWith('after.json') ? 2 : 1 }));
+  if (record >= 0) fs.writeFileSync(args[record + 1], JSON.stringify({ capture: scenario === 'unstable' && args[record + 1].endsWith('after.json') ? 2 : scenario === 'api-drift' && process.env.MCP_PATH ? 3 : 1 }));
   const diff = args.indexOf('golden:diff');
   if (diff >= 0) process.exit(fs.readFileSync(args[diff + 1], 'utf8') === fs.readFileSync(args[diff + 2], 'utf8') ? 0 : 1);
+} else if (command === 'curl' && args.includes('--write-out')) {
+  const url = args.at(-1);
+  const method = args.includes('--request') ? args[args.indexOf('--request') + 1] : 'GET';
+  const registry = process.env.SMOKE_EVENTS + '.registry';
+  let code = scenario === 'api-down' ? '000' : '200';
+  if (url.endsWith('/mcp/no-such-product')) code = '404';
+  else if (url.endsWith('/products')) code = method === 'POST' ? (fs.writeFileSync(registry, '1'), '201') : scenario === 'admin-exposed' ? '200' : '404';
+  else if (url.endsWith('/products/smoke-registry')) code = (fs.rmSync(registry, { force: true }), '204');
+  else if (url.endsWith('/mcp/smoke-registry')) {
+    code = fs.existsSync(registry) || scenario === 'registry-kept' ? '200' : '404';
+    if (args.includes('--dump-header')) fs.writeFileSync(args[args.indexOf('--dump-header') + 1], 'HTTP/1.1 200 OK\\r\\nmcp-session-id: smoke-session\\r\\n\\r\\n');
+  }
+  process.stdout.write(code);
+} else if (command === 'curl' && args.at(-1).endsWith('/mcp/smoke-registry')) {
+  fs.writeFileSync(args[args.indexOf('--output') + 1], scenario === 'registry-tools' ? 'data: {"result":{"tools":[]}}' : 'data: {"result":{"tools":[{"name":"read_file"}]}}');
 } else if (command === 'curl') {
   const out = args[args.indexOf('-o') + 1];
   const query = args.find(arg => arg.startsWith('q=')).slice(2);
@@ -79,9 +94,9 @@ test("smoke compares two captures, warns without a baseline and records only whe
   assert.equal(missing.status, 0, missing.output);
   assert.match(missing.output, /WARN no baseline exists/);
   assert.match(missing.output, /PASS golden-stability/);
-  assert.match(missing.output, /PASS memory: whole clone stack 406\.06 MB/);
+  assert.match(missing.output, /PASS memory: whole clone stack 506\.06 MB/);
   assert.equal(missing.baseline, undefined);
-  assert.equal(missing.events.filter(event => event.args.includes("golden:record")).length, 2);
+  assert.equal(missing.events.filter(event => event.args.includes("golden:record")).length, 3);
   const recorded = smoke({ record: true });
   assert.equal(recorded.status, 0, recorded.output);
   assert.deepEqual(recorded.baseline, { capture: 1 });
@@ -125,4 +140,32 @@ test("smoke explains missing runner dependencies and bounds the config-reload de
   assert.equal(deletion.status, 1, deletion.output);
   assert.match(deletion.output, /FAIL delete-repo: config reload\/index deletion did not complete within 3s/);
   assert.match(deletion.output, /fixture compose failure logs/);
+});
+
+test("smoke routes a golden capture through the api service and fails when it differs or the api never answers", () => {
+  const ok = smoke();
+  assert.equal(ok.status, 0, ok.output);
+  assert.match(ok.output, /PASS golden-api/);
+  assert.equal(ok.events.filter(event => event.args.includes("golden:record")).length, 3);
+  const drift = smoke({ scenario: "api-drift" });
+  assert.equal(drift.status, 1, drift.output);
+  assert.match(drift.output, /FAIL golden-api: capture through \/mcp\/fixtures differs/);
+  const down = smoke({ scenario: "api-down" });
+  assert.equal(down.status, 1, down.output);
+  assert.match(down.output, /FAIL api: \/mcp\/fixtures did not answer within 3s/);
+});
+
+test("smoke round-trips an api Product through the admin port and proves the admin routes 404 on the product port", () => {
+  const ok = smoke();
+  assert.equal(ok.status, 0, ok.output);
+  assert.match(ok.output, /PASS registry/);
+  const curls = ok.events.filter((event) => event.command === "curl").map((event) => `${event.args.includes("--request") ? event.args[event.args.indexOf("--request") + 1] : "GET"} ${event.args.at(-1)}`);
+  for (const expected of ["GET http://127.0.0.1:3301/products", "POST http://127.0.0.1:3302/products", "POST http://127.0.0.1:3301/mcp/smoke-registry", "DELETE http://127.0.0.1:3302/products/smoke-registry"]) assert.ok(curls.includes(expected), expected);
+  const session = ok.events.find((event) => event.command === "curl" && event.args.includes("mcp-session-id: smoke-session"));
+  assert.ok(session, "tools/list carries the session id from initialize");
+  for (const [scenario, message] of [["admin-exposed", /FAIL registry: admin routes answer on the product port/], ["registry-tools", /FAIL registry: tools\/list on the new Product failed/], ["registry-kept", /FAIL registry: a deleted Product is still served/]] as const) {
+    const result = smoke({ scenario });
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, message);
+  }
 });
