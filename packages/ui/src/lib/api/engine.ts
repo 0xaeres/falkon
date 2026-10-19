@@ -9,7 +9,7 @@ export const useEngine = () => !!process.env.ENGINE_URL;
  */
 export async function forward(
   path: string,
-  init: { method?: string; body?: unknown } = {},
+  init: { method?: string; body?: unknown; stream?: AbortSignal } = {},
 ): Promise<Response> {
   let res: Response;
   try {
@@ -20,7 +20,8 @@ export async function forward(
         "content-type": "application/json",
       },
       ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
-      signal: AbortSignal.timeout(15_000),
+      // A streamed answer runs as long as the client stays; the client going away aborts the engine call too.
+      signal: init.stream ?? AbortSignal.timeout(15_000),
       cache: "no-store",
     });
   } catch {
@@ -33,8 +34,14 @@ export async function forward(
     return new Response(res.status === 204 ? null : res.body, {
       status: res.status,
       headers: {
-        "content-type": "application/json",
+        // The AI SDK UI message stream passes through unchanged (no buffering).
+        "content-type": init.stream
+          ? (res.headers.get("content-type") ?? "text/event-stream")
+          : "application/json",
         "cache-control": "no-store",
+        ...(init.stream
+          ? { "x-vercel-ai-ui-message-stream": "v1", "x-accel-buffering": "no" }
+          : {}),
       },
     });
   const failure: unknown = await res.json().catch(() => null);

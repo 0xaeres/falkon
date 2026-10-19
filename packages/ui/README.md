@@ -60,7 +60,7 @@ Set `NEXT_PUBLIC_API_BASE_URL` to a compatible gateway, or replace `src/app/api`
 | `POST /api/products/:productId/sync`             | Retry                                              |
 | `GET, POST /api/products/:productId/threads`     | Product-scoped thread list / create                |
 | `GET /api/products/:productId/threads/:threadId` | Saved thread with its answers                      |
-| `POST /api/products/:productId/query`            | NDJSON `start`, `delta`, `done`, or `error` events |
+| `POST /api/products/:productId/threads/:threadId/messages` | AI SDK UI message stream (engine only; `{ text }` in) |
 
 The current NestJS `/v1/query` contract requires a principal and an HTTP-route target. It is not a drop-in replacement for free-form chat. Real setup/status/thread endpoints and answer streaming still need integration. Add real authentication and server-side credential handling at that integration boundary. The public preview-scenario action is a local mock feature and must not be forwarded into production.
 

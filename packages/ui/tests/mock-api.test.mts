@@ -7,7 +7,6 @@ import {
   answerSchema,
   paragraphSchema,
   statusSchema,
-  streamEventSchema,
   threadSchema,
 } from "@sbc/contracts";
 import { makeAnswer, makeStatus, seedProducts } from "../src/lib/mock/fixtures";
@@ -15,14 +14,14 @@ import { makeAnswer, makeStatus, seedProducts } from "../src/lib/mock/fixtures";
 const directory = await mkdtemp(path.join(tmpdir(), "falkon-ui-test-"));
 process.env.MOCK_DATA_DIR = directory;
 const products = await import("../src/app/api/products/route");
-const { transact } = await import("../src/lib/mock/store");
 const productRoute = await import("../src/app/api/products/[productId]/route");
 const connections = await import("../src/app/api/connections/route");
 const threads =
   await import("../src/app/api/products/[productId]/threads/route");
 const threadRoute =
   await import("../src/app/api/products/[productId]/threads/[threadId]/route");
-const query = await import("../src/app/api/products/[productId]/query/route");
+const messages =
+  await import("../src/app/api/products/[productId]/threads/[threadId]/messages/route");
 const sync = await import("../src/app/api/products/[productId]/sync/route");
 after(() => rm(directory, { recursive: true, force: true }));
 const request = (value: unknown) =>
@@ -182,7 +181,7 @@ test("credential simulation rejects missing scopes without storing tokens", asyn
   assert(!("token" in connection));
 });
 
-test("threads cannot be read or queried through another Product", async () => {
+test("threads cannot be read through another Product, and chat needs the engine", async () => {
   const response = await threadRoute.GET(request({}), {
     params: Promise.resolve({
       productId: "identity-services",
@@ -191,64 +190,33 @@ test("threads cannot be read or queried through another Product", async () => {
   });
   assert.equal(response.status, 404);
   assert.equal(
-    (
-      await query.POST(
-        request({ threadId: "refund-write-path", question: "refund" }),
-        context("identity-services"),
-      )
-    ).status,
-    404,
-  );
-  assert.equal(
     (await threads.GET(request({}), context("missing-product"))).status,
     404,
   );
+  const ask = await messages.POST(request({ text: "refund" }), {
+    params: Promise.resolve({
+      productId: "payments-platform",
+      threadId: "refund-write-path",
+    }),
+  });
+  assert.deepEqual(
+    [ask.status, await ask.json()],
+    [503, { error: "Chat needs the Falkon engine." }],
+  );
 });
 
-test("a complete streamed answer persists once, survives reload, and cannot stream before publication", async () => {
+test("a new thread starts empty and is listed first", async () => {
   await sync.POST(request({ action: "retry" }), context("payments-platform"));
   const created = threadSchema.parse(
     await (
       await threads.POST(request({}), context("payments-platform"))
     ).json(),
   );
-  const response = await query.POST(
-    request({ threadId: created.id, question: "What calls POST /v1/refunds?" }),
-    context("payments-platform"),
-  );
-  assert.equal(response.status, 200);
-  const events = (await response.text())
-    .trim()
-    .split("\n")
-    .map((line) => streamEventSchema.parse(JSON.parse(line)));
-  assert.equal(events[0].type, "start");
-  assert(events.some((event) => event.type === "delta"));
-  assert.equal(events.at(-1)?.type, "done");
-  const saved = threadSchema.parse(
-    await (
-      await threadRoute.GET(request({}), {
-        params: Promise.resolve({
-          productId: "payments-platform",
-          threadId: created.id,
-        }),
-      })
-    ).json(),
-  );
-  assert.equal(saved.answers.length, 1);
-  assert.equal(saved.answers[0].generation, "g-0042");
-  await transact((db) => {
-    db.products.find((item) => item.id === "payments-platform")!.scenario =
-      "building";
-  }, true);
-  assert.equal(
-    (
-      await query.POST(
-        request({ threadId: created.id, question: "refund" }),
-        context("payments-platform"),
-      )
-    ).status,
-    409,
-  );
+  assert.deepEqual([created.title, created.answers], ["New thread", []]);
+  const listed = await (
+    await threads.GET(request({}), context("payments-platform"))
+  ).json();
+  assert.equal(listed[0].id, created.id);
 });
 
 test("sync accepts retry only and the mock keeps no dismissed state", async () => {
@@ -280,15 +248,6 @@ test("malformed, empty, and oversized requests fail at the API boundary", async 
   );
   assert.equal(
     (await products.POST(request({ ...input, id: "unsafe/../../id" }))).status,
-    400,
-  );
-  assert.equal(
-    (
-      await query.POST(
-        request({ threadId: "refund-write-path", question: " " }),
-        context("payments-platform"),
-      )
-    ).status,
     400,
   );
   assert.equal(

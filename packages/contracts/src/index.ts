@@ -166,17 +166,7 @@ export const answerPartSchema = answerSchema.pick({
   abstention: true,
   suggestions: true,
 });
-export const queryRequestSchema = z.object({
-  threadId: z.string().min(1).max(100),
-  question: z.string().trim().min(1).max(4000),
-});
 export const syncRequestSchema = z.object({ action: z.literal("retry") });
-export const streamEventSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("start"), answer: answerSchema }),
-  z.object({ type: z.literal("delta"), text: z.string() }),
-  z.object({ type: z.literal("done"), thread: threadSchema }),
-  z.object({ type: z.literal("error"), message: z.string() }),
-]);
 export type Provider = z.infer<typeof providerSchema>;
 export type Repository = z.infer<typeof repositorySchema>;
 export type Product = z.infer<typeof productSchema>;
@@ -188,4 +178,4 @@ export type Thread = z.infer<typeof threadSchema>;
 export type ThreadSummary = z.infer<typeof threadSummarySchema>;
 export type SetupRequest = z.infer<typeof setupRequestSchema>;
 export type EditRequest = z.infer<typeof editRequestSchema>;
-export type StreamEvent = z.infer<typeof streamEventSchema>;
+export * from "./chat";

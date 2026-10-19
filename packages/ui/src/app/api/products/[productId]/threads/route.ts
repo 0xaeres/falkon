@@ -1,7 +1,13 @@
-import { endpoint, type ProductRoute } from "@/lib/api/server";
+import { endpoint, proxy, type ProductRoute } from "@/lib/api/server";
+import { useEngine } from "@/lib/api/engine";
 import { findProduct, transact } from "@/lib/mock/store";
 export async function GET(_request: Request, context: ProductRoute) {
   const { productId } = await context.params;
+  if (useEngine())
+    return proxy(
+      `/ui/products/${encodeURIComponent(productId)}/threads`,
+      "GET",
+    );
   return endpoint(() =>
     transact((db) => {
       findProduct(db, productId);
@@ -19,6 +25,11 @@ export async function GET(_request: Request, context: ProductRoute) {
 }
 export async function POST(_request: Request, context: ProductRoute) {
   const { productId } = await context.params;
+  if (useEngine())
+    return proxy(
+      `/ui/products/${encodeURIComponent(productId)}/threads`,
+      "POST",
+    );
   return endpoint(() =>
     transact((db) => {
       findProduct(db, productId);

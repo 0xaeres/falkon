@@ -134,7 +134,8 @@ const products = await import("../src/app/api/products/route");
 const product = await import("../src/app/api/products/[productId]/route");
 const status = await import("../src/app/api/products/[productId]/status/route");
 const sync = await import("../src/app/api/products/[productId]/sync/route");
-const threads = await import("../src/app/api/products/[productId]/threads/route");
+const threads =
+  await import("../src/app/api/products/[productId]/threads/route");
 const ctx = (productId: string) => ({ params: Promise.resolve({ productId }) });
 const json = (body: unknown, method = "POST") =>
   new Request("http://localhost/api/x", { method, body: JSON.stringify(body) });
@@ -157,12 +158,19 @@ test("product routes forward to /ui/products with the server-side bearer", async
     [await products.POST(json(setup)), "POST", "/ui/products"],
     [await product.GET(get(), ctx("alpha")), "GET", "/ui/products/alpha"],
     [
-      await product.PATCH(json({ name: "A", repositories: setup.repositories }, "PATCH"), ctx("alpha")),
+      await product.PATCH(
+        json({ name: "A", repositories: setup.repositories }, "PATCH"),
+        ctx("alpha"),
+      ),
       "PATCH",
       "/ui/products/alpha",
     ],
     [await status.GET(get(), ctx("alpha")), "GET", "/ui/products/alpha/status"],
-    [await sync.POST(json({ action: "retry" }), ctx("alpha")), "POST", "/ui/products/alpha/sync"],
+    [
+      await sync.POST(json({ action: "retry" }), ctx("alpha")),
+      "POST",
+      "/ui/products/alpha/sync",
+    ],
   ];
   const seenCalls = seen.slice(-6);
   calls.forEach(([res, method, url], i) => {
@@ -170,20 +178,195 @@ test("product routes forward to /ui/products with the server-side bearer", async
     assert.deepEqual([seenCalls[i]!.method, seenCalls[i]!.url], [method, url]);
     assert.equal(seenCalls[i]!.authorization, "Bearer admin-token-for-test");
   });
-  assert.deepEqual(JSON.parse(seenCalls[3]!.body), { name: "A", repositories: setup.repositories });
+  assert.deepEqual(JSON.parse(seenCalls[3]!.body), {
+    name: "A",
+    repositories: setup.repositories,
+  });
 });
 
 test("product bodies are validated before forwarding", async () => {
   const before = seen.length;
-  assert.equal((await products.POST(json({ ...setup, connectionId: "" }))).status, 400);
-  assert.equal((await product.PATCH(json({ name: "A", repositories: [] }, "PATCH"), ctx("alpha"))).status, 400);
-  assert.equal((await sync.POST(json({ action: "dismiss" }), ctx("alpha"))).status, 400);
+  assert.equal(
+    (await products.POST(json({ ...setup, connectionId: "" }))).status,
+    400,
+  );
+  assert.equal(
+    (
+      await product.PATCH(
+        json({ name: "A", repositories: [] }, "PATCH"),
+        ctx("alpha"),
+      )
+    ).status,
+    400,
+  );
+  assert.equal(
+    (await sync.POST(json({ action: "dismiss" }), ctx("alpha"))).status,
+    400,
+  );
   assert.equal(seen.length, before);
 });
 
-test("in engine mode the mock thread routes accept an engine-created Product id", async () => {
+const threadCtx = (productId: string, threadId: string) => ({
+  params: Promise.resolve({ productId, threadId }),
+});
+const threadRoute =
+  await import("../src/app/api/products/[productId]/threads/[threadId]/route");
+const messages =
+  await import("../src/app/api/products/[productId]/threads/[threadId]/messages/route");
+
+test("thread routes forward to /ui/products/:slug/threads in engine mode", async () => {
+  process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
+  reply = { status: 200, body: [] };
   const get = () => new Request("http://localhost/api/x");
-  assert.equal((await threads.GET(get(), ctx("engine-made"))).status, 200);
+  const before = seen.length;
+  await threads.GET(get(), ctx("alpha"));
+  await threads.POST(json({}), ctx("alpha"));
+  await threadRoute.GET(get(), threadCtx("alpha", "t 1"));
+  assert.deepEqual(
+    seen.slice(before).map((c) => [c.method, c.url]),
+    [
+      ["GET", "/ui/products/alpha/threads"],
+      ["POST", "/ui/products/alpha/threads"],
+      ["GET", "/ui/products/alpha/threads/t%201"],
+    ],
+  );
   delete process.env.ENGINE_URL;
   assert.equal((await threads.GET(get(), ctx("engine-made"))).status, 404);
+});
+
+test("chat messages: 503 without the engine; the engine's stream passes through unbuffered; its errors become { error }", async () => {
+  delete process.env.ENGINE_URL;
+  assert.equal(
+    (await messages.POST(json({ text: "hi" }), threadCtx("alpha", "t1")))
+      .status,
+    503,
+  );
+
+  let release!: () => void;
+  const gate = new Promise<void>((r) => (release = r));
+  let engineSaw: { url?: string; authorization?: string; body: string } = {
+    body: "",
+  };
+  const streaming = http.createServer(async (req, res) => {
+    for await (const chunk of req) engineSaw.body += chunk;
+    engineSaw = {
+      ...engineSaw,
+      url: req.url,
+      authorization: req.headers.authorization,
+    };
+    res.writeHead(200, {
+      "content-type": "text/event-stream",
+      "x-vercel-ai-ui-message-stream": "v1",
+    });
+    res.write("data: one\n\n");
+    await gate;
+    res.write("data: two\n\n");
+    res.end();
+  });
+  await new Promise<void>((r) => streaming.listen(0, "127.0.0.1", r));
+  try {
+    process.env.ENGINE_URL = `http://127.0.0.1:${(streaming.address() as AddressInfo).port}`;
+    const res = await messages.POST(
+      json({ text: "hi there" }),
+      threadCtx("alpha", "t1"),
+    );
+    assert.deepEqual(
+      [
+        res.status,
+        res.headers.get("content-type"),
+        res.headers.get("x-vercel-ai-ui-message-stream"),
+      ],
+      [200, "text/event-stream", "v1"],
+    );
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    const first = decoder.decode((await reader.read()).value);
+    assert.equal(
+      first,
+      "data: one\n\n",
+      "the first chunk arrives while the engine is still working",
+    );
+    release();
+    let rest = "";
+    for (let r = await reader.read(); !r.done; r = await reader.read())
+      rest += decoder.decode(r.value);
+    assert.equal(rest, "data: two\n\n");
+    assert.deepEqual(
+      [engineSaw.url, engineSaw.authorization, JSON.parse(engineSaw.body)],
+      [
+        "/ui/products/alpha/threads/t1/messages",
+        "Bearer admin-token-for-test",
+        { text: "hi there" },
+      ],
+    );
+  } finally {
+    streaming.closeAllConnections();
+    streaming.close();
+  }
+
+  // A history, an unknown key or an empty question never reaches the engine.
+  process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
+  const count = seen.length;
+  for (const bad of [
+    { text: "x", messages: [] },
+    { text: " " },
+    { text: "x", extra: 1 },
+    {},
+  ])
+    assert.equal(
+      (await messages.POST(json(bad), threadCtx("alpha", "t1"))).status,
+      400,
+    );
+  assert.equal(seen.length, count);
+
+  reply = {
+    status: 409,
+    body: {
+      statusCode: 409,
+      errorCode: "NO_GENERATION",
+      message: "Chat opens when the first Evidence Generation publishes.",
+    },
+  };
+  const conflict = await messages.POST(
+    json({ text: "hi" }),
+    threadCtx("alpha", "t1"),
+  );
+  assert.deepEqual(
+    [conflict.status, await conflict.json()],
+    [
+      409,
+      { error: "Chat opens when the first Evidence Generation publishes." },
+    ],
+  );
+  delete process.env.ENGINE_URL;
+});
+
+test("a client that goes away aborts the engine call", async () => {
+  let closed!: () => void;
+  const gone = new Promise<void>((r) => (closed = r));
+  const hanging = http.createServer((req, res) => {
+    res.on("close", closed);
+    res.writeHead(200, { "content-type": "text/event-stream" });
+    res.write("data: start\n\n");
+  });
+  await new Promise<void>((r) => hanging.listen(0, "127.0.0.1", r));
+  try {
+    process.env.ENGINE_URL = `http://127.0.0.1:${(hanging.address() as AddressInfo).port}`;
+    const abort = new AbortController();
+    const res = await messages.POST(
+      new Request("http://localhost/api/x", {
+        method: "POST",
+        body: JSON.stringify({ text: "hi" }),
+        signal: abort.signal,
+      }),
+      threadCtx("alpha", "t1"),
+    );
+    await res.body!.getReader().read();
+    abort.abort();
+    await gone;
+  } finally {
+    delete process.env.ENGINE_URL;
+    hanging.closeAllConnections();
+    hanging.close();
+  }
 });

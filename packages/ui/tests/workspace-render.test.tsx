@@ -12,7 +12,8 @@ import {
   useWorkspace,
 } from "../src/components/layout/workspace-shell";
 import { keys } from "../src/lib/api/client";
-import { seedProducts } from "../src/lib/mock/fixtures";
+import { ChatView } from "../src/features/chat/chat-view";
+import { makeAnswer, makeStatus, seedProducts } from "../src/lib/mock/fixtures";
 
 const router: AppRouterInstance = {
   back() {},
@@ -87,4 +88,38 @@ test("saved conversations render outside the main page navigation", () => {
   assert.ok(history.includes("Saved conversation"));
   assert.ok(history.includes("New thread"));
   assert.ok(history.includes('aria-current="page"'));
+});
+
+test("a saved thread seeds useChat and renders its answers with citations", () => {
+  const product = seedProducts[0];
+  const answer = makeAnswer(product, "What calls POST /v1/refunds?", "g-0042");
+  const html = renderToStaticMarkup(
+    <AppRouterContext.Provider value={router}>
+      <PathnameContext.Provider value={`/${product.id}/chat/saved`}>
+        <SWRConfig
+          value={{
+            provider: () => new Map(),
+            fallback: {
+              [keys.status(product.id)]: makeStatus(product),
+              [keys.thread(product.id, "saved")]: {
+                id: "saved",
+                productId: product.id,
+                title: "Saved conversation",
+                updatedAt: Date.now(),
+                answers: [answer],
+              },
+            },
+          }}
+        >
+          <WorkspaceShell productId={product.id} initialProduct={product}>
+            <ChatView threadId="saved" />
+          </WorkspaceShell>
+        </SWRConfig>
+      </PathnameContext.Provider>
+    </AppRouterContext.Provider>,
+  );
+  assert.ok(html.includes("What calls POST /v1/refunds?"));
+  assert.ok(html.includes("Grounded answer"));
+  assert.ok(html.includes(`${answer.evidence.length} sources`));
+  assert.ok(html.includes('aria-label="Read source 1"'));
 });

@@ -41,11 +41,9 @@ export default function DocsPage() {
         real credentials here. Mock source excerpts are not hosted on GitHub.
       </p>
       <p>
-        Try a refund question for a grounded answer, a support-console payload
-        question for a partial answer, or an overnight settlement schedule
-        question for an abstention. Other questions abstain. Append{" "}
-        <code>[network-error]</code> or <code>[access-error]</code> to a
-        question to preview those failure states.
+        The saved sample threads show a grounded, a partial, and an abstained
+        answer. New questions are answered by the Falkon engine, so asking needs{" "}
+        <code>ENGINE_URL</code> to be set.
       </p>
       <Link href="/setup" className="btn pri">
         Set up a Product

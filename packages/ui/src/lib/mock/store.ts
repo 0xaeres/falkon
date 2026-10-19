@@ -128,9 +128,6 @@ export class MockError extends Error {
 }
 export function findProduct(db: Database, id: string): Product {
   const product = db.products.find((item) => item.id === id);
-  // S21 replaces: in engine mode Products live in the engine, so the mock thread routes accept any id.
-  if (!product && process.env.ENGINE_URL)
-    return { id, name: id, initials: "", provider: "github", host: "", repositories: [], activeGeneration: null, scenario: "building", queuedAt: null };
   if (!product) throw new MockError("Product not found.", 404);
   return product;
 }

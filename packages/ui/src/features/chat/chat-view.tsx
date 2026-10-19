@@ -1,6 +1,13 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -23,8 +30,18 @@ import {
   ErrorState,
   LoadingMark,
 } from "@/components/ui/primitives";
-import { api, keys } from "@/lib/api/client";
-import type { Answer } from "@sbc/contracts";
+import { useChat } from "@ai-sdk/react";
+import type { UIMessage } from "ai";
+import { ApiError, api, keys } from "@/lib/api/client";
+import { chatTransport } from "@/lib/api/chat-transport";
+import {
+  answersToMessages,
+  messagesToAnswers,
+  rewriteFileRefs,
+  type Answer,
+  type Status,
+  type Thread,
+} from "@sbc/contracts";
 const EvidencePanel = dynamic(() => import("./evidence-panel"), {
   loading: () => <LoadingMark label="Loading evidence" />,
 });
@@ -67,6 +84,29 @@ function Prose({
   );
 }
 
+const ANSWER_TAG = "<!--answer-->";
+const hasAnswer = (message?: UIMessage) =>
+  !!message?.parts.some((part) => part.type === "data-answer");
+/** The streaming preview: the text after the answer tag, references as [n], a half-written reference hidden. */
+const preview = (message?: UIMessage) => {
+  const text = message?.parts.findLast((part) => part.type === "text");
+  const raw = text?.type === "text" ? text.text : "";
+  const tag = raw.indexOf(ANSWER_TAG);
+  return rewriteFileRefs(
+    (tag === -1 ? raw : raw.slice(tag + ANSWER_TAG.length)).replace(
+      /@file:\{[^}]*$/,
+      "",
+    ),
+  ).trimStart();
+};
+/** A stopped or failed turn leaves a half-written assistant message; it is not an answer. */
+const dropIncomplete = (messages: UIMessage[]) => {
+  const last = messages.at(-1);
+  return last?.role === "assistant" && !hasAnswer(last)
+    ? messages.slice(0, -1)
+    : messages;
+};
+
 export function ChatView({ threadId }: { threadId?: string }) {
   const { product, status, statusError, refreshStatus } = useWorkspace();
   const {
@@ -74,14 +114,49 @@ export function ChatView({ threadId }: { threadId?: string }) {
     error: threadError,
     mutate: refreshThread,
   } = useSWR(threadId ? keys.thread(product.id, threadId) : null, api.thread);
+  if (statusError)
+    return (
+      <ErrorState error={statusError} retry={() => void refreshStatus()} />
+    );
+  if (threadError)
+    return (
+      <ErrorState error={threadError} retry={() => void refreshThread()} />
+    );
+  if (!status || (threadId && !thread))
+    return <LoadingMark label="Loading chat" />;
+  return (
+    <ChatSession
+      key={threadId ?? "new"}
+      threadId={threadId}
+      thread={thread}
+      status={status}
+      refreshThread={() => refreshThread()}
+    />
+  );
+}
+
+type Finished = { messages: UIMessage[]; isAbort: boolean; isError: boolean };
+
+/** One conversation. The stored answers seed `useChat` once; from then on its messages are what is shown. */
+function ChatSession({
+  threadId,
+  thread,
+  status,
+  refreshThread,
+}: {
+  threadId?: string;
+  thread?: Thread;
+  status: Status;
+  refreshThread: () => Promise<unknown>;
+}) {
+  const { product } = useWorkspace();
   const { mutate } = useSWRConfig();
   const router = useRouter();
   const [question, setQuestion] = useState("");
   const [pendingQuestion, setPendingQuestion] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [live, setLive] = useState<Answer | null>(null);
-  const [streamText, setStreamText] = useState("");
-  const [error, setError] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [stopped, setStopped] = useState(false);
+  const [notice, setNotice] = useState("");
   const [selection, setSelection] = useState<{
     answerId: string;
     sourceId: number;
@@ -89,27 +164,69 @@ export function ChatView({ threadId }: { threadId?: string }) {
   const [closed, setClosed] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [copied, setCopied] = useState("");
-  const controller = useRef<AbortController | null>(null);
+  const target = useRef(threadId);
+  const finished = useRef<(done: Finished) => void>(undefined);
   const threadArea = useRef<HTMLDivElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
-  useEffect(
-    () => () => {
-      controller.current?.abort();
-    },
+  // Seeds the first render only.
+  const initial = useMemo(
+    () => answersToMessages(thread?.answers ?? []) as UIMessage[],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+  const transport = useMemo(() => chatTransport(product.id), [product.id]);
+  const chat = useChat({
+    id: threadId ?? "new-thread",
+    messages: initial,
+    transport,
+    onFinish: (done) => finished.current?.(done),
+  });
   useEffect(() => {
-    if (busy && threadArea.current)
+    finished.current = ({ messages, isAbort, isError }) => {
+      if (isAbort || isError) return chat.setMessages(dropIncomplete(messages));
+      setPendingQuestion("");
+      void mutate(keys.threads(product.id));
+      void refreshThread();
+      if (!threadId && target.current)
+        router.replace(`/${product.id}/chat/${target.current}`);
+    };
+  });
+  const lastMessage = chat.messages.at(-1);
+  const inFlight = chat.status === "submitted" || chat.status === "streaming";
+  const arrived = hasAnswer(lastMessage);
+  // Working: asking, or waiting for the answer parts, which arrive just before the stream ends.
+  const working = (creating || inFlight) && !arrived;
+  const busy = creating || inFlight;
+  const settled =
+    inFlight && !arrived
+      ? chat.messages.slice(0, lastMessage?.role === "assistant" ? -2 : -1)
+      : chat.messages;
+  const answers = useMemo(
+    () => messagesToAnswers(product.id, settled),
+    [product.id, settled],
+  );
+  const streamText = working ? preview(lastMessage) : "";
+  const filesRead =
+    working && lastMessage?.role === "assistant"
+      ? lastMessage.parts.filter((part) => part.type === "data-source").length
+      : 0;
+  const error = stopped
+    ? "Answer stopped. Your question is kept; retry when ready."
+    : notice ||
+      (chat.error
+        ? chat.error instanceof ApiError
+          ? chat.error.message
+          : "The answer didn’t arrive. Your question is kept; try again."
+        : "");
+  useEffect(() => {
+    if (working && threadArea.current)
       threadArea.current.scrollTop = threadArea.current.scrollHeight;
-  }, [streamText, busy]);
-  const answers = thread?.answers ?? [];
-  const latest =
-    live ?? [...answers].reverse().find((answer) => answer.evidence.length);
+  }, [streamText, working]);
+  const latest = [...answers]
+    .reverse()
+    .find((answer) => answer.evidence.length);
   const selectedAnswer =
-    (selection &&
-      [...answers, ...(live ? [live] : [])].find(
-        (answer) => answer.id === selection.answerId,
-      )) ||
+    (selection && answers.find((answer) => answer.id === selection.answerId)) ||
     latest;
   const selectedSource =
     selection?.sourceId ??
@@ -124,57 +241,32 @@ export function ChatView({ threadId }: { threadId?: string }) {
   }
   async function send(value = question) {
     const text = value.trim();
-    if (!text || busy || !status?.generation) return;
-    setBusy(true);
-    setError("");
+    if (!text || busy || !status.generation) return;
+    setNotice("");
+    setStopped(false);
     setPendingQuestion(text);
     setQuestion("");
-    setStreamText("");
-    setLive(null);
-    const abort = new AbortController();
-    controller.current = abort;
-    try {
-      let targetId = threadId;
-      if (!targetId) {
+    setSelection(null);
+    setClosed(false);
+    if (!target.current) {
+      setCreating(true);
+      try {
         const created = await api.newThread(product.id);
-        await mutate(keys.threads(product.id));
-        targetId = created.id;
-      }
-      await api.stream(
-        product.id,
-        { threadId: targetId, question: text },
-        AbortSignal.any([abort.signal, AbortSignal.timeout(30000)]),
-        (event) => {
-          if (event.type === "start") {
-            setLive(event.answer);
-            setClosed(false);
-            setSelection(null);
-          }
-          if (event.type === "delta")
-            setStreamText((previous) => previous + event.text);
-          if (event.type === "done") {
-            void refreshThread(event.thread, { revalidate: false });
-            setLive(null);
-            setPendingQuestion("");
-            void mutate(keys.threads(product.id));
-          }
-        },
-      );
-      if (!threadId) router.replace(`/${product.id}/chat/${targetId}`);
-    } catch (error) {
-      setLive(null);
-      setError(
-        abort.signal.aborted
-          ? "Answer stopped. Your question is kept; retry when ready."
-          : error instanceof Error
-            ? error.message
+        target.current = created.id;
+        void mutate(keys.threads(product.id));
+      } catch (failure) {
+        setNotice(
+          failure instanceof Error
+            ? failure.message
             : "The answer didn’t arrive. Your question is kept; try again.",
-      );
-    } finally {
-      setBusy(false);
-      controller.current = null;
-      composer.current?.focus();
+        );
+        return;
+      } finally {
+        setCreating(false);
+      }
     }
+    await chat.sendMessage({ text }, { body: { threadId: target.current } });
+    composer.current?.focus();
   }
   async function copy(answer: Answer) {
     try {
@@ -193,19 +285,9 @@ export function ChatView({ threadId }: { threadId?: string }) {
       );
       setCopied(answer.id);
     } catch {
-      setError("Clipboard unavailable. Select the answer text to copy it.");
+      setNotice("Clipboard unavailable. Select the answer text to copy it.");
     }
   }
-  if (statusError)
-    return (
-      <ErrorState error={statusError} retry={() => void refreshStatus()} />
-    );
-  if (threadError)
-    return (
-      <ErrorState error={threadError} retry={() => void refreshThread()} />
-    );
-  if (!status || (threadId && !thread))
-    return <LoadingMark label="Loading chat" />;
   const evidence = selectedAnswer && (
     <EvidencePanel
       answer={selectedAnswer}
@@ -366,20 +448,20 @@ export function ChatView({ threadId }: { threadId?: string }) {
               ))}
             </article>
           ))}
-          {pendingQuestion && (
+          {pendingQuestion && (working || !!error) && (
             <article className="answer-turn">
               <div className="q">{pendingQuestion}</div>
-              {busy && (
+              {working && (
                 <>
                   <div className="working">
                     <div>
                       <Check size={14} />
                       Searched {product.repositories.length} repositories in{" "}
-                      {live?.generation ?? status.generation}
+                      {status.generation}
                     </div>
                     <div>
                       <Check size={14} />
-                      Read {live?.evidence.length ?? 0} declaration units
+                      Read {filesRead} {filesRead === 1 ? "file" : "files"}
                     </div>
                     <div>
                       <span className="stream-dot" />
@@ -465,7 +547,10 @@ export function ChatView({ threadId }: { threadId?: string }) {
                 type="button"
                 className="send"
                 aria-label="Stop answer"
-                onClick={() => controller.current?.abort()}
+                onClick={() => {
+                  setStopped(true);
+                  void chat.stop();
+                }}
               >
                 <Square size={14} />
               </button>

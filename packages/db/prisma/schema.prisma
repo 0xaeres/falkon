@@ -180,9 +180,13 @@ model Chat {
   visibility ChatVisibility @default(PRIVATE)
   /// Who created it: the caller's principal (access key name, "admin", "anonymous").
   createdBy  String?
+  /// The Product a UI thread belongs to (its slug); null for chats made through the web Ask routes.
+  productId  String?
   messages   Json           @default("[]")
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
+
+  @@index([productId, updatedAt])
 }
 
 model KnowledgeScan {
