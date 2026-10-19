@@ -2,11 +2,13 @@
 import { prisma } from "@sbc/db";
 import { accessPolicyFromEnv } from "@sbc/shared";
 import { handleMcpDelete, handleMcpPost } from "../../web/src/lib/mcp";
-import { createAdminApp } from "./admin";
+import { adminToken, startAdmin } from "./admin";
 import { createApp } from "./app";
 import { PrismaProductRegistry } from "./product";
 
 // An AUTH_MODE other than none or apiKey throws here: the service refuses to start.
+// A set ADMIN_TOKEN shorter than 32 characters throws here too, before anything listens.
+adminToken(process.env);
 const policy = accessPolicyFromEnv(process.env);
 const registry = new PrismaProductRegistry(prisma);
 
@@ -17,9 +19,4 @@ app.enableShutdownHooks();
 await app.listen(port, host);
 console.log(`api listening on ${host}:${port} (AUTH_MODE=${process.env.AUTH_MODE ?? "none"})`);
 
-const adminHost = process.env.API_ADMIN_HOST ?? "127.0.0.1";
-const adminPort = Number(process.env.API_ADMIN_PORT ?? 3002);
-const admin = await createAdminApp(registry);
-admin.enableShutdownHooks();
-await admin.listen(adminPort, adminHost);
-console.log(`api admin listening on ${adminHost}:${adminPort}`);
+await startAdmin(registry);

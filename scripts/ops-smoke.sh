@@ -21,6 +21,8 @@ api_base="http://127.0.0.1:$api_port"
 admin_port=${SMOKE_ADMIN_PORT:-3302}
 admin_base="http://127.0.0.1:$admin_port"
 timeout=${SMOKE_TIMEOUT:-300}
+# A random admin token for this disposable stack only; it reaches the compose file through the environment, not argv.
+admin_token=$(node -e "process.stdout.write(require('node:crypto').randomBytes(24).toString('hex'))")
 compose() { docker compose -p "$project" -f "$temp/compose.json" "$@"; }
 cleanup() {
     code=$?
@@ -44,7 +46,7 @@ trap cleanup EXIT
 trap 'exit 130' HUP INT TERM
 step=fixtures
 sh "$root/tests/fixtures/build.sh" "$temp" >/dev/null
-node - "$root" "$temp" "$port" "$api_port" "$admin_port" docker/Dockerfile <<'JS'
+ADMIN_TOKEN="$admin_token" node - "$root" "$temp" "$port" "$api_port" "$admin_port" docker/Dockerfile <<'JS'
 const fs = require('node:fs');
 const [root, temp, port, apiPort, adminPort, dockerfile] = process.argv.slice(2);
 const env = { DATABASE_URL: 'postgresql://sbc:sbc@postgres:5432/sbc', REDIS_URL: 'redis://redis:6379', DATA_DIR: '/data', CONFIG_PATH: '/fixtures/config.json', ZOEKT_URL: 'http://zoekt:6070', AUTH_URL: `http://127.0.0.1:${port}`, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'safe.directory', GIT_CONFIG_VALUE_0: '*' };
@@ -55,7 +57,7 @@ const compose = { services: {
   backend: { ...app, build: { context: root, dockerfile }, command: ['sh', '-c', 'pnpm --filter @sbc/db push && pnpm --filter @sbc/backend start'], depends_on: { postgres: { condition: 'service_healthy' }, redis: { condition: 'service_healthy' } } },
   zoekt: { ...app, command: ['zoekt-webserver', '-index', '/data/index', '-rpc', '-listen', ':6070'], depends_on: ['backend'] },
   web: { ...app, command: ['pnpm', '--filter', '@sbc/web', 'start'], ports: [`127.0.0.1:${port}:3000`], depends_on: ['backend', 'zoekt'] },
-  api: { ...app, environment: { ...env, API_HOST: '0.0.0.0', API_ADMIN_HOST: '0.0.0.0', AUTH_MODE: 'none' }, command: ['node', 'packages/api/dist/main.js'], ports: [`127.0.0.1:${apiPort}:3001`, `127.0.0.1:${adminPort}:3002`], depends_on: ['backend', 'zoekt'] }
+  api: { ...app, environment: { ...env, API_HOST: '0.0.0.0', API_ADMIN_HOST: '0.0.0.0', AUTH_MODE: 'none', ADMIN_TOKEN: process.env.ADMIN_TOKEN }, command: ['node', 'packages/api/dist/main.js'], ports: [`127.0.0.1:${apiPort}:3001`, `127.0.0.1:${adminPort}:3002`], depends_on: ['backend', 'zoekt'] }
 }, volumes: { pgdata: {}, data: {} } };
 fs.writeFileSync(`${temp}/compose.json`, JSON.stringify(compose));
 JS
@@ -108,12 +110,16 @@ done
 [ "$(mcp_post no-such-product)" = 404 ] || fail 'api: unknown Product is not 404'
 pass "$step"
 step=registry
-# An api Product created on the admin port is served at /mcp/<slug> at once, and is gone once deleted.
-# The admin routes do not exist on the product port.
+# An api Product created on the admin port (with the token) is served at /mcp/<slug> at once, and is gone once deleted.
+# The admin routes do not exist on the product port, and the admin port refuses a missing or wrong token.
 status() { curl --silent --show-error --max-time 10 --output /dev/null --write-out '%{http_code}' "$@" 2>/dev/null || :; }
+auth="authorization: Bearer $admin_token"
+product_json='{"slug":"smoke-registry","name":"Smoke registry","definition":{"include":["fixtures.test/*"]}}'
 [ "$(status "$api_base/products")" = 404 ] || fail 'registry: admin routes answer on the product port'
-[ "$(status --request POST --header 'content-type: application/json' \
-    --data '{"slug":"smoke-registry","name":"Smoke registry","definition":{"include":["fixtures.test/*"]}}' "$admin_base/products")" = 201 ] ||
+[ "$(status "$admin_base/products")" = 401 ] || fail 'registry: a tokenless admin call is not 401'
+[ "$(status --header 'authorization: Bearer wrong-token' "$admin_base/products")" = 401 ] || fail 'registry: a wrong-token admin call is not 401'
+[ "$(status --request POST --header 'content-type: application/json' --data "$product_json" "$admin_base/products")" = 401 ] || fail 'registry: a tokenless create is not 401'
+[ "$(status --request POST --header "$auth" --header 'content-type: application/json' --data "$product_json" "$admin_base/products")" = 201 ] ||
     fail 'registry: create on the admin port failed'
 [ "$(status --request POST --header 'content-type: application/json' --header 'accept: application/json, text/event-stream' --dump-header "$temp/registry.headers" \
     --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"smoke","version":"1"}}}' \
@@ -124,7 +130,7 @@ curl --silent --show-error --max-time 10 --request POST --header 'content-type: 
     --header "mcp-session-id: $session" --header 'mcp-protocol-version: 2025-03-26' \
     --data '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' --output "$temp/registry.tools" "$api_base/mcp/smoke-registry" 2>/dev/null || :
 grep -q '"read_file"' "$temp/registry.tools" || fail 'registry: tools/list on the new Product failed'
-[ "$(status --request DELETE "$admin_base/products/smoke-registry")" = 204 ] || fail 'registry: delete on the admin port failed'
+[ "$(status --request DELETE --header "$auth" "$admin_base/products/smoke-registry")" = 204 ] || fail 'registry: delete on the admin port failed'
 [ "$(mcp_post smoke-registry)" = 404 ] || fail 'registry: a deleted Product is still served'
 pass "$step"
 step=oversized-file

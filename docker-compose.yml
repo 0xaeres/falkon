@@ -52,7 +52,8 @@ services:
 
   # NestJS boundary (strangler): serves /mcp/<product> beside web's untouched /api/mcp, and the Product
   # registry admin API on a second listener (3002). Both are published on host loopback only; the 0.0.0.0
-  # binds are inside the container. The admin listener has no authentication: never publish it further.
+  # binds are inside the container. The admin listener only runs when ADMIN_TOKEN (32+ characters) is set and
+  # then needs `Authorization: Bearer <token>`; unset, nothing listens on 3002 and the published port is unused.
   # AUTH_MODE=apiKey needs ACCESS_FILE pointing at a mounted access file, or it denies everyone.
   api:
     <<: *app
@@ -68,6 +69,7 @@ services:
       API_HOST: 0.0.0.0
       API_ADMIN_HOST: 0.0.0.0
       AUTH_MODE: ${AUTH_MODE:-none}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
     volumes: [data:/data, "./config.json:/config/config.json:ro"]
     ports: ["127.0.0.1:3001:3001", "127.0.0.1:3002:3002"]
     depends_on: [backend, zoekt]
