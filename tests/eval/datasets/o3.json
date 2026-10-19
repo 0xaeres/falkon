@@ -1,0 +1,215 @@
+{
+  "id": "o3",
+  "repositories": [
+    {
+      "name": "openmrs-core",
+      "commit": "5eb8cba2e30befeaec8ab7892dff14ac7dcc9d87",
+      "checkout": "openmrs-core"
+    },
+    {
+      "name": "openmrs-module-webservices.rest",
+      "commit": "66d284b5105a13d5221e103e0243711b69f2dac0",
+      "checkout": "xrepo/openmrs-module-webservices.rest"
+    },
+    {
+      "name": "openmrs-esm-core",
+      "commit": "7a172083f27035a8f20aa71fbc5e208ab07fa97a",
+      "checkout": "xrepo/openmrs-esm-core"
+    },
+    {
+      "name": "openmrs-esm-patient-chart",
+      "commit": "45cb44919ca658d571a30355536c03e775552678",
+      "checkout": "xrepo/openmrs-esm-patient-chart"
+    },
+    {
+      "name": "openmrs-contrib-o3-docs",
+      "commit": "70eb11d9ea071939cc343b2b7332ac5565db6e89",
+      "checkout": "o3/openmrs-contrib-o3-docs"
+    },
+    {
+      "name": "openmrs-esm-admin-tools",
+      "commit": "3d76809c1766a7d933a08f718b203fa0d37e0511",
+      "checkout": "o3/openmrs-esm-admin-tools"
+    },
+    {
+      "name": "openmrs-esm-billing-app",
+      "commit": "c770afca8921295dd87d8e7c185a8a4fef231376",
+      "checkout": "o3/openmrs-esm-billing-app"
+    },
+    {
+      "name": "openmrs-esm-cohortbuilder-app",
+      "commit": "1fde6400b498c29eff22113e31cd2c74384420b7",
+      "checkout": "o3/openmrs-esm-cohortbuilder-app"
+    },
+    {
+      "name": "openmrs-esm-dispensing-app",
+      "commit": "4e8cbeeb72bef9bd22bb77ead5300d422fbef57d",
+      "checkout": "o3/openmrs-esm-dispensing-app"
+    },
+    {
+      "name": "openmrs-esm-fast-data-entry-app",
+      "commit": "2f2083eab82f96b5bae46514895072f231c7ac49",
+      "checkout": "o3/openmrs-esm-fast-data-entry-app"
+    },
+    {
+      "name": "openmrs-esm-form-builder",
+      "commit": "d897c8e3a210f3a5511513989c7ed71d89678c63",
+      "checkout": "o3/openmrs-esm-form-builder"
+    },
+    {
+      "name": "openmrs-esm-form-engine-lib",
+      "commit": "8f4fd2677aae1d8a8c522f710059b0f26b22d4bb",
+      "checkout": "o3/openmrs-esm-form-engine-lib"
+    },
+    {
+      "name": "openmrs-esm-laboratory-app",
+      "commit": "a8368280541c4fc42113bad55aeab8658e344109",
+      "checkout": "o3/openmrs-esm-laboratory-app"
+    },
+    {
+      "name": "openmrs-esm-patient-management",
+      "commit": "96a7237f4ef0dea296a9e6b3a8c67b3837a8ad82",
+      "checkout": "o3/openmrs-esm-patient-management"
+    },
+    {
+      "name": "openmrs-esm-stock-management-app",
+      "commit": "9777f6d4a456e0ea336dfce4b002830475dfa965",
+      "checkout": "o3/openmrs-esm-stock-management-app"
+    },
+    {
+      "name": "openmrs-esm-user-onboarding-app",
+      "commit": "0b723746cb196ed26ed3e212e4034157727ca4f3",
+      "checkout": "o3/openmrs-esm-user-onboarding-app"
+    },
+    {
+      "name": "openmrs-module-addresshierarchy",
+      "commit": "31f81a6870274d5fd2f4e6d1381532df6e4fb36a",
+      "checkout": "o3/openmrs-module-addresshierarchy"
+    },
+    {
+      "name": "openmrs-module-attachments",
+      "commit": "a7743f4b080852ba2345506820493f02a38c8206",
+      "checkout": "o3/openmrs-module-attachments"
+    },
+    {
+      "name": "openmrs-module-authentication",
+      "commit": "924603abcc95453e5b8730b1c00d07a6ab04668e",
+      "checkout": "o3/openmrs-module-authentication"
+    },
+    {
+      "name": "openmrs-module-bedmanagement",
+      "commit": "9c0af0fe38cbbeb34bebee0938393d4f84bddbd0",
+      "checkout": "o3/openmrs-module-bedmanagement"
+    },
+    {
+      "name": "openmrs-module-billing",
+      "commit": "6409aa01cf31b462149416a7eeb19d1d34cd6f8d",
+      "checkout": "o3/openmrs-module-billing"
+    },
+    {
+      "name": "openmrs-module-calculation",
+      "commit": "b22f6aa4704d636455a868bbb8e6db7abbf6130a",
+      "checkout": "o3/openmrs-module-calculation"
+    },
+    {
+      "name": "openmrs-module-cohort",
+      "commit": "f2304f8645f0aa2755220a0728a0a995a645938c",
+      "checkout": "o3/openmrs-module-cohort"
+    },
+    {
+      "name": "openmrs-module-emrapi",
+      "commit": "4e759ad9f0e236467874e55ad57781b388523540",
+      "checkout": "o3/openmrs-module-emrapi"
+    },
+    {
+      "name": "openmrs-module-event",
+      "commit": "f02b8fb26ffa1d7bb4735b2b5abb72d105602bd2",
+      "checkout": "o3/openmrs-module-event"
+    },
+    {
+      "name": "openmrs-module-fhir2",
+      "commit": "00a511277f7e95ea4a8364a0f78b5f6211429040",
+      "checkout": "o3/openmrs-module-fhir2"
+    },
+    {
+      "name": "openmrs-module-htmlwidgets",
+      "commit": "9531daebc709c644c284458c3d32728429f0a80d",
+      "checkout": "o3/openmrs-module-htmlwidgets"
+    },
+    {
+      "name": "openmrs-module-idgen",
+      "commit": "2b7e69b2b2cd790d7ec28701b1e11e0a02521b58",
+      "checkout": "o3/openmrs-module-idgen"
+    },
+    {
+      "name": "openmrs-module-legacyui",
+      "commit": "90fc6334a81ac07986be053be2e571d7ac1bc939",
+      "checkout": "o3/openmrs-module-legacyui"
+    },
+    {
+      "name": "openmrs-module-metadataexport",
+      "commit": "96cf3b917b2536d4d9c61bfc892e44b6de159f12",
+      "checkout": "o3/openmrs-module-metadataexport"
+    },
+    {
+      "name": "openmrs-module-metadatamapping",
+      "commit": "758365f1062826eadad53ae518c432083c11ea57",
+      "checkout": "o3/openmrs-module-metadatamapping"
+    },
+    {
+      "name": "openmrs-module-o3forms",
+      "commit": "b1a6e27a3162408a0ec765d5f1cbd9d76509ad83",
+      "checkout": "o3/openmrs-module-o3forms"
+    },
+    {
+      "name": "openmrs-module-openconceptlab",
+      "commit": "efc3f958b3fba15733939844864513f0690dca76",
+      "checkout": "o3/openmrs-module-openconceptlab"
+    },
+    {
+      "name": "openmrs-module-ordertemplates",
+      "commit": "412829e08923e6ced9e4b52ff7379f3d4a0ca99b",
+      "checkout": "o3/openmrs-module-ordertemplates"
+    },
+    {
+      "name": "openmrs-module-patientdocuments",
+      "commit": "d13767c8432fc2bd233aab85172a5130ef83fc89",
+      "checkout": "o3/openmrs-module-patientdocuments"
+    },
+    {
+      "name": "openmrs-module-patientflags",
+      "commit": "b53b6b714788cabf34107f89092cf60505e7e7e9",
+      "checkout": "o3/openmrs-module-patientflags"
+    },
+    {
+      "name": "openmrs-module-queue",
+      "commit": "22f809e7c9ad44323be9dbd61cc9b91a739f5305",
+      "checkout": "o3/openmrs-module-queue"
+    },
+    {
+      "name": "openmrs-module-reporting",
+      "commit": "cab6021d3b133dc8e24f0362dfcc3bfa1a8b407f",
+      "checkout": "o3/openmrs-module-reporting"
+    },
+    {
+      "name": "openmrs-module-reportingrest",
+      "commit": "99a755e26b1468668ccea1a237b605c427b741b6",
+      "checkout": "o3/openmrs-module-reportingrest"
+    },
+    {
+      "name": "openmrs-module-serialization.xstream",
+      "commit": "5a6160c0e32678da68a7e98bc9cf917316d2b5d3",
+      "checkout": "o3/openmrs-module-serialization.xstream"
+    },
+    {
+      "name": "openmrs-module-stockmanagement",
+      "commit": "dc2a1f207c1e2de7214fb4f0b20c3057e225d34a",
+      "checkout": "o3/openmrs-module-stockmanagement"
+    },
+    {
+      "name": "openmrs-module-tasks",
+      "commit": "63ce34cf404aa91b27a3e5a93cb008926613f5c2",
+      "checkout": "o3/openmrs-module-tasks"
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "xrepo-docs-30": [
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/recipes/format-dates.mdx",
+      "startLine": 7,
+      "endLine": 42
+    }
+  ],
+  "xrepo-docs-19": [
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/configuration-system.mdx",
+      "startLine": 17,
+      "endLine": 23
+    },
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/configuration-system.mdx",
+      "startLine": 50,
+      "endLine": 66
+    }
+  ],
+  "xrepo-docs-20": [
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/extension-system.mdx",
+      "startLine": 528,
+      "endLine": 536
+    },
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/coding-conventions/performance.mdx",
+      "startLine": 24,
+      "endLine": 41
+    }
+  ],
+  "xrepo-docs-17": [
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/coding-conventions/data-fetching.mdx",
+      "startLine": 34,
+      "endLine": 34
+    }
+  ],
+  "xrepo-docs-28": [],
+  "xrepo-docs-26": [
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/modal-system.mdx",
+      "startLine": 71,
+      "endLine": 84
+    },
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/modal-system.mdx",
+      "startLine": 129,
+      "endLine": 131
+    }
+  ],
+  "xrepo-docs-18": [
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/configure-o3/overview.mdx",
+      "startLine": 369,
+      "endLine": 369
+    }
+  ],
+  "xrepo-docs-29": [
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/workspaces/launching-workspaces.mdx",
+      "startLine": 3,
+      "endLine": 35
+    },
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/workspaces/launching-workspaces.mdx",
+      "startLine": 59,
+      "endLine": 69
+    }
+  ],
+  "xrepo-docs-27": [
+    {
+      "path": "openmrs-contrib-o3-docs/content/en-US/docs/feature-flags.mdx",
+      "startLine": 60,
+      "endLine": 81
+    }
+  ],
+  "xrepo-docs-16": []
+}

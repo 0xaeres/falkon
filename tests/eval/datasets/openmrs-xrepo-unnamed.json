@@ -1,0 +1,1926 @@
+{
+  "id": "openmrs-xrepo-unnamed",
+  "repo": {
+    "url": "https://github.com/openmrs/openmrs-core",
+    "ref": "openmrs-product",
+    "commit": "5eb8cba2e30befeaec8ab7892dff14ac7dcc9d87"
+  },
+  "corpus": {
+    "include": [
+      "**/*"
+    ],
+    "exclude": [],
+    "product": {
+      "id": "openmrs",
+      "reference": "products/openmrs.json",
+      "commits": {
+        "openmrs-core": "5eb8cba2e30befeaec8ab7892dff14ac7dcc9d87",
+        "openmrs-module-webservices.rest": "66d284b5105a13d5221e103e0243711b69f2dac0",
+        "openmrs-esm-core": "7a172083f27035a8f20aa71fbc5e208ab07fa97a",
+        "openmrs-esm-patient-chart": "45cb44919ca658d571a30355536c03e775552678"
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "xrepo-core-to-rest-6",
+      "question": "If the behaviour of `UserService.getUserByUuid` in the core platform changed, which code in the core REST API module (the generic `/ws/rest/v1` resources) uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-core-to-rest",
+      "required": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/converter/openmrs1_8/UserConverter1_8.java",
+          "startLine": 31,
+          "endLine": 37
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/UserResource1_8.java",
+          "startLine": 204,
+          "endLine": 211
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/AlertRecipientResource2_0.java",
+          "startLine": 84,
+          "endLine": 93
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs1_9/ProviderSearchHandler1_9.java",
+          "startLine": 49,
+          "endLine": 64
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/converter/openmrs1_8/UserConverter1_8.java",
+          "startLine": 31,
+          "endLine": 37
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/UserResource1_8.java",
+          "startLine": 204,
+          "endLine": 211
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/AlertRecipientResource2_0.java",
+          "startLine": 84,
+          "endLine": 93
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs1_9/ProviderSearchHandler1_9.java",
+          "startLine": 49,
+          "endLine": 64
+        }
+      ]
+    },
+    {
+      "id": "xrepo-core-to-rest-1",
+      "question": "If the behaviour of `EncounterService.saveEncounter` in the core platform changed, which code in the core REST API module (the generic `/ws/rest/v1` resources) uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-core-to-rest",
+      "required": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java",
+          "startLine": 185,
+          "endLine": 191
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java",
+          "startLine": 162,
+          "endLine": 175
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java",
+          "startLine": 182,
+          "endLine": 200
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java",
+          "startLine": 77,
+          "endLine": 86
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java",
+          "startLine": 185,
+          "endLine": 191
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java",
+          "startLine": 162,
+          "endLine": 175
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java",
+          "startLine": 182,
+          "endLine": 200
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java",
+          "startLine": 77,
+          "endLine": 86
+        }
+      ]
+    },
+    {
+      "id": "xrepo-core-to-rest-3",
+      "question": "If the behaviour of `ConceptService.saveDrug` in the core platform changed, which code in the core REST API module (the generic `/ws/rest/v1` resources) uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-core-to-rest",
+      "required": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/DrugReferenceMapResource1_10.java",
+          "startLine": 44,
+          "endLine": 49
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/DrugIngredientResource1_11.java",
+          "startLine": 154,
+          "endLine": 164
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/DrugIngredientResource1_11.java",
+          "startLine": 166,
+          "endLine": 185
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/DrugResource1_8.java",
+          "startLine": 63,
+          "endLine": 69
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/DrugReferenceMapResource1_10.java",
+          "startLine": 44,
+          "endLine": 49
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/DrugIngredientResource1_11.java",
+          "startLine": 154,
+          "endLine": 164
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/DrugIngredientResource1_11.java",
+          "startLine": 166,
+          "endLine": 185
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/DrugResource1_8.java",
+          "startLine": 63,
+          "endLine": 69
+        }
+      ]
+    },
+    {
+      "id": "xrepo-core-to-rest-10",
+      "question": "If the behaviour of `VisitService.saveVisit` in the core platform changed, which code in the core REST API module (the generic `/ws/rest/v1` resources) uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-core-to-rest",
+      "required": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9.java",
+          "startLine": 93,
+          "endLine": 116
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9.java",
+          "startLine": 118,
+          "endLine": 127
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9.java",
+          "startLine": 248,
+          "endLine": 254
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9.java",
+          "startLine": 93,
+          "endLine": 116
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9.java",
+          "startLine": 118,
+          "endLine": 127
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9.java",
+          "startLine": 248,
+          "endLine": 254
+        }
+      ]
+    },
+    {
+      "id": "xrepo-core-to-rest-4",
+      "question": "If the behaviour of `OrderService.getOrderTypes` in the core platform changed, which code in the core REST API module (the generic `/ws/rest/v1` resources) uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-core-to-rest",
+      "required": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderTypeResource1_10.java",
+          "startLine": 117,
+          "endLine": 123
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderTypeResource1_10.java",
+          "startLine": 125,
+          "endLine": 139
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderableResource1_10.java",
+          "startLine": 64,
+          "endLine": 123
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderTypeResource1_10.java",
+          "startLine": 117,
+          "endLine": 123
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderTypeResource1_10.java",
+          "startLine": 125,
+          "endLine": 139
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderableResource1_10.java",
+          "startLine": 64,
+          "endLine": 123
+        }
+      ]
+    },
+    {
+      "id": "xrepo-core-to-rest-5",
+      "question": "If the behaviour of `OrderSetService.saveOrderSet` in the core platform changed, which code in the core REST API module (the generic `/ws/rest/v1` resources) uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-core-to-rest",
+      "required": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_12/OrderSetMemberResource1_12.java",
+          "startLine": 150,
+          "endLine": 155
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_12/OrderSetMemberResource1_12.java",
+          "startLine": 162,
+          "endLine": 168
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_12/OrderSetMemberResource1_12.java",
+          "startLine": 170,
+          "endLine": 175
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_12/OrderSetResource1_12.java",
+          "startLine": 57,
+          "endLine": 72
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_12/OrderSetMemberResource1_12.java",
+          "startLine": 150,
+          "endLine": 155
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_12/OrderSetMemberResource1_12.java",
+          "startLine": 162,
+          "endLine": 168
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_12/OrderSetMemberResource1_12.java",
+          "startLine": 170,
+          "endLine": 175
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_12/OrderSetResource1_12.java",
+          "startLine": 57,
+          "endLine": 72
+        }
+      ]
+    },
+    {
+      "id": "xrepo-core-to-rest-8",
+      "question": "If the behaviour of `LocationService.saveLocation` in the core platform changed, which code in the core REST API module (the generic `/ws/rest/v1` resources) uses it and could be affected?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-core-to-rest",
+      "required": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/LocationResource1_8.java",
+          "startLine": 218,
+          "endLine": 224
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/LocationAttributeResource1_9.java",
+          "startLine": 85,
+          "endLine": 103
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/LocationAttributeResource1_9.java",
+          "startLine": 105,
+          "endLine": 114
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/LocationResource1_8.java",
+          "startLine": 218,
+          "endLine": 224
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/LocationAttributeResource1_9.java",
+          "startLine": 85,
+          "endLine": 103
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/LocationAttributeResource1_9.java",
+          "startLine": 105,
+          "endLine": 114
+        }
+      ]
+    },
+    {
+      "id": "xrepo-core-to-rest-9",
+      "question": "If the behaviour of `ProgramWorkflowService.savePatientProgram` in the core platform changed, which code in the core REST API module (the generic `/ws/rest/v1` resources) uses it and could be affected?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-core-to-rest",
+      "required": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PatientStateResource1_8.java",
+          "startLine": 70,
+          "endLine": 83
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PatientStateResource1_8.java",
+          "startLine": 111,
+          "endLine": 117
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ProgramEnrollmentResource1_8.java",
+          "startLine": 91,
+          "endLine": 94
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PatientStateResource1_8.java",
+          "startLine": 70,
+          "endLine": 83
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PatientStateResource1_8.java",
+          "startLine": 111,
+          "endLine": 117
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ProgramEnrollmentResource1_8.java",
+          "startLine": 91,
+          "endLine": 94
+        }
+      ]
+    },
+    {
+      "id": "xrepo-core-to-rest-2",
+      "question": "If the behaviour of `PatientService.getAllergies` in the core platform changed, which code in the core REST API module (the generic `/ws/rest/v1` resources) uses it and could be affected?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-core-to-rest",
+      "required": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 157,
+          "endLine": 183
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 202,
+          "endLine": 227
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 285,
+          "endLine": 313
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 157,
+          "endLine": 183
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 202,
+          "endLine": 227
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 285,
+          "endLine": 313
+        }
+      ]
+    },
+    {
+      "id": "xrepo-core-to-rest-7",
+      "question": "If the behaviour of `AdministrationService.getGlobalProperty` in the core platform changed, which code in the core REST API module (the generic `/ws/rest/v1` resources) uses it and could be affected?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-core-to-rest",
+      "required": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/helper/LayoutTemplateProvider.java",
+          "startLine": 82,
+          "endLine": 87
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod-common/src/main/java/org/openmrs/module/webservices/docs/swagger/SwaggerSpecificationCreator.java",
+          "startLine": 173,
+          "endLine": 212
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod-common/src/main/java/org/openmrs/module/webservices/rest/web/RestUtil.java",
+          "startLine": 66,
+          "endLine": 79
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/helper/LayoutTemplateProvider.java",
+          "startLine": 82,
+          "endLine": 87
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod-common/src/main/java/org/openmrs/module/webservices/docs/swagger/SwaggerSpecificationCreator.java",
+          "startLine": 173,
+          "endLine": 212
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod-common/src/main/java/org/openmrs/module/webservices/rest/web/RestUtil.java",
+          "startLine": 66,
+          "endLine": 79
+        }
+      ]
+    },
+    {
+      "id": "xrepo-framework-to-chart-23",
+      "question": "If `createGlobalStore` in the frontend framework changed its behaviour, which code in the patient chart app uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-framework-to-chart",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-form-entry-app/src/app/fe-wrapper/fe-wrapper.component.ts",
+          "startLine": 35,
+          "endLine": 35
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/store.ts",
+          "startLine": 24,
+          "endLine": 24
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/store/patient-chart-store.ts",
+          "startLine": 19,
+          "endLine": 25
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-form-entry-app/src/app/fe-wrapper/fe-wrapper.component.ts",
+          "startLine": 35,
+          "endLine": 35
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/store.ts",
+          "startLine": 24,
+          "endLine": 24
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/store/patient-chart-store.ts",
+          "startLine": 19,
+          "endLine": 25
+        }
+      ]
+    },
+    {
+      "id": "xrepo-framework-to-chart-21",
+      "question": "If `UserIcon` in the frontend framework changed its behaviour, which code in the patient chart app uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-framework-to-chart",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-medications-app/src/components/medications-details-table.component.tsx",
+          "startLine": 1,
+          "endLine": 54
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-medications-app/src/components/medications-details-table.component.tsx",
+          "startLine": 376,
+          "endLine": 382
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/components/medication-record.component.tsx",
+          "startLine": 105,
+          "endLine": 117
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-medications-app/src/components/medications-details-table.component.tsx",
+          "startLine": 1,
+          "endLine": 54
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-medications-app/src/components/medications-details-table.component.tsx",
+          "startLine": 376,
+          "endLine": 382
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/components/medication-record.component.tsx",
+          "startLine": 105,
+          "endLine": 117
+        }
+      ]
+    },
+    {
+      "id": "xrepo-framework-to-chart-9",
+      "question": "If `useVisit` in the frontend framework changed its behaviour, which code in the patient chart app uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-framework-to-chart",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-banner-app/src/banner-tags/visit-tag.extension.tsx",
+          "startLine": 13,
+          "endLine": 21
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/actions-buttons/delete-visit.component.tsx",
+          "startLine": 12,
+          "endLine": 39
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/actions-buttons/stop-visit.component.tsx",
+          "startLine": 12,
+          "endLine": 37
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/patient-banner-tags/visit-attribute-tags.extension.tsx",
+          "startLine": 33,
+          "endLine": 64
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/patient-chart/patient-chart.resources.ts",
+          "startLine": 1,
+          "endLine": 17
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/patient-chart/patient-chart.resources.ts",
+          "startLine": 54,
+          "endLine": 238
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-form/exported-visit-form.workspace.tsx",
+          "startLine": 1,
+          "endLine": 66
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-form/exported-visit-form.workspace.tsx",
+          "startLine": 111,
+          "endLine": 667
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-form/visit-form.workspace.tsx",
+          "startLine": 25,
+          "endLine": 64
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-prompt/end-visit-dialog.modal.tsx",
+          "startLine": 13,
+          "endLine": 80
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-banner-app/src/banner-tags/visit-tag.extension.tsx",
+          "startLine": 13,
+          "endLine": 21
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/actions-buttons/delete-visit.component.tsx",
+          "startLine": 12,
+          "endLine": 39
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/actions-buttons/stop-visit.component.tsx",
+          "startLine": 12,
+          "endLine": 37
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/patient-banner-tags/visit-attribute-tags.extension.tsx",
+          "startLine": 33,
+          "endLine": 64
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/patient-chart/patient-chart.resources.ts",
+          "startLine": 1,
+          "endLine": 17
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/patient-chart/patient-chart.resources.ts",
+          "startLine": 54,
+          "endLine": 238
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-form/exported-visit-form.workspace.tsx",
+          "startLine": 1,
+          "endLine": 66
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-form/exported-visit-form.workspace.tsx",
+          "startLine": 111,
+          "endLine": 667
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-form/visit-form.workspace.tsx",
+          "startLine": 25,
+          "endLine": 64
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-prompt/end-visit-dialog.modal.tsx",
+          "startLine": 13,
+          "endLine": 80
+        }
+      ]
+    },
+    {
+      "id": "xrepo-framework-to-chart-8",
+      "question": "If `WarningIcon` in the frontend framework changed its behaviour, which code in the patient chart app uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-framework-to-chart",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-medications-app/src/drug-order-basket-panel/order-basket-item-tile.component.tsx",
+          "startLine": 15,
+          "endLine": 134
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/order-basket/general-order-type/order-basket-item-tile.component.tsx",
+          "startLine": 15,
+          "endLine": 75
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-tests-app/src/test-orders/lab-order-basket-panel/lab-order-basket-item-tile.component.tsx",
+          "startLine": 15,
+          "endLine": 90
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-medications-app/src/drug-order-basket-panel/order-basket-item-tile.component.tsx",
+          "startLine": 15,
+          "endLine": 134
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/order-basket/general-order-type/order-basket-item-tile.component.tsx",
+          "startLine": 15,
+          "endLine": 75
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-tests-app/src/test-orders/lab-order-basket-panel/lab-order-basket-item-tile.component.tsx",
+          "startLine": 15,
+          "endLine": 90
+        }
+      ]
+    },
+    {
+      "id": "xrepo-framework-to-chart-24",
+      "question": "If `ActionMenuButton2` in the frontend framework changed its behaviour, which code in the patient chart app uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-framework-to-chart",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-forms-app/src/clinical-form-action-button.component.tsx",
+          "startLine": 6,
+          "endLine": 27
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-lists-app/src/action-button/patient-lists-action-button.extension.tsx",
+          "startLine": 5,
+          "endLine": 17
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-notes-app/src/visit-note-action-button.extension.tsx",
+          "startLine": 6,
+          "endLine": 26
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/order-basket-action-button/order-basket-action-button.component.tsx",
+          "startLine": 10,
+          "endLine": 33
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-task-list-app/src/launch-button/task-list-launch-button.extension.tsx",
+          "startLine": 5,
+          "endLine": 18
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-forms-app/src/clinical-form-action-button.component.tsx",
+          "startLine": 6,
+          "endLine": 27
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-lists-app/src/action-button/patient-lists-action-button.extension.tsx",
+          "startLine": 5,
+          "endLine": 17
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-notes-app/src/visit-note-action-button.extension.tsx",
+          "startLine": 6,
+          "endLine": 26
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/order-basket-action-button/order-basket-action-button.component.tsx",
+          "startLine": 10,
+          "endLine": 33
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-task-list-app/src/launch-button/task-list-launch-button.extension.tsx",
+          "startLine": 5,
+          "endLine": 18
+        }
+      ]
+    },
+    {
+      "id": "xrepo-framework-to-chart-7",
+      "question": "If `reportError` in the frontend framework changed its behaviour, which code in the patient chart app uses it and could be affected?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-framework-to-chart",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts",
+          "startLine": 1,
+          "endLine": 11
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts",
+          "startLine": 23,
+          "endLine": 61
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts",
+          "startLine": 65,
+          "endLine": 90
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/order-favorites/useFavoritesActions.ts",
+          "startLine": 18,
+          "endLine": 107
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts",
+          "startLine": 1,
+          "endLine": 11
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts",
+          "startLine": 23,
+          "endLine": 61
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts",
+          "startLine": 65,
+          "endLine": 90
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/order-favorites/useFavoritesActions.ts",
+          "startLine": 18,
+          "endLine": 107
+        }
+      ]
+    },
+    {
+      "id": "xrepo-framework-to-chart-6",
+      "question": "If `useAbortController` in the frontend framework changed its behaviour, which code in the patient chart app uses it and could be affected?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-framework-to-chart",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/lab-results/exported-lab-results-form.workspace.tsx",
+          "startLine": 1,
+          "endLine": 38
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/lab-results/exported-lab-results-form.workspace.tsx",
+          "startLine": 63,
+          "endLine": 464
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/vitals-biometrics-form/exported-vitals-biometrics-form.workspace.tsx",
+          "startLine": 1,
+          "endLine": 50
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/vitals-biometrics-form/exported-vitals-biometrics-form.workspace.tsx",
+          "startLine": 60,
+          "endLine": 699
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/lab-results/exported-lab-results-form.workspace.tsx",
+          "startLine": 1,
+          "endLine": 38
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/lab-results/exported-lab-results-form.workspace.tsx",
+          "startLine": 63,
+          "endLine": 464
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/vitals-biometrics-form/exported-vitals-biometrics-form.workspace.tsx",
+          "startLine": 1,
+          "endLine": 50
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/vitals-biometrics-form/exported-vitals-biometrics-form.workspace.tsx",
+          "startLine": 60,
+          "endLine": 699
+        }
+      ]
+    },
+    {
+      "id": "xrepo-framework-to-chart-22",
+      "question": "If `FHIRResource` in the frontend framework changed its behaviour, which code in the patient chart app uses it and could be affected?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-framework-to-chart",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-form-entry-app/src/app/form-data-source/form-data-source.service.ts",
+          "startLine": 199,
+          "endLine": 267
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/common/data.resource.ts",
+          "startLine": 1,
+          "endLine": 27
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/common/data.resource.ts",
+          "startLine": 561,
+          "endLine": 566
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-form-entry-app/src/app/form-data-source/form-data-source.service.ts",
+          "startLine": 199,
+          "endLine": 267
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/common/data.resource.ts",
+          "startLine": 1,
+          "endLine": 27
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/common/data.resource.ts",
+          "startLine": 561,
+          "endLine": 566
+        }
+      ]
+    },
+    {
+      "id": "xrepo-framework-to-chart-10",
+      "question": "If `defineExtensionConfigSchema` in the frontend framework changed its behaviour, which code in the patient chart app uses it and could be affected?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-framework-to-chart",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-generic-patient-widgets-app/src/index.ts",
+          "startLine": 20,
+          "endLine": 23
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-banner-app/src/index.ts",
+          "startLine": 1,
+          "endLine": 12
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-banner-app/src/index.ts",
+          "startLine": 23,
+          "endLine": 26
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-flags-app/src/index.ts",
+          "startLine": 10,
+          "endLine": 14
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-generic-patient-widgets-app/src/index.ts",
+          "startLine": 20,
+          "endLine": 23
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-banner-app/src/index.ts",
+          "startLine": 1,
+          "endLine": 12
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-banner-app/src/index.ts",
+          "startLine": 23,
+          "endLine": 26
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-flags-app/src/index.ts",
+          "startLine": 10,
+          "endLine": 14
+        }
+      ]
+    },
+    {
+      "id": "xrepo-framework-to-chart-25",
+      "question": "If `Concept` in the frontend framework changed its behaviour, which code in the patient chart app uses it and could be affected?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-framework-to-chart",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-generic-patient-widgets-app/src/obs-table-horizontal/obs-table-horizontal.component.tsx",
+          "startLine": 1,
+          "endLine": 42
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-generic-patient-widgets-app/src/obs-table-horizontal/obs-table-horizontal.component.tsx",
+          "startLine": 269,
+          "endLine": 278
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-generic-patient-widgets-app/src/obs-table-horizontal/obs-table-horizontal.component.tsx",
+          "startLine": 374,
+          "endLine": 572
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/postOrders.ts",
+          "startLine": 1,
+          "endLine": 12
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/postOrders.ts",
+          "startLine": 131,
+          "endLine": 135
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-generic-patient-widgets-app/src/obs-table-horizontal/obs-table-horizontal.component.tsx",
+          "startLine": 1,
+          "endLine": 42
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-generic-patient-widgets-app/src/obs-table-horizontal/obs-table-horizontal.component.tsx",
+          "startLine": 269,
+          "endLine": 278
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-generic-patient-widgets-app/src/obs-table-horizontal/obs-table-horizontal.component.tsx",
+          "startLine": 374,
+          "endLine": 572
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/postOrders.ts",
+          "startLine": 1,
+          "endLine": 12
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/postOrders.ts",
+          "startLine": 131,
+          "endLine": 135
+        }
+      ]
+    },
+    {
+      "id": "xrepo-trace-11",
+      "question": "When a user adds a sticky note in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-trace",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-notes-app/src/sticky-notes/sticky-note.resource.ts",
+          "startLine": 57,
+          "endLine": 68
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ObsResource1_8.java",
+          "startLine": 264,
+          "endLine": 271
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/ObsServiceImpl.java",
+          "startLine": 101,
+          "endLine": 127
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateObsDAO.java",
+          "startLine": 91,
+          "endLine": 110
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-notes-app/src/sticky-notes/sticky-note.resource.ts",
+          "startLine": 57,
+          "endLine": 68
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ObsResource1_8.java",
+          "startLine": 264,
+          "endLine": 271
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/ObsServiceImpl.java",
+          "startLine": 101,
+          "endLine": 127
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateObsDAO.java",
+          "startLine": 91,
+          "endLine": 110
+        }
+      ]
+    },
+    {
+      "id": "xrepo-trace-23",
+      "question": "When a user saves the fulfiller status and comment of a lab order in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-trace",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/lab-results/lab-results.resource.ts",
+          "startLine": 327,
+          "endLine": 336
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_3/FulfillerDetailsResource2_3.java",
+          "startLine": 43,
+          "endLine": 48
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java",
+          "startLine": 553,
+          "endLine": 570
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java",
+          "startLine": 350,
+          "endLine": 379
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateOrderDAO.java",
+          "startLine": 88,
+          "endLine": 95
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/lab-results/lab-results.resource.ts",
+          "startLine": 327,
+          "endLine": 336
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_3/FulfillerDetailsResource2_3.java",
+          "startLine": 43,
+          "endLine": 48
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java",
+          "startLine": 553,
+          "endLine": 570
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java",
+          "startLine": 350,
+          "endLine": 379
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateOrderDAO.java",
+          "startLine": 88,
+          "endLine": 95
+        }
+      ]
+    },
+    {
+      "id": "xrepo-trace-25",
+      "question": "When a user deletes a visit in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-trace",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visits-widget/visit.resource.tsx",
+          "startLine": 49,
+          "endLine": 53
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9.java",
+          "startLine": 266,
+          "endLine": 277
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/VisitServiceImpl.java",
+          "startLine": 203,
+          "endLine": 209
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateVisitDAO.java",
+          "startLine": 162,
+          "endLine": 169
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visits-widget/visit.resource.tsx",
+          "startLine": 49,
+          "endLine": 53
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9.java",
+          "startLine": 266,
+          "endLine": 277
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/VisitServiceImpl.java",
+          "startLine": 203,
+          "endLine": 209
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateVisitDAO.java",
+          "startLine": 162,
+          "endLine": 169
+        }
+      ]
+    },
+    {
+      "id": "xrepo-trace-13",
+      "question": "When a user enrolls a patient in a program in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-trace",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-programs-app/src/programs/programs.resource.tsx",
+          "startLine": 53,
+          "endLine": 66
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ProgramEnrollmentResource1_8.java",
+          "startLine": 91,
+          "endLine": 94
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/ProgramWorkflowServiceImpl.java",
+          "startLine": 240,
+          "endLine": 283
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateProgramWorkflowDAO.java",
+          "startLine": 149,
+          "endLine": 167
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-programs-app/src/programs/programs.resource.tsx",
+          "startLine": 53,
+          "endLine": 66
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ProgramEnrollmentResource1_8.java",
+          "startLine": 91,
+          "endLine": 94
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/ProgramWorkflowServiceImpl.java",
+          "startLine": 240,
+          "endLine": 283
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateProgramWorkflowDAO.java",
+          "startLine": 149,
+          "endLine": 167
+        }
+      ]
+    },
+    {
+      "id": "xrepo-trace-12",
+      "question": "When a user records a new allergy in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-trace",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-allergies-app/src/allergies/allergies-form/allergy-form.resource.ts",
+          "startLine": 136,
+          "endLine": 145
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 247,
+          "endLine": 260
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java",
+          "startLine": 1561,
+          "endLine": 1568
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernatePatientDAO.java",
+          "startLine": 1006,
+          "endLine": 1013
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-allergies-app/src/allergies/allergies-form/allergy-form.resource.ts",
+          "startLine": 136,
+          "endLine": 145
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 247,
+          "endLine": 260
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java",
+          "startLine": 1561,
+          "endLine": 1568
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernatePatientDAO.java",
+          "startLine": 1006,
+          "endLine": 1013
+        }
+      ]
+    },
+    {
+      "id": "xrepo-trace-21",
+      "question": "When a user marks a patient as deceased in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-trace",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/data.resource.ts",
+          "startLine": 39,
+          "endLine": 50
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PersonResource1_8.java",
+          "startLine": 411,
+          "endLine": 417
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/PersonServiceImpl.java",
+          "startLine": 302,
+          "endLine": 310
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernatePersonDAO.java",
+          "startLine": 596,
+          "endLine": 603
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/data.resource.ts",
+          "startLine": 39,
+          "endLine": 50
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PersonResource1_8.java",
+          "startLine": 411,
+          "endLine": 417
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/PersonServiceImpl.java",
+          "startLine": 302,
+          "endLine": 310
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernatePersonDAO.java",
+          "startLine": 596,
+          "endLine": 603
+        }
+      ]
+    },
+    {
+      "id": "xrepo-trace-24",
+      "question": "When a user removes an allergy from a patient in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-trace",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-allergies-app/src/allergies/allergy-intolerance.resource.ts",
+          "startLine": 89,
+          "endLine": 94
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 193,
+          "endLine": 200
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 202,
+          "endLine": 227
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java",
+          "startLine": 1578,
+          "endLine": 1589
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernatePatientDAO.java",
+          "startLine": 1006,
+          "endLine": 1013
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-allergies-app/src/allergies/allergy-intolerance.resource.ts",
+          "startLine": 89,
+          "endLine": 94
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 193,
+          "endLine": 200
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java",
+          "startLine": 202,
+          "endLine": 227
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java",
+          "startLine": 1578,
+          "endLine": 1589
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernatePatientDAO.java",
+          "startLine": 1006,
+          "endLine": 1013
+        }
+      ]
+    },
+    {
+      "id": "xrepo-trace-14",
+      "question": "When a user saves a visit note in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-trace",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts",
+          "startLine": 134,
+          "endLine": 143
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java",
+          "startLine": 185,
+          "endLine": 191
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java",
+          "startLine": 97,
+          "endLine": 226
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateEncounterDAO.java",
+          "startLine": 76,
+          "endLine": 82
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts",
+          "startLine": 134,
+          "endLine": 143
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java",
+          "startLine": 185,
+          "endLine": 191
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java",
+          "startLine": 97,
+          "endLine": 226
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateEncounterDAO.java",
+          "startLine": 76,
+          "endLine": 82
+        }
+      ]
+    },
+    {
+      "id": "xrepo-trace-22",
+      "question": "When a user adds an attribute to a visit in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-trace",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-form/visit-form.resource.ts",
+          "startLine": 172,
+          "endLine": 178
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9.java",
+          "startLine": 93,
+          "endLine": 116
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/VisitServiceImpl.java",
+          "startLine": 174,
+          "endLine": 187
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateVisitDAO.java",
+          "startLine": 162,
+          "endLine": 169
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-form/visit-form.resource.ts",
+          "startLine": 172,
+          "endLine": 178
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9.java",
+          "startLine": 93,
+          "endLine": 116
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/VisitServiceImpl.java",
+          "startLine": 174,
+          "endLine": 187
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateVisitDAO.java",
+          "startLine": 162,
+          "endLine": 169
+        }
+      ]
+    },
+    {
+      "id": "xrepo-trace-15",
+      "question": "When a user places a new order in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-trace",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/postOrders.ts",
+          "startLine": 202,
+          "endLine": 209
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderResource1_10.java",
+          "startLine": 323,
+          "endLine": 329
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/OrderResource1_8.java",
+          "startLine": 69,
+          "endLine": 75
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java",
+          "startLine": 111,
+          "endLine": 117
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java",
+          "startLine": 165,
+          "endLine": 224
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateOrderDAO.java",
+          "startLine": 88,
+          "endLine": 95
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/postOrders.ts",
+          "startLine": 202,
+          "endLine": 209
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderResource1_10.java",
+          "startLine": 323,
+          "endLine": 329
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/OrderResource1_8.java",
+          "startLine": 69,
+          "endLine": 75
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java",
+          "startLine": 111,
+          "endLine": 117
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java",
+          "startLine": 165,
+          "endLine": 224
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateOrderDAO.java",
+          "startLine": 88,
+          "endLine": 95
+        }
+      ]
+    },
+    {
+      "id": "xrepo-docs-30",
+      "question": "How does the O3 frontend format a date for display according to the user's locale, including showing \"Today\" for the current day? Point to the documentation and implementation.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-docs",
+      "required": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/formatDate.md",
+          "startLine": 1,
+          "endLine": 46
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts",
+          "startLine": 282,
+          "endLine": 372
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/formatDate.md",
+          "startLine": 1,
+          "endLine": 46
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts",
+          "startLine": 282,
+          "endLine": 372
+        }
+      ]
+    },
+    {
+      "id": "xrepo-docs-19",
+      "question": "How does an O3 frontend module declare its configuration schema so implementers can override its settings? Point to the documentation and implementation.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-docs",
+      "required": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/defineConfigSchema.md",
+          "startLine": 1,
+          "endLine": 34
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-config/src/module-config/module-config.ts",
+          "startLine": 352,
+          "endLine": 378
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/defineConfigSchema.md",
+          "startLine": 1,
+          "endLine": 34
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-config/src/module-config/module-config.ts",
+          "startLine": 352,
+          "endLine": 378
+        }
+      ]
+    },
+    {
+      "id": "xrepo-docs-20",
+      "question": "How does the O3 framework lazily load a React component to serve as an extension or page? Point to the documentation and implementation.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-docs",
+      "required": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/getAsyncLifecycle.md",
+          "startLine": 1,
+          "endLine": 52
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-react-utils/src/getLifecycle.ts",
+          "startLine": 34,
+          "endLine": 57
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/getAsyncLifecycle.md",
+          "startLine": 1,
+          "endLine": 52
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-react-utils/src/getLifecycle.ts",
+          "startLine": 34,
+          "endLine": 57
+        }
+      ]
+    },
+    {
+      "id": "xrepo-docs-17",
+      "question": "How does the O3 frontend framework's standard helper for calling the backend handle authentication failures and error responses? Point to its documentation and implementation.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-docs",
+      "required": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/openmrsFetch.md",
+          "startLine": 1,
+          "endLine": 77
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-api/src/openmrs-fetch.ts",
+          "startLine": 40,
+          "endLine": 270
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/openmrsFetch.md",
+          "startLine": 1,
+          "endLine": 77
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-api/src/openmrs-fetch.ts",
+          "startLine": 40,
+          "endLine": 270
+        }
+      ]
+    },
+    {
+      "id": "xrepo-docs-28",
+      "question": "How does a React component in the O3 frontend read the currently logged-in user's session, and what happens when nobody is authenticated? Point to the documentation and implementation.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-docs",
+      "required": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/useSession.md",
+          "startLine": 1,
+          "endLine": 20
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-react-utils/src/useSession.ts",
+          "startLine": 8,
+          "endLine": 116
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/useSession.md",
+          "startLine": 1,
+          "endLine": 20
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-react-utils/src/useSession.ts",
+          "startLine": 8,
+          "endLine": 116
+        }
+      ]
+    },
+    {
+      "id": "xrepo-docs-26",
+      "question": "In the O3 frontend, how does a module open a registered modal dialog by name, and how does the caller close it again? Point to the documentation and implementation.",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "xrepo-probe",
+      "relation": "xrepo-docs",
+      "required": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/showModal.md",
+          "startLine": 1,
+          "endLine": 45
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-styleguide/src/modals/index.tsx",
+          "startLine": 280,
+          "endLine": 319
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/showModal.md",
+          "startLine": 1,
+          "endLine": 45
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-styleguide/src/modals/index.tsx",
+          "startLine": 280,
+          "endLine": 319
+        }
+      ]
+    },
+    {
+      "id": "xrepo-docs-18",
+      "question": "How are placeholders such as ${openmrsSpaBase} in configured URLs resolved in the O3 frontend? Point to the documentation and the implementation.",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-docs",
+      "required": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/interpolateUrl.md",
+          "startLine": 1,
+          "endLine": 51
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-navigation/src/navigation/interpolate-string.ts",
+          "startLine": 7,
+          "endLine": 48
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/interpolateUrl.md",
+          "startLine": 1,
+          "endLine": 51
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-navigation/src/navigation/interpolate-string.ts",
+          "startLine": 7,
+          "endLine": 48
+        }
+      ]
+    },
+    {
+      "id": "xrepo-docs-29",
+      "question": "How does the O3 framework open a workspace with props, and what happens when a conflicting workspace group or window is already open? Point to the documentation and implementation.",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-docs",
+      "required": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/launchWorkspace2.md",
+          "startLine": 1,
+          "endLine": 78
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-styleguide/src/workspaces2/workspace2.ts",
+          "startLine": 98,
+          "endLine": 321
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/launchWorkspace2.md",
+          "startLine": 1,
+          "endLine": 78
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-styleguide/src/workspaces2/workspace2.ts",
+          "startLine": 98,
+          "endLine": 321
+        }
+      ]
+    },
+    {
+      "id": "xrepo-docs-27",
+      "question": "How does a React component in the O3 frontend find out whether an experimental feature toggle is switched on? Point to the documentation and implementation.",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-docs",
+      "required": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/useFeatureFlag.md",
+          "startLine": 1,
+          "endLine": 31
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-react-utils/src/useFeatureFlag.ts",
+          "startLine": 5,
+          "endLine": 23
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/useFeatureFlag.md",
+          "startLine": 1,
+          "endLine": 31
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-react-utils/src/useFeatureFlag.ts",
+          "startLine": 5,
+          "endLine": 23
+        }
+      ]
+    },
+    {
+      "id": "xrepo-docs-16",
+      "question": "In the O3 frontend, what is the difference between a patient's \"active\" visit and \"current\" visit, and where is this documented and implemented?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "xrepo-probe",
+      "relation": "xrepo-docs",
+      "required": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/useVisit.md",
+          "startLine": 1,
+          "endLine": 42
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-react-utils/src/useVisit.ts",
+          "startLine": 32,
+          "endLine": 141
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-framework/docs/functions/useVisit.md",
+          "startLine": 1,
+          "endLine": 42
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-react-utils/src/useVisit.ts",
+          "startLine": 32,
+          "endLine": 141
+        }
+      ]
+    }
+  ]
+}

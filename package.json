@@ -1,11 +1,12 @@
 {
-  "name": "sourcebot-clone",
+  "name": "falkon",
   "private": true,
   "packageManager": "pnpm@10.28.0",
   "scripts": {
     "typecheck": "pnpm -r typecheck",
     "db:generate": "pnpm --filter @sbc/db generate",
     "db:push": "pnpm --filter @sbc/db push",
+    "eval": "pnpm --filter @sbc/eval eval",
     "dev:backend": "pnpm --filter @sbc/backend dev",
     "dev:web": "pnpm --filter @sbc/web dev",
     "test": "pnpm -r --if-present test",
