@@ -17,7 +17,7 @@ Read [`CONTEXT.md`](CONTEXT.md) and the sections of [`docs/adr/0001-falkon-archi
 
 ## Naming
 
-The product is spelled Falkon, with a k. The predecessor product's name, in any case or spelling, stays out of every shipped file (everything tracked outside `.scratch/`); planning files under `.scratch/` may name it to give scrub instructions.
+The product is spelled Falkon, with a k. The predecessor product's name, in any case or spelling, and the misspelling of Falkon that swaps the k for a c, stay out of every shipped file (everything tracked outside `.scratch/`); planning files under `.scratch/` may name them to give scrub instructions.
 
 ## Cycle workflow
 

@@ -74,6 +74,20 @@ services:
     ports: ["127.0.0.1:3001:3001", "127.0.0.1:3002:3002"]
     depends_on: [backend, zoekt]
 
+  # Falkon UI (Next standalone). Still on its mock data until the engine endpoints land; ENGINE_URL and
+  # ENGINE_ADMIN_TOKEN (the api's ADMIN_TOKEN) are for those, kept in the server process and never sent to
+  # the browser. Published on host loopback only.
+  ui:
+    <<: *app
+    profiles: []
+    command: node packages/ui/.next/standalone/packages/ui/server.js
+    environment:
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      ENGINE_URL: ${ENGINE_URL:-}
+      ENGINE_ADMIN_TOKEN: ${ENGINE_ADMIN_TOKEN:-}
+    ports: ["127.0.0.1:3100:3000"]
+
 volumes:
   pgdata:
   data:

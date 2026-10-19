@@ -1,4 +1,4 @@
-# Single image for web + backend + api; compose picks the command.
+# Single image for web + backend + api + ui; compose picks the command.
 
 # Zoekt, built from upstream sourcegraph/zoekt (Apache-2.0) at a pinned commit. The backend passes the
 # repository name through -meta and the shard prefix through -shard_prefix_override, so no fork is needed.
@@ -20,5 +20,8 @@ COPY . .
 RUN pnpm install --frozen-lockfile=false \
  && pnpm --filter @sbc/db generate \
  && pnpm --filter @sbc/web build \
- && pnpm --filter @sbc/api build
+ && pnpm --filter @sbc/api build \
+ && pnpm --filter @sbc/ui build \
+ && cp -r packages/ui/.next/static packages/ui/.next/standalone/packages/ui/.next/static \
+ && cp -r packages/ui/public packages/ui/.next/standalone/packages/ui/public
 ENV NODE_ENV=production DATA_DIR=/data CTAGS_COMMAND=ctags

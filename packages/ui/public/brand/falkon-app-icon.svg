@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Falkon">
+  <rect width="120" height="120" rx="28" fill="#0A0A0A"/>
+  <rect x="0.5" y="0.5" width="119" height="119" rx="27.5" fill="none" stroke="#3F3F46"/>
+  <g transform="translate(28 28)" fill="#FAFAFA">
+    <path d="M10 10h44l-9 12H10z"/>
+    <path d="M10 27h30l-9 12H10z"/>
+    <path d="M10 44h16l-9 10H10z"/>
+  </g>
+</svg>
