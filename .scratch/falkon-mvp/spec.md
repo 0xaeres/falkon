@@ -1,6 +1,6 @@
 # Falkon MVP: the clone becomes the Falkon core engine
 
-Status: plan, gate 1 pending (2026-10-18). Base branch: `main` (equal to `parity-harness` at 64b045c).
+Status: cycle 1 built and verified, waiting at gate 2 (2026-10-19). Base branch: `main` (equal to `parity-harness` at 64b045c).
 
 ## Goal
 
@@ -106,3 +106,13 @@ Budget, cycle 1: 1.5M subagent tokens and 5 hours wall clock (recent cycles ran 
 ## Gate 1 approval
 
 Cycle 1 (S0, S1, S2) approved by the human on 2026-10-18. Main session stays on Opus for the cycle. Cycles 2 to 5 are sequenced but need their own gate 1.
+
+## Cycle 1 results (2026-10-19)
+
+| Slice | Outcome | Evidence |
+|---|---|---|
+| S2 domain docs and ADR | kept (`2595cef`) | Name scrub clean; Codex cross-review found 5 blocking and 11 smaller items; one fix round applied, 2 items recorded as open decisions, 1 rejected. |
+| S0 regression baseline | kept (`0d90e30`) | 77 shared and 13 web tests; 50-query golden baseline recorded live, three cold runs with an empty diff; resync and delete steps pass; memory 465 to 564 MB against the 654 MB ceiling. |
+| S1 Zoekt upstream probe | kept (`ff6ae81`) | Upstream at 0e68f41 plus a small patch gives an empty golden diff (0 of 61 queries differ); memory 581 MB. Patch is NOT applied; it changes production code and waits for gate 2. |
+
+Named limitations recorded in `baseline.md`: archived, fork and visibility filters are inert for the git connector (frozen as returned); search pagination is not covered; cross-file ranking order is not pinned because Zoekt returns tied files in varying order.
