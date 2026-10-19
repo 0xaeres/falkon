@@ -40,15 +40,15 @@ trap cleanup EXIT
 trap 'exit 130' HUP INT TERM
 step=fixtures
 sh "$root/tests/fixtures/build.sh" "$temp" >/dev/null
-node - "$root" "$temp" "$port" <<'JS'
+node - "$root" "$temp" "$port" "${SMOKE_DOCKERFILE:-docker/Dockerfile}" <<'JS'
 const fs = require('node:fs');
-const [root, temp, port] = process.argv.slice(2);
+const [root, temp, port, dockerfile] = process.argv.slice(2);
 const env = { DATABASE_URL: 'postgresql://sbc:sbc@postgres:5432/sbc', REDIS_URL: 'redis://redis:6379', DATA_DIR: '/data', CONFIG_PATH: '/fixtures/config.json', ZOEKT_URL: 'http://zoekt:6070', AUTH_URL: `http://127.0.0.1:${port}`, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'safe.directory', GIT_CONFIG_VALUE_0: '*' };
-const app = { image: 'falkon-smoke-app', environment: env, volumes: ['data:/data', `${temp}:/fixtures:ro`] };
+const app = { image: 'falkon-smoke-app', pull_policy: 'never', environment: env, volumes: ['data:/data', `${temp}:/fixtures:ro`] };
 const compose = { services: {
   postgres: { image: 'postgres:17-alpine', environment: { POSTGRES_USER: 'sbc', POSTGRES_PASSWORD: 'sbc', POSTGRES_DB: 'sbc' }, volumes: ['pgdata:/var/lib/postgresql/data'], healthcheck: { test: ['CMD-SHELL', 'pg_isready -U sbc'], interval: '3s', retries: 30 } },
   redis: { image: 'redis:7-alpine', healthcheck: { test: ['CMD', 'redis-cli', 'ping'], interval: '3s', retries: 30 } },
-  backend: { ...app, build: { context: root, dockerfile: 'docker/Dockerfile' }, command: ['sh', '-c', 'pnpm --filter @sbc/db push && pnpm --filter @sbc/backend start'], depends_on: { postgres: { condition: 'service_healthy' }, redis: { condition: 'service_healthy' } } },
+  backend: { ...app, build: { context: root, dockerfile }, command: ['sh', '-c', 'pnpm --filter @sbc/db push && pnpm --filter @sbc/backend start'], depends_on: { postgres: { condition: 'service_healthy' }, redis: { condition: 'service_healthy' } } },
   zoekt: { ...app, command: ['zoekt-webserver', '-index', '/data/index', '-rpc', '-listen', ':6070'], depends_on: ['backend'] },
   web: { ...app, command: ['pnpm', '--filter', '@sbc/web', 'start'], ports: [`127.0.0.1:${port}:3000`], depends_on: ['backend', 'zoekt'] }
 }, volumes: { pgdata: {}, data: {} } };

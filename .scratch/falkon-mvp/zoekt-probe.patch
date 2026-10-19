@@ -1,0 +1,90 @@
+diff --git a/packages/backend/src/index.ts b/packages/backend/src/index.ts
+index b0eeb62..80c4958 100644
+--- a/packages/backend/src/index.ts
++++ b/packages/backend/src/index.ts
+@@ -106,7 +106,7 @@ const worker = new Worker<{ repoId: number }>(
+         // generated locally: nothing to clone or fetch, just (re)index main
+         const dir = repoGitDir(repo.name);
+         await writeZoektGitConfig(dir, repo);
+-        await indexRepo(repo.id, dir, ["refs/heads/main"], signal, settings);
++        await indexRepo(repo.id, repo.name, dir, ["refs/heads/main"], signal, settings);
+         if (!(await prisma.repo.findUnique({ where: { id: repo.id }, select: { id: true } }))) {
+           removeShards(repo.id);
+           return;
+@@ -124,7 +124,7 @@ const worker = new Worker<{ repoId: number }>(
+       }
+       const dir = gitDirOf(path);
+       const { revisions, defaultBranch } = await pickRevisions(dir, meta);
+-      await indexRepo(repo.id, dir, revisions, signal, settings);
++      await indexRepo(repo.id, repo.name, dir, revisions, signal, settings);
+       // The repo may have been dropped from config while we were indexing. Its row is gone, so
+       // cleanup will never find the shards we just wrote; do it here.
+       if (!(await prisma.repo.findUnique({ where: { id: repo.id }, select: { id: true } }))) {
+diff --git a/packages/backend/src/zoekt.ts b/packages/backend/src/zoekt.ts
+index 0bd0fae..981c21e 100644
+--- a/packages/backend/src/zoekt.ts
++++ b/packages/backend/src/zoekt.ts
+@@ -1,12 +1,13 @@
+ import { execFile } from "node:child_process";
+ import { promisify } from "node:util";
+ import fs from "node:fs";
++import os from "node:os";
+ import path from "node:path";
+ import { env } from "@sbc/shared";
+ 
+ const run = promisify(execFile);
+ 
+-/** One tenant; zoekt's -tenant_id exists in the Sourcebot fork so shards can be partitioned later. */
++/** One tenant; only part of the shard prefix (upstream zoekt-git-index has no -tenant_id flag). */
+ export const TENANT_ID = 1;
+ 
+ export const DEFAULT_SETTINGS = {
+@@ -47,6 +48,7 @@ export async function writeZoektGitConfig(gitDir: string, m: ZoektRepoMeta) {
+ /** Build/refresh the zoekt shards for one bare repo. `revisions` are full refs, e.g. refs/heads/main. */
+ export async function indexRepo(
+   repoId: number,
++  name: string,
+   gitDir: string,
+   revisions: string[],
+   signal?: AbortSignal,
+@@ -57,19 +59,27 @@ export async function indexRepo(
+     .split(",")
+     .map((p) => p.trim())
+     .filter(Boolean);
+-  const args = [
+-    "-allow_missing_branches",
+-    "-index", env.indexDir,
+-    "-max_trigram_count", String(settings.maxTrigramCount),
+-    "-file_limit", String(settings.maxFileSize),
+-    "-branches", revisions.join(","),
+-    "-tenant_id", String(TENANT_ID),
+-    "-repo_id", String(repoId),
+-    "-shard_prefix_override", shardPrefix(repoId),
+-    ...largeFiles.flatMap((p) => ["-large_file", p]),
+-    gitDir,
+-  ];
+-  return run("zoekt-git-index", args, { maxBuffer: 16 * 1024 * 1024, signal });
++  // Upstream zoekt-git-index names an in-place clone after its directory unless told otherwise;
++  // -meta carries the registry name, which the indexer keeps when the repo has no zoekt.name.
++  const metaDir = fs.mkdtempSync(path.join(os.tmpdir(), "zoekt-meta-"));
++  try {
++    const metaFile = path.join(metaDir, "meta.json");
++    fs.writeFileSync(metaFile, JSON.stringify({ Name: name }));
++    const args = [
++      "-meta", metaFile,
++      "-allow_missing_branches",
++      "-index", env.indexDir,
++      "-max_trigram_count", String(settings.maxTrigramCount),
++      "-file_limit", String(settings.maxFileSize),
++      "-branches", revisions.join(","),
++      "-shard_prefix_override", shardPrefix(repoId),
++      ...largeFiles.flatMap((p) => ["-large_file", p]),
++      gitDir,
++    ];
++    return await run("zoekt-git-index", args, { maxBuffer: 16 * 1024 * 1024, signal });
++  } finally {
++    fs.rmSync(metaDir, { recursive: true, force: true });
++  }
+ }
+ 
+ /** Remove every shard (and leftover .tmp file from an interrupted index) written for a repo. */
