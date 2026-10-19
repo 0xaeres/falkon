@@ -2,16 +2,19 @@ import fs from "node:fs";
 import micromatch from "micromatch";
 import { Queue, Worker } from "bullmq";
 import { Redis } from "ioredis";
-import { prisma, RepoKind, RepoStatus, ScanStatus } from "@sbc/db";
-import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, repoGitDir, repoPath, resolveEnvironmentOverrides, type Config } from "@sbc/shared";
+import { prisma, ConnectionSource, RepoKind, RepoStatus, ScanStatus } from "@sbc/db";
+import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, openCredential, repoGitDir, repoPath, resolveEnvironmentOverrides, setCredentialResolver, type Config } from "@sbc/shared";
 import type { RepoMetadata } from "./connectors";
 import { credentialsFor } from "./credentials";
 import { cloneOrFetch, localDefaultBranch, repoStats, sortedRefs, upsertGitConfig } from "./git";
-import { deleteKnowledge, removeOrphans, syncConnection, syncConnectionRows, syncSearchContexts } from "./sync";
+import { claimIndexRequests, claimSyncRequests, deleteKnowledge, removeOrphans, syncConnection, syncConnectionRows, syncSearchContexts } from "./sync";
 import { indexRepo, removeShards, writeZoektGitConfig } from "./zoekt";
 import { kbSelected, runKnowledgeScan } from "./kb/scan";
 
 const connection = new Redis(env.redisUrl, { maxRetriesPerRequest: null });
+
+// `{ stored }` tokens (source=api connections) are opened from the Credential table.
+setCredentialResolver(async (id) => openCredential(await prisma.credential.findUniqueOrThrow({ where: { id } })));
 
 let cfg: Config | undefined;
 let settings = DEFAULT_SETTINGS;
@@ -165,8 +168,15 @@ async function scheduleTick() {
     select: { id: true },
   });
   for (const r of due) await enqueueIndex(r.id);
-  const stale = await prisma.connection.findFirst({ where: { OR: [{ syncedAt: null }, { syncedAt: { lt: new Date(now - settings.resyncConnectionIntervalMs) } }] } });
+  // source=api connections sync when requested; the config resync below covers config connections only
+  const stale = await prisma.connection.findFirst({ where: { source: ConnectionSource.config, OR: [{ syncedAt: null }, { syncedAt: { lt: new Date(now - settings.resyncConnectionIntervalMs) } }] } });
   if (stale && pendingConnections <= 0) await syncAllConnections();
+  for (const name of await claimSyncRequests()) {
+    pendingConnections += 1;
+    await connQueue.add("sync", { name }, { jobId: `sync-${name}-${Date.now()}` });
+  }
+  // a requested retry must not be deduped against the failed job of the same minute
+  for (const repoId of await claimIndexRequests()) await indexQueue.add("index", { repoId }, { jobId: `index-${repoId}-retry-${Date.now()}` });
 }
 
 // ---- knowledge base ---------------------------------------------------------------

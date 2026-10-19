@@ -1,15 +1,15 @@
-import { Controller, Delete, Get, HttpCode, HttpException, Inject, Module, Param, Post, Put, Req } from "@nestjs/common";
+import { Controller, Delete, Get, HttpCode, Inject, Module, Param, Post, Put, Req } from "@nestjs/common";
 import type { INestApplication } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
+export { MAX_BODY_BYTES } from "./request";
+import { ConnectionsController, ConnectionService } from "./connections";
 import { allowedHosts, restrict, sendJson } from "./http";
+import { body, error } from "./request";
 import { isProductName, PRODUCT_REGISTRY, type ProductRegistry } from "./product";
 
-export const MAX_BODY_BYTES = 64 * 1024;
-
-const error = (statusCode: number, errorCode: string, message: string) => new HttpException({ statusCode, errorCode, message }, statusCode);
 const notFound = () => error(404, "NOT_FOUND", "Product not found.");
 const readOnly = () => error(409, "READ_ONLY", "Product comes from config and is read-only through this API.");
 
@@ -26,29 +26,6 @@ const fields = {
 const createBody = z.strictObject({ slug: z.string().refine(isProductName, "must match ^[a-z0-9][a-z0-9-]{0,62}$"), ...fields });
 // slug and source are not fields of an update: sending either is an unknown key (400).
 const updateBody = z.strictObject(fields);
-
-/** JSON only, at most MAX_BODY_BYTES, validated by `schema`. */
-async function body<T>(req: IncomingMessage, schema: z.ZodType<T>): Promise<T> {
-  if (!/^application\/json\s*(;|$)/i.test(req.headers["content-type"] ?? "")) throw error(415, "UNSUPPORTED_MEDIA_TYPE", "Content-Type must be application/json.");
-  const tooLarge = () => error(413, "PAYLOAD_TOO_LARGE", `Body exceeds ${MAX_BODY_BYTES} bytes.`);
-  if (Number(req.headers["content-length"] ?? 0) > MAX_BODY_BYTES) throw tooLarge();
-  const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const chunk of req as AsyncIterable<Buffer>) {
-    size += chunk.length;
-    if (size > MAX_BODY_BYTES) throw tooLarge();
-    chunks.push(chunk);
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-  } catch {
-    throw error(400, "INVALID_REQUEST_BODY", "Body is not valid JSON.");
-  }
-  const r = schema.safeParse(parsed);
-  if (!r.success) throw error(400, "INVALID_REQUEST_BODY", z.prettifyError(r.error));
-  return r.data;
-}
 
 @Controller("products")
 class ProductsController {
@@ -130,11 +107,16 @@ function requireBearer(app: INestApplication, token: string) {
 }
 
 /**
- * The admin listener: exactly `GET/POST /products` and `GET/PUT/DELETE /products/:slug`, everything else 404,
- * all behind `Authorization: Bearer <token>`. It must still listen on loopback only (API_ADMIN_HOST, default 127.0.0.1).
+ * The admin listener: `GET/POST /products`, `GET/PUT/DELETE /products/:slug` and, when a ConnectionService is given,
+ * `POST|GET /connections`, `DELETE /connections/:id`, `PUT /connections/:id/token`, `GET /connections/:id/repositories`.
+ * Everything else is 404, all behind `Authorization: Bearer <token>`. It must still listen on loopback only
+ * (API_ADMIN_HOST, default 127.0.0.1).
  */
-export async function createAdminApp(registry: ProductRegistry, token: string, env: Record<string, string | undefined> = process.env) {
-  @Module({ controllers: [ProductsController], providers: [{ provide: PRODUCT_REGISTRY, useValue: registry }] })
+export async function createAdminApp(registry: ProductRegistry, token: string, env: Record<string, string | undefined> = process.env, connections?: ConnectionService) {
+  @Module({
+    controllers: connections ? [ProductsController, ConnectionsController] : [ProductsController],
+    providers: [{ provide: PRODUCT_REGISTRY, useValue: registry }, ...(connections ? [{ provide: ConnectionService, useValue: connections }] : [])],
+  })
   class AdminModule {}
   const app = await NestFactory.create(AdminModule, { bodyParser: false, logger: ["error", "warn"] });
   restrict(app, ["GET", "POST", "PUT", "DELETE"], allowedHosts(env));
@@ -143,12 +125,12 @@ export async function createAdminApp(registry: ProductRegistry, token: string, e
 }
 
 /** Starts the admin listener when ADMIN_TOKEN is set; otherwise nothing listens. Throws on a short token. */
-export async function startAdmin(registry: ProductRegistry, env: Record<string, string | undefined> = process.env) {
+export async function startAdmin(registry: ProductRegistry, env: Record<string, string | undefined> = process.env, connections?: ConnectionService) {
   const token = adminToken(env);
   if (!token) return void console.log("api admin disabled (ADMIN_TOKEN is not set)");
   const host = env.API_ADMIN_HOST ?? "127.0.0.1";
   const port = Number(env.API_ADMIN_PORT ?? 3002);
-  const admin = await createAdminApp(registry, token, env);
+  const admin = await createAdminApp(registry, token, env, connections);
   admin.enableShutdownHooks();
   await admin.listen(port, host);
   console.log(`api admin listening on ${host}:${port}`);

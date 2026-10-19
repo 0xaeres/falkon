@@ -3,10 +3,12 @@ import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import {
   answerPartSchema,
+  connectionDtoSchema,
   connectionRequestSchema,
   evidencePartSchema,
   evidenceSchema,
   productIdSchema,
+  repositoriesQuery,
   repositorySchema,
   scenarioSchema,
   setupRequestSchema,
@@ -148,4 +150,18 @@ test("evidence and answer parts validate the persisted data-parts", () => {
     }).success,
   );
   assert(!answerPartSchema.safeParse({ ...answer, kind: "other" }).success);
+});
+
+test("connection DTO is a strict allowlist with no token field", () => {
+  const ok = { id: "c1", host: "github.com", provider: "github", createdAt: "2026-10-20T10:00:00.000Z", lastCheckedAt: null, status: "ok", scopes: ["repo"] };
+  assert(connectionDtoSchema.safeParse(ok).success);
+  assert(!connectionDtoSchema.safeParse({ ...ok, token: "x" }).success);
+  assert(!connectionDtoSchema.safeParse({ ...ok, status: "weird" }).success);
+});
+
+test("repositories query: optional q and a page of 1 to 3", () => {
+  assert(repositoriesQuery.safeParse({}).success);
+  assert(repositoriesQuery.safeParse({ q: "app", page: "2" }).success);
+  for (const bad of [{ page: "0" }, { page: "4" }, { page: "x" }, { q: "x".repeat(201) }, { other: "1" }])
+    assert(!repositoriesQuery.safeParse(bad).success, JSON.stringify(bad));
 });

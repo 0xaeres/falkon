@@ -70,13 +70,18 @@ services:
       API_ADMIN_HOST: 0.0.0.0
       AUTH_MODE: ${AUTH_MODE:-none}
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      # Host names (no port) the listeners answer besides loopback: `api` is how the ui container reaches the admin listener.
+      API_ALLOWED_HOSTS: api
+      # Credential encryption key (README "Stored credentials"); both empty = generated into /data/secrets/master.key.
+      FALKON_SECRET_KEY: ${FALKON_SECRET_KEY:-}
+      FALKON_SECRET_KEY_FILE: ${FALKON_SECRET_KEY_FILE:-}
     volumes: [data:/data, "./config.json:/config/config.json:ro"]
     ports: ["127.0.0.1:3001:3001", "127.0.0.1:3002:3002"]
     depends_on: [backend, zoekt]
 
-  # Falkon UI (Next standalone). Still on its mock data until the engine endpoints land; ENGINE_URL and
-  # ENGINE_ADMIN_TOKEN (the api's ADMIN_TOKEN) are for those, kept in the server process and never sent to
-  # the browser. Published on host loopback only.
+  # Falkon UI (Next standalone). Connections and repository search go to the engine's admin listener; the other
+  # routes stay on the mock until later slices. ENGINE_ADMIN_TOKEN is the api's ADMIN_TOKEN (set it in .env), kept in
+  # the server process and never sent to the browser. Published on host loopback only.
   ui:
     <<: *app
     profiles: []
@@ -84,8 +89,9 @@ services:
     environment:
       PORT: 3000
       HOSTNAME: 0.0.0.0
-      ENGINE_URL: ${ENGINE_URL:-}
+      ENGINE_URL: http://api:3002
       ENGINE_ADMIN_TOKEN: ${ENGINE_ADMIN_TOKEN:-}
+    depends_on: [api]
     ports: ["127.0.0.1:3100:3000"]
 
 volumes:

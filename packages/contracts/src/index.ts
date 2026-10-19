@@ -125,6 +125,21 @@ export const connectionSchema = z.object({
   host: z.string(),
   provider: providerSchema,
 });
+// What GET /connections returns: metadata only, never a token. `status` is "failed" while the last check recorded an error.
+export const connectionDtoSchema = z.strictObject({
+  id: z.string(),
+  host: z.string(),
+  provider: providerSchema,
+  createdAt: z.iso.datetime(),
+  lastCheckedAt: z.iso.datetime().nullable(),
+  status: z.enum(["ok", "failed"]),
+  scopes: z.array(z.string()),
+});
+// Query of GET /connections/:id/repositories; `page` indexes the matches in pages of 100 (the search is capped at 300 repositories).
+export const repositoriesQuery = z.strictObject({
+  q: z.string().max(200).optional(),
+  page: z.coerce.number().int().min(1).max(3).optional(),
+});
 export const setupRequestSchema = z.object({
   id: productIdSchema,
   name: z.string().trim().min(1).max(80),

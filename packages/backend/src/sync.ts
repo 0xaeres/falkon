@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { prisma, Prisma, ProductSource, RepoKind, type ConnectionType, type PrismaClient } from "@sbc/db";
+import { prisma, ConnectionSource, Prisma, ProductSource, RepoKind, type ConnectionType, type PrismaClient } from "@sbc/db";
 import { KB_SUFFIX, ownerOfKnowledgeRepo, repoGitDir, repoPath, type Config, type ConnectionConfig } from "@sbc/shared";
 import { compileConnection, dedupeRecords, type RepoRecord } from "./connectors";
 import { isProductSlug, loadContextResolver, type ProductDefinition } from "./productResolve";
@@ -7,18 +7,53 @@ import { removeShards } from "./zoekt";
 
 const connectionType = (c: ConnectionConfig): ConnectionType => c.type;
 
-/** Mirrors config `connections` into the Connection table; dropped connections go with their links. */
-export async function syncConnectionRows(cfg: Config) {
-  const names = Object.keys(cfg.connections);
-  for (const [name, config] of Object.entries(cfg.connections)) {
-    await prisma.connection.upsert({
+type ConnectionTable = Pick<PrismaClient["connection"], "findMany" | "upsert" | "updateMany" | "deleteMany">;
+type RepoTable = Pick<PrismaClient["repo"], "findMany" | "updateMany">;
+
+/**
+ * Mirrors config `connections` into the Connection table as `source=config` rows; config rows no longer in config go
+ * with their links. `source=api` rows are never written or deleted here: a config connection with an api row's name
+ * is skipped (api wins).
+ */
+export async function syncConnectionRows(cfg: Config, connections: ConnectionTable = prisma.connection) {
+  const apiNames = new Set((await connections.findMany({ where: { source: ConnectionSource.api }, select: { name: true } })).map((c) => c.name));
+  const names = Object.keys(cfg.connections).filter((name) => {
+    if (apiNames.has(name)) console.log(`connection "${name}" skipped, an api connection has that name`);
+    return !apiNames.has(name);
+  });
+  for (const name of names) {
+    const config = cfg.connections[name]!;
+    await connections.upsert({
       where: { name },
       create: { name, connectionType: connectionType(config), config: config as unknown as Prisma.InputJsonValue },
       update: { connectionType: connectionType(config), config: config as unknown as Prisma.InputJsonValue },
     });
   }
-  const dropped = await prisma.connection.deleteMany({ where: { name: { notIn: names } } });
+  const dropped = await connections.deleteMany({ where: { source: ConnectionSource.config, name: { notIn: names } } });
   if (dropped.count) console.log(`removed ${dropped.count} connection(s) no longer in config`);
+}
+
+/**
+ * Names of connections whose sync was requested (by the api). Each is claimed with exactly the value read, so two
+ * ticks never both win and a newer request written meanwhile stays for the next tick.
+ */
+export async function claimSyncRequests(connections: ConnectionTable = prisma.connection): Promise<string[]> {
+  const claimed: string[] = [];
+  for (const c of await connections.findMany({ where: { syncRequestedAt: { not: null } }, select: { id: true, name: true, syncRequestedAt: true } })) {
+    const { count } = await connections.updateMany({ where: { id: c.id, syncRequestedAt: c.syncRequestedAt }, data: { syncRequestedAt: null } });
+    if (count) claimed.push(c.name);
+  }
+  return claimed;
+}
+
+/** Ids of repos whose index was requested (retry), claimed like `claimSyncRequests`. */
+export async function claimIndexRequests(repos: RepoTable = prisma.repo): Promise<number[]> {
+  const claimed: number[] = [];
+  for (const r of await repos.findMany({ where: { indexRequestedAt: { not: null } }, select: { id: true, indexRequestedAt: true } })) {
+    const { count } = await repos.updateMany({ where: { id: r.id, indexRequestedAt: r.indexRequestedAt }, data: { indexRequestedAt: null } });
+    if (count) claimed.push(r.id);
+  }
+  return claimed;
 }
 
 function repoData(r: RepoRecord) {

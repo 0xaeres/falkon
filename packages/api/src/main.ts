@@ -4,6 +4,7 @@ import { accessPolicyFromEnv } from "@sbc/shared";
 import { handleMcpDelete, handleMcpPost } from "../../web/src/lib/mcp";
 import { adminToken, startAdmin } from "./admin";
 import { createApp } from "./app";
+import { ConnectionService } from "./connections";
 import { PrismaProductRegistry } from "./product";
 
 // An AUTH_MODE other than none or apiKey throws here: the service refuses to start.
@@ -19,4 +20,4 @@ app.enableShutdownHooks();
 await app.listen(port, host);
 console.log(`api listening on ${host}:${port} (AUTH_MODE=${process.env.AUTH_MODE ?? "none"})`);
 
-await startAdmin(registry);
+await startAdmin(registry, process.env, new ConnectionService(prisma));

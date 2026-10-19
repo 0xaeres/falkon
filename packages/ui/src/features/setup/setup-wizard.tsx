@@ -79,11 +79,17 @@ function Wizard({ edit }: { edit?: Product }) {
   const router = useRouter();
   const { mutate } = useSWRConfig();
   const { data: products } = useSWR(keys.products, api.products);
+  const [connection, setConnection] = useState(
+    edit ? { id: "existing", host: edit.host } : null,
+  );
   const {
     data: catalog,
     error: repoError,
     mutate: reloadRepos,
-  } = useSWR(keys.repositories, api.repositories);
+  } = useSWR(
+    connection ? keys.repositories(connection.id) : null,
+    api.repositories,
+  );
   const [step, setStep] = useState(edit ? 2 : 0);
   const [provider, setProvider] = useState<Provider>(
     edit?.provider ?? "github-enterprise",
@@ -93,9 +99,6 @@ function Wizard({ edit }: { edit?: Product }) {
   );
   const [token, setToken] = useState("");
   const [name, setName] = useState(edit?.name ?? "");
-  const [connection, setConnection] = useState(
-    edit ? { id: "existing", host: edit.host } : null,
-  );
   const [selected, setSelected] = useState<Record<string, string>>(
     edit
       ? Object.fromEntries(
