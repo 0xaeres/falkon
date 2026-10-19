@@ -1,0 +1,917 @@
+[
+  {
+    "query": "c:needle",
+    "regex": false,
+    "result": {
+      "substring": {
+        "pattern": "needle",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "c:needle",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "needle",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "file:(test|spec)",
+    "regex": false,
+    "result": {
+      "regexp": {
+        "regexp": "(test|spec)",
+        "file_name": true,
+        "content": false,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "file:(test|spec)",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "(test|spec)",
+        "file_name": true,
+        "content": false,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "(file:(test|spec))",
+    "regex": false,
+    "result": {
+      "regexp": {
+        "regexp": "(test|spec)",
+        "file_name": true,
+        "content": false,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "(file:(test|spec))",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "(test|spec)",
+        "file_name": true,
+        "content": false,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "or needle",
+    "regex": false,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "substring": {
+              "pattern": "or",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "substring": {
+              "pattern": "needle",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "or needle",
+    "regex": true,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "regexp": {
+              "regexp": "or",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "regexp": {
+              "regexp": "needle",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "needle orange",
+    "regex": false,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "substring": {
+              "pattern": "needle",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "substring": {
+              "pattern": "orange",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "needle orange",
+    "regex": true,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "regexp": {
+              "regexp": "needle",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "regexp": {
+              "regexp": "orange",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "needle orElse",
+    "regex": false,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "substring": {
+              "pattern": "needle",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "substring": {
+              "pattern": "orElse",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "needle orElse",
+    "regex": true,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "regexp": {
+              "regexp": "needle",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "regexp": {
+              "regexp": "orElse",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "needle\tor\tother",
+    "regex": false,
+    "result": {
+      "or": {
+        "children": [
+          {
+            "substring": {
+              "pattern": "needle",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "substring": {
+              "pattern": "other",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "needle\tor\tother",
+    "regex": true,
+    "result": {
+      "or": {
+        "children": [
+          {
+            "regexp": {
+              "regexp": "needle",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "regexp": {
+              "regexp": "other",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "needle\nother",
+    "regex": false,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "substring": {
+              "pattern": "needle",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "substring": {
+              "pattern": "other",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "needle\nother",
+    "regex": true,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "regexp": {
+              "regexp": "needle",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "regexp": {
+              "regexp": "other",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "((a b))",
+    "regex": false,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "substring": {
+              "pattern": "a",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "substring": {
+              "pattern": "b",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "((a b))",
+    "regex": true,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "regexp": {
+              "regexp": "a",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "regexp": {
+              "regexp": "b",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "- (a or b)",
+    "regex": false,
+    "result": {
+      "not": {
+        "child": {
+          "or": {
+            "children": [
+              {
+                "substring": {
+                  "pattern": "a",
+                  "file_name": false,
+                  "content": true,
+                  "case_sensitive": true
+                }
+              },
+              {
+                "substring": {
+                  "pattern": "b",
+                  "file_name": false,
+                  "content": true,
+                  "case_sensitive": true
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "query": "- (a or b)",
+    "regex": true,
+    "result": {
+      "not": {
+        "child": {
+          "or": {
+            "children": [
+              {
+                "regexp": {
+                  "regexp": "a",
+                  "file_name": false,
+                  "content": true,
+                  "case_sensitive": true
+                }
+              },
+              {
+                "regexp": {
+                  "regexp": "b",
+                  "file_name": false,
+                  "content": true,
+                  "case_sensitive": true
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "query": "- file:test",
+    "regex": false,
+    "result": {
+      "not": {
+        "child": {
+          "regexp": {
+            "regexp": "test",
+            "file_name": true,
+            "content": false,
+            "case_sensitive": true
+          }
+        }
+      }
+    }
+  },
+  {
+    "query": "- file:test",
+    "regex": true,
+    "result": {
+      "not": {
+        "child": {
+          "regexp": {
+            "regexp": "test",
+            "file_name": true,
+            "content": false,
+            "case_sensitive": true
+          }
+        }
+      }
+    }
+  },
+  {
+    "query": "test()",
+    "regex": false,
+    "result": {
+      "substring": {
+        "pattern": "test()",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "test()",
+    "regex": true,
+    "error": "Failed to parse query \"test()\" with message: No parse at 5"
+  },
+  {
+    "query": "func(a)",
+    "regex": false,
+    "result": {
+      "substring": {
+        "pattern": "func(a)",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "func(a)",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "func(a)",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "(pr",
+    "regex": false,
+    "result": {
+      "substring": {
+        "pattern": "(pr",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "(pr",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "(pr",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "a\\(b\\)",
+    "regex": false,
+    "result": {
+      "substring": {
+        "pattern": "a\\(b\\)",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "a\\(b\\)",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "a\\(b\\)",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "()",
+    "regex": false,
+    "result": {
+      "const": false
+    }
+  },
+  {
+    "query": "()",
+    "regex": true,
+    "result": {
+      "const": false
+    }
+  },
+  {
+    "query": "( )",
+    "regex": false,
+    "result": {
+      "const": false
+    }
+  },
+  {
+    "query": "( )",
+    "regex": true,
+    "result": {
+      "const": false
+    }
+  },
+  {
+    "query": "(\"hello world\")",
+    "regex": false,
+    "result": {
+      "substring": {
+        "pattern": "hello world",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "(\"hello world\")",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "hello world",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "((file:a))",
+    "regex": false,
+    "result": {
+      "regexp": {
+        "regexp": "a",
+        "file_name": true,
+        "content": false,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "((file:a))",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "a",
+        "file_name": true,
+        "content": false,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "(-(file:a))",
+    "regex": false,
+    "result": {
+      "not": {
+        "child": {
+          "regexp": {
+            "regexp": "a",
+            "file_name": true,
+            "content": false,
+            "case_sensitive": true
+          }
+        }
+      }
+    }
+  },
+  {
+    "query": "(-(file:a))",
+    "regex": true,
+    "result": {
+      "not": {
+        "child": {
+          "regexp": {
+            "regexp": "a",
+            "file_name": true,
+            "content": false,
+            "case_sensitive": true
+          }
+        }
+      }
+    }
+  },
+  {
+    "query": "(-file:a)",
+    "regex": false,
+    "result": {
+      "not": {
+        "child": {
+          "regexp": {
+            "regexp": "a",
+            "file_name": true,
+            "content": false,
+            "case_sensitive": true
+          }
+        }
+      }
+    }
+  },
+  {
+    "query": "(-file:a)",
+    "regex": true,
+    "result": {
+      "not": {
+        "child": {
+          "regexp": {
+            "regexp": "a",
+            "file_name": true,
+            "content": false,
+            "case_sensitive": true
+          }
+        }
+      }
+    }
+  },
+  {
+    "query": "((a|b))",
+    "regex": false,
+    "result": {
+      "substring": {
+        "pattern": "a|b",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "((a|b))",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "((a|b))",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "(a b)",
+    "regex": false,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "substring": {
+              "pattern": "a",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "substring": {
+              "pattern": "b",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "(a b)",
+    "regex": true,
+    "result": {
+      "and": {
+        "children": [
+          {
+            "regexp": {
+              "regexp": "a",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          },
+          {
+            "regexp": {
+              "regexp": "b",
+              "file_name": false,
+              "content": true,
+              "case_sensitive": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "(a|b)",
+    "regex": false,
+    "result": {
+      "substring": {
+        "pattern": "a|b",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "(a|b)",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "(a|b)",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "-(a|b)",
+    "regex": false,
+    "result": {
+      "not": {
+        "child": {
+          "substring": {
+            "pattern": "a|b",
+            "file_name": false,
+            "content": true,
+            "case_sensitive": true
+          }
+        }
+      }
+    }
+  },
+  {
+    "query": "-(a|b)",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "-(a|b)",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "(a\\)b)",
+    "regex": false,
+    "error": "Failed to parse query \"(a\\)b)\" with message: No parse at 5"
+  },
+  {
+    "query": "(a\\)b)",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "(a\\)b)",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "file:(a|b)",
+    "regex": false,
+    "result": {
+      "regexp": {
+        "regexp": "(a|b)",
+        "file_name": true,
+        "content": false,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "file:(a|b)",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "(a|b)",
+        "file_name": true,
+        "content": false,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "[()]",
+    "regex": false,
+    "result": {
+      "substring": {
+        "pattern": "[()]",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "[()]",
+    "regex": true,
+    "error": "Failed to parse query \"[()]\" with message: No parse at 2"
+  },
+  {
+    "query": "foo\\\\)",
+    "regex": false,
+    "result": {
+      "substring": {
+        "pattern": "foo\\\\)",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  },
+  {
+    "query": "foo\\\\)",
+    "regex": true,
+    "result": {
+      "regexp": {
+        "regexp": "foo\\\\)",
+        "file_name": false,
+        "content": true,
+        "case_sensitive": true
+      }
+    }
+  }
+]
