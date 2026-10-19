@@ -243,8 +243,13 @@ test("no configured language model is the existing Ask error as JSON", async () 
   try {
     const r = await chat("alpha", id, "hi");
     assert.deepEqual([r.status, r.json.statusCode, r.json.errorCode, r.json.message.startsWith("No language models are configured.")], [400, 400, "INVALID_REQUEST_BODY", true]);
+    const none = () => (stored(id).messages as J[]).length;
+    assert.equal(none(), 0, "one failed attempt stores nothing");
+    assert.equal((await chat("alpha", id, "hi again")).status, 400);
+    assert.equal(none(), 0, "two failed attempts store nothing");
     const unknown = await call("POST", `/ui/products/alpha/threads/${id}/messages`, { text: "hi", languageModel: { provider: "anthropic", model: "nope" } });
     assert.equal(unknown.status, 400);
+    assert.equal(none(), 0, "an unknown model stores nothing either");
   } finally { process.env.LLM_BASE_URL = saved; }
 });
 

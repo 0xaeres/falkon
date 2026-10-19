@@ -20,9 +20,12 @@ export async function uiChatResponse(o: {
   /** The first question when the chat has no name yet; it is named from it. */
   nameFrom?: string;
   abortSignal?: AbortSignal;
+  /** Runs once the model is picked, before the first byte: where the caller stores the question. */
+  onAccepted?: () => Promise<void>;
   onFinish: (messages: UIMessage[], name: string | undefined) => Promise<void>;
 }): Promise<Response> {
   const model = await pickModel(o.languageModel);
+  await o.onAccepted?.();
   // Started now so the stream does not wait for it; a failure only leaves the chat unnamed.
   const name = o.nameFrom === undefined ? undefined : chatName(o.nameFrom, model).catch(() => undefined);
   const stream = await createMessageStream({

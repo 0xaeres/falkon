@@ -66,9 +66,6 @@ export class ThreadService {
 
     const history = messagesOf(chat.messages);
     const user = { id: randomUUID(), role: "user" as const, parts: [{ type: "text" as const, text: input.text }] };
-    // The question is kept even if the turn is stopped or fails.
-    await this.db.chat.update({ where: { id }, data: { messages: [...history, user] as object[] } });
-
     // The Product's repositories exactly (the same intersection the MCP path uses), whatever the caller sent.
     const effective = noneAccessPolicy().effectiveScope({ ...scopeFor(["*"]), principal: UI_PRINCIPAL }, repoNames)!;
     const { uiChatResponse } = await import("../../web/src/lib/ask/uiChat");
@@ -81,6 +78,8 @@ export class ThreadService {
       generation,
       nameFrom: chat.name ? undefined : input.text,
       abortSignal: signal,
+      // Stored once the model is picked, so a model-config error leaves nothing behind; kept if the turn is then stopped or fails.
+      onAccepted: async () => void (await this.db.chat.update({ where: { id }, data: { messages: [...history, user] as object[] } })),
       onFinish: async (messages, name) => {
         // A stopped turn keeps only the question (stored above); the next turn goes on from it.
         if (signal.aborted) return;
