@@ -123,3 +123,49 @@ Named limitations recorded in `baseline.md`: archived, fork and visibility filte
 - **Falkon UI integration** (new, cycle 2 or 3). The UI is the separate app `../falkon-ui` (Next.js 16, React 19, Zod 4, mock API today). Its HTTP surface to implement or adapt in the engine: `products` (create, read), `repositories` (search a code host), `connections` (token check), `products/{id}/status`, `products/{id}/sync`, `products/{id}/threads[/{threadId}]`, `products/{id}/query` (NDJSON stream of answers with paragraphs and evidence). Contracts live in `falkon-ui/src/lib/contracts.ts`. The UI stays a separate app talking to the engine over HTTP; it does not move into this repository.
 - **Open design questions raised by the UI** (to grill before its slices): (1) the UI creates Products through a setup wizard (Product registry managed through the API), while D6 says a Product is a named repo set in `config.json` — the registry must become API-managed in Postgres, with config as an import path; (2) the UI's evidence-backed answer shape (paragraphs with evidence spans) differs from Ask's `@file:{repo::path:a-b}` markdown, so an adapter or a shared answer contract is needed; (3) the UI streams NDJSON while Ask streams the AI SDK UI message stream; (4) the wizard collects a code-host token, which collides with "no secrets stored through the UI" unless the engine stores connection credentials server-side (security-sensitive, stops for review); (5) per-Product `sync` and `status` need engine endpoints backed by the existing sync state.
 - **Cycle 2 plan change:** add S3b "Ask via the client" (instructions, prompt, model-free tool, eval check) beside S3 to S5; Falkon UI integration becomes its own slices after S4 (Product scoping), because it depends on the Product registry design.
+
+## Decisions added 2026-10-19 (human)
+
+| # | Decision |
+|---|---|
+| D13 | Monorepo. `falkon-ui` is imported into this repository as `packages/ui` (git subtree, history kept), with a new `packages/contracts` (Zod 4) imported by the engine and the UI. The UI keeps its own Next 16 and React 19.3. |
+| D14 | The engine moves to Zod 4 in its own early slice. Gate: the 11 tools' pinned JSON schemas and outputs stay byte-identical (any diff gets hand review); `zod-to-json-schema` is dropped for the native conversion. |
+| D15 | Chat transport is the Vercel AI SDK on both sides: the UI uses `useChat` against the engine's UI message stream; UI evidence travels as a Zod-validated `data-evidence` part beside `data-source` parts; the UI's NDJSON route and mock `/query` are retired. UI threads map onto the engine's stored chats, which gain a `productId`. |
+| D16 | The engine's own web pages (search, repos, Ask) stay until the Falkon UI reaches parity, then are retired. The API routes stay until the NestJS boundary replaces them. Nothing is deleted before parity. |
+| D17 | The Product registry is API-managed in Postgres (config is an import path). Connection credentials are stored server-side; that design is security-sensitive and stops for human review before it is built. |
+
+## Revised cycle map (supersedes the cycle map above for cycles 2 onward; slice ids keep their old meaning, new work gets new ids)
+
+- **Cycle 2 (this plan): S16, S17, S18.**
+- Cycle 3: S5 eval harness port and the floor rerun (also measures the client-LLM Ask), S3 NestJS boundary, S4 `AccessPolicy` plus the API-managed Product registry (stops for review).
+- Cycle 4: S19 `packages/contracts` plus the `packages/ui` import, S20 engine endpoints for the UI (products, repositories, connections, status, sync, threads), S21 chat transport (`useChat`, `data-evidence`, `productId` on chats).
+- Cycle 5 to 7: graph (S6 to S9), overview and knowledge base (S10 to S12), de-reference rewrite, rename and final gate (S13 to S15) as before.
+
+## Cycle 2 plan (gate 1 pending)
+
+Base: `main` at the current tip. Agent defaults: Codex `gpt-6.1-sol` at high effort; Claude where Docker or live access is needed. Main session stays on Opus where the human switches it; otherwise the Opus-grade review runs in `opus` agents.
+
+**S16. Zod 4 migration.** Tier standard. Agent: codex.
+- Goal: the engine, the tool definitions and the Ask agent run on Zod 4 with no change to any pinned contract.
+- Scope: `packages/*/package.json`, `pnpm-lock.yaml`, every `z.` use under `packages/*/src` (config schemas, tool input schemas, the config JSON schema generation), `packages/shared/src/tools.ts`, `packages/web/src/lib/mcp.ts`, `packages/web/src/lib/ask/*`. No behavior changes.
+- Done: `pnpm typecheck && pnpm test` green with `UPDATE_SNAPSHOTS` unset and every file under `tests/contract/` byte-identical (a needed schema diff is listed and hand-reviewed instead of regenerated); `zod-to-json-schema` is gone from the dependency tree of the workspace packages; a lockfile check shows one Zod major for workspace dependencies; the Ask agent still builds its tool schemas.
+- Verify: `pnpm typecheck && pnpm test`; `git diff --stat -- tests/contract` empty; `pnpm ls zod -r`.
+- Blocked by: none.
+
+**S17. Adopt upstream Zoekt.** Tier standard. Agent: claude (Docker). This is a production change the human approves at this gate.
+- Goal: build on upstream Zoekt at a pinned commit and drop the fork.
+- Scope: `packages/backend/src/zoekt.ts` and its two callers in `index.ts` (apply `.scratch/falkon-mvp/zoekt-probe.patch`), `docker/Dockerfile`, delete `docker/Dockerfile.zoekt-probe` and the `SMOKE_DOCKERFILE` opt-in, README note on the Zoekt license and a migration note (existing fork shards need a full reindex).
+- Done: `scripts/ops-smoke.sh` passes on the default Dockerfile with an empty golden diff against `tests/golden/expected.json`; resync, delete and memory (at most 654 MB) pass; the image ships the Zoekt license text; Go and Node base images are digest-pinned; the string for the old fork's owner appears nowhere in shipped files.
+- Verify: the smoke run, twice from cold; `pnpm typecheck && pnpm test`; `grep -rniE 'sourcebot' docker packages/backend`.
+- Blocked by: none.
+
+**S18. Ask via the client.** Tier standard (wording reviewed by an `opus` agent). Agent: codex.
+- Goal: MCP clients can run the Ask workflow on their own LLM, with no server model, alongside the unchanged server-LLM Ask (D12).
+- Scope: `packages/web/src/lib/mcp.ts`, a new `packages/web/src/lib/ask/brief.ts`, `packages/shared/src/toolText.json` (new entry only), `tests/contract/**` (new snapshot entries only, existing entries untouched), docs.
+- Done: the MCP initialize result carries server `instructions`; an MCP prompt `ask_codebase` takes `query` and optional `repos`; a model-free tool `research_codebase` returns the research workflow, the citation format and the repository context for the client to execute with the existing tools; all three are present with or without a configured model; `ask_codebase` (the tool) keeps its pinned contract unchanged; the guidance text is original wording (not copied from the reference v6 prompts), checked by a grep for the old prompt's distinctive phrases; unit tests pin the new surface.
+- Verify: `pnpm typecheck && pnpm test`; `git diff -- tests/contract` shows only added entries; connect a real MCP client (the Claude Code CLI via `claude mcp add`) to a running stack and run one research question end to end, with the transcript saved in `.scratch/falkon-mvp/`.
+- Blocked by: S16 (avoids snapshot churn).
+- The eval check (regression gate item 3) for the client-LLM path runs in S5, cycle 3.
+
+Autonomy limits, cycle 2: the loop may decide alone test layout, wording within the stated constraints, and fix rounds (one per slice). It must stop for: any contract snapshot change other than the S18 additions, a new dependency other than Zod 4 and its types, and any outward action. Budget: 1.2M Claude subagent tokens and 4 hours of wall clock, Codex runs under a `perl alarm` cap of 25 minutes each.
+
