@@ -9,7 +9,9 @@ export const REPO_ROOT = join(EVAL_DIR, "../..");
 export const FLOOR_DIR = join(REPO_ROOT, ".scratch/falkon-mvp/eval-floor");
 /** Both O3 question sets, scored and reported together. */
 export const DATASETS = ["openmrs-xrepo", "openmrs-xrepo-unnamed"] as const;
-export const ALL_ARMS = ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr"] as const;
+/** The impact-and-change question set (S25), selected with --dataset impact; separate from the two sets above. */
+export const IMPACT_DATASETS = ["o3-impact"] as const;
+export const ALL_ARMS = ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr", "clone-tools-recipe"] as const;
 export type Arm = typeof ALL_ARMS[number];
 /** The arms run when --arms is not given. */
 export const ARMS: Arm[] = ["clone-tools", "clone-research"];

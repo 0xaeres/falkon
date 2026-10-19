@@ -61,3 +61,17 @@ test("any other MCP_INSTRUCTIONS value behaves as default and logs one line per 
   assert.match(again.instructions ?? "", /^Falkon searches and reads code/);
   assert.deepEqual(again.warnings, [], "logged once per process");
 });
+
+test("MCP_IMPACT_RECIPE=on appends the recipe to the instructions; unset, off or anything else keeps today's bytes", async () => {
+  const before = process.env.MCP_IMPACT_RECIPE;
+  try {
+    delete process.env.MCP_IMPACT_RECIPE;
+    const base = (await initialize(undefined)).instructions ?? "";
+    for (const value of ["off", "ON", ""]) { process.env.MCP_IMPACT_RECIPE = value; assert.equal((await initialize(undefined)).instructions, base, value); }
+    process.env.MCP_IMPACT_RECIPE = "on";
+    const on = (await initialize(undefined)).instructions ?? "";
+    assert.ok(on.startsWith(base) && on.length > base.length);
+    assert.match(on, /what a change would affect/);
+    assert.equal((await initialize("off")).instructions, undefined);
+  } finally { if (before === undefined) delete process.env.MCP_IMPACT_RECIPE; else process.env.MCP_IMPACT_RECIPE = before; }
+});

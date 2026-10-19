@@ -13,11 +13,15 @@
  *   pnpm eval -- preflight [--arms ...]             42 repositories and 104 gold paths readable through each selected arm's server
  *
  * Options for pilot, run and report: --model sonnet|haiku (or the full id; default sonnet), --arms from
- * clone-tools,clone-research,v6-tools,clone-tools-noinstr (default clone-tools,clone-research). Runs are stored per model under
+ * clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe (default clone-tools,clone-research). Runs are stored per model under
  * <runs dir>/<model alias>/; Sonnet runs in the earlier layout (datasets directly under the runs dir) are still read.
  * The reference is the recorded Sonnet floor for sonnet, and the v6-tools runs of the model's own directory otherwise.
  *
- * Environment: EVAL_O3_DIR (corpus checkouts), EVAL_PORT (3400), EVAL_NOINSTR_PORT (3401), EVAL_RUNS_DIR, EVAL_WORK_DIR,
+ * Impact-and-change set (S25): --dataset impact selects o3-impact (11 questions, its pilot is the 6 dev ones) instead of the two O3 sets;
+ * arm clone-tools-recipe talks to a second stack (`stack up --recipe on`: project falkon-eval-recipe on EVAL_RECIPE_PORT with MCP_IMPACT_RECIPE=on);
+ * `report --reference clone-tools` compares the arms against that arm's runs of the same model instead of the recorded floor or v6-tools.
+ *
+ * Environment: EVAL_O3_DIR (corpus checkouts), EVAL_PORT (3400), EVAL_NOINSTR_PORT (3401), EVAL_RECIPE_PORT (3402), EVAL_RUNS_DIR, EVAL_WORK_DIR,
  * EVAL_API_KEY_FILE (optional key file for the clone stacks), EVAL_SPEND_CAP (agent spend ledger per model directory, default 6),
  * EVAL_V6_URL (the v6-tools arm's MCP endpoint, e.g. http://127.0.0.1:3000/api/mcp) and EVAL_V6_KEY_FILE (its key, a mode 600 file).
  * Start the stack with `pnpm eval -- stack up`; its state lives under tests/eval/.local (ignored).
@@ -27,7 +31,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { ALL_ARMS, ARMS, DATASETS, EVAL_DIR, FLOOR_DIR, REPO_ROOT, hasRaw, loadAccepted, loadDataset, loadProduct, modelDir, readRaw, resolveModel, type Arm, type Dataset, type Raw } from "./data.js";
+import { ALL_ARMS, ARMS, DATASETS, EVAL_DIR, IMPACT_DATASETS, FLOOR_DIR, REPO_ROOT, hasRaw, loadAccepted, loadDataset, loadProduct, modelDir, readRaw, resolveModel, type Arm, type Dataset, type Raw } from "./data.js";
 import { buildCommand } from "./harness.js";
 import { expectedRepos, goldPaths, preflight, readKey } from "./preflight.js";
 import { report } from "./report.js";
@@ -38,17 +42,18 @@ import { stack } from "./stack.js";
 const PER_RUN_CAP = 1;
 const hash = (id: string) => createHash("sha256").update("eval|" + id).digest("hex");
 
-/** Five dev questions of a set: the first of each relation in a fixed hash order, then the next in that order. */
-export function pilotIds(dataset: Dataset): string[] {
+/** `count` (default five) dev questions of a set: the first of each relation in a fixed hash order, then the next in that order. */
+export function pilotIds(dataset: Dataset, count = 5): string[] {
   const dev = dataset.questions.filter((q) => q.split === "dev").sort((a, b) => hash(a.id).localeCompare(hash(b.id)));
   const first = [...new Map(dev.map((q) => [q.relation, q.id])).values()];
-  return [...first, ...dev.map((q) => q.id).filter((id) => !first.includes(id))].slice(0, 5);
+  return [...first, ...dev.map((q) => q.id).filter((id) => !first.includes(id))].slice(0, count);
 }
 
 const config = (env: NodeJS.ProcessEnv) => ({
   o3Dir: resolve(env.EVAL_O3_DIR ?? "/Users/aeres/Desktop/projects/falkon/.local/eval"),
   port: Number(env.EVAL_PORT ?? 3400),
   noinstrPort: Number(env.EVAL_NOINSTR_PORT ?? 3401),
+  recipePort: Number(env.EVAL_RECIPE_PORT ?? 3402),
   spendCap: Number(env.EVAL_SPEND_CAP ?? 6),
   runsRoot: resolve(env.EVAL_RUNS_DIR ?? join(REPO_ROOT, ".scratch/falkon-mvp/eval-runs")),
   workDir: resolve(env.EVAL_WORK_DIR ?? "/private/tmp/falkon-eval"),
@@ -91,6 +96,7 @@ type Backend = { id: string; url: string; key?: string; kind: "clone" | "v6"; in
 function backendOf(arm: Arm, cfg: ReturnType<typeof config>, env: NodeJS.ProcessEnv): Backend {
   const local = (port: number) => `http://127.0.0.1:${port}/api/mcp`;
   if (arm === "clone-tools-noinstr") return { id: "noinstr", url: local(cfg.noinstrPort), key: readKey(cfg.keyFile), kind: "clone", instructions: false };
+  if (arm === "clone-tools-recipe") return { id: "recipe", url: local(cfg.recipePort), key: readKey(cfg.keyFile), kind: "clone", instructions: true };
   if (arm !== "v6-tools") return { id: "clone", url: local(cfg.port), key: readKey(cfg.keyFile), kind: "clone", instructions: true };
   let url: URL | undefined;
   try { url = new URL(env.EVAL_V6_URL ?? ""); } catch { /* reported below */ }
@@ -104,9 +110,9 @@ const flagValue = (args: string[], flag: string) => { const at = args.indexOf(fl
 const clean = (r: { is_error: boolean; malformed: boolean; leak?: boolean }) => !r.is_error && !r.malformed && !r.leak;
 
 /** One line per pilot run, then the stop rules; `stop` is true when any rule is STOP. */
-function pilotReport(named: Dataset, stored: Raw[], arms: Arm[], alias: string): { lines: string[]; stop: boolean } {
+function pilotReport(named: Dataset, stored: Raw[], arms: Arm[], alias: string, ids: string[]): { lines: string[]; stop: boolean } {
   const recalls: Record<string, number[]> = {};
-  const lines = pilotIds(named).flatMap((id) => arms.map((arm) => {
+  const lines = ids.flatMap((id) => arms.map((arm) => {
     const run = stored.find((r) => r.taskId === id && r.arm === arm);
     if (!run) return `${id} ${arm} missing`;
     const q = named.questions.find((x) => x.id === id)!;
@@ -115,15 +121,16 @@ function pilotReport(named: Dataset, stored: Raw[], arms: Arm[], alias: string):
     const tools = Object.entries(run.toolCalls ?? {}).map(([k, v]) => `${k}:${v}`).join(",") || "none";
     return `${id} ${arm} first=${run.firstTool ?? "none"} tools=${tools} recall=${recall.toFixed(2)} cost=${run.total_cost_usd.toFixed(4)} leak=${!!run.leak} denied=${run.deniedAttempts ?? 0} malformed=${run.malformed}`;
   }));
-  const mine = stored.filter((r) => pilotIds(named).includes(r.taskId) && arms.includes(r.arm as Arm));
-  const research = mine.filter((r) => r.arm === "clone-research"), plain = recalls["clone-tools"] ?? [], v6 = recalls["v6-tools"] ?? [];
+  const mine = stored.filter((r) => ids.includes(r.taskId) && arms.includes(r.arm as Arm));
+  const research = mine.filter((r) => r.arm === "clone-research"), plain = recalls["clone-tools"] ?? [], v6 = recalls["v6-tools"] ?? [], recipe = recalls["clone-tools-recipe"] ?? [];
   const meanOf = (xs: number[]) => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN;
-  const meanPlain = meanOf(plain), meanV6 = meanOf(v6), plainMin = alias === "haiku" ? 0.7 : 0.8;
+  const meanPlain = meanOf(plain), meanV6 = meanOf(v6), meanRecipe = meanOf(recipe), plainMin = alias === "haiku" ? 0.7 : 0.8;
   const rules: string[] = [];
   const rule = (ok: boolean, text: string) => rules.push(`${ok ? "PASS" : "STOP"}: ${text}`);
   const shown = (n: number) => Number.isNaN(n) ? "n/a" : n.toFixed(3);
-  if (arms.includes("clone-tools")) rule(plain.length === pilotIds(named).length && meanPlain >= plainMin, `plain-arm pilot recall ${shown(meanPlain)} (needs complete runs and at least ${plainMin.toFixed(2)})`);
-  if (arms.includes("v6-tools")) rule(v6.length === pilotIds(named).length && meanV6 >= 0.5, `v6-tools pilot recall ${shown(meanV6)} (needs complete runs and at least 0.50; a reference near zero shows nothing)`);
+  if (arms.includes("clone-tools")) rule(plain.length === ids.length && meanPlain >= plainMin, `plain-arm pilot recall ${shown(meanPlain)} (needs complete runs and at least ${plainMin.toFixed(2)})`);
+  if (arms.includes("clone-tools-recipe")) rule(recipe.length === ids.length && meanRecipe >= plainMin, `recipe-arm pilot recall ${shown(meanRecipe)} (needs complete runs and at least ${plainMin.toFixed(2)})`);
+  if (arms.includes("v6-tools")) rule(v6.length === ids.length && meanV6 >= 0.5, `v6-tools pilot recall ${shown(meanV6)} (needs complete runs and at least 0.50; a reference near zero shows nothing)`);
   rule(mine.length > 0 && !mine.some((r) => r.leak), `no leaks (${mine.filter((r) => r.leak).length} of ${mine.length} runs)`);
   if (arms.includes("clone-research")) rule(research.length > 0 && research.every((r) => r.firstTool === "research_codebase"), `research_codebase first in every research run (${research.filter((r) => r.firstTool === "research_codebase").length}/${research.length})`);
   lines.push("", `Stop rules (spec S5, model ${alias}):`, ...rules, `Denied research_codebase attempts by the plain arms: ${mine.filter((r) => r.arm !== "clone-research").reduce((n, r) => n + (r.deniedAttempts ?? 0), 0)}.`);
@@ -133,36 +140,46 @@ function pilotReport(named: Dataset, stored: Raw[], arms: Arm[], alias: string):
 export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env): Promise<string> {
   const args = argv.filter((a, i) => !(a === "--" && i < 2)); // pnpm may pass a leading "--"
   const command = args[0], cfg = config(env), listing = args.includes("--list");
-  if (!["pilot", "run", "report", "preflight", "stack"].includes(command ?? "")) throw new Error("Usage: pnpm eval -- pilot|run|report|preflight|stack [--split dev|hidden] [--model sonnet|haiku] [--arms clone-tools,clone-research,v6-tools,clone-tools-noinstr] [--list] [--pilot] [--instructions off]");
+  if (!["pilot", "run", "report", "preflight", "stack"].includes(command ?? "")) throw new Error("Usage: pnpm eval -- pilot|run|report|preflight|stack [--split dev|hidden] [--model sonnet|haiku] [--arms clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe] [--dataset impact] [--reference arm] [--list] [--pilot] [--instructions off] [--recipe on]");
   const splitFlag = flagValue(args, "--split");
   if (splitFlag && !["dev", "hidden"].includes(splitFlag)) throw new Error("--split must be dev or hidden");
   const split = (splitFlag ?? "dev") as "dev" | "hidden";
   if (!(cfg.spendCap > 0) || !Number.isFinite(cfg.spendCap)) throw new Error("EVAL_SPEND_CAP must be a positive number of dollars.");
   const model = resolveModel(flagValue(args, "--model"));
   if (command === "stack") {
-    const instructions = flagValue(args, "--instructions");
+    const instructions = flagValue(args, "--instructions"), recipe = flagValue(args, "--recipe");
     if (instructions && instructions !== "off") throw new Error("--instructions must be off (the default stack keeps the instructions on).");
-    const extra = args.slice(2).filter((a, i, all) => a !== "--instructions" && all[i - 1] !== "--instructions");
+    if (recipe && recipe !== "on") throw new Error("--recipe must be on (the default stack serves no recipe).");
+    if (instructions && recipe) throw new Error("--instructions off and --recipe on are separate stacks; pass one.");
+    const extra = args.slice(2).filter((a, i, all) => !["--instructions", "--recipe"].includes(a) && !["--instructions", "--recipe"].includes(all[i - 1]!));
     const base = { o3Dir: cfg.o3Dir, repoRoot: REPO_ROOT };
+    if (recipe) return stack(args[1] ?? "", extra, { ...base, port: cfg.recipePort, project: "falkon-eval-recipe", recipe: "on", stateDir: resolve(env.EVAL_RECIPE_STATE_DIR ?? join(EVAL_DIR, ".local/stack-recipe")) });
     return instructions
       ? stack(args[1] ?? "", extra, { ...base, port: cfg.noinstrPort, project: "falkon-eval-noinstr", instructions: "off", stateDir: resolve(env.EVAL_NOINSTR_STATE_DIR ?? join(EVAL_DIR, ".local/stack-noinstr")) })
       : stack(args[1] ?? "", extra, { ...base, port: cfg.port, project: env.EVAL_COMPOSE_PROJECT ?? "falkon-eval", stateDir: resolve(env.EVAL_STATE_DIR ?? join(EVAL_DIR, ".local/stack")) });
   }
-  const datasets = DATASETS.map(loadDataset), named = datasets[0]!;
+  const datasetFlag = flagValue(args, "--dataset");
+  if (datasetFlag && datasetFlag !== "impact") throw new Error("--dataset must be impact (the default is the two O3 sets).");
+  const ids = datasetFlag ? IMPACT_DATASETS : DATASETS;
+  const datasets = ids.map(loadDataset), named = datasets[0]!;
   const runsDir = modelDir(cfg.runsRoot, model.alias), dirOf = (d: string) => join(runsDir, d);
   // Without --arms: the two clone arms, plus any other arm that already has stored runs (so a report shows everything run).
-  const armsFlag = flagValue(args, "--arms"), stored = DATASETS.flatMap((d) => readRaw(dirOf(d)));
+  const armsFlag = flagValue(args, "--arms"), stored = ids.flatMap((d) => readRaw(dirOf(d)));
   const arms = (armsFlag ? armsFlag.split(",") : ALL_ARMS.filter((a) => ARMS.includes(a) || (command === "report" && stored.some((r) => r.arm === a)))) as Arm[];
   if (arms.some((a) => !ALL_ARMS.includes(a)) || new Set(arms).size !== arms.length) throw new Error(`--arms must be a comma-separated list of ${ALL_ARMS.join(",")}`);
 
-  if (command === "preflight") return await preflightArms(arms, cfg, env) + "\n";
+  if (command === "preflight") return await preflightArms(arms, cfg, env, ids) + "\n";
 
+  // The impact set is small (11 questions), so its pilot is the whole dev split.
+  const pilot = pilotIds(named, datasetFlag ? 6 : 5);
   if (command === "report") {
     if (args.includes("--pilot")) {
-      const { lines } = pilotReport(named, readRaw(dirOf(named.id)), arms, model.alias);
+      const { lines } = pilotReport(named, readRaw(dirOf(named.id)), arms, model.alias, pilot);
       return lines.join("\n") + "\n";
     }
-    const referenceArm = model.alias === "sonnet" ? undefined : "v6-tools" as const;
+    const referenceFlag = flagValue(args, "--reference");
+    if (referenceFlag && !ALL_ARMS.includes(referenceFlag as Arm)) throw new Error(`--reference must be one of ${ALL_ARMS.join(",")}`);
+    const referenceArm = (referenceFlag as Arm | undefined) ?? (model.alias === "sonnet" ? undefined : "v6-tools" as const);
     return report({
       datasets: datasets.map((dataset) => {
         const runs = readRaw(dirOf(dataset.id));
@@ -172,7 +189,6 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     });
   }
 
-  const pilot = pilotIds(named);
   const tasks: Task[] = command === "pilot"
     ? pilot.map((id) => ({ id, dataset: named.id, split: "dev" as const, question: named.questions.find((q) => q.id === id)!.question }))
     : datasets.flatMap((d) => d.questions.filter((q) => q.split === split).map((q) => ({ id: q.id, dataset: d.id, split, question: q.question })));
@@ -188,12 +204,12 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     if (readRaw(dirOf(named.id)).some((r) => pilot.includes(r.taskId) && r.leak)) throw new Error("A pilot run leaked; stop and review it before the full runs.");
     if (split === "hidden" && !datasets.every((d) => d.questions.filter((q) => q.split === "dev").every((q) => arms.every((arm) => readRaw(dirOf(d.id)).some((r) => r.arm === arm && r.taskId === q.id && clean(r))))))
       throw new Error("The dev split must be complete and clean (no failed, malformed or leaking runs) before hidden.");
-    const rules = pilotReport(named, readRaw(dirOf(named.id)), arms, model.alias);
+    const rules = pilotReport(named, readRaw(dirOf(named.id)), arms, model.alias, pilot);
     if (rules.stop) throw new Error(`A pilot stop rule failed; review before spending:\n${rules.lines.filter((l) => l.startsWith("STOP")).join("\n")}`);
   }
   const backends = new Map(arms.map((arm) => [arm, backendOf(arm, cfg, env)]));
   exportChart(cfg.o3Dir, cfg.workDir);
-  console.log(await preflightArms(arms, cfg, env));
+  console.log(await preflightArms(arms, cfg, env, ids));
   console.log(header);
   const lineCount = lineCounter(cfg.o3Dir), ledger = join(cfg.runsRoot, "ledger.jsonl");
   await runTasks(tasks, {
@@ -208,15 +224,15 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     },
   });
   const done = `Agent spend $${spentSoFar(ledger).toFixed(4)} of $${cfg.spendCap} (all models, ${ledger}).\n`;
-  const modelArgs = ["--model", model.alias, ...(armsFlag ? ["--arms", armsFlag] : [])];
+  const modelArgs = ["--model", model.alias, ...(armsFlag ? ["--arms", armsFlag] : []), ...(datasetFlag ? ["--dataset", datasetFlag] : []), ...(flagValue(args, "--reference") ? ["--reference", flagValue(args, "--reference")!] : [])];
   return command === "pilot" ? done + await main(["report", "--pilot", ...modelArgs], env) : done + await main(["report", "--split", split, ...modelArgs], env);
 }
 
 /** One preflight per distinct server among the arms, each with its own URL and key. */
-async function preflightArms(arms: Arm[], cfg: ReturnType<typeof config>, env: NodeJS.ProcessEnv): Promise<string> {
+async function preflightArms(arms: Arm[], cfg: ReturnType<typeof config>, env: NodeJS.ProcessEnv, datasetIds: readonly string[]): Promise<string> {
   const servers = new Map(arms.map((arm) => backendOf(arm, cfg, env)).map((b) => [b.id, b]));
   const out: string[] = [];
-  for (const b of servers.values()) out.push(`${b.id} (${new URL(b.url).host}): ${await preflight({ expectedRepos: expectedRepos(), gold: goldPaths(), url: b.url, apiKey: b.key, kind: b.kind, instructions: b.instructions })}`);
+  for (const b of servers.values()) out.push(`${b.id} (${new URL(b.url).host}): ${await preflight({ expectedRepos: expectedRepos(), gold: goldPaths(datasetIds), url: b.url, apiKey: b.key, kind: b.kind, instructions: b.instructions })}`);
   return out.join("\n");
 }
 
