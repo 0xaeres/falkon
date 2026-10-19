@@ -12,7 +12,7 @@ export const maxDuration = 600;
 const body = z.object({
   id: z.string(),
   messages: z.array(z.any()),
-  selectedSearchScopes: z.array(z.object({ type: z.literal("repo"), value: z.string() }).passthrough()).default([]),
+  selectedSearchScopes: z.array(z.object({ type: z.literal("repo"), value: z.string() }).loose()).default([]),
   languageModel: languageModelInfo.optional(),
 });
 

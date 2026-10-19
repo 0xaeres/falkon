@@ -68,6 +68,10 @@ test("MCP registration order, exact descriptions, annotations and JSON schemas s
       const tools = (await session.client.listTools()).tools;
       assert.deepEqual(tools.map((tool) => tool.name), ["grep", "glob", "get_diff", "list_commits", "list_branches", "list_repos", "read_file", "list_tree", "find_symbol_definitions", "find_symbol_references", "list_language_models", ...(models ? ["ask_codebase"] : [])]);
       snapshot(models ? "registration-model" : "registration", tools);
+      const previous = JSON.parse(fs.readFileSync(new URL(`../../../../../tests/contract/${models ? "registration-model" : "registration"}.json`, import.meta.url), "utf8"));
+      for (const [index, tool] of tools.entries()) {
+        assert.equal(JSON.stringify(tool.inputSchema), JSON.stringify(previous[index].inputSchema), `Schema bytes changed for ${tool.name}`);
+      }
       snapshot(models ? "models-configured" : "models-empty", await session.client.callTool({ name: "list_language_models", arguments: {} }));
     } finally { await session.close(); }
   }
