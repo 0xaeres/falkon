@@ -1,0 +1,738 @@
+{
+  "id": "o3-impact",
+  "repo": {
+    "url": "https://github.com/openmrs/openmrs-core",
+    "ref": "openmrs-product",
+    "commit": "5eb8cba2e30befeaec8ab7892dff14ac7dcc9d87"
+  },
+  "corpus": {
+    "include": [
+      "**/*"
+    ],
+    "exclude": [],
+    "product": {
+      "id": "openmrs",
+      "reference": "products/openmrs.json",
+      "commits": {
+        "openmrs-core": "5eb8cba2e30befeaec8ab7892dff14ac7dcc9d87",
+        "openmrs-module-webservices.rest": "66d284b5105a13d5221e103e0243711b69f2dac0",
+        "openmrs-esm-core": "7a172083f27035a8f20aa71fbc5e208ab07fa97a",
+        "openmrs-esm-patient-chart": "45cb44919ca658d571a30355536c03e775552678"
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "impact-1",
+      "question": "If `PatientService.getPatientByUuid` in openmrs-core changed so that it throws instead of returning null for an unknown uuid, which code in the queue, attachments, billing and patientflags modules calls it and could break?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "impact-author",
+      "relation": "impact-java-service",
+      "required": [
+        {
+          "path": "openmrs-module-queue/api/src/main/java/org/openmrs/module/queue/api/QueueServicesWrapper.java",
+          "startLine": 160,
+          "endLine": 168
+        },
+        {
+          "path": "openmrs-module-attachments/omod/src/main/java/org/openmrs/module/attachments/rest/AttachmentResource.java",
+          "startLine": 114,
+          "endLine": 116
+        },
+        {
+          "path": "openmrs-module-attachments/omod/src/main/java/org/openmrs/module/attachments/rest/AttachmentResource.java",
+          "startLine": 358,
+          "endLine": 360
+        },
+        {
+          "path": "openmrs-module-billing/omod/src/main/java/org/openmrs/module/billing/web/legacyweb/controller/BillAddEditController.java",
+          "startLine": 137,
+          "endLine": 141
+        },
+        {
+          "path": "openmrs-module-billing/omod/src/main/java/org/openmrs/module/billing/web/rest/controller/PatientPaymentStatusController.java",
+          "startLine": 32,
+          "endLine": 34
+        },
+        {
+          "path": "openmrs-module-patientflags/omod/src/main/java/org/openmrs/module/patientflags/web/rest/resources/PatientFlagFlagResource.java",
+          "startLine": 156,
+          "endLine": 158
+        },
+        {
+          "path": "openmrs-module-patientflags/omod/src/main/java/org/openmrs/module/patientflags/web/rest/resources/PatientFlagResource.java",
+          "startLine": 111,
+          "endLine": 113
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-queue/api/src/main/java/org/openmrs/module/queue/api/QueueServicesWrapper.java",
+          "startLine": 160,
+          "endLine": 168
+        },
+        {
+          "path": "openmrs-module-attachments/omod/src/main/java/org/openmrs/module/attachments/rest/AttachmentResource.java",
+          "startLine": 114,
+          "endLine": 116
+        },
+        {
+          "path": "openmrs-module-attachments/omod/src/main/java/org/openmrs/module/attachments/rest/AttachmentResource.java",
+          "startLine": 358,
+          "endLine": 360
+        },
+        {
+          "path": "openmrs-module-billing/omod/src/main/java/org/openmrs/module/billing/web/legacyweb/controller/BillAddEditController.java",
+          "startLine": 137,
+          "endLine": 141
+        },
+        {
+          "path": "openmrs-module-billing/omod/src/main/java/org/openmrs/module/billing/web/rest/controller/PatientPaymentStatusController.java",
+          "startLine": 32,
+          "endLine": 34
+        },
+        {
+          "path": "openmrs-module-patientflags/omod/src/main/java/org/openmrs/module/patientflags/web/rest/resources/PatientFlagFlagResource.java",
+          "startLine": 156,
+          "endLine": 158
+        },
+        {
+          "path": "openmrs-module-patientflags/omod/src/main/java/org/openmrs/module/patientflags/web/rest/resources/PatientFlagResource.java",
+          "startLine": 111,
+          "endLine": 113
+        }
+      ]
+    },
+    {
+      "id": "impact-2",
+      "question": "If the single-argument `AdministrationService.getGlobalProperty(String)` started throwing for a missing key instead of returning null, which code in the event, metadataexport and idgen modules calls that form and relies on a silent default?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "impact-author",
+      "relation": "impact-java-service",
+      "required": [
+        {
+          "path": "openmrs-module-event/api/src/main/java/org/openmrs/event/EventEngine.java",
+          "startLine": 195,
+          "endLine": 199
+        },
+        {
+          "path": "openmrs-module-metadataexport/api/src/main/java/org/openmrs/module/metadataexport/MetadataExportActivator.java",
+          "startLine": 39,
+          "endLine": 42
+        },
+        {
+          "path": "openmrs-module-idgen/omod/src/main/java/org/openmrs/module/idgen/web/controller/IdgenEditPatientIdentifiersController.java",
+          "startLine": 109,
+          "endLine": 111
+        },
+        {
+          "path": "openmrs-module-idgen/api/src/main/java/org/openmrs/module/idgen/prefixprovider/LocationBasedPrefixProvider.java",
+          "startLine": 59,
+          "endLine": 62
+        },
+        {
+          "path": "openmrs-module-idgen/api/src/main/java/org/openmrs/module/idgen/suffixprovider/LocationBasedSuffixProvider.java",
+          "startLine": 59,
+          "endLine": 62
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-event/api/src/main/java/org/openmrs/event/EventEngine.java",
+          "startLine": 195,
+          "endLine": 199
+        },
+        {
+          "path": "openmrs-module-metadataexport/api/src/main/java/org/openmrs/module/metadataexport/MetadataExportActivator.java",
+          "startLine": 39,
+          "endLine": 42
+        },
+        {
+          "path": "openmrs-module-idgen/omod/src/main/java/org/openmrs/module/idgen/web/controller/IdgenEditPatientIdentifiersController.java",
+          "startLine": 109,
+          "endLine": 111
+        },
+        {
+          "path": "openmrs-module-idgen/api/src/main/java/org/openmrs/module/idgen/prefixprovider/LocationBasedPrefixProvider.java",
+          "startLine": 59,
+          "endLine": 62
+        },
+        {
+          "path": "openmrs-module-idgen/api/src/main/java/org/openmrs/module/idgen/suffixprovider/LocationBasedSuffixProvider.java",
+          "startLine": 59,
+          "endLine": 62
+        }
+      ]
+    },
+    {
+      "id": "impact-3",
+      "question": "Which classes in the FHIR2 module declare, implement or inject `FhirPatientService`, and so would be touched by a signature change to it?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "impact-author",
+      "relation": "impact-java-interface",
+      "required": [
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/api/FhirPatientService.java",
+          "startLine": 25,
+          "endLine": 27
+        },
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/api/impl/FhirPatientServiceImpl.java",
+          "startLine": 44,
+          "endLine": 46
+        },
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/providers/r3/PatientFhirResourceProvider.java",
+          "startLine": 73,
+          "endLine": 76
+        },
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/providers/r4/PatientFhirResourceProvider.java",
+          "startLine": 73,
+          "endLine": 76
+        },
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientIdentifierTranslatorImpl.java",
+          "startLine": 47,
+          "endLine": 50
+        },
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/api/search/SearchQueryIncludeImpl.java",
+          "startLine": 86,
+          "endLine": 89
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/api/FhirPatientService.java",
+          "startLine": 25,
+          "endLine": 27
+        },
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/api/impl/FhirPatientServiceImpl.java",
+          "startLine": 44,
+          "endLine": 46
+        },
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/providers/r3/PatientFhirResourceProvider.java",
+          "startLine": 73,
+          "endLine": 76
+        },
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/providers/r4/PatientFhirResourceProvider.java",
+          "startLine": 73,
+          "endLine": 76
+        },
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientIdentifierTranslatorImpl.java",
+          "startLine": 47,
+          "endLine": 50
+        },
+        {
+          "path": "openmrs-module-fhir2/api/src/main/java/org/openmrs/module/fhir2/api/search/SearchQueryIncludeImpl.java",
+          "startLine": 86,
+          "endLine": 89
+        }
+      ]
+    },
+    {
+      "id": "impact-4",
+      "question": "If the `useVisit` hook from `@openmrs/esm-framework` changed the shape of what it returns (for example renaming `activeVisit`), which components in the laboratory app and the patient-management repository call it? Ignore hooks that merely share the name but are defined locally.",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "impact-author",
+      "relation": "impact-esm-hook",
+      "required": [
+        {
+          "path": "openmrs-esm-laboratory-app/src/components/add-test-order/add-test-order-button.component.tsx",
+          "startLine": 26,
+          "endLine": 28
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-appointments-app/src/appointments/common-components/end-appointment.modal.tsx",
+          "startLine": 15,
+          "endLine": 17
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-ward-app/src/ward-workspace/create-admission-encounter/create-admission-encounter.workspace.tsx",
+          "startLine": 47,
+          "endLine": 49
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-patient-search-app/src/patient-search-page/patient-banner/banner/patient-banner.component.tsx",
+          "startLine": 45,
+          "endLine": 47
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/add-or-move-button/add-or-move-overflow-menu-item.extension.tsx",
+          "startLine": 11,
+          "endLine": 13
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/create-queue-entry/create-queue-entry.workspace.tsx",
+          "startLine": 46,
+          "endLine": 48
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-laboratory-app/src/components/add-test-order/add-test-order-button.component.tsx",
+          "startLine": 26,
+          "endLine": 28
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-appointments-app/src/appointments/common-components/end-appointment.modal.tsx",
+          "startLine": 15,
+          "endLine": 17
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-ward-app/src/ward-workspace/create-admission-encounter/create-admission-encounter.workspace.tsx",
+          "startLine": 47,
+          "endLine": 49
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-patient-search-app/src/patient-search-page/patient-banner/banner/patient-banner.component.tsx",
+          "startLine": 45,
+          "endLine": 47
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/add-or-move-button/add-or-move-overflow-menu-item.extension.tsx",
+          "startLine": 11,
+          "endLine": 13
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/create-queue-entry/create-queue-entry.workspace.tsx",
+          "startLine": 46,
+          "endLine": 48
+        }
+      ]
+    },
+    {
+      "id": "impact-5",
+      "question": "If `usePatient` from `@openmrs/esm-framework` stopped returning `isLoading`, which components in the dispensing app, billing app, fast-data-entry app and form-engine-lib read it and would break?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "impact-author",
+      "relation": "impact-esm-hook",
+      "required": [
+        {
+          "path": "openmrs-esm-form-engine-lib/src/hooks/usePatientData.ts",
+          "startLine": 24,
+          "endLine": 26
+        },
+        {
+          "path": "openmrs-esm-dispensing-app/src/forms/pause-dispense-form.workspace.tsx",
+          "startLine": 36,
+          "endLine": 38
+        },
+        {
+          "path": "openmrs-esm-dispensing-app/src/forms/dispense-form.workspace.tsx",
+          "startLine": 66,
+          "endLine": 68
+        },
+        {
+          "path": "openmrs-esm-dispensing-app/src/forms/close-dispense-form.workspace.tsx",
+          "startLine": 36,
+          "endLine": 38
+        },
+        {
+          "path": "openmrs-esm-billing-app/src/invoice/invoice.component.tsx",
+          "startLine": 59,
+          "endLine": 61
+        },
+        {
+          "path": "openmrs-esm-fast-data-entry-app/src/add-group-modal/add-group.modal.tsx",
+          "startLine": 19,
+          "endLine": 21
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-form-engine-lib/src/hooks/usePatientData.ts",
+          "startLine": 24,
+          "endLine": 26
+        },
+        {
+          "path": "openmrs-esm-dispensing-app/src/forms/pause-dispense-form.workspace.tsx",
+          "startLine": 36,
+          "endLine": 38
+        },
+        {
+          "path": "openmrs-esm-dispensing-app/src/forms/dispense-form.workspace.tsx",
+          "startLine": 66,
+          "endLine": 68
+        },
+        {
+          "path": "openmrs-esm-dispensing-app/src/forms/close-dispense-form.workspace.tsx",
+          "startLine": 36,
+          "endLine": 38
+        },
+        {
+          "path": "openmrs-esm-billing-app/src/invoice/invoice.component.tsx",
+          "startLine": 59,
+          "endLine": 61
+        },
+        {
+          "path": "openmrs-esm-fast-data-entry-app/src/add-group-modal/add-group.modal.tsx",
+          "startLine": 19,
+          "endLine": 21
+        }
+      ]
+    },
+    {
+      "id": "impact-6",
+      "question": "We want to rename the `queueEntry` field in the body of the DELETE queue-entry transition request (undoing a transition). Which backend code reads that field and which front-end code sends it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "impact-author",
+      "relation": "impact-rest-contract",
+      "required": [
+        {
+          "path": "openmrs-module-queue/omod/src/main/java/org/openmrs/module/queue/web/dto/UndoQueueEntryTransitionRequest.java",
+          "startLine": 14,
+          "endLine": 18
+        },
+        {
+          "path": "openmrs-module-queue/omod/src/main/java/org/openmrs/module/queue/web/QueueEntryTransitionRestController.java",
+          "startLine": 99,
+          "endLine": 110
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/modals/queue-entry-actions.resource.ts",
+          "startLine": 63,
+          "endLine": 65
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/modals/queue-entry-actions.resource.ts",
+          "startLine": 67,
+          "endLine": 76
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/modals/undo-transition-queue-entry.modal.tsx",
+          "startLine": 52,
+          "endLine": 55
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-queue/omod/src/main/java/org/openmrs/module/queue/web/dto/UndoQueueEntryTransitionRequest.java",
+          "startLine": 14,
+          "endLine": 18
+        },
+        {
+          "path": "openmrs-module-queue/omod/src/main/java/org/openmrs/module/queue/web/QueueEntryTransitionRestController.java",
+          "startLine": 99,
+          "endLine": 110
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/modals/queue-entry-actions.resource.ts",
+          "startLine": 63,
+          "endLine": 65
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/modals/queue-entry-actions.resource.ts",
+          "startLine": 67,
+          "endLine": 76
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/modals/undo-transition-queue-entry.modal.tsx",
+          "startLine": 52,
+          "endLine": 55
+        }
+      ]
+    },
+    {
+      "id": "impact-7",
+      "question": "If `ObsService.getComplexObs(Integer, String)` were removed, which code in the attachments, legacyui and REST web services modules calls it directly?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "impact-author",
+      "relation": "impact-java-service",
+      "required": [
+        {
+          "path": "openmrs-module-attachments/omod/src/main/java/org/openmrs/module/attachments/rest/AttachmentBytesResource.java",
+          "startLine": 57,
+          "endLine": 59
+        },
+        {
+          "path": "openmrs-module-attachments/api/src/main/java/org/openmrs/module/attachments/AttachmentsServiceImpl.java",
+          "startLine": 155,
+          "endLine": 161
+        },
+        {
+          "path": "openmrs-module-legacyui/omod/src/main/java/org/openmrs/web/servlet/ComplexObsServlet.java",
+          "startLine": 63,
+          "endLine": 65
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/ObsComplexValueController1_8.java",
+          "startLine": 47,
+          "endLine": 49
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-attachments/omod/src/main/java/org/openmrs/module/attachments/rest/AttachmentBytesResource.java",
+          "startLine": 57,
+          "endLine": 59
+        },
+        {
+          "path": "openmrs-module-attachments/api/src/main/java/org/openmrs/module/attachments/AttachmentsServiceImpl.java",
+          "startLine": 155,
+          "endLine": 161
+        },
+        {
+          "path": "openmrs-module-legacyui/omod/src/main/java/org/openmrs/web/servlet/ComplexObsServlet.java",
+          "startLine": 63,
+          "endLine": 65
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/ObsComplexValueController1_8.java",
+          "startLine": 47,
+          "endLine": 49
+        }
+      ]
+    },
+    {
+      "id": "impact-8",
+      "question": "If `AdministrationService.saveGlobalProperty` became asynchronous, which code in the billing, stockmanagement and reporting modules calls it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "impact-author",
+      "relation": "impact-java-service",
+      "required": [
+        {
+          "path": "openmrs-module-billing/api/src/main/java/org/openmrs/module/billing/api/ReceiptNumberGeneratorFactory.java",
+          "startLine": 180,
+          "endLine": 183
+        },
+        {
+          "path": "openmrs-module-stockmanagement/api/src/main/java/org/openmrs/module/stockmanagement/api/utils/GlobalProperties.java",
+          "startLine": 82,
+          "endLine": 85
+        },
+        {
+          "path": "openmrs-module-stockmanagement/api/src/main/java/org/openmrs/module/stockmanagement/api/utils/GlobalProperties.java",
+          "startLine": 91,
+          "endLine": 93
+        },
+        {
+          "path": "openmrs-module-reporting/api/src/main/java/org/openmrs/module/reporting/report/manager/ReportManagerUtil.java",
+          "startLine": 71,
+          "endLine": 74
+        },
+        {
+          "path": "openmrs-module-reporting/api/src/main/java/org/openmrs/module/reporting/report/util/ReportUtil.java",
+          "startLine": 342,
+          "endLine": 345
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-billing/api/src/main/java/org/openmrs/module/billing/api/ReceiptNumberGeneratorFactory.java",
+          "startLine": 180,
+          "endLine": 183
+        },
+        {
+          "path": "openmrs-module-stockmanagement/api/src/main/java/org/openmrs/module/stockmanagement/api/utils/GlobalProperties.java",
+          "startLine": 82,
+          "endLine": 85
+        },
+        {
+          "path": "openmrs-module-stockmanagement/api/src/main/java/org/openmrs/module/stockmanagement/api/utils/GlobalProperties.java",
+          "startLine": 91,
+          "endLine": 93
+        },
+        {
+          "path": "openmrs-module-reporting/api/src/main/java/org/openmrs/module/reporting/report/manager/ReportManagerUtil.java",
+          "startLine": 71,
+          "endLine": 74
+        },
+        {
+          "path": "openmrs-module-reporting/api/src/main/java/org/openmrs/module/reporting/report/util/ReportUtil.java",
+          "startLine": 342,
+          "endLine": 345
+        }
+      ]
+    },
+    {
+      "id": "impact-9",
+      "question": "If the props of the `FormEngine` component exported by the form engine library changed, which code in the Product defines those props and which applications render the component?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "impact-author",
+      "relation": "impact-ui-component",
+      "required": [
+        {
+          "path": "openmrs-esm-form-engine-lib/src/form-engine.component.tsx",
+          "startLine": 24,
+          "endLine": 40
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-form-engine-app/src/form-renderer/form-renderer.component.tsx",
+          "startLine": 95,
+          "endLine": 109
+        },
+        {
+          "path": "openmrs-esm-form-builder/src/components/form-renderer/form-renderer.component.tsx",
+          "startLine": 81,
+          "endLine": 83
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-form-engine-lib/src/form-engine.component.tsx",
+          "startLine": 24,
+          "endLine": 40
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-form-engine-app/src/form-renderer/form-renderer.component.tsx",
+          "startLine": 95,
+          "endLine": 109
+        },
+        {
+          "path": "openmrs-esm-form-builder/src/components/form-renderer/form-renderer.component.tsx",
+          "startLine": 81,
+          "endLine": 83
+        }
+      ]
+    },
+    {
+      "id": "impact-10",
+      "question": "We plan to rename the `bedTag` REST resource of the bed management module. Which front-end code (the O3 bed management app and the module's legacy OWA) calls the `/bedTag` endpoint?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "impact-author",
+      "relation": "impact-rest-contract",
+      "required": [
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-bed-management-app/src/summary/summary.resource.ts",
+          "startLine": 215,
+          "endLine": 217
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-bed-management-app/src/summary/summary.resource.ts",
+          "startLine": 253,
+          "endLine": 255
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-bed-management-app/src/summary/summary.resource.ts",
+          "startLine": 281,
+          "endLine": 283
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-bed-management-app/src/summary/summary.resource.ts",
+          "startLine": 289,
+          "endLine": 291
+        },
+        {
+          "path": "openmrs-module-bedmanagement/owa/app/components/bedTag/bedTagForm/addEditBedTag.js",
+          "startLine": 53,
+          "endLine": 55
+        },
+        {
+          "path": "openmrs-module-bedmanagement/owa/app/components/bedTag/bedTagWrapper.js",
+          "startLine": 48,
+          "endLine": 50
+        },
+        {
+          "path": "openmrs-module-bedmanagement/owa/app/components/bedTag/bedTagList/bedTagListRow.js",
+          "startLine": 28,
+          "endLine": 30
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-bed-management-app/src/summary/summary.resource.ts",
+          "startLine": 215,
+          "endLine": 217
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-bed-management-app/src/summary/summary.resource.ts",
+          "startLine": 253,
+          "endLine": 255
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-bed-management-app/src/summary/summary.resource.ts",
+          "startLine": 281,
+          "endLine": 283
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-bed-management-app/src/summary/summary.resource.ts",
+          "startLine": 289,
+          "endLine": 291
+        },
+        {
+          "path": "openmrs-module-bedmanagement/owa/app/components/bedTag/bedTagForm/addEditBedTag.js",
+          "startLine": 53,
+          "endLine": 55
+        },
+        {
+          "path": "openmrs-module-bedmanagement/owa/app/components/bedTag/bedTagWrapper.js",
+          "startLine": 48,
+          "endLine": 50
+        },
+        {
+          "path": "openmrs-module-bedmanagement/owa/app/components/bedTag/bedTagList/bedTagListRow.js",
+          "startLine": 28,
+          "endLine": 30
+        }
+      ]
+    },
+    {
+      "id": "impact-11",
+      "question": "If `AdtService.getLocationThatSupportsVisits` in the emrapi module were removed, which code outside `AdtServiceImpl` calls it, in emrapi or any other module?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "impact-author",
+      "relation": "impact-java-service",
+      "required": [
+        {
+          "path": "openmrs-module-emrapi/omod/src/main/java/org/openmrs/module/emrapi/web/controller/LocationThatSupportsVisitsController.java",
+          "startLine": 42,
+          "endLine": 44
+        },
+        {
+          "path": "openmrs-module-emrapi/omod/src/main/java/org/openmrs/module/emrapi/web/controller/InpatientVisitsController.java",
+          "startLine": 44,
+          "endLine": 46
+        },
+        {
+          "path": "openmrs-module-emrapi/api/src/main/java/org/openmrs/module/emrapi/adt/EmrApiVisitAssignmentHandler.java",
+          "startLine": 151,
+          "endLine": 153
+        },
+        {
+          "path": "openmrs-module-emrapi/api/src/main/java/org/openmrs/module/emrapi/patient/EmrPatientServiceImpl.java",
+          "startLine": 43,
+          "endLine": 45
+        }
+      ],
+      "declarations": [
+        {
+          "path": "openmrs-module-emrapi/omod/src/main/java/org/openmrs/module/emrapi/web/controller/LocationThatSupportsVisitsController.java",
+          "startLine": 42,
+          "endLine": 44
+        },
+        {
+          "path": "openmrs-module-emrapi/omod/src/main/java/org/openmrs/module/emrapi/web/controller/InpatientVisitsController.java",
+          "startLine": 44,
+          "endLine": 46
+        },
+        {
+          "path": "openmrs-module-emrapi/api/src/main/java/org/openmrs/module/emrapi/adt/EmrApiVisitAssignmentHandler.java",
+          "startLine": 151,
+          "endLine": 153
+        },
+        {
+          "path": "openmrs-module-emrapi/api/src/main/java/org/openmrs/module/emrapi/patient/EmrPatientServiceImpl.java",
+          "startLine": 43,
+          "endLine": 45
+        }
+      ]
+    }
+  ]
+}

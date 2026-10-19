@@ -90,6 +90,58 @@ test("stack takes --instructions off only", async () => {
   await assert.rejects(main(["stack", "up", "--instructions", "on"], {}), /--instructions must be off/);
 });
 
+test("stack takes --recipe on only, and not together with --instructions off", async () => {
+  await assert.rejects(main(["stack", "up", "--recipe", "off"], {}), /--recipe must be on/);
+  await assert.rejects(main(["stack", "up", "--recipe", "on", "--instructions", "off"], {}), /separate stacks/);
+});
+
+test("the impact set: 11 questions, 6 dev and 5 hidden, with 3 to 8 gold spans each, and a pilot of all the dev ones", async () => {
+  const d = loadDataset("o3-impact");
+  assert.equal(d.questions.length, 11);
+  assert.equal(new Set(d.questions.map((q) => q.id)).size, 11);
+  assert.equal(d.questions.filter((q) => q.split === "dev").length, 6);
+  for (const q of d.questions) {
+    assert.ok(q.required.length >= 3 && q.required.length <= 8, q.id);
+    assert.deepEqual(q.declarations, q.required, q.id);
+    assert.ok(q.required.every((s) => s.endLine >= s.startLine && loadProduct().repositories.some((r) => s.path.startsWith(`${r.name}/`))), q.id);
+  }
+  assert.deepEqual([...pilotIds(d, 6)].sort(), d.questions.filter((q) => q.split === "dev").map((q) => q.id).sort());
+});
+
+test("pilot --dataset impact --list works offline for every arm, including clone-tools-recipe", async () => {
+  await withRuns(async (runs) => {
+    const out = lines(await main(["pilot", "--dataset", "impact", "--list", "--model", "haiku", "--arms", "clone-tools,clone-tools-recipe"], env(runs)));
+    assert.match(out[0]!, /12 runs \(6 questions x 2 arms, model haiku\)/);
+    const runLines = out.slice(1);
+    assert.equal(runLines.length, 12);
+    assert.ok(runLines.every((l) => l.startsWith("o3-impact/impact-") && !l.includes("research_codebase")));
+    assert.equal(runLines.filter((l) => l.includes(" clone-tools-recipe: ")).length, 6);
+    assert.match(await main(["run", "--dataset", "impact", "--split", "hidden", "--list", "--arms", "clone-tools-recipe"], env(runs)), /5 runs/);
+    assert.deepEqual(readdirSync(runs), []);
+    await assert.rejects(main(["pilot", "--dataset", "other", "--list"], env(runs)), /--dataset/);
+  });
+});
+
+test("report --dataset impact --reference clone-tools compares the recipe arm with the plain arm of the same model", async () => {
+  await withRuns(async (runs) => {
+    const d = loadDataset("o3-impact"), gold = d.questions.find((q) => q.id === "impact-6")!;
+    writeRaw(join(runs, "haiku", "o3-impact"), run("impact-6", "clone-tools", { repository: "o3-impact", answer: [] }));
+    writeRaw(join(runs, "haiku", "o3-impact"), run("impact-6", "clone-tools-recipe", { repository: "o3-impact", answer: gold.required }));
+    const text = await main(["report", "--split", "dev", "--model", "haiku", "--dataset", "impact", "--arms", "clone-tools,clone-tools-recipe", "--reference", "clone-tools"], env(runs));
+    assert.match(text, /Reference: clone-tools runs of this model/);
+    assert.match(text, /### clone-tools-recipe \(dev\)[\s\S]*Coverage clone-tools-recipe: 1\/6 paired[\s\S]*Recall wins 1, losses 0, ties 0/);
+    await assert.rejects(main(["report", "--reference", "nope"], env(runs)), /--reference/);
+  });
+});
+
+test("report --pilot applies the plain-arm recall floor to the recipe arm too", async () => {
+  await withRuns(async (runs) => {
+    const out = await main(["report", "--pilot", "--dataset", "impact", "--model", "haiku", "--arms", "clone-tools-recipe"], env(runs));
+    assert.match(out, /STOP: recipe-arm pilot recall n\/a/);
+    assert.match(out, /o3-impact|impact-\d+ clone-tools-recipe missing/);
+  });
+});
+
 test("run --list covers both datasets and the whole split; hidden needs no clean dev when only listing", async () => {
   await withRuns(async (runs) => {
     assert.match(await main(["run", "--split", "dev", "--list"], env(runs)), /96 runs/);
@@ -176,6 +228,14 @@ test("report --pilot prints the stop rules as PASS or STOP lines", async () => {
 });
 
 const o3 = process.env.EVAL_O3_DIR ?? "/Users/aeres/Desktop/projects/falkon/.local/eval";
+test("every impact gold span lies inside its file at the pinned commit", { skip: existsSync(join(o3, "openmrs-core")) ? false : "corpus checkouts not present" }, () => {
+  const count = lineCounter(o3);
+  for (const q of loadDataset("o3-impact").questions) for (const s of q.required) {
+    const lines = count(s.path);
+    assert.ok(lines !== undefined && s.endLine <= lines, `${q.id} ${s.path}:${s.startLine}-${s.endLine}`);
+  }
+});
+
 test("line counts come from the pinned commit and cover all 104 gold files", { skip: existsSync(join(o3, "openmrs-core")) ? false : "corpus checkouts not present" }, () => {
   const count = lineCounter(o3);
   const gold = goldPaths();

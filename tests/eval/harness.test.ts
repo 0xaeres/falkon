@@ -81,10 +81,11 @@ test("answers keep the last json fence, drop unknown files and bare filenames, c
 });
 
 test("every arm carries the question; the three tools arms share one prompt", () => {
-  const arms: Arm[] = ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr"];
+  const arms: Arm[] = ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr", "clone-tools-recipe"];
   for (const arm of arms) assert.ok(prompt(arm, "Q").includes("Question:\nQ"));
   assert.equal(prompt("v6-tools", "Q"), prompt("clone-tools", "Q"));
   assert.equal(prompt("clone-tools-noinstr", "Q"), prompt("clone-tools", "Q"));
+  assert.equal(prompt("clone-tools-recipe", "Q"), prompt("clone-tools", "Q"));
 });
 
 test("--model reaches the claude command", () => {
@@ -93,7 +94,7 @@ test("--model reaches the claude command", () => {
 
 test("the v6 and no-instructions arms expose the plain arm's tools and denials, at their own URL", () => {
   const plain = buildCommand("clone-tools", base);
-  for (const [arm, url] of [["v6-tools", "http://127.0.0.1:3000/api/mcp"], ["clone-tools-noinstr", "http://127.0.0.1:3401/api/mcp"]] as const) {
+  for (const [arm, url] of [["v6-tools", "http://127.0.0.1:3000/api/mcp"], ["clone-tools-noinstr", "http://127.0.0.1:3401/api/mcp"], ["clone-tools-recipe", "http://127.0.0.1:3402/api/mcp"]] as const) {
     const c = buildCommand(arm, { ...base, url, apiKey: "s3cret" });
     assert.equal(flag(c.args, "--allowedTools"), flag(plain.args, "--allowedTools"), arm);
     assert.equal(flag(c.args, "--disallowedTools"), flag(plain.args, "--disallowedTools"), arm);

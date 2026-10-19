@@ -79,7 +79,8 @@ export async function createMessageStream(o: {
 }) {
   const { model, temperature } = await aiModel(o.model);
   const repos = [...o.selectedRepos].sort((a, b) => a.localeCompare(b));
-  const dyn = dynamicPrompt({ repos, files: await mentionedFiles(o.messages, o.scope) });
+  const query = o.messages.findLast((m) => m.role === "user")?.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ");
+  const dyn = dynamicPrompt({ repos, files: await mentionedFiles(o.messages, o.scope), query });
   return createUIMessageStream({
     originalMessages: o.messages,
     onFinish: async ({ messages }) => o.onFinish?.(messages),

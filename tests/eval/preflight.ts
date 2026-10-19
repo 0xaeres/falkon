@@ -24,8 +24,8 @@ export function readKey(file: string | undefined): string | undefined {
   return key;
 }
 
-/** Every unique gold path of both datasets, as <repository>/<path>. */
-export const goldPaths = () => [...new Set(DATASETS.flatMap((id) => loadDataset(id).questions.flatMap((q) => (q.declarations ?? []).map((d) => d.path))))].sort();
+/** Every unique gold path of the datasets (both O3 sets unless told otherwise), as <repository>/<path>. */
+export const goldPaths = (ids: readonly string[] = DATASETS) => [...new Set(ids.flatMap((id) => loadDataset(id).questions.flatMap((q) => (q.declarations ?? []).map((d) => d.path))))].sort();
 
 export async function connect(url: string, apiKey?: string): Promise<EvalClient> {
   const client = new Client({ name: "falkon-eval-preflight", version: "1" });

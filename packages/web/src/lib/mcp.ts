@@ -4,6 +4,7 @@ import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { toolDefinitions, toolNames, toolJsonSchema, type AnyToolDefinition, type Scope } from "@sbc/shared";
 import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS } from "./ask/brief";
+import { IMPACT_INSTRUCTIONS } from "./ask/impact";
 import { configuredLanguageModels, languageModelsInfo } from "./ask/models";
 import { languageModelInfo } from "./ask/http";
 import { toolDeps } from "./tools";
@@ -37,9 +38,11 @@ export async function createMcpServer(scope: Scope) {
     warnedMode = true;
     console.warn(`MCP_INSTRUCTIONS="${mode.replace(/\s+/g, " ").slice(0, 40)}" is not default or off; using default.`);
   }
+  // MCP_IMPACT_RECIPE=on adds the impact-and-change recipe to the instructions and to impact-style research briefs; anything else keeps today's bytes.
+  const impactRecipe = process.env.MCP_IMPACT_RECIPE === "on";
   const server = new McpServer(
     { name: MCP_SERVER_NAME, version: process.env.SOURCEBOT_CLONE_VERSION ?? "0.0.1" },
-    mode === "off" ? undefined : { instructions: CLIENT_RESEARCH_INSTRUCTIONS },
+    mode === "off" ? undefined : { instructions: impactRecipe ? `${CLIENT_RESEARCH_INSTRUCTIONS}\n\n${IMPACT_INSTRUCTIONS}` : CLIENT_RESEARCH_INSTRUCTIONS },
   );
   const registered: { name: string; tool: RegisteredTool }[] = [];
   // Every tool must go through add so registration and listing stay together.
@@ -110,6 +113,7 @@ export async function createMcpServer(scope: Scope) {
     query,
     repos,
     scope,
+    impactRecipe,
     availableRepos: (await toolDeps.listRepos({ sort: "name", direction: "asc" })).map((repo) => repo.name),
   });
   add(

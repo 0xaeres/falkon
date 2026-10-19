@@ -1,4 +1,5 @@
 import dedent from "dedent";
+import { IMPACT_PROMPT, isImpactQuery } from "./impact";
 
 export const ANSWER_TAG = "<!--answer-->";
 export const FILE_REFERENCE_PREFIX = "@file:";
@@ -85,7 +86,7 @@ export const STATIC_PROMPT = d`
     `;
 
 /** Per-chat context: selected repos and files the user mentioned. */
-export function dynamicPrompt({ repos, files }: { repos: string[]; files: { path: string; repo: string; language: string; revision: string; source: string }[] }) {
+export function dynamicPrompt({ repos, files, query }: { repos: string[]; files: { path: string; repo: string; language: string; revision: string; source: string }[]; query?: string }) {
   const parts: string[] = [];
   if (repos.length > 0) {
     parts.push(d`
@@ -114,6 +115,8 @@ export function dynamicPrompt({ repos, files }: { repos: string[]; files: { path
         </files>
         `);
   }
+  // The recipe goes in this per-chat part, not STATIC_PROMPT: the static part stays byte-identical and prompt-cached, and only this part can see the question.
+  if (query !== undefined && isImpactQuery(query)) parts.push(IMPACT_PROMPT);
   return parts.join("\n\n");
 }
 
