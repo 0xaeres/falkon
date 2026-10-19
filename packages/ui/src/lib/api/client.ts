@@ -8,6 +8,7 @@ import {
   streamEventSchema,
   threadSchema,
   threadSummarySchema,
+  type EditRequest,
   type SetupRequest,
   type StreamEvent,
 } from "@sbc/contracts";
@@ -80,13 +81,10 @@ export const api = {
   thread: (url: string) => request(url, threadSchema),
   connect: (input: unknown) =>
     request(`${base}/connections`, connectionSchema, "POST", input),
-  setup: (input: SetupRequest, edit = false) =>
-    request(
-      edit ? keys.product(input.id) : keys.products,
-      productSchema,
-      edit ? "PATCH" : "POST",
-      input,
-    ),
+  setup: (input: SetupRequest) =>
+    request(keys.products, productSchema, "POST", input),
+  edit: (id: string, input: EditRequest) =>
+    request(keys.product(id), productSchema, "PATCH", input),
   sync: (id: string, input: unknown) =>
     request(`${keys.product(id)}/sync`, statusSchema, "POST", input),
   newThread: (id: string) => request(keys.threads(id), threadSchema, "POST"),

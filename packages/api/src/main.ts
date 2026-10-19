@@ -6,6 +6,7 @@ import { adminToken, startAdmin } from "./admin";
 import { createApp } from "./app";
 import { ConnectionService } from "./connections";
 import { PrismaProductRegistry } from "./product";
+import { UiProductService } from "./ui";
 
 // An AUTH_MODE other than none or apiKey throws here: the service refuses to start.
 // A set ADMIN_TOKEN shorter than 32 characters throws here too, before anything listens.
@@ -20,4 +21,5 @@ app.enableShutdownHooks();
 await app.listen(port, host);
 console.log(`api listening on ${host}:${port} (AUTH_MODE=${process.env.AUTH_MODE ?? "none"})`);
 
-await startAdmin(registry, process.env, new ConnectionService(prisma));
+const connections = new ConnectionService(prisma);
+await startAdmin(registry, process.env, connections, new UiProductService(prisma, connections));

@@ -147,7 +147,10 @@ test("setup validates branches, duplicate IDs, immutable identity, and concurren
   assert.equal(
     (
       await productRoute.PATCH(
-        request({ ...input, id: "changed-id" }),
+        request({
+          name: input.name,
+          repositories: [{ id: "payments-api", branch: "not-a-branch" }],
+        }),
         context(input.id),
       )
     ).status,

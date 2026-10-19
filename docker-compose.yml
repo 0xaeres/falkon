@@ -90,7 +90,7 @@ services:
       PORT: 3000
       HOSTNAME: 0.0.0.0
       ENGINE_URL: http://api:3002
-      ENGINE_ADMIN_TOKEN: ${ENGINE_ADMIN_TOKEN:-}
+      ENGINE_ADMIN_TOKEN: ${ENGINE_ADMIN_TOKEN:-${ADMIN_TOKEN:-}}
     depends_on: [api]
     ports: ["127.0.0.1:3100:3000"]
 

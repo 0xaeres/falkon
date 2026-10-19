@@ -163,6 +163,7 @@ model Product {
   source      ProductSource
   definition  Json
   repoNames   String[]
+  connectionId Int? // the api Connection a UI-created Product draws its repositories from
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 }
