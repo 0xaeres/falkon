@@ -21,7 +21,7 @@ let mcp: typeof import("../../web/src/lib/mcp");
 before(async () => {
   mcp = await import("../../web/src/lib/mcp");
   const { createApp } = await import("./app");
-  app = await createApp({ repoNames: async (p) => (p === "fx" ? repos : undefined) }, { post: mcp.handleMcpPost, delete: mcp.handleMcpDelete });
+  app = await createApp({ find: async (p) => (p === "fx" ? { id: 1, repoNames: repos } : undefined) }, { post: mcp.handleMcpPost, delete: mcp.handleMcpDelete });
   await app.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(app.getHttpServer().address() as AddressInfo).port}`;
 });

@@ -1,8 +1,8 @@
 import fs from "node:fs";
-import micromatch from "micromatch";
-import { prisma, Prisma, RepoKind, type ConnectionType } from "@sbc/db";
+import { prisma, Prisma, ProductSource, RepoKind, type ConnectionType, type PrismaClient } from "@sbc/db";
 import { KB_SUFFIX, ownerOfKnowledgeRepo, repoGitDir, repoPath, type Config, type ConnectionConfig } from "@sbc/shared";
-import { compileConnection, dedupeRecords, type RepoMetadata, type RepoRecord } from "./connectors";
+import { compileConnection, dedupeRecords, type RepoRecord } from "./connectors";
+import { isProductSlug, loadContextResolver, type ProductDefinition } from "./productResolve";
 import { removeShards } from "./zoekt";
 
 const connectionType = (c: ConnectionConfig): ConnectionType => c.type;
@@ -108,37 +108,11 @@ export async function removeOrphans() {
   }
 }
 
-/** Resolves config `contexts` to repo names (include globs / connections / topics, then excludes). */
+/** Resolves config `contexts` to repo names (include globs / connections / topics, then excludes); imports them as Products too. */
 export async function syncSearchContexts(cfg: Config) {
-  const all = await prisma.repo.findMany({ where: { kind: RepoKind.CODE }, select: { id: true, name: true, metadata: true } });
-  const reposOf = async (names: string[]) =>
-    (await prisma.connection.findMany({ where: { name: { in: names } }, include: { repos: { select: { repoId: true } } } })).flatMap((c) =>
-      c.repos.map((r) => r.repoId),
-    );
-  const topicsOf = (m: unknown) => {
-    const h = (m as RepoMetadata)?.codeHostMetadata;
-    return [...(h?.gitlab?.topics ?? []), ...(h?.github?.topics ?? [])].map((t) => t.toLowerCase());
-  };
+  const resolve = await loadContextResolver(prisma);
   for (const [name, ctx] of Object.entries(cfg.contexts)) {
-    let ids: number[] = [];
-    if (ctx.include) ids.push(...all.filter((r) => micromatch.isMatch(r.name, ctx.include!)).map((r) => r.id));
-    if (ctx.includeConnections) ids.push(...(await reposOf(ctx.includeConnections)));
-    if (ctx.includeTopics) {
-      const p = ctx.includeTopics.map((t) => t.toLowerCase());
-      ids.push(...all.filter((r) => topicsOf(r.metadata).some((t) => micromatch.isMatch(t, p))).map((r) => r.id));
-    }
-    const byId = new Map(all.map((r) => [r.id, r]));
-    let repos = [...new Set(ids)].map((id) => byId.get(id)!).filter(Boolean);
-    if (ctx.exclude) repos = repos.filter((r) => !micromatch.isMatch(r.name, ctx.exclude!));
-    if (ctx.excludeConnections) {
-      const drop = new Set(await reposOf(ctx.excludeConnections));
-      repos = repos.filter((r) => !drop.has(r.id));
-    }
-    if (ctx.excludeTopics) {
-      const p = ctx.excludeTopics.map((t) => t.toLowerCase());
-      repos = repos.filter((r) => !topicsOf(r.metadata).some((t) => micromatch.isMatch(t, p)));
-    }
-    const repoNames = repos.map((r) => r.name);
+    const repoNames = resolve(ctx);
     await prisma.searchContext.upsert({
       where: { name },
       create: { name, description: ctx.description, repoNames },
@@ -146,4 +120,41 @@ export async function syncSearchContexts(cfg: Config) {
     });
   }
   await prisma.searchContext.deleteMany({ where: { name: { notIn: Object.keys(cfg.contexts) } } });
+  await syncProducts(cfg, resolve);
+}
+
+type ProductTable = Pick<PrismaClient["product"], "findMany" | "create" | "updateMany" | "deleteMany">;
+const isUniqueViolation = (e: unknown) => (e as { code?: string } | null)?.code === "P2002";
+
+/**
+ * Config `contexts` become `source=config` Products; config Products no longer in config are deleted; `source=api`
+ * Products are never written by the import except to re-resolve their own definition. A context whose name is not a
+ * valid slug, or whose slug an api Product holds (api wins), is skipped with a log line. Every write is conditioned on
+ * `source`, so a concurrent admin create cannot be turned into a config row.
+ */
+export async function syncProducts(cfg: Config, resolve: (d: ProductDefinition) => string[], products: ProductTable = prisma.product) {
+  const imported: string[] = [];
+  for (const [slug, { description, ...definition }] of Object.entries(cfg.contexts)) {
+    if (!isProductSlug(slug)) {
+      console.log(`product import: context "${slug}" skipped, not a valid Product slug (^[a-z0-9][a-z0-9-]{0,62}$)`);
+      continue;
+    }
+    const data = { name: slug, description: description ?? null, definition: definition as Prisma.InputJsonValue, repoNames: resolve(definition) };
+    const { count } = await products.updateMany({ where: { slug, source: ProductSource.config }, data });
+    if (count === 0) {
+      try {
+        await products.create({ data: { slug, source: ProductSource.config, ...data } });
+      } catch (e) {
+        if (!isUniqueViolation(e)) throw e;
+        console.log(`product import: context "${slug}" skipped, an api Product has that slug`);
+        continue;
+      }
+    }
+    imported.push(slug);
+  }
+  await products.deleteMany({ where: { source: ProductSource.config, slug: { notIn: imported } } });
+  for (const p of await products.findMany({ where: { source: ProductSource.api } })) {
+    const repoNames = resolve(p.definition as ProductDefinition);
+    if (JSON.stringify(repoNames) !== JSON.stringify(p.repoNames)) await products.updateMany({ where: { id: p.id, source: ProductSource.api, updatedAt: p.updatedAt }, data: { repoNames } });
+  }
 }
