@@ -1,0 +1,6393 @@
+[
+  {
+    "id": "and",
+    "query": {
+      "id": "and",
+      "query": "hello world"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 3,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "export function legacy() { return \"hello world\"; }\n",
+                "contentStart": {
+                  "byteOffset": 33,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 73,
+                      "column": 41,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 68,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  },
+                  {
+                    "end": {
+                      "byteOffset": 79,
+                      "column": 47,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 74,
+                      "column": 42,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    40
+                  ],
+                  [
+                    41,
+                    46
+                  ]
+                ],
+                "text": "export function legacy() { return \"hello world\"; }"
+              }
+            ],
+            "occurrences": 2,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 61,
+                      "column": 16,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 56,
+                      "column": 11,
+                      "lineNumber": 2
+                    }
+                  },
+                  {
+                    "end": {
+                      "byteOffset": 67,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 62,
+                      "column": 17,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    10,
+                    15
+                  ],
+                  [
+                    16,
+                    21
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 2,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 32,
+                      "column": 13,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 27,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  },
+                  {
+                    "end": {
+                      "byteOffset": 38,
+                      "column": 19,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 33,
+                      "column": 14,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    13,
+                    18
+                  ],
+                  [
+                    7,
+                    12
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 2,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 6,
+        "rawMatchCount": 6
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "archived-no",
+    "query": {
+      "id": "archived-no",
+      "query": "archived:no fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "archived-only",
+    "query": {
+      "id": "archived-only",
+      "query": "archived:only fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 0,
+        "files": [],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 0,
+        "rawMatchCount": 0
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "archived-yes",
+    "query": {
+      "id": "archived-yes",
+      "query": "archived:yes fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "case-insensitive",
+    "query": {
+      "case": false,
+      "id": "case-insensitive",
+      "query": "NEEDLE"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 2,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "export const message = greet(\"Needle\");\n",
+                "contentStart": {
+                  "byteOffset": 111,
+                  "column": 1,
+                  "lineNumber": 4
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 147,
+                      "column": 37,
+                      "lineNumber": 4
+                    },
+                    "start": {
+                      "byteOffset": 141,
+                      "column": 31,
+                      "lineNumber": 4
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 4,
+                "ranges": [
+                  [
+                    30,
+                    36
+                  ]
+                ],
+                "text": "export const message = greet(\"Needle\");"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "print(dispatch(\"needle\"))\n",
+                "contentStart": {
+                  "byteOffset": 96,
+                  "column": 1,
+                  "lineNumber": 5
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 118,
+                      "column": 23,
+                      "lineNumber": 5
+                    },
+                    "start": {
+                      "byteOffset": 112,
+                      "column": 17,
+                      "lineNumber": 5
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 5,
+                "ranges": [
+                  [
+                    16,
+                    22
+                  ]
+                ],
+                "text": "print(dispatch(\"needle\"))"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 2,
+        "rawMatchCount": 2
+      },
+      "status": 200
+    }
+  },
+  {
+    "grep": {
+      "content": [
+        {
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/greet.ts:\n  4: export const message = greet(\"Needle\");",
+          "type": "text"
+        }
+      ]
+    },
+    "id": "case-sensitive",
+    "query": {
+      "case": true,
+      "grep": {
+        "limit": 500,
+        "pattern": "Needle"
+      },
+      "id": "case-sensitive",
+      "query": "Needle"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 1,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "export const message = greet(\"Needle\");\n",
+                "contentStart": {
+                  "byteOffset": 111,
+                  "column": 1,
+                  "lineNumber": 4
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 147,
+                      "column": 37,
+                      "lineNumber": 4
+                    },
+                    "start": {
+                      "byteOffset": 141,
+                      "column": 31,
+                      "lineNumber": 4
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 4,
+                "ranges": [
+                  [
+                    30,
+                    36
+                  ]
+                ],
+                "text": "export const message = greet(\"Needle\");"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 1,
+        "rawMatchCount": 1
+      },
+      "status": 200
+    }
+  },
+  {
+    "grep": {
+      "content": [
+        {
+          "text": "No files found",
+          "type": "text"
+        }
+      ]
+    },
+    "id": "case-sensitive-empty",
+    "query": {
+      "case": true,
+      "grep": {
+        "limit": 500,
+        "pattern": "NEEDLE"
+      },
+      "id": "case-sensitive-empty",
+      "query": "NEEDLE"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 0,
+        "files": [],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 0,
+        "rawMatchCount": 0
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "content",
+    "query": {
+      "id": "content",
+      "query": "content:fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "content-alias",
+    "query": {
+      "id": "content-alias",
+      "query": "c:fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "context",
+    "query": {
+      "id": "context",
+      "query": "context:fixtures fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "empty-group",
+    "query": {
+      "id": "empty-group",
+      "query": "()"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 0,
+        "files": [],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 0,
+        "rawMatchCount": 0
+      },
+      "status": 200
+    }
+  },
+  {
+    "grep": {
+      "content": [
+        {
+          "text": "No files found",
+          "type": "text"
+        }
+      ]
+    },
+    "id": "empty-result",
+    "query": {
+      "grep": {
+        "limit": 500,
+        "pattern": "(?i)absent_unique_marker"
+      },
+      "id": "empty-result",
+      "query": "absent_unique_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 0,
+        "files": [],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 0,
+        "rawMatchCount": 0
+      },
+      "status": 200
+    }
+  },
+  {
+    "grep": {
+      "content": [
+        {
+          "text": "Found 4 matches in 4 files\n\n[fixtures.test/archive] src/legacy.ts:\n  1: // fixture_marker archive_marker\n\n[fixtures.test/atlas] src/greet.ts:\n  2:   return `hello world ${name}`; // fixture_marker atlas_marker\n\n[fixtures.test/ledger] src/Ledger.java:\n  2:     // fixture_marker ledger_marker\n\n[fixtures.test/worker] src/worker.py:\n  2:     \"\"\"hello world fixture_marker worker_marker\"\"\"",
+          "type": "text"
+        }
+      ]
+    },
+    "id": "exhaustive",
+    "query": {
+      "grep": {
+        "limit": 1000,
+        "pattern": "(?i)fixture_marker"
+      },
+      "id": "exhaustive",
+      "limit": 1000,
+      "query": "fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "file",
+    "query": {
+      "id": "file",
+      "query": "file:src/ fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "file-alias",
+    "query": {
+      "id": "file-alias",
+      "query": "f:greet fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 1,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 1,
+        "rawMatchCount": 1
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "fork-no",
+    "query": {
+      "id": "fork-no",
+      "query": "fork:no fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "fork-only",
+    "query": {
+      "id": "fork-only",
+      "query": "fork:only fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 0,
+        "files": [],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 0,
+        "rawMatchCount": 0
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "fork-yes",
+    "query": {
+      "id": "fork-yes",
+      "query": "fork:yes fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "invalid-filter",
+    "query": {
+      "id": "invalid-filter",
+      "query": "file:"
+    },
+    "search": {
+      "body": {
+        "errorCode": "FAILED_TO_PARSE_QUERY",
+        "message": "Failed to parse query \"file:\" with message: No parse at 5",
+        "statusCode": 400
+      },
+      "status": 400
+    }
+  },
+  {
+    "id": "lang-java",
+    "query": {
+      "id": "lang-java",
+      "query": "lang:Java fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 1,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 1,
+        "rawMatchCount": 1
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "lang-python",
+    "query": {
+      "id": "lang-python",
+      "query": "lang:Python fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 1,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 1,
+        "rawMatchCount": 1
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "lang-ts",
+    "query": {
+      "id": "lang-ts",
+      "query": "lang:typescript fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 2,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 2,
+        "rawMatchCount": 2
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "lang-unknown",
+    "query": {
+      "id": "lang-unknown",
+      "query": "lang:Unknown fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 0,
+        "files": [],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 0,
+        "rawMatchCount": 0
+      },
+      "status": 200
+    }
+  },
+  {
+    "grep": {
+      "content": [
+        {
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/greet.ts:\n  2:   return `hello world ${name}`; // fixture_marker atlas_marker\n\n(Results truncated. Consider using a more specific path or pattern, specifying a repo, or increasing the limit.)",
+          "type": "text"
+        }
+      ]
+    },
+    "id": "limit-one",
+    "query": {
+      "grep": {
+        "limit": 1,
+        "pattern": "(?i)fixture_marker"
+      },
+      "id": "limit-one",
+      "limit": 1,
+      "page": 1,
+      "query": "fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": false,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "limit-two",
+    "query": {
+      "id": "limit-two",
+      "limit": 2,
+      "query": "fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": false,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "negated-group",
+    "query": {
+      "id": "negated-group",
+      "query": "fixture_marker -(atlas_marker or worker_marker)"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 2,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 2,
+        "rawMatchCount": 2
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "negated-repo",
+    "query": {
+      "id": "negated-repo",
+      "query": "-repo:atlas fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 3,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 3,
+        "rawMatchCount": 3
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "negative-file",
+    "query": {
+      "id": "negative-file",
+      "query": "fixture_marker -file:legacy"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 3,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 3,
+        "rawMatchCount": 3
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "or",
+    "query": {
+      "id": "or",
+      "query": "atlas_marker or worker_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 2,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 108,
+                      "column": 63,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 96,
+                      "column": 51,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    50,
+                    62
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 67,
+                      "column": 48,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 54,
+                      "column": 35,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    34,
+                    47
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 2,
+        "rawMatchCount": 2
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "oversized-excluded",
+    "query": {
+      "id": "oversized-excluded",
+      "query": "oversized_only_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 0,
+        "files": [],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 0,
+        "rawMatchCount": 0
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "parentheses",
+    "query": {
+      "id": "parentheses",
+      "query": "(atlas_marker or worker_marker) fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 2,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 108,
+                      "column": 63,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 96,
+                      "column": 51,
+                      "lineNumber": 2
+                    }
+                  },
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ],
+                  [
+                    50,
+                    62
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 2,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  },
+                  {
+                    "end": {
+                      "byteOffset": 67,
+                      "column": 48,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 54,
+                      "column": 35,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ],
+                  [
+                    34,
+                    47
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 2,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "grep": {
+      "content": [
+        {
+          "text": "Found 4 matches in 4 files\n\n[fixtures.test/archive] src/legacy.ts:\n  1: // fixture_marker archive_marker\n\n[fixtures.test/atlas] src/greet.ts:\n  2:   return `hello world ${name}`; // fixture_marker atlas_marker\n\n[fixtures.test/ledger] src/Ledger.java:\n  2:     // fixture_marker ledger_marker\n\n[fixtures.test/worker] src/worker.py:\n  2:     \"\"\"hello world fixture_marker worker_marker\"\"\"",
+          "type": "text"
+        }
+      ]
+    },
+    "id": "plain",
+    "query": {
+      "grep": {
+        "limit": 500,
+        "pattern": "(?i)fixture_marker"
+      },
+      "id": "plain",
+      "query": "fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "grep": {
+      "content": [
+        {
+          "text": "Found 3 matches in 3 files\n\n[fixtures.test/archive] src/legacy.ts:\n  2: export function legacy() { return \"hello world\"; }\n\n[fixtures.test/atlas] src/greet.ts:\n  2:   return `hello world ${name}`; // fixture_marker atlas_marker\n\n[fixtures.test/worker] src/worker.py:\n  2:     \"\"\"hello world fixture_marker worker_marker\"\"\"",
+          "type": "text"
+        }
+      ]
+    },
+    "id": "quoted",
+    "query": {
+      "grep": {
+        "limit": 500,
+        "pattern": "(?i)hello world"
+      },
+      "id": "quoted",
+      "query": "\"hello world\""
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 3,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "export function legacy() { return \"hello world\"; }\n",
+                "contentStart": {
+                  "byteOffset": 33,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 79,
+                      "column": 47,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 68,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    46
+                  ]
+                ],
+                "text": "export function legacy() { return \"hello world\"; }"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 67,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 56,
+                      "column": 11,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    10,
+                    21
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 38,
+                      "column": 19,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 27,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    18
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 3,
+        "rawMatchCount": 3
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "quoted-filter",
+    "query": {
+      "id": "quoted-filter",
+      "query": "file:\"src/greet.ts\" fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 1,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 1,
+        "rawMatchCount": 1
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "regex-escaped",
+    "query": {
+      "id": "regex-escaped",
+      "query": "greet\\(",
+      "regex": true
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 1,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "export function greet(name: string): string {\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 22,
+                      "column": 23,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 16,
+                      "column": 17,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              },
+              {
+                "content": "export const message = greet(\"Needle\");\n",
+                "contentStart": {
+                  "byteOffset": 111,
+                  "column": 1,
+                  "lineNumber": 4
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 140,
+                      "column": 30,
+                      "lineNumber": 4
+                    },
+                    "start": {
+                      "byteOffset": 134,
+                      "column": 24,
+                      "lineNumber": 4
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    16,
+                    22
+                  ]
+                ],
+                "text": "export function greet(name: string): string {"
+              },
+              {
+                "fileNameMatch": false,
+                "lineNumber": 4,
+                "ranges": [
+                  [
+                    23,
+                    29
+                  ]
+                ],
+                "text": "export const message = greet(\"Needle\");"
+              }
+            ],
+            "occurrences": 2,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 2,
+        "rawMatchCount": 2
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "regex-groups",
+    "query": {
+      "id": "regex-groups",
+      "query": "(atlas|worker)_marker",
+      "regex": true
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 2,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 108,
+                      "column": 63,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 96,
+                      "column": 51,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    50,
+                    62
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 67,
+                      "column": 48,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 54,
+                      "column": 35,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    34,
+                    47
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 2,
+        "rawMatchCount": 2
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "regex-off",
+    "query": {
+      "id": "regex-off",
+      "query": "hello.*world",
+      "regex": false
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 0,
+        "files": [],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 0,
+        "rawMatchCount": 0
+      },
+      "status": 200
+    }
+  },
+  {
+    "grep": {
+      "content": [
+        {
+          "text": "Found 3 matches in 3 files\n\n[fixtures.test/archive] src/legacy.ts:\n  2: export function legacy() { return \"hello world\"; }\n\n[fixtures.test/atlas] src/greet.ts:\n  2:   return `hello world ${name}`; // fixture_marker atlas_marker\n\n[fixtures.test/worker] src/worker.py:\n  2:     \"\"\"hello world fixture_marker worker_marker\"\"\"",
+          "type": "text"
+        }
+      ]
+    },
+    "id": "regex-on",
+    "query": {
+      "grep": {
+        "limit": 500,
+        "pattern": "(?i)hello.*world"
+      },
+      "id": "regex-on",
+      "query": "hello.*world",
+      "regex": true
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 3,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "export function legacy() { return \"hello world\"; }\n",
+                "contentStart": {
+                  "byteOffset": 33,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 79,
+                      "column": 47,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 68,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    46
+                  ]
+                ],
+                "text": "export function legacy() { return \"hello world\"; }"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 67,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 56,
+                      "column": 11,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    10,
+                    21
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 38,
+                      "column": 19,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 27,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    18
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 3,
+        "rawMatchCount": 3
+      },
+      "status": 200
+    }
+  },
+  {
+    "grep": {
+      "content": [
+        {
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/greet.ts:\n  2:   return `hello world ${name}`; // fixture_marker atlas_marker",
+          "type": "text"
+        }
+      ]
+    },
+    "id": "repo",
+    "query": {
+      "grep": {
+        "limit": 500,
+        "pattern": "(?i)fixture_marker",
+        "repo": "fixtures.test/atlas"
+      },
+      "id": "repo",
+      "query": "repo:atlas fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 1,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 1,
+        "rawMatchCount": 1
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "repo-alias",
+    "query": {
+      "id": "repo-alias",
+      "query": "r:worker fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 1,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 1,
+        "rawMatchCount": 1
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "reposet",
+    "query": {
+      "id": "reposet",
+      "query": "reposet:fixtures.test/atlas,fixtures.test/worker fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 2,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 2,
+        "rawMatchCount": 2
+      },
+      "status": 200
+    }
+  },
+  {
+    "grep": {
+      "content": [
+        {
+          "text": "Found 4 matches in 4 files\n\n[fixtures.test/archive] feature.txt:\n  1: feature_only_marker archive\n\n[fixtures.test/atlas] feature.txt:\n  1: feature_only_marker atlas\n\n[fixtures.test/ledger] feature.txt:\n  1: feature_only_marker ledger\n\n[fixtures.test/worker] feature.txt:\n  1: feature_only_marker worker",
+          "type": "text"
+        }
+      ]
+    },
+    "id": "rev-all",
+    "query": {
+      "grep": {
+        "limit": 500,
+        "pattern": "(?i)feature_only_marker",
+        "ref": "*"
+      },
+      "id": "rev-all",
+      "query": "rev:* feature_only_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/feature"
+            ],
+            "chunks": [
+              {
+                "content": "feature_only_marker archive\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 19,
+                      "column": 20,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 0,
+                      "column": 1,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Text",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    0,
+                    19
+                  ]
+                ],
+                "text": "feature_only_marker archive"
+              }
+            ],
+            "occurrences": 1,
+            "path": "feature.txt",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/feature"
+            ],
+            "chunks": [
+              {
+                "content": "feature_only_marker atlas\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 19,
+                      "column": 20,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 0,
+                      "column": 1,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Text",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    0,
+                    19
+                  ]
+                ],
+                "text": "feature_only_marker atlas"
+              }
+            ],
+            "occurrences": 1,
+            "path": "feature.txt",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/feature"
+            ],
+            "chunks": [
+              {
+                "content": "feature_only_marker ledger\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 19,
+                      "column": 20,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 0,
+                      "column": 1,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Text",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    0,
+                    19
+                  ]
+                ],
+                "text": "feature_only_marker ledger"
+              }
+            ],
+            "occurrences": 1,
+            "path": "feature.txt",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/feature"
+            ],
+            "chunks": [
+              {
+                "content": "feature_only_marker worker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 19,
+                      "column": 20,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 0,
+                      "column": 1,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Text",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    0,
+                    19
+                  ]
+                ],
+                "text": "feature_only_marker worker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "feature.txt",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "grep": {
+      "content": [
+        {
+          "text": "Found 4 matches in 4 files\n\n[fixtures.test/archive] feature.txt:\n  1: feature_only_marker archive\n\n[fixtures.test/atlas] feature.txt:\n  1: feature_only_marker atlas\n\n[fixtures.test/ledger] feature.txt:\n  1: feature_only_marker ledger\n\n[fixtures.test/worker] feature.txt:\n  1: feature_only_marker worker",
+          "type": "text"
+        }
+      ]
+    },
+    "id": "rev-feature",
+    "query": {
+      "grep": {
+        "limit": 500,
+        "pattern": "(?i)feature_only_marker",
+        "ref": "feature"
+      },
+      "id": "rev-feature",
+      "query": "rev:feature feature_only_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/feature"
+            ],
+            "chunks": [
+              {
+                "content": "feature_only_marker archive\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 19,
+                      "column": 20,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 0,
+                      "column": 1,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Text",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    0,
+                    19
+                  ]
+                ],
+                "text": "feature_only_marker archive"
+              }
+            ],
+            "occurrences": 1,
+            "path": "feature.txt",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/feature"
+            ],
+            "chunks": [
+              {
+                "content": "feature_only_marker atlas\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 19,
+                      "column": 20,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 0,
+                      "column": 1,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Text",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    0,
+                    19
+                  ]
+                ],
+                "text": "feature_only_marker atlas"
+              }
+            ],
+            "occurrences": 1,
+            "path": "feature.txt",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/feature"
+            ],
+            "chunks": [
+              {
+                "content": "feature_only_marker ledger\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 19,
+                      "column": 20,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 0,
+                      "column": 1,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Text",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    0,
+                    19
+                  ]
+                ],
+                "text": "feature_only_marker ledger"
+              }
+            ],
+            "occurrences": 1,
+            "path": "feature.txt",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/feature"
+            ],
+            "chunks": [
+              {
+                "content": "feature_only_marker worker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 19,
+                      "column": 20,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 0,
+                      "column": 1,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Text",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    0,
+                    19
+                  ]
+                ],
+                "text": "feature_only_marker worker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "feature.txt",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "rev-main",
+    "query": {
+      "id": "rev-main",
+      "query": "rev:main fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "rev-tag",
+    "query": {
+      "id": "rev-tag",
+      "query": "rev:v1 fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/tags/v1"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/tags/v1"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/tags/v1"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/tags/v1"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "selected-repos",
+    "query": {
+      "id": "selected-repos",
+      "query": "fixture_marker",
+      "repos": [
+        "fixtures.test/atlas",
+        "fixtures.test/ledger"
+      ]
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 2,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 2,
+        "rawMatchCount": 2
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "symbol",
+    "query": {
+      "id": "symbol",
+      "query": "sym:greet"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 1,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "export function greet(name: string): string {\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 21,
+                      "column": 22,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 16,
+                      "column": 17,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": [
+                  {
+                    "kind": "function",
+                    "symbol": "greet"
+                  }
+                ]
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    16,
+                    21
+                  ]
+                ],
+                "text": "export function greet(name: string): string {"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 1,
+        "rawMatchCount": 1
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "visibility-any",
+    "query": {
+      "id": "visibility-any",
+      "query": "visibility:any fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "visibility-private",
+    "query": {
+      "id": "visibility-private",
+      "query": "visibility:private fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 4,
+        "files": [
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "// fixture_marker archive_marker\n",
+                "contentStart": {
+                  "byteOffset": 0,
+                  "column": 1,
+                  "lineNumber": 1
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 17,
+                      "column": 18,
+                      "lineNumber": 1
+                    },
+                    "start": {
+                      "byteOffset": 3,
+                      "column": 4,
+                      "lineNumber": 1
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 1,
+                "ranges": [
+                  [
+                    3,
+                    17
+                  ]
+                ],
+                "text": "// fixture_marker archive_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/legacy.ts",
+            "repo": "fixtures.test/archive"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "  return `hello world ${name}`; // fixture_marker atlas_marker\n",
+                "contentStart": {
+                  "byteOffset": 46,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 95,
+                      "column": 50,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 81,
+                      "column": 36,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "TypeScript",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    35,
+                    49
+                  ]
+                ],
+                "text": "  return `hello world ${name}`; // fixture_marker atlas_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/greet.ts",
+            "repo": "fixtures.test/atlas"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    // fixture_marker ledger_marker\n",
+                "contentStart": {
+                  "byteOffset": 22,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 43,
+                      "column": 22,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 29,
+                      "column": 8,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Java",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    7,
+                    21
+                  ]
+                ],
+                "text": "    // fixture_marker ledger_marker"
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/Ledger.java",
+            "repo": "fixtures.test/ledger"
+          },
+          {
+            "branches": [
+              "refs/heads/main"
+            ],
+            "chunks": [
+              {
+                "content": "    \"\"\"hello world fixture_marker worker_marker\"\"\"\n",
+                "contentStart": {
+                  "byteOffset": 20,
+                  "column": 1,
+                  "lineNumber": 2
+                },
+                "matchRanges": [
+                  {
+                    "end": {
+                      "byteOffset": 53,
+                      "column": 34,
+                      "lineNumber": 2
+                    },
+                    "start": {
+                      "byteOffset": 39,
+                      "column": 20,
+                      "lineNumber": 2
+                    }
+                  }
+                ],
+                "symbols": []
+              }
+            ],
+            "fileNameRanges": [],
+            "language": "Python",
+            "matches": [
+              {
+                "fileNameMatch": false,
+                "lineNumber": 2,
+                "ranges": [
+                  [
+                    19,
+                    33
+                  ]
+                ],
+                "text": "    \"\"\"hello world fixture_marker worker_marker\"\"\""
+              }
+            ],
+            "occurrences": 1,
+            "path": "src/worker.py",
+            "repo": "fixtures.test/worker"
+          }
+        ],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 4,
+        "rawMatchCount": 4
+      },
+      "status": 200
+    }
+  },
+  {
+    "id": "visibility-public",
+    "query": {
+      "id": "visibility-public",
+      "query": "visibility:public fixture_marker"
+    },
+    "search": {
+      "body": {
+        "crashes": 0,
+        "fileCount": 0,
+        "files": [],
+        "filesSkipped": 0,
+        "isSearchExhaustive": true,
+        "matchCount": 0,
+        "rawMatchCount": 0
+      },
+      "status": 200
+    }
+  }
+]
