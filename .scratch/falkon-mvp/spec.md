@@ -141,7 +141,9 @@ Named limitations recorded in `baseline.md`: archived, fork and visibility filte
 - Cycle 4: S19 `packages/contracts` plus the `packages/ui` import, S20 engine endpoints for the UI (products, repositories, connections, status, sync, threads), S21 chat transport (`useChat`, `data-evidence`, `productId` on chats).
 - Cycle 5 to 7: graph (S6 to S9), overview and knowledge base (S10 to S12), de-reference rewrite, rename and final gate (S13 to S15) as before.
 
-## Cycle 2 plan (gate 1 pending)
+## Cycle 2 plan (gate 1 approved 2026-10-19)
+
+Approved by the human on 2026-10-19; main session on Opus. S17 is owned by a separate session (worktree `.loop/worktrees/zoekt-upstream`, branch `loop/zoekt-upstream`); this cycle verifies its result against the S17 done condition before merging and does not build it.
 
 Base: `main` at the current tip. Agent defaults: Codex `gpt-6.1-sol` at high effort; Claude where Docker or live access is needed. Main session stays on Opus where the human switches it; otherwise the Opus-grade review runs in `opus` agents.
 
