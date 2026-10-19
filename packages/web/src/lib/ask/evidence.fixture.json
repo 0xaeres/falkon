@@ -1,0 +1,1050 @@
+[
+ {
+  "id": "xrepo-framework-to-chart-25-clone-research",
+  "text": "The chart uses the framework's `Concept` type in six modules, all as type-only imports from `@openmrs/esm-framework`. The only runtime code that reads its shape is `mapConcept` and `getConceptCode` in the form-entry app. A behaviour change in the framework could therefore affect those modules' data handling, and it could also affect the chart's `NumericObservation` consumers, which depend on the framework's concept reference-range behaviour.\n\n**Framework definition**\n- The `Concept` interface is defined at openmrs-esm-core/packages/framework/esm-api/src/types/concept-resource.ts:4-18. It has `name`, `datatype`, `conceptClass`, `set`, `names`, `mappings`, `answers`, `setMembers` and related fields.\n\n**Chart code that uses `Concept`, most likely affected first**\n1. `mapConcept` and `getConceptCode` in the form-entry data source. `getConceptCode` reads `concept.mappings` and the `conceptReferenceTerm` shape, and `mapConcept` reads `concept.name.display` and `concept.uuid`. Any change to the mappings or name shape would break these directly. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-form-entry-app/src/app/form-data-source/form-data-source.service.ts:28-38} and @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-form-entry-app/src/app/form-data-source/form-data-source.service.ts:347-363}\n2. The `Concept` import in the same file. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-form-entry-app/src/app/form-data-source/form-data-source.service.ts:13}\n3. Order posting, where `Concept` types the order's `concept` field. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-common-lib/src/orders/postOrders.ts:1-10} and @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-common-lib/src/orders/postOrders.ts:132}\n4. The horizontal obs table, which types its `concepts` props with `Concept`. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-generic-patient-widgets-app/src/obs-table-horizontal/obs-table-horizontal.component.tsx:13} and @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-generic-patient-widgets-app/src/obs-table-horizontal/obs-table-horizontal.component.tsx:274}\n5. The tablet lab-results helper, which reads `Concept` metadata. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-tests-app/src/test-results/individual-results-table-tablet/helper.tsx:3} and @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-tests-app/src/test-results/individual-results-table-tablet/helper.tsx:83-90}\n6. The lab panel data hook, which types the SWR response as `Concept`. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-tests-app/src/test-results/individual-results-table-tablet/usePanelData.tsx:6} and @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-tests-app/src/test-results/individual-results-table-tablet/usePanelData.tsx:74-82}\n7. The visit-notes resource, which fetches concepts as `Concept`. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts:9} and @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts:105}\n\n**Chart code affected through `NumericObservation`**\nThe framework's `NumericObservation` component (esm-styleguide) resolves concept reference ranges from a `conceptUuid`, so it is affected if the framework's concept behaviour changes. The chart passes `conceptUuid` in these places:\n- @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-vitals-app/src/vitals/paginated-vitals.component.tsx:99-130}\n- @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-vitals-app/src/biometrics/paginated-biometrics.component.tsx:94}\n- @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-vitals-app/src/vitals-and-biometrics-header/vitals-header-item.component.tsx:23}\n- @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-chart-app/src/clinical-views/encounter-list/encounter-list.component.tsx:182}\n- @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-chart-app/src/clinical-views/encounter-tile/encounter-tile.component.tsx:74}\n\n**Caveats**\n- I did not read the full bodies of the six type-only consumers. Their impact is inferred from how they use the type, not from a traced runtime path.\n- Line ranges for single-line matches are approximate, and I did not confirm the `NumericObservation` props lines in each file.\n- The framework's own `Concept` consumers (esm-emr-api types, esm-implementer-tools-app) are outside the chart and not listed.\n\n```json\n[\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-form-entry-app/src/app/form-data-source/form-data-source.service.ts\", \"startLine\": 28, \"endLine\": 38},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-form-entry-app/src/app/form-data-source/form-data-source.service.ts\", \"startLine\": 347, \"endLine\": 363},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-form-entry-app/src/app/form-data-source/form-data-source.service.ts\", \"startLine\": 13, \"endLine\": 13},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/postOrders.ts\", \"startLine\": 1, \"endLine\": 10},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/postOrders.ts\", \"startLine\": 132, \"endLine\": 132},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-generic-patient-widgets-app/src/obs-table-horizontal/obs-table-horizontal.component.tsx\", \"startLine\": 13, \"endLine\": 13},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-generic-patient-widgets-app/src/obs-table-horizontal/obs-table-horizontal.component.tsx\", \"startLine\": 274, \"endLine\": 274},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-tests-app/src/test-results/individual-results-table-tablet/helper.tsx\", \"startLine\": 3, \"endLine\": 3},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-tests-app/src/test-results/individual-results-table-tablet/helper.tsx\", \"startLine\": 83, \"endLine\": 90},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-tests-app/src/test-results/individual-results-table-tablet/usePanelData.tsx\", \"startLine\": 6, \"endLine\": 6},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-tests-app/src/test-results/individual-results-table-tablet/usePanelData.tsx\", \"startLine\": 74, \"endLine\": 82},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts\", \"startLine\": 9, \"endLine\": 9},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts\", \"startLine\": 105, \"endLine\": 105},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/vitals/paginated-vitals.component.tsx\", \"startLine\": 99, \"endLine\": 130},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/biometrics/paginated-biometrics.component.tsx\", \"startLine\": 94, \"endLine\": 94},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/vitals-and-biometrics-header/vitals-header-item.component.tsx\", \"startLine\": 23, \"endLine\": 23},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/clinical-views/encounter-list/encounter-list.component.tsx\", \"startLine\": 182, \"endLine\": 182},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/clinical-views/encounter-tile/encounter-tile.component.tsx\", \"startLine\": 74, \"endLine\": 74},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-api/src/types/concept-resource.ts\", \"startLine\": 4, \"endLine\": 18}\n]\n```",
+  "sources": [
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-api/src/types/concept-resource.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-styleguide/src/numeric-observation/use-concept-reference-range.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/apps/esm-implementer-tools-app/src/configuration/interactive-editor/value-editors/concept-search.resource.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/apps/esm-implementer-tools-app/src/configuration/interactive-editor/value-editors/concept-search.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-styleguide/mock.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-styleguide/mock-jest.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-styleguide/src/pictograms/pictograms.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-tests-app/src/types.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-notes-app/src/types/index.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-chart-app/src/visit/hooks/useVisitAttributeType.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-form-entry-app/src/app/types/index.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-common-lib/src/orders/types/order.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-tests-app/src/test-results/individual-results-table-tablet/helper.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-tests-app/src/test-results/individual-results-table-tablet/usePanelData.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-generic-patient-widgets-app/src/obs-table-horizontal/obs-table-horizontal.component.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-common-lib/src/orders/postOrders.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-immunizations-app/README.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "__mocks__/visits.mock.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-tests-app/README.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-orders-app/README.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-procedures-app/README.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-banner-app/src/types/index.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-procedures-app/src/config-schema.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-medications-app/src/config-schema.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-growth-chart-app/src/config-schema.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-procedures-app/src/procedures.resource.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-notes-app/src/notes/visit-notes-form.component.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-form-entry-app/src/app/form-data-source/form-data-source.service.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-form-entry-app/src/app/openmrs-api/concept-reference-range-resource.service.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-orders-app/src/lab-results/lab-results-form.test.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-api/src/types/person-resource.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-emr-api/src/types/obs-resource.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-emr-api/src/types/drug-resource.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-emr-api/src/types/order-resource.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-emr-api/src/types/diagnosis-resource.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/interfaces/Concept.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/interfaces/Obs.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/interfaces/Drug.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/interfaces/Order.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/interfaces/Person.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/interfaces/Diagnosis.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/interfaces/OpenmrsResource.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/interfaces/NumericObservationProps.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-styleguide/src/numeric-observation/numeric-observation.component.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-styleguide/src/numeric-observation/use-concept-reference-range.test.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "e2e/commands/test-helpers.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-vitals-app/src/vitals/paginated-vitals.component.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-vitals-app/src/biometrics/paginated-biometrics.component.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-chart-app/src/clinical-views/encounter-list/table.component.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-chart-app/src/clinical-views/encounter-list/encounter-list.component.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-chart-app/src/clinical-views/encounter-tile/encounter-tile.component.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-vitals-app/src/vitals-and-biometrics-header/vitals-header-item.component.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-vitals-app/src/biometrics/biometrics-overview.test.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-vitals-app/src/vitals-and-biometrics-header/vitals-header.test.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-vitals-app/src/vitals-and-biometrics-header/vitals-header-item.test.tsx"
+   }
+  ]
+ },
+ {
+  "id": "xrepo-docs-30-clone-research",
+  "text": "The O3 frontend formats dates through `formatDate` in `openmrs-esm-core`, which picks the locale, formats the date with `Intl`, and substitutes the word \"Today\" when the date is the current day. The docs describe the same behaviour.\n\n**How it works**\n\n1. **Locale:** `formatDate` uses `options.locale` if given, otherwise `getLocale()`. `getLocale()` reads `window.i18next.language`, normalises it to a BCP 47 tag, and maps `ht` to `fr-HT` (`openmrs-esm-core/packages/framework/esm-utils/src/get-locale.ts:7-18`).\n2. **Defaults and \"Today\" switch:** Defaults are `mode: 'standard'`, `time: 'for today'`, `day/month/year: true`, `noToday: false`. Amharic (`am`) sets `noToday` to true by default, so it never shows \"Today\" (`openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts:208-215`, `:310-314`).\n3. **Today check:** `dayjs(date).isToday()` runs first. If the date is today and `noToday` is false, it uses `Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(0, 'day')`, which yields the locale's word for today, and capitalises its first letter (`date-util.ts:326-332`). This is why the word comes out in the user's language.\n4. **Otherwise, normal formatting:** English is switched to `en-GB` so dates use the day-month-year order with AM/PM for times. `Intl.DateTimeFormat` builds the string from `formatToParts`. English and Amharic standard dates use hyphens as separators, `wide` mode uses ` — `, and Ethiopic-calendar eras are removed (`date-util.ts:333-366`).\n5. **Time:** The time is appended as `, HH:MM` when `time === true`, or when it is `'for today'` and the date is today. `formatTime` uses `toLocaleTimeString(getLocale(), …)` (`date-util.ts:368-370`, `:396-401`).\n6. **Related helpers:** `formatDatetime` forces `time: true` (`date-util.ts:416-418`). `formatPartialDate` parses approximate dates such as year-only or year-month and then delegates to `formatDate` (`date-util.ts:241-280`).\n\n**Documentation**\n\n- The recipe `openmrs-contrib-o3-docs/content/en-US/docs/recipes/format-dates.mdx` (lines 7-30) documents `formatDate`'s options, the \"Today\" behaviour, `{ time: false }`, and `{ noToday: true }`. The French version (`content/fr-FR/docs/recipes/format-dates.mdx`) matches it.\n- The generated API reference `openmrs-esm-core/packages/framework/esm-framework/docs/type-aliases/FormatDateOptions.md` (lines 62-71) describes `noToday`. `docs/functions/formatDate.md` and `formatPartialDate.md` (line 20 in each) say \"Today\" is produced in the locale language.\n\n**Tests:** `openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.test.ts:159` asserts `formatDate(today, { time: false })` equals `'Today'`. I did not read the test at line 54 (\"formats 'Today' with respect to the locale\"), so I have not verified its assertions.\n\n**Not checked:** I did not read `getDefaultCalendar` (`date-util.ts:164`), so I have not verified how the calendar is chosen per locale. I also did not confirm how the app shell sets `window.i18next.language`.\n\n@file:{openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:306-372}\n@file:{openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:396-401}\n@file:{openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:416-418}\n@file:{openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:241-280}\n@file:{openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:190-215}\n@file:{openmrs-esm-core::packages/framework/esm-utils/src/get-locale.ts:7-18}\n@file:{openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.test.ts:159}\n@file:{openmrs-esm-core::packages/framework/esm-framework/docs/type-aliases/FormatDateOptions.md:62-71}\n@file:{openmrs-esm-core::packages/framework/esm-framework/docs/functions/formatDate.md:20}\n@file:{openmrs-esm-core::packages/framework/esm-framework/docs/functions/formatPartialDate.md:20}\n@file:{openmrs-contrib-o3-docs::content/en-US/docs/recipes/format-dates.mdx:1-30}\n@file:{openmrs-contrib-o3-docs::content/fr-FR/docs/recipes/format-dates.mdx:28}\n\nRanked by relevance:\n\n```json\n[\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 306, \"endLine\": 372},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 190, \"endLine\": 215},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 282, \"endLine\": 304},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 396, \"endLine\": 401},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 403, \"endLine\": 418},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 217, \"endLine\": 280},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/get-locale.ts\", \"startLine\": 7, \"endLine\": 18},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.test.ts\", \"startLine\": 159, \"endLine\": 159},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-framework/docs/type-aliases/FormatDateOptions.md\", \"startLine\": 62, \"endLine\": 71},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-framework/docs/functions/formatDate.md\", \"startLine\": 9, \"endLine\": 20},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-framework/docs/functions/formatPartialDate.md\", \"startLine\": 9, \"endLine\": 20},\n  {\"path\": \"openmrs-contrib-o3-docs/content/en-US/docs/recipes/format-dates.mdx\", \"startLine\": 7, \"endLine\": 30},\n  {\"path\": \"openmrs-contrib-o3-docs/content/fr-FR/docs/recipes/format-dates.mdx\", \"startLine\": 7, \"endLine\": 30}\n]\n```",
+  "sources": [
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-utils/src/dates/date-util.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-react-utils/src/useVisit.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/functions/formatDate.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/functions/formatPartialDate.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/type-aliases/FormatDateOptions.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-react-utils/src/useVisit.test.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-utils/src/dates/date-util.test.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-contrib-o3-docs",
+    "path": "content/en-US/docs/recipes/format-dates.mdx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-contrib-o3-docs",
+    "path": "content/fr-FR/docs/recipes/format-dates.mdx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-contrib-o3-docs",
+    "path": "content/en-US/docs/forms-in-o3/expressions-validation-and-logic.mdx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-contrib-o3-docs",
+    "path": "content/fr-FR/docs/forms-in-o3/expressions-validation-and-logic.mdx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-utils/src/get-locale.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/tooling/storybook/mocks/esm-react-utils.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-utils/src/language-tag.ts"
+   }
+  ]
+ },
+ {
+  "id": "xrepo-trace-15-clone-research",
+  "text": "The order path runs from the chart's `postOrder` helper through the REST `OrderResource` into `OrderServiceImpl` and then the Hibernate DAO. I did not find a separate frontend component in the chart that calls these directly; the order-basket flow reaches `postOrder` through `postOrders`.\n\n**Flow**\n\n1. **Frontend request:** `postOrder` in `openmrs-esm-patient-chart` POSTs the order body to `${restBaseUrl}/order` via `openmrsFetch`. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-common-lib/src/orders/postOrders.ts:202-209}\n2. **Batch caller:** `postOrders` walks the order basket items for a patient, builds each payload with the registered data-prep function, and calls `postOrder` for each one. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-common-lib/src/orders/postOrders.ts:157-199}\n3. **REST handler:** `OrderResource1_10.save` (the `/order` resource, inherited by `OrderResource1_8`, and by `OrderResource2_2`) calls `Context.getOrderService().saveOrder(delegate, null)`. @file:{github.com/openmrs/openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderResource1_10.java:323-329}\n4. **Core service:** `OrderServiceImpl.saveOrder` delegates to the private `saveOrder(order, ctx, isRetrospective)`, which runs validation (existing-order check, date/concept/order-type defaults, previous-order checks, active-order overlap check) and then calls `saveOrderInternal`. @file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java:115-117}, @file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java:165-224}\n5. **Persistence prep:** `saveOrderInternal` assigns an order number if missing, sets auto-expire rules for new orders, then calls `dao.saveOrder`. @file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java:350-379}\n6. **Data access:** `HibernateOrderDAO.saveOrder` calls `HibernateUtil.saveOrUpdate` on the current Hibernate session, which is the database write. @file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/db/hibernate/HibernateOrderDAO.java:88-95}\n\nThe DAO interface declaration is `OrderDAO.saveOrder`, and the public service contract is `OrderService.saveOrder`. I did not read those two declarations, so their line ranges below are from grep hits, not from a read.\n\n**Declarations, best first**\n\n- @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-common-lib/src/orders/postOrders.ts:202-209}\n- @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-common-lib/src/orders/postOrders.ts:157-199}\n- @file:{github.com/openmrs/openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderResource1_10.java:323-329}\n- @file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java:114-117}\n- @file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java:165-224}\n- @file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java:350-379}\n- @file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/db/hibernate/HibernateOrderDAO.java:92-95}\n- @file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/db/OrderDAO.java:47}\n- @file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/OrderService.java:135}\n- @file:{github.com/openmrs/openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/OrderResource1_8.java:73}\n\n**Not verified**\n\n- `OrderResource1_8.save` (line 73) is the base implementation that `OrderResource1_10` overrides. I did not read it.\n- The REST `/order` resource and its REST module routing were not read.\n- The `openmrsFetch` wrapper and `restBaseUrl` definitions were not read.\n- The `OrderServiceImpl.saveOrder` path that the `OrderGroup` flow uses (`saveOrderGroup`) was not traced beyond the grep hit.\n\n```json\n[\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/postOrders.ts\", \"startLine\": 202, \"endLine\": 209},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/postOrders.ts\", \"startLine\": 157, \"endLine\": 199},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderResource1_10.java\", \"startLine\": 323, \"endLine\": 329},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java\", \"startLine\": 114, \"endLine\": 117},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java\", \"startLine\": 165, \"endLine\": 224},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java\", \"startLine\": 350, \"endLine\": 379},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateOrderDAO.java\", \"startLine\": 92, \"endLine\": 95},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/db/OrderDAO.java\", \"startLine\": 47, \"endLine\": 47},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/OrderService.java\", \"startLine\": 135, \"endLine\": 135},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/OrderResource1_8.java\", \"startLine\": 73, \"endLine\": 73}\n]\n```",
+  "sources": [
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-common-lib/src/orders/postOrders.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-orders-app/src/order-basket/order-basket.utils.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-orders-app/README.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "__mocks__/index.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "__mocks__/mockOrders.mock.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "__mocks__/medication.mock.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "__mocks__/order-price-data.mock.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-orders-app/src/index.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-orders-app/package.json"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-orders-app/src/api/api.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/OrderResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/OrderResource2_2.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderResource1_10.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/OrderResource1_8Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/OrderResource2_2Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/OrderResource1_10Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod-common/src/test/java/org/mockingbird/test/rest/resource/BirdResource_1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod-common/src/test/java/org/mockingbird/test/rest/resource/AnimalResource_1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/resource/SubDetailsResource.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod-common/src/test/java/org/mockingbird/test/rest/resource/CatSubclassHandler_1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod-common/src/test/java/org/mockingbird/test/rest/resource/AnimalClassResource_1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod-common/src/test/java/org/mockingbird/test/rest/resource/UnannotatedAnimalResource.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod-common/src/test/java/org/mockingbird/test/rest/resource/DuplicateNameAnimalResource_1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod-common/src/test/java/org/mockingbird/test/rest/resource/AnimalWithHigherOrderResource_1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ObsResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/UserResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/RoleResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/FormResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/DrugResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod-common/src/test/java/org/mockingbird/test/rest/resource/InstantiateExceptionAnimalResource_1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/UserResource2_0.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/AlertResource2_0.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/test/openmrs2_4/GenericChildResource.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/FieldResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod-common/src/test/java/org/mockingbird/test/rest/resource/DuplicateNameAndOrderAnimalResource_1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PersonResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/CohortResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/db/OrderDAO.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/OrderService.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/db/hibernate/HibernateOrderDAO.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/validator/ValidateUtil.java"
+   }
+  ]
+ },
+ {
+  "id": "xrepo-docs-30-clone-research",
+  "text": "The O3 frontend formats dates through `formatDate` in the esm-core framework. It reads the user's locale from i18next, uses `Intl` for the output, and replaces today's date with a localized \"Today\".\n\n**How it works**\n\n1. **Locale:** `getLocale()` returns `window.i18next.language`, normalized to a BCP 47 tag, with a special case that maps `ht` to `fr-HT` @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-utils/src/get-locale.ts:7-18}.\n2. **Defaults:** `formatDate` defaults to `mode: 'standard'`, `time: 'for today'`, and `day`/`month`/`year` on, with `noToday: false`. Amharic (`am`) turns `noToday` on by default @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:208-215}.\n3. **Today check:** `formatDate` uses dayjs's `isToday` plugin. If the date is today and `noToday` is false, it returns `Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(0, 'day')`, with the first letter uppercased. That is where \"Today\" comes from in each language @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:306-332}.\n4. **Other dates:** the code builds `Intl.DateTimeFormat` options (`year: 'numeric'`, `month: 'short'`, `day: '2-digit'`, plus an optional calendar and numbering system). For English it switches the locale to `en-GB` so the output is day-month-year, and for English and Amharic in standard mode it joins parts with hyphens. Wide mode joins them with \" — \" @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:318-350}.\n5. **Time:** for today, with the default `'for today'` setting, `formatDate` appends `, <time>`. `time: true` always appends it. `formatTime` uses `toLocaleTimeString` with 2-digit hour and minute, so the 12- or 24-hour clock follows the locale @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:366-370}, @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:396-401}.\n6. **Other entry points:** `formatDatetime` is `formatDate` with `time: true` @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:416-418}. `formatPartialDate` parses partial strings such as \"2000-01\" in the current locale, hides the missing parts, and delegates to `formatDate` @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.ts:241-280}.\n\n**Documentation**\n\n- The O3 docs recipe `content/en-US/docs/recipes/format-dates.mdx` describes `formatDate` (lines 7–30). It says the default is `time: \"for today\"` and that today is shown as `Today`, with `{ time: false }` and `{ noToday: true }` as the overrides @file:{github.com/openmrs/openmrs-contrib-o3-docs::content/en-US/docs/recipes/format-dates.mdx:7-30}. It also covers `formatDatetime` (lines 58–80), `formatTime` (lines 83–99), and `isOmrsDateToday` (line 136).\n- The French version (`content/fr-FR/docs/recipes/format-dates.mdx`) says the same thing.\n\n**Tests**\n\n- The English \"Today\" output and the `noToday` behaviour are tested at @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.test.ts:54-66}, @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.test.ts:154-160}, and @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-utils/src/dates/date-util.test.ts:183-202}. The tests cover Russian, French (\"Aujourd'hui\"), Amharic, and Thai date output.\n\n**Not verified**\n\n- The docs mention calendar registration (`registerDefaultCalendar`, `getDefaultCalendar`, and the `preferredCalendar` styleguide setting). I did not read those implementations, so I can't say how calendars are chosen.\n- I did not check how the patient chart repo calls these functions.\n\n```json\n[\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 306, \"endLine\": 372},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 208, \"endLine\": 215},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 199, \"endLine\": 206},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 282, \"endLine\": 304},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 318, \"endLine\": 350},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 366, \"endLine\": 370},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 396, \"endLine\": 401},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 403, \"endLine\": 418},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 241, \"endLine\": 280},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.ts\", \"startLine\": 64, \"endLine\": 66},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/get-locale.ts\", \"startLine\": 1, \"endLine\": 18},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.test.ts\", \"startLine\": 54, \"endLine\": 66},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.test.ts\", \"startLine\": 154, \"endLine\": 160},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-utils/src/dates/date-util.test.ts\", \"startLine\": 183, \"endLine\": 202},\n  {\"path\": \"openmrs-contrib-o3-docs/content/en-US/docs/recipes/format-dates.mdx\", \"startLine\": 1, \"endLine\": 99},\n  {\"path\": \"openmrs-contrib-o3-docs/content/en-US/docs/recipes/format-dates.mdx\", \"startLine\": 136, \"endLine\": 160},\n  {\"path\": \"openmrs-contrib-o3-docs/content/fr-FR/docs/recipes/format-dates.mdx\", \"startLine\": 7, \"endLine\": 30}\n]\n```",
+  "sources": [
+   {
+    "repo": "github.com/openmrs/openmrs-contrib-o3-docs",
+    "path": "next.config.mjs"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-contrib-o3-docs",
+    "path": "scripts/post-export.mjs"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-contrib-o3-docs",
+    "path": "scripts/check-forms-doc-ownership.mjs"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-contrib-o3-docs",
+    "path": "content/en-US/docs/recipes/format-dates.mdx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-contrib-o3-docs",
+    "path": "content/fr-FR/docs/recipes/format-dates.mdx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-utils/src/dates/date-util.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-react-utils/src/useVisit.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-react-utils/src/useVisit.test.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-utils/src/dates/date-util.test.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-utils/src/get-locale.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/tooling/storybook/mocks/esm-react-utils.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-react-utils/mock.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-react-utils/mock-jest.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/functions/getLocale.md"
+   }
+  ]
+ },
+ {
+  "id": "xrepo-trace-21-clone-research",
+  "text": "The chain is only partly traced. The frontend request and the REST handler are confirmed. The core and data-access steps are only partly confirmed, because I used up the 10-search budget before locating `PersonServiceImpl.savePerson` and `HibernatePersonDAO.savePerson`.\n\n**Flow as traced**\n\n1. **Frontend function:** `markPatientDeceased` in `openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/data.resource.ts:52-78`. It builds a payload with `dead: true`, a `deathDate`, and either `causeOfDeath` or `causeOfDeathNonCoded`. It then calls `changePatientDeathStatus` (`data.resource.ts:39-50`), which POSTs JSON to `${restBaseUrl}/person/${personUuid}` via `openmrsFetch`.\n\n2. **Server-side REST handler:** The POST to `/person/{uuid}` is handled by `PersonResource1_8` in `openmrs-module-webservices.rest`. Its `getUpdatableProperties` (`PersonResource1_8.java:133-149`) declares `causeOfDeath`, `dead` and `deathDate` as writable. `PersonResource2_2.java:55-60` adds `causeOfDeathNonCoded`. The update path calls `save(Person)` (`PersonResource1_8.java:414-417`), which delegates to `Context.getPersonService().savePerson(person)`. I did not read the base-class update code that copies the properties onto the `Person`.\n\n3. **Core domain method:** `Person.setDead` (`openmrs-core/api/src/main/java/org/openmrs/Person.java:317`) sets the dead flag on the entity.\n\n4. **Core service:** `PersonServiceImpl.savePerson` is the service method on this path. I did not locate it in the source.\n   - `PatientServiceImpl.processDeath` (`PatientServiceImpl.java:1128-1160`) does set dead, death date and cause of death, then calls `savePatient` and exits the patient from care. It is the core death logic, but this REST path does not call it. I found no evidence that the chart uses it.\n\n5. **Data access:** `HibernatePersonDAO.savePerson` is the expected write on this path. I did not locate it. The patient-specific write I confirmed is `HibernatePatientDAO.savePatient` (`HibernatePatientDAO.java:108-115`), reached from `PatientResource1_8.save` (`PatientResource1_8.java:287`), which is not on the chart's `/person` path.\n\n**Remaining gaps:** `PersonServiceImpl.savePerson`, `HibernatePersonDAO.savePerson`, and the base-class property-setting code. Those are the next reads needed to finish the trace.\n\n@file:{openmrs-esm-patient-chart::packages/esm-patient-chart-app/src/data.resource.ts:52-78} (`markPatientDeceased`)\n@file:{openmrs-esm-patient-chart::packages/esm-patient-chart-app/src/data.resource.ts:39-50} (`changePatientDeathStatus`)\n@file:{openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PersonResource1_8.java:414-417} (`save`)\n@file:{openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PersonResource1_8.java:133-149} (`getUpdatableProperties`)\n@file:{openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/PersonResource2_2.java:55-60}\n@file:{openmrs-core::api/src/main/java/org/openmrs/Person.java:317} (`setDead`)\n@file:{openmrs-core::api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java:1128-1160} (`processDeath`)\n@file:{openmrs-core::api/src/main/java/org/openmrs/api/db/hibernate/HibernatePatientDAO.java:108-115} (`savePatient`)\n@file:{openmrs-core::api/src/main/java/org/openmrs/api/db/PatientDAO.java:34}\n@file:{openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PatientResource1_8.java:287}\n\n```json\n[\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/data.resource.ts\", \"startLine\": 52, \"endLine\": 78},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/data.resource.ts\", \"startLine\": 39, \"endLine\": 50},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PersonResource1_8.java\", \"startLine\": 414, \"endLine\": 417},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PersonResource1_8.java\", \"startLine\": 133, \"endLine\": 149},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/PersonResource2_2.java\", \"startLine\": 55, \"endLine\": 60},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/Person.java\", \"startLine\": 317, \"endLine\": 317},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java\", \"startLine\": 1128, \"endLine\": 1160},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernatePatientDAO.java\", \"startLine\": 108, \"endLine\": 115},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/db/PatientDAO.java\", \"startLine\": 34, \"endLine\": 34},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PatientResource1_8.java\", \"startLine\": 287, \"endLine\": 287}\n]\n```",
+  "sources": [
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "__mocks__/patient.mock.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "e2e/specs/mark-patient-deceased.spec.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-chart-app/src/data.resource.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "__mocks__/mockDeceasedPatient.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/Person.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/test/java/org/openmrs/api/impl/PatientServiceImplTest.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/test/java/org/openmrs/PersonTest.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/test/java/org/openmrs/api/PatientServiceTest.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/test/java/org/openmrs/validator/PersonValidatorTest.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/test/java/org/openmrs/api/db/hibernate/HibernatePersonDAOTest.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/PersonController1_9Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/PersonController2_2Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs1_11/LivingPatientSearchHandler1_11.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/PersonResource2_2Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs1_11/LivingPatientSearchHandler1_11Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/db/PatientDAO.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/db/hibernate/HibernatePatientDAO.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PersonResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/PersonResource2_2.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/PersonResource1_10.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/PersonResource1_11.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PatientResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/ConceptProposalResource2_0.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ConceptDatatypeResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PersonNameResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PatientStateResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/RelationshipResource1_8.java"
+   }
+  ]
+ },
+ {
+  "id": "xrepo-framework-to-chart-8-clone-research",
+  "text": "The three patient chart components that use `WarningIcon` are all order-basket item tiles, and each renders it only when an order error is present. Nothing in the chart uses `AllergiesIcon`, which is an alias of `WarningIcon` in the framework, so no alias-based usage needs checking.\n\n1. **Medications order basket** renders the icon beside the order error text. It is imported from `@openmrs/esm-framework` and used at `<WarningIcon size={16} />` inside the `orderError` block: @file:{openmrs-esm-patient-chart::packages/esm-patient-medications-app/src/drug-order-basket-panel/order-basket-item-tile.component.tsx:5-5} and @file:{openmrs-esm-patient-chart::packages/esm-patient-medications-app/src/drug-order-basket-panel/order-basket-item-tile.component.tsx:87-96}.\n\n2. **Lab tests order basket** uses it the same way for lab order errors: @file:{openmrs-esm-patient-chart::packages/esm-patient-tests-app/src/test-orders/lab-order-basket-panel/lab-order-basket-item-tile.component.tsx:5-5} and @file:{openmrs-esm-patient-chart::packages/esm-patient-tests-app/src/test-orders/lab-order-basket-panel/lab-order-basket-item-tile.component.tsx:42-52}.\n\n3. **General order basket** (`esm-patient-orders-app`) uses it for generic order errors: @file:{openmrs-esm-patient-chart::packages/esm-patient-orders-app/src/order-basket/general-order-type/order-basket-item-tile.component.tsx:5-5} and @file:{openmrs-esm-patient-chart::packages/esm-patient-orders-app/src/order-basket/general-order-type/order-basket-item-tile.component.tsx:34-44}.\n\nThe icon is defined in the framework at @file:{openmrs-esm-core::packages/framework/esm-styleguide/src/icons/icons.tsx:848-859}, and its mocks are at @file:{openmrs-esm-core::packages/framework/esm-styleguide/mock.tsx:103-103} and @file:{openmrs-esm-core::packages/framework/esm-styleguide/mock-jest.tsx:102-102}. Those mocks only affect tests, not runtime behaviour.\n\nScope and limits: I only grepped the patient chart checkout locally and searched `openmrs-esm-core` through Falkon. I did not search the other repositories, so consumers outside the patient chart (the date picker and login app in core, for example) are not covered here. Falkon's repository-scoped grep failed with the short names, so I used the full `github.com/openmrs/...` name for the core search. The patient chart search was local, not through Falkon.\n\nPossible effects in the patient chart: a behaviour change to the icon's size, markup, or accessibility would show up in these three error states. Snapshot or unit tests that match the icon's output may also need updating.\n\n```json\n[\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-medications-app/src/drug-order-basket-panel/order-basket-item-tile.component.tsx\", \"startLine\": 87, \"endLine\": 96},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-tests-app/src/test-orders/lab-order-basket-panel/lab-order-basket-item-tile.component.tsx\", \"startLine\": 42, \"endLine\": 52},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/order-basket/general-order-type/order-basket-item-tile.component.tsx\", \"startLine\": 34, \"endLine\": 44},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-medications-app/src/drug-order-basket-panel/order-basket-item-tile.component.tsx\", \"startLine\": 5, \"endLine\": 5},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-tests-app/src/test-orders/lab-order-basket-panel/lab-order-basket-item-tile.component.tsx\", \"startLine\": 5, \"endLine\": 5},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/order-basket/general-order-type/order-basket-item-tile.component.tsx\", \"startLine\": 5, \"endLine\": 5},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-styleguide/src/icons/icons.tsx\", \"startLine\": 848, \"endLine\": 859},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-styleguide/mock.tsx\", \"startLine\": 103, \"endLine\": 103},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-styleguide/mock-jest.tsx\", \"startLine\": 102, \"endLine\": 102}\n]\n```",
+  "sources": [
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-styleguide/mock.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-styleguide/mock-jest.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/variables/WarningIcon.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-styleguide/src/icons/icons.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/variables/AllergiesIcon.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-styleguide/src/datepicker/date-picker-icon.component.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/apps/esm-login-app/src/location-picker/location-picker-view.component.tsx"
+   },
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-medications-app/src/drug-order-basket-panel/order-basket-item-tile.component.tsx"
+   },
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-tests-app/src/test-orders/lab-order-basket-panel/lab-order-basket-item-tile.component.tsx"
+   },
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-orders-app/src/order-basket/general-order-type/order-basket-item-tile.component.tsx"
+   }
+  ]
+ },
+ {
+  "id": "xrepo-trace-22-clone-tools",
+  "text": "**Flow for adding a visit attribute to an existing visit**\n\n1. **Frontend request:** `createVisitAttribute(visitUuid, attributeType, value)` POSTs `{ attributeType, value }` to `${restBaseUrl}/visit/${visitUuid}/attribute` (@file:{openmrs-esm-patient-chart::packages/esm-patient-chart-app/src/visit/visit-form/visit-form.resource.ts:172-178}). The save workspace calls it for new attributes at @file:{openmrs-esm-patient-chart::packages/esm-patient-chart-app/src/visit/visit-form/exported-visit-form.workspace.tsx:249}. Edits to existing attributes use `updateVisitAttribute` (@file:{openmrs-esm-patient-chart::packages/esm-patient-chart-app/src/visit/visit-form/visit-form.resource.ts:180-186}), called at line 217 of the same workspace file.\n\n2. **Server REST handler:** `VisitAttributeResource1_9` is a sub-resource at path `attribute` under `VisitResource1_9`. Its `save` sets the attribute on the visit (via `setAttribute` when max occurs is 1, otherwise `addAttribute`) and then calls `Context.getVisitService().saveVisit(visit)` (@file:{openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9.java:29-31}, @file:{openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9.java:97-116}). I did not open `BaseAttributeCrudResource1_9` to confirm how the generic controller dispatches a POST to `save`.\n\n3. **Core service:** `VisitServiceImpl.saveVisit` checks the ADD_VISITS or EDIT_VISITS privilege, calls `CustomDatatypeUtil.saveAttributesIfNecessary(visit)`, then delegates to `dao.saveVisit` (@file:{openmrs-core::api/src/main/java/org/openmrs/api/impl/VisitServiceImpl.java:178-187}).\n\n4. **Data access:** `HibernateVisitDAO.saveVisit` runs `HibernateUtil.saveOrUpdate(getCurrentSession(), visit)`, which is the database write (@file:{openmrs-core::api/src/main/java/org/openmrs/api/db/hibernate/HibernateVisitDAO.java:165-169}). The DAO interface declaration is at @file:{openmrs-core::api/src/main/java/org/openmrs/api/db/VisitDAO.java:86}.\n\nNot verified: the `VisitService` interface declaration of `saveVisit`, `CustomDatatypeUtil.saveAttributesIfNecessary`, and the generic base class `BaseAttributeCrudResource1_9`. These are the remaining links I did not open.\n\nTwo Falkon lookups failed on repository names: `openmrs-esm-patient-chart` and the bare `openmrs-module-webservices.rest`. Those succeeded only with the `github.com/openmrs/` prefix. I read the chart files from the local checkout.\n\n```json\n[\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-form/visit-form.resource.ts\", \"startLine\": 172, \"endLine\": 186},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-chart-app/src/visit/visit-form/exported-visit-form.workspace.tsx\", \"startLine\": 215, \"endLine\": 255},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9.java\", \"startLine\": 29, \"endLine\": 31},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9.java\", \"startLine\": 97, \"endLine\": 116},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/impl/VisitServiceImpl.java\", \"startLine\": 178, \"endLine\": 187},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateVisitDAO.java\", \"startLine\": 165, \"endLine\": 169},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/db/VisitDAO.java\", \"startLine\": 86, \"endLine\": 86}\n]\n```",
+  "sources": [
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-chart-app/src/visit/visit-form/visit-form.resource.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/test/java/org/openmrs/api/VisitServiceTest.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeResource1_9Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeTypeResource1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitAttributeTypeResource1_9Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/VisitAttributeTypeController1_9Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/VisitAttributeController1_9Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/VisitController1_9Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/impl/VisitServiceImpl.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/db/hibernate/HibernateVisitDAO.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/db/VisitDAO.java"
+   }
+  ]
+ },
+ {
+  "id": "xrepo-trace-13-clone-research",
+  "text": "The chain is `createProgramEnrollment` (frontend) → `ProgramEnrollmentResource1_8.save` (REST) → `ProgramWorkflowServiceImpl.savePatientProgram` (core service) → `HibernateProgramWorkflowDAO.savePatientProgram` (data access, which persists via Hibernate).\n\n**1. Frontend request.** The enrollment form's workspace calls `createProgramEnrollment`, which POSTs to `/programenrollment`. The function lives in the programs app's resource module; the form calls it at `programs-form.workspace.tsx:163`.\n@file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-programs-app/src/programs/programs.resource.tsx:53-66}\n@file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-programs-app/src/programs/programs-form.workspace.tsx:163}\n\n**2. Server REST handler.** `ProgramEnrollmentResource1_8` extends `DataDelegatingCrudResource<PatientProgram>`. Its `save` method delegates to the program workflow service. The `2_2` and `1_10` subclasses inherit this behavior.\n@file:{github.com/openmrs/openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ProgramEnrollmentResource1_8.java:42}\n@file:{github.com/openmrs/openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ProgramEnrollmentResource1_8.java:91-94}\n\n**3. Core service.** `ProgramWorkflowServiceImpl.savePatientProgram` validates that the patient and program are set, checks the states, cascades voiding, and fills in end dates. It then calls the DAO. The interface declaration is in `ProgramWorkflowService.java:281`.\n@file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/impl/ProgramWorkflowServiceImpl.java:244-283}\n@file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/ProgramWorkflowService.java:281}\n\n**4. Data access and write.** `HibernateProgramWorkflowDAO.savePatientProgram` saves custom attributes, then calls `persist` for a new enrollment or `HibernateUtil.saveOrUpdate` for an existing one. The DAO interface is `ProgramWorkflowDAO.java:97`.\n@file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/db/hibernate/HibernateProgramWorkflowDAO.java:156-167}\n@file:{github.com/openmrs/openmrs-core::api/src/main/java/org/openmrs/api/db/ProgramWorkflowDAO.java:97}\n\n**Not verified:**\n- I did not read the base `DataDelegatingCrudResource` to confirm how the POST is routed to `save`, or the resource's `@Resource` registration for `programenrollment`.\n- The frontend `createProgramEnrollment` has no `await` in the workspace call I checked, so I did not trace error handling.\n- Edits to an existing enrollment take a different path (`updateProgramEnrollment`, which POSTs to `/programenrollment/{uuid}`). That is outside this question.\n\n```json\n[\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-programs-app/src/programs/programs.resource.tsx\", \"startLine\": 53, \"endLine\": 66},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-programs-app/src/programs/programs-form.workspace.tsx\", \"startLine\": 163, \"endLine\": 163},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ProgramEnrollmentResource1_8.java\", \"startLine\": 42, \"endLine\": 42},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ProgramEnrollmentResource1_8.java\", \"startLine\": 91, \"endLine\": 94},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/impl/ProgramWorkflowServiceImpl.java\", \"startLine\": 248, \"endLine\": 283},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/ProgramWorkflowService.java\", \"startLine\": 281, \"endLine\": 281},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateProgramWorkflowDAO.java\", \"startLine\": 156, \"endLine\": 167},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/db/ProgramWorkflowDAO.java\", \"startLine\": 97, \"endLine\": 97}\n]\n```",
+  "sources": [
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-programs-app/src/programs/programs.resource.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-programs-app/src/programs/programs-form.workspace.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-programs-app/src/programs/programs-form.test.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/ProgramEnrollmentResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/ProgramEnrollmentResource2_2.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/ProgramEnrollmentResource1_10.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/ProgramEnrollmentResource2_2Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/PatientStateResource1_8.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/PatientProgramAttributeResource2_2.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/db/ProgramWorkflowDAO.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/ProgramWorkflowService.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/impl/ProgramWorkflowServiceImpl.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/db/hibernate/HibernateProgramWorkflowDAO.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/test/java/org/openmrs/api/ProgramWorkflowServiceTest.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/test/java/org/openmrs/api/ProgramWorkflowServiceUnitTest.java"
+   }
+  ]
+ },
+ {
+  "id": "xrepo-trace-24-clone-research",
+  "text": "The delete path runs from the chart's confirmation modal through the REST client, the webservices.rest sub-resource controller and allergy resource, and into openmrs-core's `PatientService` and Hibernate DAO. The allergy is soft-deleted, not removed: the code sets `voided` and `voidReason` and then persists the row.\n\n1. **Frontend trigger:** the \"Delete\" button in the modal calls `handleDelete`, which calls `deletePatientAllergy` and then revalidates the allergy list. @file:{openmrs-esm-patient-chart::packages/esm-patient-allergies-app/src/allergies/delete-allergy.modal.tsx:18-46}\n2. **Frontend request:** `deletePatientAllergy` sends `DELETE {restBaseUrl}/patient/{patientUuid}/allergy/{allergyUuid}`. @file:{openmrs-esm-patient-chart::packages/esm-patient-allergies-app/src/allergies/allergy-intolerance.resource.ts:89-94}\n3. **REST route:** the generic sub-resource controller matches `/{resource}/{parentUuid}/{subResource}/{uuid}` with `DELETE` and no `purge` parameter. It looks up the `patient/allergy` sub-resource and calls `delete(parentUuid, uuid, reason, context)`. @file:{openmrs-module-webservices.rest::omod-common/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/MainSubResourceController.java:158-169}\n4. **REST handler:** `PatientAllergyResource2_0` looks up the allergy by UUID, throws `ObjectNotFoundException` if it is missing, and calls `voidAllergy`. @file:{openmrs-module-webservices.rest::omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java:210-219}. The single-argument `delete(Allergy, ...)` at lines 197-200 is the same call without the parent lookup.\n5. **Core service:** `PatientServiceImpl.voidAllergy(Allergy, String)` sets `voided`, `voidedBy`, `dateVoided` and `voidReason`, then calls `dao.saveAllergy`. @file:{openmrs-core::api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java:1581-1589}. The interface declaration is at @file:{openmrs-core::api/src/main/java/org/openmrs/api/PatientService.java:992}.\n6. **Data access:** `HibernatePatientDAO.saveAllergy` calls `sessionFactory.getCurrentSession().persist(allergy)`. This is the database write, though the UPDATE is flushed later by the Hibernate session. @file:{openmrs-core::api/src/main/java/org/openmrs/api/db/hibernate/HibernatePatientDAO.java:1009-1013}. The DAO interface is at @file:{openmrs-core::api/src/main/java/org/openmrs/api/db/PatientDAO.java:299}.\n\nOther paths I did not follow:\n- `PatientServiceImpl.removeAllergy` (lines 1573-1576) also calls `voidAllergy`, but I found no caller for it in the REST path.\n- The \"delete all allergies\" branch of the handler (lines 219-226) is not used by the modal.\n- `allergies-action-menu.component.tsx` opens the modal; I did not trace it.\n- I did not check whether the REST module's own `patient/allergy` resource is registered under another name.\n\n```json\n[\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-allergies-app/src/allergies/delete-allergy.modal.tsx\", \"startLine\": 18, \"endLine\": 46},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-allergies-app/src/allergies/allergy-intolerance.resource.ts\", \"startLine\": 89, \"endLine\": 94},\n  {\"path\": \"openmrs-module-webservices.rest/omod-common/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/MainSubResourceController.java\", \"startLine\": 158, \"endLine\": 169},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java\", \"startLine\": 210, \"endLine\": 227},\n  {\"path\": \"openmrs-module-webservices.rest/omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java\", \"startLine\": 197, \"endLine\": 200},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java\", \"startLine\": 1581, \"endLine\": 1589},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/PatientService.java\", \"startLine\": 992, \"endLine\": 992},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernatePatientDAO.java\", \"startLine\": 1009, \"endLine\": 1013},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/db/PatientDAO.java\", \"startLine\": 299, \"endLine\": 299},\n  {\"path\": \"openmrs-core/api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java\", \"startLine\": 1570, \"endLine\": 1576}\n]\n```",
+  "sources": [
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-allergies-app/src/allergies/allergy-intolerance.resource.ts"
+   },
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-allergies-app/src/allergies/delete-allergy.modal.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/PatientAllergyResource2_0Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/PatientAllergyController2_0Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/AlertResource2_0.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/AlertRecipientResource2_0.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/ConceptProposalResource2_0.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/ConceptAttributeResource2_0.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/ConceptStateConversionResource2_0.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/PatientService.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/test/java/org/openmrs/api/PatientServiceTest.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/SessionController1_9.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/ClobDatatypeStorageController.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/db/PatientDAO.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-core",
+    "path": "api/src/main/java/org/openmrs/api/db/hibernate/HibernatePatientDAO.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/MainResourceController.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/RestControllerTestUtils.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod-common/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/MainResourceController.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/jupiter/RestControllerTestUtils.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod-common/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/MainSubResourceController.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/UserController1_8Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/UserController2_0Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/RoleController1_8Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/DrugController1_9Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/CohortController1_8Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/ConceptController1_8Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/ProgramController1_9Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/LocationController1_9Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/ProviderController1_9Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/ConditionController2_2Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/DiagnosisController2_2Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_4/ServerLogController2_4Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/ServerLogController1_8Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/PrivilegeController1_8Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_12/OrderSetController1_12Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_8/ProviderRoleController2_8Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderTypeController1_10Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/LocationTagController1_8Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/ConceptClassController1_8Test.java"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-module-webservices.rest",
+    "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/EncounterTypeController1_8Test.java"
+   }
+  ]
+ },
+ {
+  "id": "xrepo-framework-to-chart-7-clone-research",
+  "text": "`reportError` is used in two places in the patient chart, and both are error-reporting hooks. Each only runs when an error occurs, so a change in `reportError`'s behaviour would show up there, but nothing else in the chart calls it.\n\n**What `reportError` does now.** It normalises the value with `ensureErrorObject` and rethrows it inside `setTimeout`, so the error surfaces as an uncaught global error (`window.onerror`) rather than being handled inline. @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-error-handling/src/index.ts:56-61}\n\n**Chart call sites, most affected first:**\n\n1. **`useOrderableConceptSWR`** calls `reportError(error)` in a `useEffect` whenever the SWR fetch fails. It has no dependency array, so it runs on every render while `error` is set. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts:23-61}, call at line 36.\n\n2. **`useOrderableConceptSets`** is the public hook built on that SWR call. It calls `reportError(error)` in a second `useEffect` keyed on `[error]`. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts:65-91}, call at line 73. It is the hook the orders UI consumes, so it is the main place where a change would reach users.\n\n3. **`useFavoritesActions` → `persistFavorites`** calls `reportError(error)` in the `catch` block when saving drug favourites fails, then shows an error snackbar. @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-orders-app/src/order-favorites/useFavoritesActions.ts:18-108}, with the call at line 57 inside `persistFavorites` at @file:{github.com/openmrs/openmrs-esm-patient-chart::packages/esm-patient-orders-app/src/order-favorites/useFavoritesActions.ts:25-68}.\n\n**Mocks.** The framework's own test mocks also declare `reportError` (for example @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-framework/mock.tsx:52-55} and @file:{github.com/openmrs/openmrs-esm-core::packages/framework/esm-framework/mock-jest.tsx:51-54}). If the signature or semantics change, these would need matching updates for chart tests that rely on them, but they are not runtime code.\n\n**Limits.** The chart grep and the symbol-reference lookup both returned the same two files, so I found no other direct uses. I did not check whether `reportError` is re-exported through `@openmrs/esm-framework` in a way that would hide a call, and I did not check the other 40+ OpenMRS repositories. I also did not look at whether the chart's tests assert on `reportError` calls beyond the mock definitions.\n\n```json\n[\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts\", \"startLine\": 65, \"endLine\": 91},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts\", \"startLine\": 23, \"endLine\": 61},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/order-favorites/useFavoritesActions.ts\", \"startLine\": 25, \"endLine\": 68},\n  {\"path\": \"openmrs-esm-patient-chart/packages/esm-patient-orders-app/src/order-favorites/useFavoritesActions.ts\", \"startLine\": 18, \"endLine\": 108},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-error-handling/src/index.ts\", \"startLine\": 56, \"endLine\": 61},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-framework/mock.tsx\", \"startLine\": 52, \"endLine\": 55},\n  {\"path\": \"openmrs-esm-core/packages/framework/esm-framework/mock-jest.tsx\", \"startLine\": 51, \"endLine\": 54}\n]\n```",
+  "sources": [
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-error-handling/src/index.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/tooling/storybook/mocks/esm-error-handling.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/mock.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-api/__mocks__/openmrs-esm-error-handling.mock.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-react-utils/__mocks__/openmrs-esm-error-handling.mock.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/mock-jest.tsx"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-core",
+    "path": "packages/framework/esm-framework/docs/functions/reportError.md"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-common-lib/src/orders/useOrderableConceptSets.ts"
+   },
+   {
+    "repo": "github.com/openmrs/openmrs-esm-patient-chart",
+    "path": "packages/esm-patient-orders-app/src/order-favorites/useFavoritesActions.ts"
+   }
+  ]
+ }
+]

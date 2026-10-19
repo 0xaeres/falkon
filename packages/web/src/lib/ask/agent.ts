@@ -77,6 +77,10 @@ export async function createMessageStream(o: {
   scope: Scope;
   model: LanguageModelConfig;
   onFinish?: (messages: UIMessage[]) => Promise<void> | void;
+  /** Stops the model run (a client that went away). */
+  abortSignal?: AbortSignal;
+  /** Extra data parts written (and persisted) once the model stream has ended, before the finish chunk. */
+  postProcess?: (ctx: { text: string; sources: ToolSource[]; stepCapHit: boolean }) => Promise<{ type: `data-${string}`; data: unknown }[]>;
 }) {
   const { model, temperature } = await aiModel(o.model);
   const repos = [...o.selectedRepos].sort((a, b) => a.localeCompare(b));
@@ -88,12 +92,14 @@ export async function createMessageStream(o: {
     execute: async ({ writer }) => {
       writer.write({ type: "start" });
       const started = Date.now();
+      const sources: ToolSource[] = [];
       const result = streamText({
         model,
         system: [{ role: "system", content: STATIC_PROMPT }, ...(dyn ? [{ role: "system" as const, content: dyn }] : [])],
         messages: modelMessages(o.messages),
-        tools: agentTools(o.scope, repos, (data) => writer.write({ type: "data-source", data })),
+        tools: agentTools(o.scope, repos, (data) => (sources.push(data), writer.write({ type: "data-source", data }))),
         temperature,
+        abortSignal: o.abortSignal,
         stopWhen: [({ steps }) => steps.length >= MAX_STEPS()],
         toolChoice: "auto",
         // A model that capitalises a tool name gets the lowercase tool.
@@ -109,6 +115,11 @@ export async function createMessageStream(o: {
       await new Promise<void>((resolve) =>
         writer.merge(result.toUIMessageStream({ originalMessages: o.messages, sendReasoning: true, sendStart: false, sendFinish: false, onFinish: () => resolve() })),
       );
+      if (o.postProcess) {
+        // A failed model run already put an error chunk in the stream: it gets no answer parts.
+        const done = await Promise.all([result.text, result.steps]).catch(() => undefined);
+        if (done) for (const part of await o.postProcess({ text: done[0], sources, stepCapHit: done[1].length >= MAX_STEPS() })) writer.write(part);
+      }
       const usage = await result.totalUsage;
       writer.write({
         type: "message-metadata",

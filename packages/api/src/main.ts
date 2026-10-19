@@ -6,6 +6,7 @@ import { adminToken, startAdmin } from "./admin";
 import { createApp } from "./app";
 import { ConnectionService } from "./connections";
 import { PrismaProductRegistry } from "./product";
+import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
 
 // An AUTH_MODE other than none or apiKey throws here: the service refuses to start.
@@ -22,4 +23,5 @@ await app.listen(port, host);
 console.log(`api listening on ${host}:${port} (AUTH_MODE=${process.env.AUTH_MODE ?? "none"})`);
 
 const connections = new ConnectionService(prisma);
-await startAdmin(registry, process.env, connections, new UiProductService(prisma, connections));
+const ui = new UiProductService(prisma, connections);
+await startAdmin(registry, process.env, connections, ui, new ThreadService(prisma, ui));

@@ -6,6 +6,7 @@ import { createAdminApp } from "./admin";
 import { ConnectionService, type CodeHost } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";
 import { PrismaProductRegistry } from "./product";
+import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
 
 process.env.FALKON_SECRET_KEY = Buffer.alloc(32, 3).toString("base64");
@@ -28,7 +29,8 @@ let admin: INestApplication;
 let base: string;
 before(async () => {
   const connections = new ConnectionService(engine.db as never, host);
-  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never), TOKEN, {}, connections, new UiProductService(engine.db, connections));
+  const ui = new UiProductService(engine.db, connections);
+  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never), TOKEN, {}, connections, ui, new ThreadService(engine.db, ui));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
 });
@@ -160,20 +162,22 @@ test("create validation: unknown connection, repo outside the listing, duplicate
   assert.equal((await call("GET", "/ui/products", undefined, false)).status, 401);
 });
 
-test("route enumeration: the admin listener has exactly the S20a routes plus the six /ui/products routes", () => {
+test("route enumeration: the admin listener has exactly the S20a routes, the six /ui/products routes and the four thread routes", () => {
   const router = (admin.getHttpAdapter().getInstance() as { router: { stack: { route?: { path: string; methods: Record<string, boolean> } }[] } }).router;
   const routes = router.stack.flatMap((l) => (l.route ? Object.keys(l.route.methods).map((m) => `${m.toUpperCase()} ${l.route!.path}`) : [])).sort();
   assert.deepEqual(routes, [
     "DELETE /connections/:id", "DELETE /products/:slug",
     "GET /connections", "GET /connections/:id/repositories", "GET /products", "GET /products/:slug",
     "GET /ui/products", "GET /ui/products/:slug", "GET /ui/products/:slug/status",
+    "GET /ui/products/:slug/threads", "GET /ui/products/:slug/threads/:id",
     "PATCH /ui/products/:slug",
     "POST /connections", "POST /products", "POST /ui/products", "POST /ui/products/:slug/sync",
+    "POST /ui/products/:slug/threads", "POST /ui/products/:slug/threads/:id/messages",
     "PUT /connections/:id/token", "PUT /products/:slug",
   ].sort());
 });
 
 test("other /ui paths and methods stay 404", async () => {
-  for (const [method, p] of [["PUT", "/ui/products/alpha"], ["DELETE", "/ui/products/alpha"], ["GET", "/ui"], ["GET", "/ui/products/alpha/sync"], ["POST", "/ui/products/alpha"], ["GET", "/ui/products/alpha/status/x"], ["PATCH", "/ui/products"], ["PATCH", "/products/alpha"]] as const)
+  for (const [method, p] of [["PUT", "/ui/products/alpha"], ["DELETE", "/ui/products/alpha"], ["GET", "/ui"], ["GET", "/ui/products/alpha/sync"], ["POST", "/ui/products/alpha"], ["GET", "/ui/products/alpha/status/x"], ["PATCH", "/ui/products"], ["PATCH", "/products/alpha"], ["PUT", "/ui/products/alpha/threads"], ["DELETE", "/ui/products/alpha/threads/x"], ["GET", "/ui/products/alpha/threads/x/messages"], ["POST", "/ui/products/alpha/threads/x"], ["PATCH", "/ui/products/alpha/threads/x"], ["GET", "/ui/products/alpha/threads/x/messages/y"], ["POST", "/ui/products/alpha/query"]] as const)
     assert.equal((await call(method, p, method === "GET" ? undefined : {})).status, 404, `${method} ${p}`);
 });
