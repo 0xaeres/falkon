@@ -311,3 +311,54 @@ Revised map for the remaining MVP (supersedes the earlier "Revised cycle map" fr
 - Cycle 6: core merge and rename (`@sbc/*` to `@falkon/*`, `shared`, `db` and `backend` folded into `packages/core`), then S11 knowledge base default-on semantics.
 - Cycle 7: S13 original rewrite of inherited text and the Falkon config schema with converter, then S14 package and database rename if any remains, S15 final regression gate, README and release notes.
 - Memory size (654 MB ceiling) is deferred by the human; recorded as information, not a keep condition, until the final gate.
+
+## Cycle 5 plan (grilled 2026-10-20; gate 1 pending)
+
+Base: `loop/falkon-mvp-c4` merged into this worktree's branch (cycle 4 waits at its own gate 2). Detail, tables and drafts: `.scratch/falkon-mvp/cycle5-prep.md` (sections referenced below). Roles: Sonnet builds, reviews and verifies; Haiku for mechanical checks and eval runs; no Opus, no Codex. Cycle branch: `loop/falkon-mvp-c5`.
+
+### Decisions from the cycle 5 grill (human, 2026-10-20)
+
+| # | Decision |
+|---|---|
+| D29 | The product is tested internally first. Security hardening is a separate later effort and is out of scope for this cycle. Credential storage keeps only: AES-256-GCM at rest, tokens never returned by any response and never logged (canary test). Dropped from the prep design: host allowlist and SSRF rules, key rotation and `rekey`, outbound-call wrapper, UI passphrase gate, Opus review and attack pass, the "stops at gate 2 for security" rule of D17. The UI binds to loopback; the admin listener stays behind `ADMIN_TOKEN`. |
+| D30 | The master key is `FALKON_SECRET_KEY` (base64, 32 bytes) or `FALKON_SECRET_KEY_FILE`; if neither is set the engine generates one into `/data/secrets/master.key` (mode 600) on first use. Any UI user may create connections; one shared principal `"ui"` for threads. |
+| D31 | Missing engine data is removed from the contract, not stubbed: `overlay`, `overlayPercent` and `structural` leave `packages/contracts` and the UI hides the overlay layer. Derived fields (`generation`, `scenario`, `gaps`, `progress`, `revision`, `updated`) are computed from real sync and index state. `dismiss` and the `scenario` mock action leave the server contract. |
+| D32 | Providers in the wizard: `github` and `github-enterprise`, token method only. Branches: default branch only. |
+| D33 | Approved sync-path exception (D7): `Connection.source` filter in `syncConnectionRows`, request markers claimed by the 30 s tick, `{stored}` token variant. No change to indexing, Zoekt or `git.ts`. |
+| D34 | S25 runs beside S20 in its own worktree, Docker serialised; eval cap $3 on Haiku, no Sonnet confirmation unless the human asks. |
+
+### Slices
+
+Common: Tier standard (Sonnet), Agent claude. Verify always includes `pnpm typecheck && pnpm test` and `git diff --stat -- tests/contract tests/golden/expected.json` empty (additive only). Naming rule: no predecessor name in tracked files outside `.scratch/`.
+
+**S19. `packages/contracts` and `packages/ui` import.** Blocked by: cycle 4 on this branch (done).
+- Goal: one Zod 4 contract package shared by engine and UI; UI in the repo; no behaviour change.
+- Scope: new `packages/contracts` (`@sbc/contracts`: moved `contracts.ts`, the D31 removals, `connectionId` on `setupRequestSchema`, `method: "token"` only, ISO `updated`, empty-allowed `revision`/`language`, `productIdSchema` aligned to the engine slug regex, `evidencePartSchema`, `answerPartSchema`, marker-rewrite helper); `packages/ui` via `git subtree add --prefix=packages/ui` from `../falkon-ui` (history kept; name `@sbc/ui`; npm lock removed; pnpm workspace); UI edits for D31/D32 against the still-running mock; `PRODUCT.md` scrub; Dockerfile and compose `ui` service (Next standalone, `127.0.0.1:3100`); root scripts; ADR amendment (packages).
+- Done: root typecheck and test green including UI tests; `pnpm ls zod -r` one major; both Next majors build; `docker compose up --build` serves the UI on 3100 against the mock; contract and golden diff empty; naming grep clean.
+- Budget: 2 units.
+
+**S20. Engine endpoints for the UI and credential storage.** Blocked by: S19.
+- Goal: the UI runs against the real engine for products, repositories, connections, status and sync, with no mock and no token in the browser.
+- Scope: `packages/shared/src/credentialStore.ts` (+tests); `packages/db/prisma/schema.prisma` (`Credential`, `Connection.source/credentialId/syncRequestedAt`, `Repo.indexRequestedAt`); `packages/api/src/**` (UI module on the admin listener with the explicit route list of prep 2.1, status derivation of 2.5, repo search of 2.3, product create/edit of 2.4, route-enumeration test); `packages/backend/src/{sync,credentials,index}.ts` (D33 only); `packages/ui/src/app/api/**` thin proxies for products, repositories, connections, status, sync (threads and query stay on the mock until S21); compose (`ui` env, `API_ALLOWED_HOSTS`), README, ADR 4.5 allowlist and 7 status text.
+- Allowlist (kept): admin routes exactly the prep 2.1 list; strict bodies, JSON only, 64 KiB; fixed-vocabulary error messages for code-host failures; `Credential` read only inside `openCredential` (grep test).
+- Done: crypto round-trip and tamper tests; canary token never appears in any route response or thrown error; `api` connections survive a config sync and a `{stored}` token in a config file is rejected; status derivation tests over fixtures (table in prep 2.5); a manual run through the UI wizard with a read-only GitHub token creates a Product, status goes building to current, `retry` recovers a failed sync (notes saved under `.scratch/falkon-mvp/`); ops-smoke passes with a stored-credential round trip against a local fake host.
+- Verify: root commands; `sh scripts/ops-smoke.sh` once.
+- Budget: 4 units. Fallback split: S20a credentials, connections, repo search; S20b status, sync, product create and edit.
+
+**S21. Chat transport.** Blocked by: S20.
+- Goal: the UI chats over the AI SDK UI message stream with renderable evidence, stored per Product.
+- Scope: `Chat.productId` + index; `packages/web/src/lib/ask/evidence.ts` (+tests, adapter per prep 3.4); `packages/api/src/threads.ts` (list, create, get, messages route; history from DB, client text only); `packages/contracts` parts; `packages/ui` (`useChat` + `DefaultChatTransport`, streaming proxy route, delete NDJSON route, mock query and `streamEventSchema`, thread mapping); ADR 7 P9 status.
+- Done: adapter property and hostile-input tests green; thread of Product A is 404 under B; a body with `messages` is 400; a live Haiku run through the UI shows cited lines at the recorded revision and reload reproduces the answer; adapter resolves at least 95% of references on stored eval outputs; contract and golden unchanged.
+- Budget: 3 units.
+
+**S25. Impact-and-change recipe and question set.** Blocked by: none (UI half after S21).
+- Goal: the recipe is in the `research_codebase` brief and the UI Ask prompt with a measured effect on a small impact set.
+- Scope: `packages/web/src/lib/ask/{brief,prompt}.ts` (recipe gated on impact-style questions; prompt bytes for other queries pinned by a test); new `tests/eval/datasets/o3-impact.json` (existing datasets and `accepted.json` untouched); `tests/eval/**` arm `clone-tools-recipe`; `baseline.md` results; D28 text in spec and ADR.
+- Done: recipe text pinned, distinctive-phrase grep clean; offline `pilot --list` works; 6-run Haiku pilot per arm passes the stop rules (plain recall at least 0.70, no leaks); full Haiku runs of both arms on the impact set plus the 80-question control for the recipe arm; report with recall, wins and losses, effect size. A miss is reported, not retuned.
+- Budget: 2 units, eval spend cap $3.
+
+Units: 1 unit is about 0.25M subagent tokens. Cycle budget: 11 units (about 2.75M subagent tokens) and 10 hours wall clock.
+
+### Autonomy limits
+
+The loop may decide alone: test layout, module layout in `packages/api` and `packages/ui`, UI copy following D31/D32, adapter thresholds within the prep caps, one fix round per slice. It must stop (gate 2) for: a non-additive contract or golden change, a dependency not named in S19 or beyond the AI SDK React package, any change to existing datasets or gold, sync-path edits beyond D33, spend over $3, and any outward action (push, PR, publish). Gate 2 also fires after three kept slices, so the cycle is expected to need two gate-2 stops.
