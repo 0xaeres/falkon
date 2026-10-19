@@ -42,7 +42,7 @@ Every answer is scoped to one Product and backed by citations to exact source ex
 ## Capabilities and Constraints
 
 - Three UI surfaces are confirmed: Product setup, sync/generation status, and chat.
-- Product setup is where a Product and its repositories are registered in Falkon: connect a code host (GitHub App or personal access token), name the Product, select repositories with a branch per repository (default `main`), optionally see other sources, then queue ingestion and land on the status view. Supported code hosts: GitHub.com, GitHub Enterprise Server, GitLab, Bitbucket, and Azure DevOps.
+- Product setup is where a Product and its repositories are registered in Falkon: connect a code host (personal access token), name the Product, select repositories with a branch per repository (default `main`), optionally see other sources, then queue ingestion and land on the status view. Supported code hosts: GitHub.com and GitHub Enterprise Server.
 - Jira and Confluence appear in setup as not yet available. Ingesting them is outside the MVP; the UI must not imply it works.
 - Product Access through AD groups is handled at the service-account level in a separate system; the UI does not bind groups.
 - Chat centers on a grounded prose answer with citations up front; the supporting evidence is reachable from each answer. Answers also show unresolved targets, coverage gaps, partial-result reasons, and abstentions when present.
@@ -58,7 +58,7 @@ Every answer is scoped to one Product and backed by citations to exact source ex
 - The product name is **Falkon**.
 - The Falkon logo is approved and locked (2026-10-11): three swept bars forming an F and a stooping wing, with a Geist Semibold wordmark. Shipping SVG assets are in `public/brand/`.
 - Standing visual preference (user choice, 2026-10-11): every Falkon surface, including the logo, follows the developer-tool category standard, executed at full craft without irony. Quality bar: Vercel, Linear, and Sourcegraph/Greptile.
-- Third-party sources (GitHub, GitLab, Bitbucket, Azure DevOps, Jira, Confluence) appear with their proper brand logos.
+- Third-party sources (GitHub, GitHub Enterprise) appear with their proper brand logos.
 
 ## Evidence on Hand
 

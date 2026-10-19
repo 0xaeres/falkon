@@ -17,9 +17,7 @@ export default function DocsPage() {
       <h2>Set up a Product</h2>
       <p>
         Connect a code host, name the Product, choose repositories and branches,
-        then queue ingestion. TypeScript, JavaScript, and Java receive
-        structural extraction. Other supported files receive text evidence only.
-        Jira and Confluence are not yet available.
+        then queue ingestion. Jira and Confluence are not yet available.
       </p>
       <h2>Read the status</h2>
       <p>
@@ -45,10 +43,9 @@ export default function DocsPage() {
       <p>
         Try a refund question for a grounded answer, a support-console payload
         question for a partial answer, or an overnight settlement schedule
-        question for an abstention. Other questions abstain. Settings provides
-        status scenarios. Append <code>[network-error]</code> or{" "}
-        <code>[access-error]</code> to a question to preview those failure
-        states.
+        question for an abstention. Other questions abstain. Append{" "}
+        <code>[network-error]</code> or <code>[access-error]</code> to a
+        question to preview those failure states.
       </p>
       <Link href="/setup" className="btn pri">
         Set up a Product

@@ -49,18 +49,18 @@ Append `[network-error]` or `[access-error]` to a question to preview those erro
 
 Set `NEXT_PUBLIC_API_BASE_URL` to a compatible gateway, or replace `src/app/api` handlers with adapters to real services. Client UI components do not import mock fixtures or storage. The asynchronous workspace layout loads the initial Product from the same local store used by the Product API and seeds SWR so route children render during SSR. Replace that server-side load with the real Product adapter when switching to a gateway. All endpoint paths are centralized in `src/lib/api/client.ts`; contract mapping belongs there or in the gateway handlers.
 
-| Endpoint                                         | Behavior                                            |
-| ------------------------------------------------ | --------------------------------------------------- |
-| `GET /api/products`                              | Product switcher and ID availability                |
-| `POST /api/connections`                          | Validate simulated host connection                  |
-| `GET /api/repositories`                          | Available repository catalog and branches           |
-| `POST /api/products`                             | Create Product and queue first ingestion            |
-| `GET, PATCH /api/products/:productId`            | Product details / queue repository replacement      |
-| `GET /api/products/:productId/status`            | Freshness, generation, sync, overlay, coverage gaps |
-| `POST /api/products/:productId/sync`             | Retry, dismiss, or mock scenario selection          |
-| `GET, POST /api/products/:productId/threads`     | Product-scoped thread list / create                 |
-| `GET /api/products/:productId/threads/:threadId` | Saved thread with its answers                       |
-| `POST /api/products/:productId/query`            | NDJSON `start`, `delta`, `done`, or `error` events  |
+| Endpoint                                         | Behavior                                           |
+| ------------------------------------------------ | -------------------------------------------------- |
+| `GET /api/products`                              | Product switcher and ID availability               |
+| `POST /api/connections`                          | Validate simulated host connection                 |
+| `GET /api/repositories`                          | Available repository catalog and branches          |
+| `POST /api/products`                             | Create Product and queue first ingestion           |
+| `GET, PATCH /api/products/:productId`            | Product details / queue repository replacement     |
+| `GET /api/products/:productId/status`            | Freshness, generation, sync, coverage gaps         |
+| `POST /api/products/:productId/sync`             | Retry                                              |
+| `GET, POST /api/products/:productId/threads`     | Product-scoped thread list / create                |
+| `GET /api/products/:productId/threads/:threadId` | Saved thread with its answers                      |
+| `POST /api/products/:productId/query`            | NDJSON `start`, `delta`, `done`, or `error` events |
 
 The current NestJS `/v1/query` contract requires a principal and an HTTP-route target. It is not a drop-in replacement for free-form chat. Real setup/status/thread endpoints and answer streaming still need integration. Add real authentication and server-side credential handling at that integration boundary. The public preview-scenario action is a local mock feature and must not be forwarded into production.
 

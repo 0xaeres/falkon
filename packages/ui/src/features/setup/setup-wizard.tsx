@@ -480,8 +480,7 @@ function Wizard({ edit }: { edit?: Product }) {
                 ) : step === 2 ? (
                   <>
                     <Info size={16} className="amber" />
-                    Structural extraction covers TypeScript, JavaScript, and
-                    Java. Other files get text evidence only.
+                    Each repository is read at the head of its chosen branch.
                   </>
                 ) : step === 4 ? (
                   <>
