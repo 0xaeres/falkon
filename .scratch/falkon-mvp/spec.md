@@ -333,7 +333,7 @@ Common: Tier standard (Sonnet), Agent claude. Verify always includes `pnpm typec
 
 **S19. `packages/contracts` and `packages/ui` import.** Blocked by: cycle 4 on this branch (done).
 - Goal: one Zod 4 contract package shared by engine and UI; UI in the repo; no behaviour change.
-- Scope: new `packages/contracts` (`@sbc/contracts`: moved `contracts.ts`, the D31 removals, `connectionId` on `setupRequestSchema`, `method: "token"` only, ISO `updated`, empty-allowed `revision`/`language`, `productIdSchema` aligned to the engine slug regex, `evidencePartSchema`, `answerPartSchema`, marker-rewrite helper); `packages/ui` via `git subtree add --prefix=packages/ui` from `../falkon-ui` (history kept; name `@sbc/ui`; npm lock removed; pnpm workspace); UI edits for D31/D32 against the still-running mock; `PRODUCT.md` scrub; Dockerfile and compose `ui` service (Next standalone, `127.0.0.1:3100`); root scripts; ADR amendment (packages).
+- Scope: new `packages/contracts` (`@sbc/contracts`: moved `contracts.ts`, the D31 removals, `connectionId` on `setupRequestSchema`, `method: "token"` only, ISO `updated`, empty-allowed `revision`/`language`, `productIdSchema` aligned to the engine slug regex, `evidencePartSchema`, `answerPartSchema`; the marker-rewrite helper moves to S21 where its adapter lives); `packages/ui` via `git subtree add --prefix=packages/ui` from `../falkon-ui` (history kept; name `@sbc/ui`; npm lock removed; pnpm workspace); UI edits for D31/D32 against the still-running mock; `PRODUCT.md` scrub; Dockerfile and compose `ui` service (Next standalone, `127.0.0.1:3100`); root scripts; ADR amendment (packages).
 - Done: root typecheck and test green including UI tests; `pnpm ls zod -r` one major; both Next majors build; `docker compose up --build` serves the UI on 3100 against the mock; contract and golden diff empty; naming grep clean.
 - Budget: 2 units.
 
@@ -367,3 +367,5 @@ The engine already syncs incrementally: `cloneOrFetch` does `git fetch --prune` 
 
 The loop may decide alone: test layout, module layout in `packages/api` and `packages/ui`, UI copy following D31/D32, adapter thresholds within the prep caps, one fix round per slice. It must stop (gate 2) for: a non-additive contract or golden change, a dependency not named in S19 or beyond the AI SDK React package, any change to existing datasets or gold, sync-path edits beyond D33, spend over $3, and any outward action (push, PR, publish). Gate 2 also fires after three kept slices, so the cycle is expected to need two gate-2 stops.
 Gate 1 approved by the human on 2026-10-20: cycle 5 plan as written, human asleep, loop runs autonomously to gate 2.
+
+**S20 brief addition (from S19 review):** the wizard's edit mode sends `connectionId: "existing"` (placeholder, ponytail comment in `setup-wizard.tsx`). S20 must either make `connectionId` optional on edit or define what an edit sends; the engine ignores a placeholder id.
