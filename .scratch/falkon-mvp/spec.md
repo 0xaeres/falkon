@@ -359,6 +359,10 @@ Common: Tier standard (Sonnet), Agent claude. Verify always includes `pnpm typec
 
 Units: 1 unit is about 0.25M subagent tokens. Cycle budget: 11 units (about 2.75M subagent tokens) and 10 hours wall clock.
 
+### Delta sync (human note, 2026-10-20)
+
+The engine already syncs incrementally: `cloneOrFetch` does `git fetch --prune` into the existing bare clone (full clone only the first time), Zoekt indexes per revision, and knowledge scans are pinned to `kbScannedCommit`. S20 reuses that path for `retry` and for UI-triggered sync: no new sync mechanism, only the request marker. The status rule `pushedAt > lastIndexedAt` (partly-behind) is the delta signal. Never full-reclone on retry.
+
 ### Autonomy limits
 
 The loop may decide alone: test layout, module layout in `packages/api` and `packages/ui`, UI copy following D31/D32, adapter thresholds within the prep caps, one fix round per slice. It must stop (gate 2) for: a non-additive contract or golden change, a dependency not named in S19 or beyond the AI SDK React package, any change to existing datasets or gold, sync-path edits beyond D33, spend over $3, and any outward action (push, PR, publish). Gate 2 also fires after three kept slices, so the cycle is expected to need two gate-2 stops.
