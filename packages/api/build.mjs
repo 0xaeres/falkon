@@ -26,7 +26,12 @@ const nextShim = {
 
 await build({
   entryPoints: ["src/main.ts"],
-  outfile: "dist/main.js",
+  // Splitting moves the dynamically imported `ai` SDK into chunks under dist/chunks that load on first ask_codebase use;
+  // a single-file bundle would still evaluate it at start. `node dist/main.js` is unchanged.
+  outdir: "dist",
+  splitting: true,
+  entryNames: "[name]",
+  chunkNames: "chunks/[name]-[hash]",
   bundle: true,
   platform: "node",
   format: "esm",

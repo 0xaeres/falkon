@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { generateText, type UIMessage } from "ai";
 import { prisma, type ChatVisibility } from "@sbc/db";
 import type { Scope } from "@sbc/shared";
+import { AskError } from "./errors";
 import { answerPart, sourcesOf, toPortableMarkdown } from "./answer";
 import { createMessageStream } from "./agent";
 import { aiModel, configuredLanguageModels, describeModel, modelKey, toInfo, type LanguageModelConfig, type LanguageModelInfo } from "./models";
@@ -10,15 +11,8 @@ import { CHAT_NAME_PROMPT } from "./prompt";
 export const baseUrl = () => (process.env.AUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
 export const chatUrl = (id: string) => `${baseUrl()}/chat/${id}`;
 
-export class AskError extends Error {
-  constructor(
-    readonly statusCode: number,
-    readonly errorCode: string,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+// Lives in errors.ts so http.ts (reached from the MCP path) need not load this module and the `ai` SDK.
+export { AskError };
 
 /** The configured model to use: the requested one, else the first. */
 export async function pickModel(requested?: LanguageModelInfo): Promise<LanguageModelConfig> {

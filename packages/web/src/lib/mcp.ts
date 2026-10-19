@@ -3,7 +3,6 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { toolDefinitions, toolNames, toolJsonSchema, type AnyToolDefinition, type Scope } from "@sbc/shared";
-import { askCodebase } from "./ask/chat";
 import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS } from "./ask/brief";
 import { configuredLanguageModels, languageModelsInfo } from "./ask/models";
 import { languageModelInfo } from "./ask/http";
@@ -93,6 +92,8 @@ export async function createMcpServer(scope: Scope) {
       },
       async (a) => {
         try {
+          // Loaded on first use: pulls in the `ai` SDK, which a tool-listing server never needs.
+          const { askCodebase } = await import("./ask/chat");
           const r = await askCodebase({ query: a.query, repos: a.repos, languageModel: a.languageModel, visibility: a.visibility, scope });
           return { content: [{ type: "text" as const, text: `${r.answer}\n\n---\n**View full research session:** ${r.chatUrl}\n**Model used:** ${r.languageModel.model}` }] };
         } catch (e) {

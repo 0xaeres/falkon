@@ -1,4 +1,4 @@
-import { convertToModelMessages, createUIMessageStream, jsonSchema, NoSuchToolError, streamText, tool, type ModelMessage, type UIMessage } from "ai";
+import { createUIMessageStream, jsonSchema, NoSuchToolError, streamText, tool, type ModelMessage, type UIMessage } from "ai";
 import { gitRead, toolDefinitions, toolJsonSchema, toolNames, type AnyToolDefinition, type Scope, type ToolSource } from "@sbc/shared";
 import { toolDeps } from "../tools";
 import { answerPart } from "./answer";
@@ -122,5 +122,3 @@ export async function createMessageStream(o: {
     },
   });
 }
-
-export { convertToModelMessages };
