@@ -1,0 +1,264 @@
+[
+  {
+    "id": "plain",
+    "query": "fixture_marker",
+    "grep": {
+      "pattern": "(?i)fixture_marker",
+      "limit": 500
+    }
+  },
+  {
+    "id": "and",
+    "query": "hello world"
+  },
+  {
+    "id": "quoted",
+    "query": "\"hello world\"",
+    "grep": {
+      "pattern": "(?i)hello world",
+      "limit": 500
+    }
+  },
+  {
+    "id": "or",
+    "query": "atlas_marker or worker_marker"
+  },
+  {
+    "id": "parentheses",
+    "query": "(atlas_marker or worker_marker) fixture_marker"
+  },
+  {
+    "id": "negated-group",
+    "query": "fixture_marker -(atlas_marker or worker_marker)"
+  },
+  {
+    "id": "negative-file",
+    "query": "fixture_marker -file:legacy"
+  },
+  {
+    "id": "file",
+    "query": "file:src/ fixture_marker"
+  },
+  {
+    "id": "file-alias",
+    "query": "f:greet fixture_marker"
+  },
+  {
+    "id": "repo",
+    "query": "repo:atlas fixture_marker",
+    "grep": {
+      "pattern": "(?i)fixture_marker",
+      "limit": 500,
+      "repo": "fixtures.test/atlas"
+    }
+  },
+  {
+    "id": "repo-alias",
+    "query": "r:worker fixture_marker"
+  },
+  {
+    "id": "rev-main",
+    "query": "rev:main fixture_marker"
+  },
+  {
+    "id": "rev-feature",
+    "query": "rev:feature feature_only_marker",
+    "grep": {
+      "pattern": "(?i)feature_only_marker",
+      "limit": 500,
+      "ref": "feature"
+    }
+  },
+  {
+    "id": "rev-tag",
+    "query": "rev:v1 fixture_marker"
+  },
+  {
+    "id": "rev-all",
+    "query": "rev:* feature_only_marker",
+    "grep": {
+      "pattern": "(?i)feature_only_marker",
+      "limit": 500,
+      "ref": "*"
+    }
+  },
+  {
+    "id": "lang-ts",
+    "query": "lang:typescript fixture_marker"
+  },
+  {
+    "id": "lang-java",
+    "query": "lang:Java fixture_marker"
+  },
+  {
+    "id": "lang-python",
+    "query": "lang:Python fixture_marker"
+  },
+  {
+    "id": "lang-unknown",
+    "query": "lang:Unknown fixture_marker"
+  },
+  {
+    "id": "symbol",
+    "query": "sym:greet"
+  },
+  {
+    "id": "content",
+    "query": "content:fixture_marker"
+  },
+  {
+    "id": "content-alias",
+    "query": "c:fixture_marker"
+  },
+  {
+    "id": "reposet",
+    "query": "reposet:fixtures.test/atlas,fixtures.test/worker fixture_marker"
+  },
+  {
+    "id": "archived-yes",
+    "query": "archived:yes fixture_marker"
+  },
+  {
+    "id": "archived-no",
+    "query": "archived:no fixture_marker"
+  },
+  {
+    "id": "archived-only",
+    "query": "archived:only fixture_marker"
+  },
+  {
+    "id": "fork-yes",
+    "query": "fork:yes fixture_marker"
+  },
+  {
+    "id": "fork-no",
+    "query": "fork:no fixture_marker"
+  },
+  {
+    "id": "fork-only",
+    "query": "fork:only fixture_marker"
+  },
+  {
+    "id": "visibility-any",
+    "query": "visibility:any fixture_marker"
+  },
+  {
+    "id": "visibility-public",
+    "query": "visibility:public fixture_marker"
+  },
+  {
+    "id": "visibility-private",
+    "query": "visibility:private fixture_marker"
+  },
+  {
+    "id": "regex-off",
+    "query": "hello.*world",
+    "regex": false
+  },
+  {
+    "id": "regex-on",
+    "query": "hello.*world",
+    "regex": true,
+    "grep": {
+      "pattern": "(?i)hello.*world",
+      "limit": 500
+    }
+  },
+  {
+    "id": "regex-groups",
+    "query": "(atlas|worker)_marker",
+    "regex": true
+  },
+  {
+    "id": "regex-escaped",
+    "query": "greet\\(",
+    "regex": true
+  },
+  {
+    "id": "case-insensitive",
+    "query": "NEEDLE",
+    "case": false
+  },
+  {
+    "id": "case-sensitive",
+    "query": "Needle",
+    "grep": {
+      "pattern": "Needle",
+      "limit": 500
+    },
+    "case": true
+  },
+  {
+    "id": "case-sensitive-empty",
+    "query": "NEEDLE",
+    "grep": {
+      "pattern": "NEEDLE",
+      "limit": 500
+    },
+    "case": true
+  },
+  {
+    "id": "limit-one",
+    "query": "fixture_marker",
+    "limit": 1,
+    "grep": {
+      "pattern": "(?i)fixture_marker",
+      "limit": 1
+    },
+    "page": 1
+  },
+  {
+    "id": "limit-two",
+    "query": "fixture_marker",
+    "limit": 2
+  },
+  {
+    "id": "exhaustive",
+    "query": "fixture_marker",
+    "limit": 1000,
+    "grep": {
+      "pattern": "(?i)fixture_marker",
+      "limit": 1000
+    }
+  },
+  {
+    "id": "selected-repos",
+    "query": "fixture_marker",
+    "repos": [
+      "fixtures.test/atlas",
+      "fixtures.test/ledger"
+    ]
+  },
+  {
+    "id": "context",
+    "query": "context:fixtures fixture_marker"
+  },
+  {
+    "id": "empty-result",
+    "query": "absent_unique_marker",
+    "grep": {
+      "pattern": "(?i)absent_unique_marker",
+      "limit": 500
+    }
+  },
+  {
+    "id": "empty-group",
+    "query": "()"
+  },
+  {
+    "id": "invalid-filter",
+    "query": "file:"
+  },
+  {
+    "id": "oversized-excluded",
+    "query": "oversized_only_marker"
+  },
+  {
+    "id": "quoted-filter",
+    "query": "file:\"src/greet.ts\" fixture_marker"
+  },
+  {
+    "id": "negated-repo",
+    "query": "-repo:atlas fixture_marker"
+  }
+]

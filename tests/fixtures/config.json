@@ -1,0 +1,72 @@
+{
+  "settings": {
+    "maxFileSize": 1024,
+    "reindexIntervalMs": 1000,
+    "resyncConnectionIntervalMs": 1000,
+    "repoGarbageCollectionGracePeriodMs": 1000
+  },
+  "knowledgeBase": {
+    "enabled": false
+  },
+  "connections": {
+    "atlas": {
+      "type": "git",
+      "url": "file:///fixtures/repos/atlas",
+      "revisions": {
+        "branches": [
+          "main",
+          "feature"
+        ],
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "ledger": {
+      "type": "git",
+      "url": "file:///fixtures/repos/ledger",
+      "revisions": {
+        "branches": [
+          "main",
+          "feature"
+        ],
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "worker": {
+      "type": "git",
+      "url": "file:///fixtures/repos/worker",
+      "revisions": {
+        "branches": [
+          "main",
+          "feature"
+        ],
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "archive": {
+      "type": "git",
+      "url": "file:///fixtures/repos/archive",
+      "revisions": {
+        "branches": [
+          "main",
+          "feature"
+        ],
+        "tags": [
+          "v1"
+        ]
+      }
+    }
+  },
+  "contexts": {
+    "fixtures": {
+      "include": [
+        "fixtures.test/*"
+      ]
+    }
+  }
+}

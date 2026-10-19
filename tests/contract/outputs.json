@@ -1,0 +1,2369 @@
+{
+  "grep": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "greet",
+                          "case_sensitive": true,
+                          "file_name": false,
+                          "content": true
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "src",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "([^/]*)\\.ts$",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "fixtures.test/atlas": true
+                          }
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "",
+                          "exact": false
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/hello.ts:\n  1: export function greet() { return \"hello world\"; }\n  2: greet();\n  3: // second commit"
+        }
+      ]
+    }
+  },
+  "grep-grouped": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "regexp": {
+                    "regexp": "greet",
+                    "case_sensitive": true,
+                    "file_name": false,
+                    "content": true
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 10000,
+            "total_max_match_count": 10001,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found matches in 1 repository:\n  fixtures.test/atlas: 1 match in 1 file"
+        }
+      ]
+    }
+  },
+  "grep-truncated": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "regexp": {
+                    "regexp": "greet",
+                    "case_sensitive": true,
+                    "file_name": false,
+                    "content": true
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 1,
+            "total_max_match_count": 2,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/hello.ts:\n  1: export function greet() { return \"hello world\"; }\n  2: greet();\n  3: // second commit\n\n(Results truncated. Consider using a more specific path or pattern, specifying a repo, or increasing the limit.)"
+        }
+      ]
+    }
+  },
+  "grep-grouped-truncated": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "regexp": {
+                    "regexp": "greet",
+                    "case_sensitive": true,
+                    "file_name": false,
+                    "content": true
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 1,
+            "total_max_match_count": 2,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found matches in 1 repository:\n  fixtures.test/atlas: 1 match in 1 file\n\n(Results truncated. Consider using a more specific path or pattern, specifying a repo, or increasing the limit.)"
+        }
+      ]
+    }
+  },
+  "grep-long": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "regexp": {
+                    "regexp": "x",
+                    "case_sensitive": true,
+                    "file_name": false,
+                    "content": true
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/hello.ts:\n  1: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... (line truncated to 2000 chars)"
+        }
+      ]
+    }
+  },
+  "glob": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "((?:[^/]*(?:\\/|$))*)([^/]*)\\.ts$",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "src",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "fixtures.test/atlas": true
+                          }
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "main",
+                          "exact": false
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 file matching \"**/*.ts\":\n\n[fixtures.test/atlas]\n  src/hello.ts"
+        }
+      ]
+    }
+  },
+  "glob-truncated": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "regexp": {
+                    "regexp": "((?:[^/]*(?:\\/|$))*)([^/]*)\\.ts$",
+                    "case_sensitive": true,
+                    "file_name": true,
+                    "content": false
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 1,
+            "total_max_match_count": 2,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 file matching \"**/*.ts\":\n\n[fixtures.test/atlas]\n  src/hello.ts\n\n(Results truncated. Consider using a more specific pattern, specifying a repo, or increasing the limit.)"
+        }
+      ]
+    }
+  },
+  "diff": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "--- a/src/hello.ts\n+++ b/src/hello.ts\n@@ -1,2 +1,3 @@\n export function greet() { return \"hello world\"; }\n greet();\n+// second commit\n"
+        }
+      ]
+    }
+  },
+  "diff-empty": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": ""
+        }
+      ]
+    }
+  },
+  "diff-ref-error": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"get_diff\" failed: Invalid git reference: \"-bad\". Git refs cannot start with '-'."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "commits": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"commits\":[{\"hash\":\"3e1fe82fbafe629929cd7e8251f1fa4afaefa97f\",\"date\":\"2026-01-02T00:00:00Z\",\"message\":\"extend greeting\",\"refs\":\"HEAD -> main\",\"body\":\"\",\"authorName\":\"Fixture\",\"authorEmail\":\"fixture@example.test\"},{\"hash\":\"78229eedc764fc44d727ca667fdd365a32fd5bf6\",\"date\":\"2026-01-01T00:00:00Z\",\"message\":\"initial fixture\",\"refs\":\"tag: v1, feature\",\"body\":\"\",\"authorName\":\"Fixture\",\"authorEmail\":\"fixture@example.test\"}],\"totalCount\":2}"
+        }
+      ]
+    }
+  },
+  "commits-page": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"commits\":[{\"hash\":\"78229eedc764fc44d727ca667fdd365a32fd5bf6\",\"date\":\"2026-01-01T00:00:00Z\",\"message\":\"initial fixture\",\"refs\":\"tag: v1, feature\",\"body\":\"\",\"authorName\":\"Fixture\",\"authorEmail\":\"fixture@example.test\"}],\"totalCount\":2}"
+        }
+      ]
+    }
+  },
+  "commits-filter": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"commits\":[{\"hash\":\"3e1fe82fbafe629929cd7e8251f1fa4afaefa97f\",\"date\":\"2026-01-02T00:00:00Z\",\"message\":\"extend greeting\",\"refs\":\"HEAD -> main\",\"body\":\"\",\"authorName\":\"Fixture\",\"authorEmail\":\"fixture@example.test\"}],\"totalCount\":1}"
+        }
+      ]
+    }
+  },
+  "commits-empty": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"commits\":[],\"totalCount\":0}"
+        }
+      ]
+    }
+  },
+  "commits-date-error": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_commits\" failed: Unexpected error: Invalid date range: 'since' (2026-02-01) must be before 'until' (2026-01-01)"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "commits-ref-error": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_commits\" failed: Invalid git reference: \"-bad\". Git refs cannot start with '-'."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "branches": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"repo\":\"fixtures.test/atlas\",\"defaultBranch\":\"main\",\"indexedAt\":\"2026-01-03T00:00:00.000Z\",\"totalCount\":2,\"branches\":[{\"name\":\"main\",\"commit\":\"3e1fe82fbafe629929cd7e8251f1fa4afaefa97f\",\"committedAt\":\"2026-01-02T00:00:00Z\",\"isDefault\":true,\"isIndexed\":true},{\"name\":\"feature\",\"commit\":\"78229eedc764fc44d727ca667fdd365a32fd5bf6\",\"committedAt\":\"2026-01-01T00:00:00Z\",\"isDefault\":false,\"isIndexed\":true}]}"
+        }
+      ]
+    }
+  },
+  "branches-page": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"repo\":\"fixtures.test/atlas\",\"defaultBranch\":\"main\",\"indexedAt\":\"2026-01-03T00:00:00.000Z\",\"totalCount\":2,\"branches\":[{\"name\":\"feature\",\"commit\":\"78229eedc764fc44d727ca667fdd365a32fd5bf6\",\"committedAt\":\"2026-01-01T00:00:00Z\",\"isDefault\":false,\"isIndexed\":true}]}"
+        }
+      ]
+    }
+  },
+  "branches-filter": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"repo\":\"fixtures.test/atlas\",\"defaultBranch\":\"main\",\"indexedAt\":\"2026-01-03T00:00:00.000Z\",\"totalCount\":1,\"branches\":[{\"name\":\"feature\",\"commit\":\"78229eedc764fc44d727ca667fdd365a32fd5bf6\",\"committedAt\":\"2026-01-01T00:00:00Z\",\"isDefault\":false,\"isIndexed\":true}]}"
+        }
+      ]
+    }
+  },
+  "branches-empty": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"repo\":\"fixtures.test/atlas\",\"defaultBranch\":\"main\",\"indexedAt\":\"2026-01-03T00:00:00.000Z\",\"totalCount\":0,\"branches\":[]}"
+        }
+      ]
+    }
+  },
+  "repos": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"repos\":[{\"name\":\"fixtures.test/atlas\",\"url\":\"http://localhost:3000/browse/fixtures.test/atlas/-/tree/\",\"pushedAt\":\"2026-01-02T00:00:00.000Z\",\"defaultBranch\":\"refs/heads/main\",\"isFork\":false,\"isArchived\":false}],\"totalCount\":1}"
+        }
+      ]
+    }
+  },
+  "repos-empty": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"repos\":[],\"totalCount\":0}"
+        }
+      ]
+    }
+  },
+  "repos-page": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"repos\":[],\"totalCount\":1}"
+        }
+      ]
+    }
+  },
+  "read": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "<repo>fixtures.test/atlas</repo>\n<path>src/hello.ts</path>\n<url>undefined</url>\n<content>\n1: export function greet() { return \"hello world\"; }\n2: greet();\n3: // second commit\n4: \n\n(End of file - 4 lines total)\n</content>"
+        }
+      ]
+    }
+  },
+  "read-page": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "<repo>fixtures.test/atlas</repo>\n<path>src/hello.ts</path>\n<url>undefined</url>\n<content>\n2: greet();\n\n(Showing lines 2-2 of 4. Use offset=3 to continue.)\n</content>"
+        }
+      ]
+    }
+  },
+  "read-tag": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "<repo>fixtures.test/atlas</repo>\n<path>src/hello.ts</path>\n<url>undefined</url>\n<content>\n1: export function greet() { return \"hello world\"; }\n2: greet();\n3: \n\n(End of file - 3 lines total)\n</content>"
+        }
+      ]
+    }
+  },
+  "read-empty": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "<repo>fixtures.test/atlas</repo>\n<path>empty.txt</path>\n<url>undefined</url>\n<content>\n1: \n\n(End of file - 1 lines total)\n</content>"
+        }
+      ]
+    }
+  },
+  "read-beyond": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "<repo>fixtures.test/atlas</repo>\n<path>empty.txt</path>\n<url>undefined</url>\n<content>\n\n\n(End of file - 1 lines total)\n</content>"
+        }
+      ]
+    }
+  },
+  "read-long": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "<repo>fixtures.test/atlas</repo>\n<path>long.txt</path>\n<url>undefined</url>\n<content>\n1: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... (line truncated to 2000 chars)\n2: \n\n(End of file - 2 lines total)\n</content>"
+        }
+      ]
+    }
+  },
+  "read-bytes": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "<repo>fixtures.test/atlas</repo>\n<path>bytes.txt</path>\n<url>undefined</url>\n<content>\n1: yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\n2: yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\n\n(Output capped at 5KB. Showing lines 1-2 of 5. Use offset=3 to continue.)\n</content>"
+        }
+      ]
+    }
+  },
+  "read-lines": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "<repo>fixtures.test/atlas</repo>\n<path>lines.txt</path>\n<url>undefined</url>\n<content>\n1: short\n2: short\n3: short\n4: short\n5: short\n6: short\n7: short\n8: short\n9: short\n10: short\n11: short\n12: short\n13: short\n14: short\n15: short\n16: short\n17: short\n18: short\n19: short\n20: short\n21: short\n22: short\n23: short\n24: short\n25: short\n26: short\n27: short\n28: short\n29: short\n30: short\n31: short\n32: short\n33: short\n34: short\n35: short\n36: short\n37: short\n38: short\n39: short\n40: short\n41: short\n42: short\n43: short\n44: short\n45: short\n46: short\n47: short\n48: short\n49: short\n50: short\n51: short\n52: short\n53: short\n54: short\n55: short\n56: short\n57: short\n58: short\n59: short\n60: short\n61: short\n62: short\n63: short\n64: short\n65: short\n66: short\n67: short\n68: short\n69: short\n70: short\n71: short\n72: short\n73: short\n74: short\n75: short\n76: short\n77: short\n78: short\n79: short\n80: short\n81: short\n82: short\n83: short\n84: short\n85: short\n86: short\n87: short\n88: short\n89: short\n90: short\n91: short\n92: short\n93: short\n94: short\n95: short\n96: short\n97: short\n98: short\n99: short\n100: short\n101: short\n102: short\n103: short\n104: short\n105: short\n106: short\n107: short\n108: short\n109: short\n110: short\n111: short\n112: short\n113: short\n114: short\n115: short\n116: short\n117: short\n118: short\n119: short\n120: short\n121: short\n122: short\n123: short\n124: short\n125: short\n126: short\n127: short\n128: short\n129: short\n130: short\n131: short\n132: short\n133: short\n134: short\n135: short\n136: short\n137: short\n138: short\n139: short\n140: short\n141: short\n142: short\n143: short\n144: short\n145: short\n146: short\n147: short\n148: short\n149: short\n150: short\n151: short\n152: short\n153: short\n154: short\n155: short\n156: short\n157: short\n158: short\n159: short\n160: short\n161: short\n162: short\n163: short\n164: short\n165: short\n166: short\n167: short\n168: short\n169: short\n170: short\n171: short\n172: short\n173: short\n174: short\n175: short\n176: short\n177: short\n178: short\n179: short\n180: short\n181: short\n182: short\n183: short\n184: short\n185: short\n186: short\n187: short\n188: short\n189: short\n190: short\n191: short\n192: short\n193: short\n194: short\n195: short\n196: short\n197: short\n198: short\n199: short\n200: short\n201: short\n202: short\n203: short\n204: short\n205: short\n206: short\n207: short\n208: short\n209: short\n210: short\n211: short\n212: short\n213: short\n214: short\n215: short\n216: short\n217: short\n218: short\n219: short\n220: short\n221: short\n222: short\n223: short\n224: short\n225: short\n226: short\n227: short\n228: short\n229: short\n230: short\n231: short\n232: short\n233: short\n234: short\n235: short\n236: short\n237: short\n238: short\n239: short\n240: short\n241: short\n242: short\n243: short\n244: short\n245: short\n246: short\n247: short\n248: short\n249: short\n250: short\n251: short\n252: short\n253: short\n254: short\n255: short\n256: short\n257: short\n258: short\n259: short\n260: short\n261: short\n262: short\n263: short\n264: short\n265: short\n266: short\n267: short\n268: short\n269: short\n270: short\n271: short\n272: short\n273: short\n274: short\n275: short\n276: short\n277: short\n278: short\n279: short\n280: short\n281: short\n282: short\n283: short\n284: short\n285: short\n286: short\n287: short\n288: short\n289: short\n290: short\n291: short\n292: short\n293: short\n294: short\n295: short\n296: short\n297: short\n298: short\n299: short\n300: short\n301: short\n302: short\n303: short\n304: short\n305: short\n306: short\n307: short\n308: short\n309: short\n310: short\n311: short\n312: short\n313: short\n314: short\n315: short\n316: short\n317: short\n318: short\n319: short\n320: short\n321: short\n322: short\n323: short\n324: short\n325: short\n326: short\n327: short\n328: short\n329: short\n330: short\n331: short\n332: short\n333: short\n334: short\n335: short\n336: short\n337: short\n338: short\n339: short\n340: short\n341: short\n342: short\n343: short\n344: short\n345: short\n346: short\n347: short\n348: short\n349: short\n350: short\n351: short\n352: short\n353: short\n354: short\n355: short\n356: short\n357: short\n358: short\n359: short\n360: short\n361: short\n362: short\n363: short\n364: short\n365: short\n366: short\n367: short\n368: short\n369: short\n370: short\n371: short\n372: short\n373: short\n374: short\n375: short\n376: short\n377: short\n378: short\n379: short\n380: short\n381: short\n382: short\n383: short\n384: short\n385: short\n386: short\n387: short\n388: short\n389: short\n390: short\n391: short\n392: short\n393: short\n394: short\n395: short\n396: short\n397: short\n398: short\n399: short\n400: short\n401: short\n402: short\n403: short\n404: short\n405: short\n406: short\n407: short\n408: short\n409: short\n410: short\n411: short\n412: short\n413: short\n414: short\n415: short\n416: short\n417: short\n418: short\n419: short\n420: short\n421: short\n422: short\n423: short\n424: short\n425: short\n426: short\n427: short\n428: short\n429: short\n430: short\n431: short\n432: short\n433: short\n434: short\n435: short\n436: short\n437: short\n438: short\n439: short\n440: short\n441: short\n442: short\n443: short\n444: short\n445: short\n446: short\n447: short\n448: short\n449: short\n450: short\n451: short\n452: short\n453: short\n454: short\n455: short\n456: short\n457: short\n458: short\n459: short\n460: short\n461: short\n462: short\n463: short\n464: short\n465: short\n466: short\n467: short\n468: short\n469: short\n470: short\n471: short\n472: short\n473: short\n474: short\n475: short\n476: short\n477: short\n478: short\n479: short\n480: short\n481: short\n482: short\n483: short\n484: short\n485: short\n486: short\n487: short\n488: short\n489: short\n490: short\n491: short\n492: short\n493: short\n494: short\n495: short\n496: short\n497: short\n498: short\n499: short\n500: short\n\n(Showing lines 1-500 of 511. Use offset=501 to continue.)\n</content>"
+        }
+      ]
+    }
+  },
+  "read-missing": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"read_file\" failed: File \"absent\" not found in repository \"fixtures.test/atlas\""
+        }
+      ],
+      "isError": true
+    }
+  },
+  "read-bad-ref": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"read_file\" failed: Git reference \"absent\" could not be resolved."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "tree": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "/\n  src/\n  bytes.txt\n  empty.txt\n  lines.txt\n  long.txt"
+        }
+      ]
+    }
+  },
+  "tree-deep": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "/\n  src/\n    nested/\n      a.ts\n    hello.ts\n  bytes.txt\n  empty.txt\n  lines.txt\n  long.txt"
+        }
+      ]
+    }
+  },
+  "tree-path": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "src\n  nested/\n    a.ts\n  hello.ts"
+        }
+      ]
+    }
+  },
+  "tree-directories": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "/\n  src/\n    nested/"
+        }
+      ]
+    }
+  },
+  "tree-files": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "/\n  bytes.txt\n  empty.txt\n  lines.txt\n  long.txt"
+        }
+      ]
+    }
+  },
+  "tree-truncated": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "/\n  src/\n\n(truncated — showing first 1 entries)"
+        }
+      ]
+    }
+  },
+  "tree-empty": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "absent\n  (no entries found)"
+        }
+      ]
+    }
+  },
+  "tree-bad-ref": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_tree\" failed: Unexpected error: git ls-tree command failed."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "definitions": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "symbol": {
+                          "expr": {
+                            "regexp": {
+                              "regexp": "\\bgreet\\b",
+                              "case_sensitive": true,
+                              "file_name": false,
+                              "content": true
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "HEAD",
+                          "exact": true
+                        }
+                      },
+                      {
+                        "repo": {
+                          "regexp": "^fixtures\\.test/atlas$"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 1000,
+            "total_max_match_count": 1001,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 definition in 1 file\n\n[fixtures.test/atlas] src/hello.ts:\n  1: export function greet() { return \"hello world\"; }\ngreet();\n// second commit"
+        }
+      ]
+    }
+  },
+  "references": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "\\bgreet\\b",
+                          "case_sensitive": true,
+                          "file_name": false,
+                          "content": true
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "HEAD",
+                          "exact": true
+                        }
+                      },
+                      {
+                        "repo": {
+                          "regexp": "^fixtures\\.test/atlas$"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 1000,
+            "total_max_match_count": 1001,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 reference in 1 file\n\n[fixtures.test/atlas] src/hello.ts:\n  1: export function greet() { return \"hello world\"; }\ngreet();\n// second commit"
+        }
+      ]
+    }
+  },
+  "grep-empty": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "regexp": {
+                    "regexp": "absent",
+                    "case_sensitive": true,
+                    "file_name": false,
+                    "content": true
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "No files found"
+        }
+      ]
+    }
+  },
+  "grep-transport-error": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "regexp": {
+                    "regexp": "absent",
+                    "case_sensitive": true,
+                    "file_name": false,
+                    "content": true
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"grep\" failed: fixture search unavailable"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "glob-empty": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "regexp": {
+                    "regexp": "absent$",
+                    "case_sensitive": true,
+                    "file_name": true,
+                    "content": false
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "No files found"
+        }
+      ]
+    }
+  },
+  "glob-transport-error": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "regexp": {
+                    "regexp": "absent$",
+                    "case_sensitive": true,
+                    "file_name": true,
+                    "content": false
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"glob\" failed: fixture search unavailable"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "find_symbol_definitions-empty": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "symbol": {
+                          "expr": {
+                            "regexp": {
+                              "regexp": "\\babsent\\b",
+                              "case_sensitive": true,
+                              "file_name": false,
+                              "content": true
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "HEAD",
+                          "exact": true
+                        }
+                      },
+                      {
+                        "repo": {
+                          "regexp": "^fixtures\\.test/atlas$"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 1000,
+            "total_max_match_count": 1001,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "No definitions found"
+        }
+      ]
+    }
+  },
+  "find_symbol_definitions-transport-error": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "symbol": {
+                          "expr": {
+                            "regexp": {
+                              "regexp": "\\babsent\\b",
+                              "case_sensitive": true,
+                              "file_name": false,
+                              "content": true
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "HEAD",
+                          "exact": true
+                        }
+                      },
+                      {
+                        "repo": {
+                          "regexp": "^fixtures\\.test/atlas$"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 1000,
+            "total_max_match_count": 1001,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"find_symbol_definitions\" failed: fixture search unavailable"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "find_symbol_references-empty": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "\\babsent\\b",
+                          "case_sensitive": true,
+                          "file_name": false,
+                          "content": true
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "HEAD",
+                          "exact": true
+                        }
+                      },
+                      {
+                        "repo": {
+                          "regexp": "^fixtures\\.test/atlas$"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 1000,
+            "total_max_match_count": 1001,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "No references found"
+        }
+      ]
+    }
+  },
+  "find_symbol_references-transport-error": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "\\babsent\\b",
+                          "case_sensitive": true,
+                          "file_name": false,
+                          "content": true
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "HEAD",
+                          "exact": true
+                        }
+                      },
+                      {
+                        "repo": {
+                          "regexp": "^fixtures\\.test/atlas$"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 1000,
+            "total_max_match_count": 1001,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"find_symbol_references\" failed: fixture search unavailable"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "read_file-path-\"../outside\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"read_file\" failed: File \"../outside\" not found in repository \"fixtures.test/atlas\""
+        }
+      ],
+      "isError": true
+    }
+  },
+  "read_file-path-\"src/../../outside\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"read_file\" failed: File \"src/../../outside\" not found in repository \"fixtures.test/atlas\""
+        }
+      ],
+      "isError": true
+    }
+  },
+  "read_file-path-\"a\\u0000b\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"read_file\" failed: File \"a\u0000b\" not found in repository \"fixtures.test/atlas\""
+        }
+      ],
+      "isError": true
+    }
+  },
+  "read_file-dash-ref": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"read_file\" failed: Invalid git reference: \"--help\". Git refs cannot start with '-'."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "list_tree-path-\"../outside\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_tree\" failed: Not found"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "list_tree-path-\"src/../../outside\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_tree\" failed: Not found"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "list_tree-path-\"a\\u0000b\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_tree\" failed: Not found"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "list_tree-dash-ref": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_tree\" failed: Invalid git reference: \"--help\". Git refs cannot start with '-'."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "get_diff-path-\"../outside\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"get_diff\" failed: Unexpected error: Failed to compute diff for fixtures.test/atlas: fatal: ../outside: '../outside' is outside repository at '<fixture>/repos/atlas.git/.'\n"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "get_diff-path-\"src/../../outside\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"get_diff\" failed: Unexpected error: Failed to compute diff for fixtures.test/atlas: fatal: src/../../outside: 'src/../../outside' is outside repository at '<fixture>/repos/atlas.git/.'\n"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "get_diff-path-\"a\\u0000b\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"get_diff\" failed: Unexpected error: Failed to compute diff for fixtures.test/atlas: TypeError [ERR_INVALID_ARG_VALUE]: The argument 'args[4]' must be a string without null bytes. Received 'a\\x00b'"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "get_diff-dash-ref": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"get_diff\" failed: Invalid git reference: \"--help\". Git refs cannot start with '-'."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "list_commits-path-\"../outside\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_commits\" failed: Failed to search commits in repository fixtures.test/atlas: fatal: ../outside: '../outside' is outside repository at '<fixture>/repos/atlas.git/.'\n"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "list_commits-path-\"src/../../outside\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_commits\" failed: Failed to search commits in repository fixtures.test/atlas: fatal: src/../../outside: 'src/../../outside' is outside repository at '<fixture>/repos/atlas.git/.'\n"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "list_commits-path-\"a\\u0000b\"": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_commits\" failed: Failed to search commits in repository fixtures.test/atlas: TypeError [ERR_INVALID_ARG_VALUE]: The argument 'args[5]' must be a string without null bytes. Received 'a\\x00b'"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "list_commits-dash-ref": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_commits\" failed: Invalid git reference: \"--help\". Git refs cannot start with '-'."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "grep-path-\"../outside\"": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "greet",
+                          "case_sensitive": true,
+                          "file_name": false,
+                          "content": true
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "\\.\\./outside",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "fixtures.test/atlas": true
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/hello.ts:\n  1: export function greet() { return \"hello world\"; }\n  2: greet();\n  3: // second commit"
+        }
+      ]
+    }
+  },
+  "grep-path-\"src/../../outside\"": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "greet",
+                          "case_sensitive": true,
+                          "file_name": false,
+                          "content": true
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "src/\\.\\./\\.\\./outside",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "fixtures.test/atlas": true
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/hello.ts:\n  1: export function greet() { return \"hello world\"; }\n  2: greet();\n  3: // second commit"
+        }
+      ]
+    }
+  },
+  "grep-path-\"a\\u0000b\"": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "greet",
+                          "case_sensitive": true,
+                          "file_name": false,
+                          "content": true
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "a\u0000b",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "fixtures.test/atlas": true
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/hello.ts:\n  1: export function greet() { return \"hello world\"; }\n  2: greet();\n  3: // second commit"
+        }
+      ]
+    }
+  },
+  "grep-dash-ref": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "greet",
+                          "case_sensitive": true,
+                          "file_name": false,
+                          "content": true
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "src/hello\\.ts",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "fixtures.test/atlas": true
+                          }
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "--help",
+                          "exact": false
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/hello.ts:\n  1: export function greet() { return \"hello world\"; }\n  2: greet();\n  3: // second commit"
+        }
+      ]
+    }
+  },
+  "glob-path-\"../outside\"": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "greet$",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "\\.\\./outside",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "fixtures.test/atlas": true
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 file matching \"greet\":\n\n[fixtures.test/atlas]\n  src/hello.ts"
+        }
+      ]
+    }
+  },
+  "glob-path-\"src/../../outside\"": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "greet$",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "src/\\.\\./\\.\\./outside",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "fixtures.test/atlas": true
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 file matching \"greet\":\n\n[fixtures.test/atlas]\n  src/hello.ts"
+        }
+      ]
+    }
+  },
+  "glob-path-\"a\\u0000b\"": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "greet$",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "a\u0000b",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "fixtures.test/atlas": true
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 file matching \"greet\":\n\n[fixtures.test/atlas]\n  src/hello.ts"
+        }
+      ]
+    }
+  },
+  "glob-dash-ref": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "greet$",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "src/hello\\.ts",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "fixtures.test/atlas": true
+                          }
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "--help",
+                          "exact": false
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 1 file matching \"greet\":\n\n[fixtures.test/atlas]\n  src/hello.ts"
+        }
+      ]
+    }
+  },
+  "grep-missing-repo": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "x",
+                          "case_sensitive": true,
+                          "file_name": false,
+                          "content": true
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "x",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "missing": true
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"grep\" failed: Repository \"missing\" not found."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "glob-missing-repo": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "x$",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "regexp": {
+                          "regexp": "x",
+                          "case_sensitive": true,
+                          "file_name": true,
+                          "content": false
+                        }
+                      },
+                      {
+                        "repo_set": {
+                          "set": {
+                            "missing": true
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "branch": {
+                    "pattern": "HEAD",
+                    "exact": true
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 100,
+            "total_max_match_count": 101,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"glob\" failed: Repository \"missing\" not found."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "get_diff-missing-repo": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"get_diff\" failed: Repository \"missing\" not found."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "list_commits-missing-repo": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_commits\" failed: Repository \"missing\" not found."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "list_branches-missing-repo": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_branches\" failed: Failed to list branches."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "read_file-missing-repo": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"read_file\" failed: Repository \"missing\" not found."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "list_tree-missing-repo": {
+    "requests": [],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"list_tree\" failed: Repository \"missing\" not found."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "find_symbol_definitions-missing-repo": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "symbol": {
+                          "expr": {
+                            "regexp": {
+                              "regexp": "\\bx\\b",
+                              "case_sensitive": true,
+                              "file_name": false,
+                              "content": true
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "HEAD",
+                          "exact": true
+                        }
+                      },
+                      {
+                        "repo": {
+                          "regexp": "^missing$"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 1000,
+            "total_max_match_count": 1001,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"find_symbol_definitions\" failed: Repository \"missing\" not found."
+        }
+      ],
+      "isError": true
+    }
+  },
+  "find_symbol_references-missing-repo": {
+    "requests": [
+      {
+        "method": "search",
+        "request": {
+          "query": {
+            "and": {
+              "children": [
+                {
+                  "and": {
+                    "children": [
+                      {
+                        "regexp": {
+                          "regexp": "\\bx\\b",
+                          "case_sensitive": true,
+                          "file_name": false,
+                          "content": true
+                        }
+                      },
+                      {
+                        "branch": {
+                          "pattern": "HEAD",
+                          "exact": true
+                        }
+                      },
+                      {
+                        "repo": {
+                          "regexp": "^missing$"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "opts": {
+            "chunk_matches": true,
+            "max_match_display_count": 1000,
+            "total_max_match_count": 1001,
+            "num_context_lines": 0,
+            "shard_max_match_count": -1,
+            "max_wall_time": {
+              "seconds": 0
+            }
+          }
+        }
+      }
+    ],
+    "output": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool \"find_symbol_references\" failed: Repository \"missing\" not found."
+        }
+      ],
+      "isError": true
+    }
+  }
+}
