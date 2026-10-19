@@ -254,3 +254,45 @@ Landed on `main`. The parity-verified clone is preserved at tag `reference/v6-pa
 3. **Memory.** Lazy-load the `ai` SDK and heavy `@sbc/shared` imports (edits `mcp.ts`/`shared`, gated by contract, golden and ops-smoke). Ceiling stays 654 MB.
 4. **Absorb the clone.** Rename `@sbc/*` to `@falkon/*` and fold `shared`, `db` and `backend` into one `packages/core`; `api` and `web` stay the HTTP surfaces, `contracts` and `ui` follow. This moves the rename forward from S14 and precedes the UI import (S19). Import-only, no behaviour change, gated by the contract snapshots, the golden set and ops-smoke.
 5. Accepted as is: esbuild, `@prisma/client` and `zod` in `@sbc/api`; the sync refactor; P6 deferred to the knowledge-base cycle.
+
+## Cycle 4 plan (grilled 2026-10-19; gate 1 pending)
+
+Base: `main` at dca8d4a. Roles: Sonnet builds, reviews and attacks; Haiku verifies; no Opus this cycle (human, quota). The main session is Sonnet; design calls beyond these slices escalate to the human. Slice ids continue the numbering (S22 to S24). The core merge is cycle 5 (own gate 1 and Opus design pass), after S24, because the lazy-loads edit the same shared and `mcp.ts` files the merge moves.
+
+### Decisions from the cycle 4 grill (human, 2026-10-19)
+
+| # | Decision |
+|---|---|
+| D25 | Regression gate item 3 is replaced. A client-LLM or tools arm passes when, pooled over dev and hidden (n=80, paired per question id, seed 20261017): the lower 95% bootstrap bound of (arm minus reference) recall is at or above -0.10, and the number of questions where the arm is worse is not more than twice the number where it is better, with zero failed, malformed or leaked runs. Reason: at n=32 to 48 the old -0.05 bound is unpassable even for an exact tie (pooled n=80 on the cycle 3 runs: tools -0.012 [-0.062, 0.032], 7 better and 8 worse; research -0.033 [-0.079, 0.013], 7 better and 12 worse). The spec's Regression gate item 3 and ADR section 9 are amended to match. |
+| D26 | Reference floor for comparisons made on a given client model is the real v6.0.1 engine run on that same model, paired per question. The recorded Sonnet floor (dev 0.973, hidden 0.923) stays the reference for Sonnet. Iteration runs use Haiku; a Sonnet run confirms only if the Haiku result shows a difference worth confirming. Eval spend cap this cycle: $6. |
+| D27 | The admin listener is off unless `ADMIN_TOKEN` is set (at least 32 characters, else the service refuses to start); when on, every admin request needs `Authorization: Bearer <token>`. This refines the "refuse to start if unset" wording from gate 2: an unset token disables admin, which is a safer default than a hard failure. |
+
+### Slices
+
+**S22. Admin token.** Tier standard. Agent: claude (Sonnet). Security-sensitive: stops at gate 2. Blocked by: none.
+- Goal: the admin listener (registry CRUD) cannot be used without a secret, including by other containers on the compose network.
+- Scope: `packages/api/src/{admin,http,main}.ts` and tests, `docker-compose.yml`, `scripts/ops-smoke.sh` (+ its test), README, ADR section 4.5 and 7 status text. No other code.
+- Allowlist spec: admin routes unchanged (`GET/POST /products`, `GET/PUT/DELETE /products/:slug`); the credential is `Authorization: Bearer <ADMIN_TOKEN>` only; compare as sha256 digests with `timingSafeEqual`; missing, malformed, empty or wrong credential gives the identical 401 body before any body is read or route matched beyond method and path allowlist; unmatched paths stay 404 (no auth oracle on path existence is acceptable, but no credential check result may differ by path); the token is never logged, echoed or placed in an error.
+- Done: tests prove 401 for no header, `bearer` casing, empty, whitespace, wrong, multiple headers, and token in query or body; correct token reaches the routes; `ADMIN_TOKEN` unset means the admin port is not listening (checked over a real socket); token shorter than 32 characters refuses to start; the product listener is unaffected (token on `/mcp` is ignored, not required); compose passes the token through and publishes the admin port only when set; ops-smoke generates a random token for its registry step and asserts a tokenless admin call is 401; contract and golden files untouched; memory step still at most 654 MB.
+- Verify: `pnpm typecheck && pnpm test`; `git diff --stat -- tests/contract tests/golden/expected.json` empty; `sh scripts/ops-smoke.sh` once.
+
+**S23. Eval rule, model option, v6 reference, ablation.** Tier standard. Agent: claude (Sonnet); paid runs executed by the main session. Blocked by: none.
+- Goal: the Ask-quality check is passable and measures our engine against v6 on the same client model, cheaply, and answers whether the server `instructions` cost recall.
+- Scope: `tests/eval/**` (add `--model` default `claude-sonnet-5-5`, a `v6-tools` arm that talks to a running v6 instance via `EVAL_V6_URL` and a mode-600 key file, a `clone-tools-noinstr` arm, the D25 report rule with wins and losses, per-model run directories), `packages/web/src/lib/mcp.ts` (read `MCP_INSTRUCTIONS`: `default` keeps today's behavior byte for byte, `off` omits the server `instructions`; new test; `tests/contract` snapshots unchanged), `docker-compose.yml` is untouched (the eval stack sets the env itself), spec Regression gate item 3 and ADR section 9 text. The tracked-file name rule applies to `tests/eval` as before (the `v6-tools` arm and its URL variable are named without the predecessor's name; the instance's key file path is read from an env var).
+- Done: unit tests for the rule (passes a synthetic tie at n=80, fails a synthetic 0.15 drop, fails on 3x losses over wins, withholds on any failed run); `MCP_INSTRUCTIONS=off` test shows no `instructions` in the initialize result and `default` is byte-identical to today; offline `pilot --list` works for every arm; a 10-run Haiku pilot per arm passes the stop rules (plain recall at least 0.70 on Haiku, no leaks, research tool first) and is reviewed by me before the full runs; full Haiku runs of `v6-tools`, `clone-tools`, `clone-tools-noinstr`, `clone-research` on all 80 questions with zero failed or leaked; the report applies D25 and prints per-arm wins and losses against the Haiku v6 reference; results recorded in `baseline.md`. A miss is reported, not retuned.
+- Verify: `pnpm typecheck && pnpm test`; `pnpm eval -- report --model haiku`; contract diff empty; grep rule for forbidden words in `tests/eval`.
+- Decision rule: pilot first; stop and ask if the v6 Haiku pilot recall is below 0.50 (a floor near zero cannot show anything), any leak occurs, or spend would pass $6.
+
+**S24. Memory lazy-loads.** Tier standard. Agent: claude (Sonnet). Blocked by: S23 (both edit `mcp.ts`).
+- Goal: restore headroom under the 654 MB ceiling without behavior change.
+- Scope: `packages/web/src/lib/mcp.ts`, `packages/web/src/lib/ask/*` (dynamic `import()` of the `ai` SDK and `@ai-sdk/*` providers on first `ask_codebase` or model-listing use), `packages/api/build.mjs` if needed for the chunking, measurement notes in `baseline.md`. Heavy `@sbc/shared` imports (grpc, secret manager, ajv, simple-git, about 73 MB) are measured and reported with the import chain, not changed: restructuring `shared` belongs to the cycle 5 core merge.
+- Done: all contract snapshots and the golden set byte-identical; `ask_codebase`, `list_language_models` and the `ask_codebase` prompt behave as before in the existing tests and in a new test that drives them through the lazy path with a fake model; api idle RSS measured before and after in `baseline.md`; ops-smoke memory at most 625 MB (about 29 MB headroom; 646.99 MB before); no new dependency.
+- Verify: `pnpm typecheck && pnpm test`; contract and golden diff empty; `sh scripts/ops-smoke.sh` twice from cold, memory line recorded.
+
+### Order, limits, budget
+
+S22 and S23 run in parallel in separate worktrees (each with its own `pnpm install`); Docker steps are serialized by the main session. S24 starts after S23 is kept. Cycle branch: `loop/falkon-mvp-c4`.
+
+The loop may decide alone: test layout, module layout, pilot parameters within the cap, one fix round per slice. It must stop for: a contract snapshot change other than additive, any new dependency, any change to datasets or gold, any rule change beyond D25, spend over $6, S22 (gate 2), and any outward action. Long Docker steps run as tracked background commands in the main session, never inside a verifier agent.
+
+Budget: 1.0M Claude subagent tokens (no Opus), 4 hours wall clock, $6 eval spend.
