@@ -1,0 +1,32 @@
+{
+  "instructions": "Falkon searches and reads code in the repositories your access policy permits. Use list_repos for repository names; glob and list_tree for paths; grep for content; read_file for source; find_symbol_definitions and find_symbol_references for symbol relationships; list_branches, list_commits, and get_diff for history. For open questions, research_codebase returns a scoped research brief for your model to carry out with these tools. Write Markdown. Follow every code mention immediately with @file:{<repo>::<path>} or @file:{<repo>::<path>:<start>-<end>}, using the repository name, file path, and start and end lines from your evidence.",
+  "prompts": [
+    {
+      "name": "ask_codebase",
+      "description": "Plan a code investigation for your model using the repositories you can access.",
+      "arguments": [
+        {
+          "name": "query",
+          "description": "The question to investigate in source code.",
+          "required": true
+        },
+        {
+          "name": "repos",
+          "description": "Comma-separated repository names. Omit for all visible repositories; an empty value selects none.",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "prompt": {
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "type": "text",
+          "text": "Question: Where is greeting implemented?\n\nRepositories in scope:\n- fixtures.test/atlas\n\nUnavailable repositories (unknown or outside your access policy):\n- fixtures.test/private\n- missing\n\nResearch steps:\n1. Keep research within the repositories above. Use their exact names as repo on tool calls, including grep and glob; omitting repo can search beyond this selection. Use list_repos to confirm names, never to expand this list.\n2. Locate likely files with glob or list_tree, then search terms with grep. Refine broad searches and inspect additional result pages when needed.\n3. Read matching source with read_file, including surrounding logic. Follow declarations and uses with find_symbol_definitions and find_symbol_references; read those locations too.\n4. If the question concerns changes or versions, inspect list_branches and list_commits, compare revisions with get_diff, and read source at the relevant ref.\n5. Stop when gathered evidence answers the question or further searches yield no useful evidence. State what you could not find and any remaining uncertainty.\n\nWrite Markdown. Follow every code mention immediately with @file:{<repo>::<path>} or @file:{<repo>::<path>:<start>-<end>}, using the repository name, file path, and start and end lines from your evidence."
+        }
+      }
+    ]
+  }
+}

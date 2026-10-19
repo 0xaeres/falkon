@@ -4,6 +4,7 @@ import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { toolDefinitions, toolNames, toolJsonSchema, type AnyToolDefinition, type Scope } from "@sbc/shared";
 import { askCodebase } from "./ask/chat";
+import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS } from "./ask/brief";
 import { configuredLanguageModels, languageModelsInfo } from "./ask/models";
 import { languageModelInfo } from "./ask/http";
 import { toolDeps } from "./tools";
@@ -25,9 +26,14 @@ Returns a detailed answer in markdown format with code references, plus a link t
 
 When using this in shared environments (e.g., Slack), you can set the visibility parameter to 'PUBLIC' to ensure everyone can access the chat link.`;
 
-/** One MCP server per session, registering tools in Sourcebot's order with its annotations and error text. */
+const RESEARCH_DESCRIPTION = "Prepare a repository-scoped research brief for your model to answer a code question with Falkon's search and read tools. Returns a workflow and citation guidance without calling a server model.";
+
+/** One MCP server per session, retaining the existing tool order, annotations and error text. */
 export async function createMcpServer(scope: Scope) {
-  const server = new McpServer({ name: MCP_SERVER_NAME, version: process.env.SOURCEBOT_CLONE_VERSION ?? "0.0.1" });
+  const server = new McpServer(
+    { name: MCP_SERVER_NAME, version: process.env.SOURCEBOT_CLONE_VERSION ?? "0.0.1" },
+    { instructions: CLIENT_RESEARCH_INSTRUCTIONS },
+  );
   const registered: { name: string; tool: RegisteredTool }[] = [];
   // Every tool must go through add so registration and listing stay together.
   function add<S extends z.ZodObject | undefined = undefined>(
@@ -87,6 +93,34 @@ export async function createMcpServer(scope: Scope) {
       },
     );
   }
+  const researchSchema = z.object({
+    query: z.string().describe("The question to investigate in source code."),
+    repos: z.array(z.string()).optional().describe("Repository names to select from your visible repositories. Omit for all visible repositories; an empty list selects none."),
+  });
+  const researchBrief = async (query: string, repos?: string[]) => buildResearchBrief({
+    query,
+    repos,
+    scope,
+    availableRepos: (await toolDeps.listRepos({ sort: "name", direction: "asc" })).map((repo) => repo.name),
+  });
+  add(
+    "research_codebase",
+    { description: RESEARCH_DESCRIPTION, inputSchema: researchSchema, annotations: { readOnlyHint: true, idempotentHint: true } },
+    async ({ query, repos }) => ({ content: [{ type: "text" as const, text: await researchBrief(query, repos) }] }),
+  );
+  server.registerPrompt(
+    "ask_codebase",
+    {
+      description: "Plan a code investigation for your model using the repositories you can access.",
+      argsSchema: {
+        query: researchSchema.shape.query,
+        repos: z.string().optional().describe("Comma-separated repository names. Omit for all visible repositories; an empty value selects none."),
+      },
+    },
+    async ({ query, repos }) => ({
+      messages: [{ role: "user" as const, content: { type: "text" as const, text: await researchBrief(query, repos?.split(",").map((name) => name.trim()).filter(Boolean)) } }],
+    }),
+  );
   // The SDK's native Zod 4 conversion changes schema content and key order.
   // Keep its registrations/validation, but list the same normalized bytes as Ask/KB.
   server.server.setRequestHandler(ListToolsRequestSchema, () => ({

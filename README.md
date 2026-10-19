@@ -89,6 +89,8 @@ Streamable HTTP at `/api/mcp` (and `/api/ee/mcp`, Sourcebot's path), stateful se
 
 ## Ask
 
+MCP clients can research with their own model. Server instructions explain the tools, and `research_codebase` accepts `{ query, repos? }` and returns a short research brief without calling a server model. The `ask_codebase` MCP prompt returns the same brief, taking `query` and optional comma-separated `repos`. These are available even when no model is configured. Repository selections intersect the caller's access policy; unavailable names are reported and an empty selection stays empty. Follow the brief with the search, read, symbol and history tools, then answer in Markdown with `@file:{repo::path}` or `@file:{repo::path:start-end}` citations. The existing `ask_codebase` tool still runs the server model when configured.
+
 Sourcebot v6's Ask agent on the AI SDK (`ai` 6): its static and per-chat system prompts word for word, the same ten tools in the same order as MCP (scoped to the chat's selected repos), up to `SOURCEBOT_CHAT_MAX_STEP_COUNT` steps (default 100), lowercase tool-name repair, an answer after the `<!--answer-->` tag with `@file:{repo::path:a-b}` citations, and a chat title from Sourcebot's naming prompt. Models come from config `models` (providers `openai-compatible`, `openai`, `anthropic`; `temperature` or `SOURCEBOT_CHAT_MODEL_TEMPERATURE`), else one openai-compatible model from `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. Input capabilities are looked up on models.dev, as v6 does.
 
 - `POST /api/chat/blocking` `{ query, repos?, languageModel?, visibility? }` → `{ answer, chatId, chatUrl, languageModel }`, the answer as portable markdown (citations become browse links with `highlightRange`). `/api/ask` is an alias.
