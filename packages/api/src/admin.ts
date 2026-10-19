@@ -9,6 +9,7 @@ import { ConnectionsController, ConnectionService } from "./connections";
 import { allowedHosts, restrict, sendJson } from "./http";
 import { body, error } from "./request";
 import { isProductName, PRODUCT_REGISTRY, type ProductRegistry } from "./product";
+import { UiProductService, UiProductsController } from "./ui";
 
 const notFound = () => error(404, "NOT_FOUND", "Product not found.");
 const readOnly = () => error(409, "READ_ONLY", "Product comes from config and is read-only through this API.");
@@ -108,29 +109,34 @@ function requireBearer(app: INestApplication, token: string) {
 
 /**
  * The admin listener: `GET/POST /products`, `GET/PUT/DELETE /products/:slug` and, when a ConnectionService is given,
- * `POST|GET /connections`, `DELETE /connections/:id`, `PUT /connections/:id/token`, `GET /connections/:id/repositories`.
+ * `POST|GET /connections`, `DELETE /connections/:id`, `PUT /connections/:id/token`, `GET /connections/:id/repositories`
+ * and, when a UiProductService is given, the six UI-shaped routes under `/ui/products`.
  * Everything else is 404, all behind `Authorization: Bearer <token>`. It must still listen on loopback only
  * (API_ADMIN_HOST, default 127.0.0.1).
  */
-export async function createAdminApp(registry: ProductRegistry, token: string, env: Record<string, string | undefined> = process.env, connections?: ConnectionService) {
+export async function createAdminApp(registry: ProductRegistry, token: string, env: Record<string, string | undefined> = process.env, connections?: ConnectionService, ui?: UiProductService) {
   @Module({
-    controllers: connections ? [ProductsController, ConnectionsController] : [ProductsController],
-    providers: [{ provide: PRODUCT_REGISTRY, useValue: registry }, ...(connections ? [{ provide: ConnectionService, useValue: connections }] : [])],
+    controllers: [ProductsController, ...(connections ? [ConnectionsController] : []), ...(ui ? [UiProductsController] : [])],
+    providers: [
+      { provide: PRODUCT_REGISTRY, useValue: registry },
+      ...(connections ? [{ provide: ConnectionService, useValue: connections }] : []),
+      ...(ui ? [{ provide: UiProductService, useValue: ui }] : []),
+    ],
   })
   class AdminModule {}
   const app = await NestFactory.create(AdminModule, { bodyParser: false, logger: ["error", "warn"] });
-  restrict(app, ["GET", "POST", "PUT", "DELETE"], allowedHosts(env));
+  restrict(app, ["GET", "POST", "PUT", "PATCH", "DELETE"], allowedHosts(env));
   requireBearer(app, token);
   return app;
 }
 
 /** Starts the admin listener when ADMIN_TOKEN is set; otherwise nothing listens. Throws on a short token. */
-export async function startAdmin(registry: ProductRegistry, env: Record<string, string | undefined> = process.env, connections?: ConnectionService) {
+export async function startAdmin(registry: ProductRegistry, env: Record<string, string | undefined> = process.env, connections?: ConnectionService, ui?: UiProductService) {
   const token = adminToken(env);
   if (!token) return void console.log("api admin disabled (ADMIN_TOKEN is not set)");
   const host = env.API_ADMIN_HOST ?? "127.0.0.1";
   const port = Number(env.API_ADMIN_PORT ?? 3002);
-  const admin = await createAdminApp(registry, token, env, connections);
+  const admin = await createAdminApp(registry, token, env, connections, ui);
   admin.enableShutdownHooks();
   await admin.listen(port, host);
   console.log(`api admin listening on ${host}:${port}`);

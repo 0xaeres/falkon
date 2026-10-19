@@ -1,12 +1,15 @@
-import { body, endpoint } from "@/lib/api/server";
+import { body, endpoint, proxy } from "@/lib/api/server";
+import { useEngine } from "@/lib/api/engine";
 import { setupRequestSchema } from "@sbc/contracts";
 import { repositories } from "@/lib/mock/fixtures";
 import { MockError, transact } from "@/lib/mock/store";
 
 export async function GET() {
+  if (useEngine()) return proxy("/ui/products", "GET");
   return endpoint(() => transact((db) => db.products));
 }
 export async function POST(request: Request) {
+  if (useEngine()) return proxy("/ui/products", "POST", request, setupRequestSchema);
   return endpoint(async () => {
     const input = await body(request, setupRequestSchema);
     return transact((db) => {
@@ -38,6 +41,7 @@ export async function POST(request: Request) {
         activeGeneration: null,
         scenario: "building" as const,
         queuedAt: Date.now(),
+        connectionId: input.connectionId,
       };
       db.products.push(product);
       return product;

@@ -129,3 +129,61 @@ test("with ENGINE_URL unset the mock answers", async () => {
   assert.ok(((await res.json()) as unknown[]).length > 0);
   assert.equal(seen.length, before);
 });
+
+const products = await import("../src/app/api/products/route");
+const product = await import("../src/app/api/products/[productId]/route");
+const status = await import("../src/app/api/products/[productId]/status/route");
+const sync = await import("../src/app/api/products/[productId]/sync/route");
+const threads = await import("../src/app/api/products/[productId]/threads/route");
+const ctx = (productId: string) => ({ params: Promise.resolve({ productId }) });
+const json = (body: unknown, method = "POST") =>
+  new Request("http://localhost/api/x", { method, body: JSON.stringify(body) });
+const setup = {
+  id: "alpha",
+  name: "Alpha",
+  provider: "github",
+  host: "github.com",
+  connectionId: "conn1",
+  repositories: [{ id: "github.com/acme/app", branch: "main" }],
+};
+
+test("product routes forward to /ui/products with the server-side bearer", async () => {
+  process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
+  process.env.ENGINE_ADMIN_TOKEN = "admin-token-for-test";
+  reply = { status: 200, body: [] };
+  const get = () => new Request("http://localhost/api/x");
+  const calls: [Response, string, string][] = [
+    [await products.GET(), "GET", "/ui/products"],
+    [await products.POST(json(setup)), "POST", "/ui/products"],
+    [await product.GET(get(), ctx("alpha")), "GET", "/ui/products/alpha"],
+    [
+      await product.PATCH(json({ name: "A", repositories: setup.repositories }, "PATCH"), ctx("alpha")),
+      "PATCH",
+      "/ui/products/alpha",
+    ],
+    [await status.GET(get(), ctx("alpha")), "GET", "/ui/products/alpha/status"],
+    [await sync.POST(json({ action: "retry" }), ctx("alpha")), "POST", "/ui/products/alpha/sync"],
+  ];
+  const seenCalls = seen.slice(-6);
+  calls.forEach(([res, method, url], i) => {
+    assert.equal(res.status, 200, url);
+    assert.deepEqual([seenCalls[i]!.method, seenCalls[i]!.url], [method, url]);
+    assert.equal(seenCalls[i]!.authorization, "Bearer admin-token-for-test");
+  });
+  assert.deepEqual(JSON.parse(seenCalls[3]!.body), { name: "A", repositories: setup.repositories });
+});
+
+test("product bodies are validated before forwarding", async () => {
+  const before = seen.length;
+  assert.equal((await products.POST(json({ ...setup, connectionId: "" }))).status, 400);
+  assert.equal((await product.PATCH(json({ name: "A", repositories: [] }, "PATCH"), ctx("alpha"))).status, 400);
+  assert.equal((await sync.POST(json({ action: "dismiss" }), ctx("alpha"))).status, 400);
+  assert.equal(seen.length, before);
+});
+
+test("in engine mode the mock thread routes accept an engine-created Product id", async () => {
+  const get = () => new Request("http://localhost/api/x");
+  assert.equal((await threads.GET(get(), ctx("engine-made"))).status, 200);
+  delete process.env.ENGINE_URL;
+  assert.equal((await threads.GET(get(), ctx("engine-made"))).status, 404);
+});

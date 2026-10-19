@@ -78,10 +78,11 @@ const FIXED = {
   INVALID_TOKEN: () => error(422, "INVALID_TOKEN", "The code host rejected this token."),
   UPSTREAM_UNAVAILABLE: () => error(502, "UPSTREAM_UNAVAILABLE", "The code host could not be reached."),
   NOT_FOUND: () => error(404, "NOT_FOUND", "Connection not found."),
+  DECRYPT_FAILED: () => error(500, "DECRYPT_FAILED", "The stored credential could not be decrypted."),
 };
 
 const ID = /^[A-Za-z0-9_-]{22}$/;
-const meta = { select: { id: true, host: true, scopes: true, createdAt: true, lastCheckedAt: true, lastError: true } } as const;
+const meta = { select: { id: true, host: true, scopes: true, createdAt: true, lastCheckedAt: true } } as const;
 
 /** Runs a code-host call; whatever it throws becomes a fixed-vocabulary error (the original is not kept or logged). */
 async function upstream<T>(call: () => Promise<T>): Promise<T> {
@@ -92,14 +93,15 @@ async function upstream<T>(call: () => Promise<T>): Promise<T> {
   }
 }
 
-const dto = (c: { id: string; host: string; scopes: string[]; createdAt: Date; lastCheckedAt: Date | null; lastError: string | null }) =>
+/** `syncError` is the connection's last sync outcome (set and cleared by the backend sync). */
+const dto = (c: { id: string; host: string; scopes: string[]; createdAt: Date; lastCheckedAt: Date | null }, syncError: string | null) =>
   connectionDtoSchema.parse({
     id: c.id,
     host: c.host,
     provider: c.host === "github.com" ? "github" : "github-enterprise",
     createdAt: c.createdAt.toISOString(),
     lastCheckedAt: c.lastCheckedAt?.toISOString() ?? null,
-    status: c.lastError ? "failed" : "ok",
+    status: syncError ? "failed" : "ok",
     scopes: c.scopes,
   });
 
@@ -110,7 +112,7 @@ export class ConnectionService {
   private async find(id: string) {
     const row = ID.test(id) ? await this.db.connection.findFirst({ where: { credentialId: id, source: "api" }, include: { credential: true } }) : null;
     if (!row?.credential) throw FIXED.NOT_FOUND();
-    return { connectionId: row.id, credential: row.credential };
+    return { connectionId: row.id, syncError: row.syncError, credential: row.credential };
   }
 
   async create(input: z.infer<typeof createBody>) {
@@ -128,12 +130,12 @@ export class ConnectionService {
       },
       include: { credential: meta },
     });
-    return dto(created.credential!);
+    return dto(created.credential!, null);
   }
 
   async list() {
     const rows = await this.db.connection.findMany({ where: { source: "api" }, include: { credential: meta }, orderBy: { createdAt: "asc" } });
-    return rows.flatMap((r) => (r.credential ? [dto(r.credential)] : []));
+    return rows.flatMap((r) => (r.credential ? [dto(r.credential, r.syncError)] : []));
   }
 
   /** Deletes the connection and its credential row. */
@@ -144,27 +146,32 @@ export class ConnectionService {
   }
 
   async rotate(id: string, tokenInput: string) {
-    const { credential } = await this.find(id);
+    const { credential, syncError } = await this.find(id);
     const token = tokenInput.trim();
     const { scopes } = await upstream(() => this.host.check(credential.host, token));
     return dto(
       await this.db.credential.update({
         where: { id },
-        data: { ...seal(token, { id, host: credential.host }), scopes, rotatedAt: new Date(), lastCheckedAt: new Date(), lastError: null },
+        data: { ...seal(token, { id, host: credential.host }), scopes, rotatedAt: new Date(), lastCheckedAt: new Date() },
         ...meta,
       }),
+      syncError,
     );
   }
 
-  async repositories(id: string, query: z.infer<typeof repositoriesQuery>): Promise<Repository[]> {
-    const { credential } = await this.find(id);
-    const repos = await upstream(() => this.host.repos(credential.host, openCredential(credential)));
-    const q = query.q?.toLowerCase();
-    const page = query.page ?? 1;
-    return repos
-      .filter((r) => !q || r.full_name.toLowerCase().includes(q))
-      .slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-      .map((r) => {
+  /** Every repository the connection's token can list (at most 300), with the connection row's id. */
+  async listing(id: string): Promise<{ connectionId: number; repos: Repository[] }> {
+    const { connectionId, credential } = await this.find(id);
+    let token: string;
+    try {
+      token = openCredential(credential);
+    } catch {
+      throw FIXED.DECRYPT_FAILED(); // a key or data problem, not an upstream outage
+    }
+    const repos = await upstream(() => this.host.repos(credential.host, token));
+    return {
+      connectionId,
+      repos: repos.map((r) => {
         const [organization = "", name = ""] = r.full_name.split("/");
         return {
           id: `${credential.host}/${r.full_name}`,
@@ -176,7 +183,15 @@ export class ConnectionService {
           branches: [r.default_branch],
           branch: r.default_branch,
         };
-      });
+      }),
+    };
+  }
+
+  async repositories(id: string, query: z.infer<typeof repositoriesQuery>): Promise<Repository[]> {
+    const q = query.q?.toLowerCase();
+    const page = query.page ?? 1;
+    const match = (r: Repository) => !q || `${r.organization}/${r.name}`.toLowerCase().includes(q);
+    return (await this.listing(id)).repos.filter(match).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   }
 }
 

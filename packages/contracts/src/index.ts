@@ -33,6 +33,8 @@ export const productSchema = z.object({
   activeGeneration: z.string().nullable(),
   scenario: scenarioSchema,
   queuedAt: z.number().nullable(),
+  // The connection (Credential id) an engine Product draws from; absent for config Products and the mock.
+  connectionId: z.string().optional(),
 });
 export const gapSchema = z.object({
   count: z.number(),
@@ -151,6 +153,8 @@ export const setupRequestSchema = z.object({
     .min(1)
     .max(100),
 });
+// PATCH /products/:id: the Product keeps its id, connection, provider and host; only the name and repositories change.
+export const editRequestSchema = setupRequestSchema.pick({ name: true, repositories: true });
 // Persisted chat parts (CONTEXT.md Evidence): data-evidence is one Evidence, data-answer the answer shape without ids or evidence.
 export const evidencePartSchema = evidenceSchema;
 export const answerPartSchema = answerSchema.pick({
@@ -183,4 +187,5 @@ export type Answer = z.infer<typeof answerSchema>;
 export type Thread = z.infer<typeof threadSchema>;
 export type ThreadSummary = z.infer<typeof threadSummarySchema>;
 export type SetupRequest = z.infer<typeof setupRequestSchema>;
+export type EditRequest = z.infer<typeof editRequestSchema>;
 export type StreamEvent = z.infer<typeof streamEventSchema>;

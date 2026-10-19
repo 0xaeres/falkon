@@ -29,8 +29,8 @@ function fakeConnectionDb() {
     connection: {
       async create({ data }: { data: Row }) {
         const { credential, ...rest } = data;
-        credentials.push({ createdAt: new Date(), rotatedAt: null, lastCheckedAt: null, lastError: null, ...credential.create });
-        const row = { id: nextId++, createdAt: new Date(), ...rest, credentialId: credential.create.id };
+        credentials.push({ createdAt: new Date(), rotatedAt: null, lastCheckedAt: null, ...credential.create });
+        const row = { id: nextId++, createdAt: new Date(), syncError: null, ...rest, credentialId: credential.create.id };
         connections.push(row);
         return withCredential(row);
       },
@@ -141,6 +141,22 @@ test("a GitHub Enterprise host is recorded in the connection config", async () =
   assert.deepEqual([json.host, json.provider], ["ghe.example.com", "github-enterprise"]);
   assert.deepEqual(db.connections.find((c) => c.credentialId === json.id)!.config, { type: "github", url: "https://ghe.example.com", repos: [], token: { stored: json.id } });
   assert.equal(seen.at(-1)!.host, "ghe.example.com");
+});
+
+test("status derives from the connection's syncError; an undecryptable credential is DECRYPT_FAILED, not an upstream outage", async () => {
+  const { json: c } = await create("ghp_status");
+  const conn = db.connections.find((x) => x.credentialId === c.id)!;
+  conn.syncError = "Error: 401 SECRET provider text";
+  const listed = (await call("GET", "/connections")).json.find((x: Row) => x.id === c.id);
+  assert.equal(listed.status, "failed");
+  assert.equal(JSON.stringify(listed).includes("SECRET"), false);
+  assert.equal((await call("PUT", `/connections/${c.id}/token`, { token: "ghp_next" })).json.status, "failed");
+  conn.syncError = null;
+  assert.equal((await call("GET", "/connections")).json.find((x: Row) => x.id === c.id).status, "ok");
+  const row = db.credentials.find((k) => k.id === c.id)!;
+  row.ciphertext = Buffer.alloc(row.ciphertext.length, 1);
+  const r = await call("GET", `/connections/${c.id}/repositories`);
+  assert.deepEqual([r.status, r.json], [500, { statusCode: 500, errorCode: "DECRYPT_FAILED", message: "The stored credential could not be decrypted." }]);
 });
 
 test("code host failures return fixed errors and store nothing", async () => {

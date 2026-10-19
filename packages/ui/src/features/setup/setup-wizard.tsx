@@ -80,7 +80,7 @@ function Wizard({ edit }: { edit?: Product }) {
   const { mutate } = useSWRConfig();
   const { data: products } = useSWR(keys.products, api.products);
   const [connection, setConnection] = useState(
-    edit ? { id: "existing", host: edit.host } : null,
+    edit?.connectionId ? { id: edit.connectionId, host: edit.host } : null,
   );
   const {
     data: catalog,
@@ -169,21 +169,20 @@ function Wizard({ edit }: { edit?: Product }) {
     else {
       setBusy(true);
       try {
-        await api.setup(
-          {
+        const repositories = picked.map((repo) => ({
+          id: repo.id,
+          branch: selected[repo.id],
+        }));
+        if (edit) await api.edit(id, { name: name.trim(), repositories });
+        else
+          await api.setup({
             id,
             name: name.trim(),
             provider,
             host: connection?.host ?? new URL(host).host,
-            // ponytail: edits keep the Product's connection; the engine ignores this id until S20 defines edit semantics.
-            connectionId: connection?.id ?? "existing",
-            repositories: picked.map((repo) => ({
-              id: repo.id,
-              branch: selected[repo.id],
-            })),
-          },
-          !!edit,
-        );
+            connectionId: connection!.id,
+            repositories,
+          });
         await mutate(keys.products);
         if (edit) await mutate(keys.product(id));
         router.push(`/${id}/status?queued=1`);

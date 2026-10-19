@@ -1,17 +1,19 @@
-import { body, endpoint, type ProductRoute } from "@/lib/api/server";
-import { setupRequestSchema } from "@sbc/contracts";
+import { body, endpoint, proxy, type ProductRoute } from "@/lib/api/server";
+import { useEngine } from "@/lib/api/engine";
+import { editRequestSchema } from "@sbc/contracts";
 import { makeStatus, repositories } from "@/lib/mock/fixtures";
 import { findProduct, MockError, transact } from "@/lib/mock/store";
 export async function GET(_request: Request, context: ProductRoute) {
   const { productId } = await context.params;
+  if (useEngine()) return proxy(`/ui/products/${encodeURIComponent(productId)}`, "GET");
   return endpoint(() => transact((db) => findProduct(db, productId)));
 }
 export async function PATCH(request: Request, context: ProductRoute) {
   const { productId } = await context.params;
+  if (useEngine())
+    return proxy(`/ui/products/${encodeURIComponent(productId)}`, "PATCH", request, editRequestSchema);
   return endpoint(async () => {
-    const input = await body(request, setupRequestSchema);
-    if (input.id !== productId)
-      throw new MockError("Product identity cannot be changed.");
+    const input = await body(request, editRequestSchema);
     return transact((db) => {
       const product = findProduct(db, productId);
       const selected = input.repositories.map((choice) => {

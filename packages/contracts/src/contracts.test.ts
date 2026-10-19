@@ -5,6 +5,7 @@ import {
   answerPartSchema,
   connectionDtoSchema,
   connectionRequestSchema,
+  editRequestSchema,
   evidencePartSchema,
   evidenceSchema,
   productIdSchema,
@@ -164,4 +165,14 @@ test("repositories query: optional q and a page of 1 to 3", () => {
   assert(repositoriesQuery.safeParse({ q: "app", page: "2" }).success);
   for (const bad of [{ page: "0" }, { page: "4" }, { page: "x" }, { q: "x".repeat(201) }, { other: "1" }])
     assert(!repositoriesQuery.safeParse(bad).success, JSON.stringify(bad));
+});
+
+test("editRequestSchema takes name and repositories only; setup-only fields are not part of it", () => {
+  const ok = { name: "Payments", repositories: [{ id: "github.com/o/r", branch: "main" }] };
+  assert(editRequestSchema.safeParse(ok).success);
+  assert(!editRequestSchema.safeParse({ ...ok, repositories: [] }).success);
+  assert(!editRequestSchema.safeParse({ ...ok, name: " " }).success);
+  assert(!editRequestSchema.safeParse({ name: "x" }).success);
+  assert(!editRequestSchema.strict().safeParse({ ...ok, connectionId: "c1" }).success);
+  assert(!editRequestSchema.strict().safeParse({ ...ok, id: "p" }).success);
 });

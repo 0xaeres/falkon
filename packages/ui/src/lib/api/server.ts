@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { MockError } from "../mock/store";
+import { forward } from "./engine";
 
 export function endpoint<T>(handler: () => Promise<T>): Promise<Response> {
   return handler()
@@ -56,6 +57,14 @@ export async function body<T>(
     reader.releaseLock();
   }
   return schema.parse(JSON.parse(text));
+}
+/** Engine mode: validates the body (when a schema is given) and forwards one call to the engine's `/ui/products...` routes. */
+export async function proxy<T>(path: string, method: string, request?: Request, schema?: z.ZodType<T>) {
+  try {
+    return await forward(path, { method, body: request && schema ? await body(request, schema) : undefined });
+  } catch (error) {
+    return apiError(error);
+  }
 }
 export type ProductRoute = { params: Promise<{ productId: string }> };
 export type ThreadRoute = {

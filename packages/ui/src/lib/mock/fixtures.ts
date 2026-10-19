@@ -70,6 +70,7 @@ export const seedProducts: Product[] = [
     activeGeneration: "g-0042",
     scenario: "partly-behind",
     queuedAt: null,
+    connectionId: "demo",
   },
   {
     id: "identity-services",
@@ -89,6 +90,7 @@ export const seedProducts: Product[] = [
     activeGeneration: "g-0042",
     scenario: "current",
     queuedAt: null,
+    connectionId: "demo",
   },
   {
     id: "storefront",
@@ -108,6 +110,7 @@ export const seedProducts: Product[] = [
     activeGeneration: "g-0042",
     scenario: "updating",
     queuedAt: null,
+    connectionId: "demo",
   },
 ];
 
