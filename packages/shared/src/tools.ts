@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import { toolJsonSchema } from "./toolJsonSchema";
 import escapeStringRegexp from "escape-string-regexp";
 import globToRegExp from "glob-to-regexp";
 import parseDiff from "parse-diff";
@@ -717,7 +717,7 @@ export type AnyToolDefinition = ToolDefinition<z.ZodRawShape>;
 export function openAiTools(names: ToolName[] = toolNames) {
   return names.map((n) => {
     const d = toolDefinitions[n] as unknown as AnyToolDefinition;
-    return { type: "function" as const, function: { name: n, description: d.description, parameters: zodToJsonSchema(d.inputSchema, { $refStrategy: "none" }) } };
+    return { type: "function" as const, function: { name: n, description: d.description, parameters: toolJsonSchema(d.inputSchema) } };
   });
 }
 
