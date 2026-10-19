@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import { toolJsonSchema } from "../toolJsonSchema";
 import { MAX_STEPS_PER_AGENT, SUBMIT_NUDGES } from "./limits";
 
 // ---- budget ---------------------------------------------------------------
@@ -141,7 +141,7 @@ export const tool = <S extends z.ZodObject<any>>(
 
 const asOpenAi = (t: ToolDef) => ({
   type: "function" as const,
-  function: { name: t.name, description: t.description, parameters: zodToJsonSchema(t.schema, { $refStrategy: "none" }) },
+  function: { name: t.name, description: t.description, parameters: toolJsonSchema(t.schema) },
 });
 
 const MAX_TOOL_OUTPUT = 9_000;

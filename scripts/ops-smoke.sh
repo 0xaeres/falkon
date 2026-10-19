@@ -40,7 +40,7 @@ trap cleanup EXIT
 trap 'exit 130' HUP INT TERM
 step=fixtures
 sh "$root/tests/fixtures/build.sh" "$temp" >/dev/null
-node - "$root" "$temp" "$port" "${SMOKE_DOCKERFILE:-docker/Dockerfile}" <<'JS'
+node - "$root" "$temp" "$port" docker/Dockerfile <<'JS'
 const fs = require('node:fs');
 const [root, temp, port, dockerfile] = process.argv.slice(2);
 const env = { DATABASE_URL: 'postgresql://sbc:sbc@postgres:5432/sbc', REDIS_URL: 'redis://redis:6379', DATA_DIR: '/data', CONFIG_PATH: '/fixtures/config.json', ZOEKT_URL: 'http://zoekt:6070', AUTH_URL: `http://127.0.0.1:${port}`, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'safe.directory', GIT_CONFIG_VALUE_0: '*' };

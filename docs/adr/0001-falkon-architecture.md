@@ -156,9 +156,9 @@ Ports and their adapters. Domain and use cases depend only on ports; a backend c
 | B. In-memory graph per Product loaded by the MCP server (*earlier ADR* 4.10, 2026-10-17 amendment) | No | In process | Fast | Grows with the Product; reload on every resync |
 | **C. Postgres tables behind `GraphStore`** | **No** | **Same database** | **Recursive CTE, bounded hops** | **Requires measurement (S7)** |
 
-### 4.2 Serving is LLM-free; the knowledge base is the only LLM feature (D3)
+### 4.2 MCP serving needs no model; knowledge base and UI Ask use server models (D3)
 
-**Decision.** No model runs on the serving path. Knowledge base generation is the only LLM feature. It is **on by default** and uses the operator's `LLM_*` environment. With no model configured, a scan is skipped with a visible status, never an error. (Today a missing `LLM_*` setting throws in `kb/llm.ts`, and `SKIPPED` marks only a delta scan with nothing to do; S11 changes this.) A default `tokenBudget` caps each scan, and the first scan logs its cost estimate before spending.
+**Decision, amended 2026-10-19.** The MCP serving path needs no model. Knowledge base generation and the UI's server-LLM Ask use server models. Knowledge base generation is **on by default** and uses the operator's `LLM_*` environment. With no model configured, a scan is skipped with a visible status, never an error. (Today a missing `LLM_*` setting throws in `kb/llm.ts`, and `SKIPPED` marks only a delta scan with nothing to do; S11 changes this.) A default `tokenBudget` caps each scan, and the first scan logs its cost estimate before spending.
 
 **Why.** MCP clients bring their own model; a second model on the serving path adds cost and an error source the caller cannot see (*earlier ADR* 4.1). The knowledge base runs offline, its citations are checked against the scanned commit before a document is accepted (`finish_doc` in `kb/docTools.ts`), and it reaches agents through Zoekt as an ordinary repository, so it adds no serving dependency. Default-on with auto-skip gives the feature to operators who already set `LLM_*` without making a model a requirement.
 
@@ -168,7 +168,7 @@ Ports and their adapters. Domain and use cases depend only on ports; a backend c
 | **B. On by default, auto-skip without a model, default token cap** | **None** | **Bounded per scan, estimate logged first** | **Visible `SKIPPED`** |
 | C. Model on the serving path (answer synthesis) | Must configure | Per query | Hidden paraphrase errors |
 
-Ask and the `ask_codebase` MCP tool call a model today. How that squares with D3 is not decided here; it is open decision 1 in [12](#12-open-decisions-for-the-human).
+The human resolved the Ask exception in [12, item 1](#12-open-decisions-for-the-human). The existing `ask_codebase` tool still requires a configured server model. S18 adds server instructions, an `ask_codebase` MCP prompt, and a `research_codebase` tool that return guidance for the client's own model. The prompt and research tool share a brief builder, intersect requested repositories with the caller's visible inventory, and report unavailable names without expanding the selection. Citation examples use the existing formatter in `ask/prompt.ts`.
 
 ### 4.3 MVP capabilities (D4)
 

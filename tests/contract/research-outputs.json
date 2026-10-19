@@ -1,0 +1,50 @@
+{
+  "all-visible": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Question: Where is greeting implemented?\n\nRepositories in scope:\n- fixtures.test/atlas\n- fixtures.test/boreal\n\nResearch steps:\n1. Keep research within the repositories above. Use their exact names as repo on tool calls, including grep and glob; omitting repo can search beyond this selection. Use list_repos to confirm names, never to expand this list.\n2. Locate likely files with glob or list_tree, then search terms with grep. Refine broad searches and inspect additional result pages when needed.\n3. Read matching source with read_file, including surrounding logic. Follow declarations and uses with find_symbol_definitions and find_symbol_references; read those locations too.\n4. If the question concerns changes or versions, inspect list_branches and list_commits, compare revisions with get_diff, and read source at the relevant ref.\n5. Stop when gathered evidence answers the question or further searches yield no useful evidence. State what you could not find and any remaining uncertainty.\n\nWrite Markdown. Follow every code mention immediately with @file:{<repo>::<path>} or @file:{<repo>::<path>:<start>-<end>}, using the repository name, file path, and start and end lines from your evidence."
+      }
+    ]
+  },
+  "scope-intersection": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Question: Where is greeting implemented?\n\nRepositories in scope:\n- fixtures.test/atlas\n\nUnavailable repositories (unknown or outside your access policy):\n- fixtures.test/private\n\nResearch steps:\n1. Keep research within the repositories above. Use their exact names as repo on tool calls, including grep and glob; omitting repo can search beyond this selection. Use list_repos to confirm names, never to expand this list.\n2. Locate likely files with glob or list_tree, then search terms with grep. Refine broad searches and inspect additional result pages when needed.\n3. Read matching source with read_file, including surrounding logic. Follow declarations and uses with find_symbol_definitions and find_symbol_references; read those locations too.\n4. If the question concerns changes or versions, inspect list_branches and list_commits, compare revisions with get_diff, and read source at the relevant ref.\n5. Stop when gathered evidence answers the question or further searches yield no useful evidence. State what you could not find and any remaining uncertainty.\n\nWrite Markdown. Follow every code mention immediately with @file:{<repo>::<path>} or @file:{<repo>::<path>:<start>-<end>}, using the repository name, file path, and start and end lines from your evidence."
+      }
+    ]
+  },
+  "unknown-repo": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Question: Where is greeting implemented?\n\nRepositories in scope:\nNone. Stop here and report that no repositories are available for this question.\n\nUnavailable repositories (unknown or outside your access policy):\n- missing\n\nResearch steps:\n1. Keep research within the repositories above. Use their exact names as repo on tool calls, including grep and glob; omitting repo can search beyond this selection. Use list_repos to confirm names, never to expand this list.\n2. Locate likely files with glob or list_tree, then search terms with grep. Refine broad searches and inspect additional result pages when needed.\n3. Read matching source with read_file, including surrounding logic. Follow declarations and uses with find_symbol_definitions and find_symbol_references; read those locations too.\n4. If the question concerns changes or versions, inspect list_branches and list_commits, compare revisions with get_diff, and read source at the relevant ref.\n5. Stop when gathered evidence answers the question or further searches yield no useful evidence. State what you could not find and any remaining uncertainty.\n\nWrite Markdown. Follow every code mention immediately with @file:{<repo>::<path>} or @file:{<repo>::<path>:<start>-<end>}, using the repository name, file path, and start and end lines from your evidence."
+      }
+    ]
+  },
+  "empty-selection": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Question: Where is greeting implemented?\n\nRepositories in scope:\nNone. Stop here and report that no repositories are available for this question.\n\nResearch steps:\n1. Keep research within the repositories above. Use their exact names as repo on tool calls, including grep and glob; omitting repo can search beyond this selection. Use list_repos to confirm names, never to expand this list.\n2. Locate likely files with glob or list_tree, then search terms with grep. Refine broad searches and inspect additional result pages when needed.\n3. Read matching source with read_file, including surrounding logic. Follow declarations and uses with find_symbol_definitions and find_symbol_references; read those locations too.\n4. If the question concerns changes or versions, inspect list_branches and list_commits, compare revisions with get_diff, and read source at the relevant ref.\n5. Stop when gathered evidence answers the question or further searches yield no useful evidence. State what you could not find and any remaining uncertainty.\n\nWrite Markdown. Follow every code mention immediately with @file:{<repo>::<path>} or @file:{<repo>::<path>:<start>-<end>}, using the repository name, file path, and start and end lines from your evidence."
+      }
+    ]
+  },
+  "no-repositories": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Question: Where is greeting implemented?\n\nRepositories in scope:\nNone. Stop here and report that no repositories are available for this question.\n\nResearch steps:\n1. Keep research within the repositories above. Use their exact names as repo on tool calls, including grep and glob; omitting repo can search beyond this selection. Use list_repos to confirm names, never to expand this list.\n2. Locate likely files with glob or list_tree, then search terms with grep. Refine broad searches and inspect additional result pages when needed.\n3. Read matching source with read_file, including surrounding logic. Follow declarations and uses with find_symbol_definitions and find_symbol_references; read those locations too.\n4. If the question concerns changes or versions, inspect list_branches and list_commits, compare revisions with get_diff, and read source at the relevant ref.\n5. Stop when gathered evidence answers the question or further searches yield no useful evidence. State what you could not find and any remaining uncertainty.\n\nWrite Markdown. Follow every code mention immediately with @file:{<repo>::<path>} or @file:{<repo>::<path>:<start>-<end>}, using the repository name, file path, and start and end lines from your evidence."
+      }
+    ]
+  },
+  "outside-scope": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Question: Where is greeting implemented?\n\nRepositories in scope:\nNone. Stop here and report that no repositories are available for this question.\n\nUnavailable repositories (unknown or outside your access policy):\n- fixtures.test/atlas\n\nResearch steps:\n1. Keep research within the repositories above. Use their exact names as repo on tool calls, including grep and glob; omitting repo can search beyond this selection. Use list_repos to confirm names, never to expand this list.\n2. Locate likely files with glob or list_tree, then search terms with grep. Refine broad searches and inspect additional result pages when needed.\n3. Read matching source with read_file, including surrounding logic. Follow declarations and uses with find_symbol_definitions and find_symbol_references; read those locations too.\n4. If the question concerns changes or versions, inspect list_branches and list_commits, compare revisions with get_diff, and read source at the relevant ref.\n5. Stop when gathered evidence answers the question or further searches yield no useful evidence. State what you could not find and any remaining uncertainty.\n\nWrite Markdown. Follow every code mention immediately with @file:{<repo>::<path>} or @file:{<repo>::<path>:<start>-<end>}, using the repository name, file path, and start and end lines from your evidence."
+      }
+    ]
+  }
+}

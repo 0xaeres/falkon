@@ -1,5 +1,5 @@
-import { convertToModelMessages, createUIMessageStream, NoSuchToolError, streamText, tool, type ModelMessage, type UIMessage } from "ai";
-import { gitRead, toolDefinitions, toolNames, type AnyToolDefinition, type Scope, type ToolSource } from "@sbc/shared";
+import { convertToModelMessages, createUIMessageStream, jsonSchema, NoSuchToolError, streamText, tool, type ModelMessage, type UIMessage } from "ai";
+import { gitRead, toolDefinitions, toolJsonSchema, toolNames, type AnyToolDefinition, type Scope, type ToolSource } from "@sbc/shared";
 import { toolDeps } from "../tools";
 import { answerPart } from "./answer";
 import { aiModel, type LanguageModelConfig } from "./models";
@@ -11,7 +11,7 @@ const MAX_STEPS = () => Number(process.env.SOURCEBOT_CHAT_MAX_STEP_COUNT ?? 100)
 const AGENT_TOOL_ORDER = ["read_file", "list_branches", "list_commits", "list_repos", "get_diff", "grep", "glob", "find_symbol_references", "find_symbol_definitions", "list_tree"] as const;
 
 /** The agent's tools: the shared definitions, scoped to the caller and the chat's selected repos. */
-function agentTools(scope: Scope, selectedRepos: string[], onSource: (s: ToolSource) => void) {
+export function agentTools(scope: Scope, selectedRepos: string[], onSource: (s: ToolSource) => void) {
   return Object.fromEntries(
     AGENT_TOOL_ORDER.filter((n) => toolNames.includes(n)).map((name) => {
       const d = toolDefinitions[name] as unknown as AnyToolDefinition;
@@ -19,7 +19,12 @@ function agentTools(scope: Scope, selectedRepos: string[], onSource: (s: ToolSou
         name,
         tool({
           description: d.description,
-          inputSchema: d.inputSchema,
+          inputSchema: jsonSchema(toolJsonSchema(d.inputSchema), {
+            validate: (value) => {
+              const parsed = d.inputSchema.safeParse(value);
+              return parsed.success ? { success: true, value: parsed.data } : { success: false, error: parsed.error };
+            },
+          }),
           needsApproval: !d.isReadOnly,
           execute: async (args) => {
             const r = await d.execute(args, { deps: toolDeps, scope, selectedRepos });

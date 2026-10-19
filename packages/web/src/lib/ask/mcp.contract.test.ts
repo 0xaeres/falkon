@@ -52,22 +52,82 @@ const respond = () => {
 };
 after(() => { setZoektTransport(undefined); mock.restoreAll(); hooks.deregister(); fs.rmSync(fixture.dir, { recursive: true, force: true }); });
 
-async function connect(models: boolean) {
+async function connect(models: boolean, repos = ["*"]) {
   fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(models ? { models: [{ provider: "openai", model: "fixture-model", displayName: "Fixture model" }] } : {}));
-  const server = await createMcpServer(scopeFor(["*"]));
+  const server = await createMcpServer(scopeFor(repos));
   const client = new Client({ name: "contract", version: "1" });
   const [a, b] = InMemoryTransport.createLinkedPair();
   await server.connect(a); await client.connect(b);
   return { client, close: async () => { await client.close(); await server.close(); } };
 }
 
+test("client research instructions, tool and prompt work with and without a server model", async () => {
+  for (const models of [false, true]) {
+    const session = await connect(models, [REPO]);
+    try {
+      assert.match(session.client.getInstructions() ?? "", /^Falkon searches and reads code/);
+      assert.deepEqual((await session.client.listPrompts()).prompts.map((prompt) => ({ name: prompt.name, arguments: prompt.arguments?.map(({ name, required }) => ({ name, required })) })), [
+        { name: "ask_codebase", arguments: [{ name: "query", required: true }, { name: "repos", required: false }] },
+      ]);
+      const args = { query: "Where is greeting implemented?", repos: [REPO, "missing"] };
+      const tool = await session.client.callTool({ name: "research_codebase", arguments: args });
+      assert.equal(tool.isError, undefined);
+      assert.ok(Array.isArray(tool.content));
+      assert.match(JSON.stringify(tool), /Unavailable repositories/);
+      const prompt = await session.client.getPrompt({ name: "ask_codebase", arguments: { query: args.query, repos: ` ${REPO}, missing ` } });
+      assert.deepEqual(prompt.messages, [{ role: "user", content: tool.content[0] }]);
+      await assert.rejects(session.client.getPrompt({ name: "ask_codebase", arguments: {} }), /query/);
+      assert.equal((await session.client.callTool({ name: "research_codebase", arguments: { query: args.query, repos: "invalid" } })).isError, true);
+    } finally { await session.close(); }
+  }
+});
+
+test("client research contracts cover repository selection, empty scope and MCP guidance", async (t) => {
+  const other = "fixtures.test/boreal";
+  const hidden = "fixtures.test/private";
+  t.mock.method(toolDeps, "listRepos", async () => [row, { ...row, name: other }, { ...row, name: hidden }]);
+  const session = await connect(false, [REPO, other]);
+  const query = "Where is greeting implemented?";
+  try {
+    snapshot("research-guidance", {
+      instructions: session.client.getInstructions(),
+      prompts: (await session.client.listPrompts()).prompts,
+      prompt: await session.client.getPrompt({ name: "ask_codebase", arguments: { query, repos: ` ${REPO}, ${hidden}, missing ` } }),
+    });
+    const results: Record<string, unknown> = {};
+    for (const [name, repos] of [
+      ["all-visible", undefined],
+      ["scope-intersection", [REPO, hidden]],
+      ["unknown-repo", ["missing"]],
+      ["empty-selection", []],
+    ] as const) {
+      const result = await session.client.callTool({ name: "research_codebase", arguments: { query, ...(repos === undefined ? {} : { repos }) } });
+      assert.ok(Array.isArray(result.content));
+      results[name] = result;
+      assert.deepEqual((await session.client.getPrompt({ name: "ask_codebase", arguments: { query, ...(repos === undefined ? {} : { repos: repos.join(", ") }) } })).messages, [
+        { role: "user", content: result.content[0] },
+      ]);
+    }
+    const empty = await connect(false, []);
+    try {
+      results["no-repositories"] = await empty.client.callTool({ name: "research_codebase", arguments: { query } });
+      results["outside-scope"] = await empty.client.callTool({ name: "research_codebase", arguments: { query, repos: [REPO] } });
+    } finally { await empty.close(); }
+    snapshot("research-outputs", results);
+  } finally { await session.close(); }
+});
+
 test("MCP registration order, exact descriptions, annotations and JSON schemas stay frozen", async () => {
   for (const models of [false, true]) {
     const session = await connect(models);
     try {
       const tools = (await session.client.listTools()).tools;
-      assert.deepEqual(tools.map((tool) => tool.name), ["grep", "glob", "get_diff", "list_commits", "list_branches", "list_repos", "read_file", "list_tree", "find_symbol_definitions", "find_symbol_references", "list_language_models", ...(models ? ["ask_codebase"] : [])]);
+      assert.deepEqual(tools.map((tool) => tool.name), ["grep", "glob", "get_diff", "list_commits", "list_branches", "list_repos", "read_file", "list_tree", "find_symbol_definitions", "find_symbol_references", "list_language_models", ...(models ? ["ask_codebase"] : []), "research_codebase"]);
       snapshot(models ? "registration-model" : "registration", tools);
+      const previous = JSON.parse(fs.readFileSync(new URL(`../../../../../tests/contract/${models ? "registration-model" : "registration"}.json`, import.meta.url), "utf8"));
+      for (const [index, tool] of tools.entries()) {
+        assert.equal(JSON.stringify(tool.inputSchema), JSON.stringify(previous[index].inputSchema), `Schema bytes changed for ${tool.name}`);
+      }
       snapshot(models ? "models-configured" : "models-empty", await session.client.callTool({ name: "list_language_models", arguments: {} }));
     } finally { await session.close(); }
   }

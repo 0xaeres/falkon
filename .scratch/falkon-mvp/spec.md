@@ -171,3 +171,11 @@ Base: `main` at the current tip. Agent defaults: Codex `gpt-6.1-sol` at high eff
 
 Autonomy limits, cycle 2: the loop may decide alone test layout, wording within the stated constraints, and fix rounds (one per slice). It must stop for: any contract snapshot change other than the S18 additions, a new dependency other than Zod 4 and its types, and any outward action. Budget: 1.2M Claude subagent tokens and 4 hours of wall clock, Codex runs under a `perl alarm` cap of 25 minutes each.
 
+## Cycle 2 results (2026-10-19)
+
+| Slice | Outcome | Evidence |
+|---|---|---|
+| S16 Zod 4 migration | kept (`3b6f9cf`) | One Zod major (4.6.5); every `tests/contract` file byte-identical; the Ask agent's model-facing schemas byte-identical to an independent Zod 3 dump from main; one fix round. Accepted change: Zod 4 wording in config errors, HTTP 400 `message` bodies and the KB `invalid_input` tool result, now pinned by tests. |
+| S17 upstream Zoekt | kept (`91ea88e`, built by a side session) | Coordinator's own cold smoke: every step passes, empty golden diff, memory 462.55 MB of 654 MB. Remaining `sourcebot-dev` strings in shipped files are config-format references (`config.example.json`, config JSON schema), left to S13. |
+| S18 Ask via the client | kept (`e4bfb5b`) | Contract additions only; live run with the Claude Code CLI and no server model: `research_codebase` first, scoped calls, two exact verified citations. Brief bounded (50 names per list, sanitized). |
+

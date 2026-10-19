@@ -6,5 +6,6 @@ export * from "./zoekt";
 export * as gitRead from "./git";
 export { setRepoResolver } from "./git";
 export * from "./tools";
+export { toolJsonSchema } from "./toolJsonSchema";
 export * from "./access";
 export * as kb from "./kb";
