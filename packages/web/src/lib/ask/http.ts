@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { AskError } from "./chat";
+import { AskError } from "./errors";
 
 const PROVIDERS = ["amazon-bedrock", "anthropic", "azure", "deepseek", "google-generative-ai", "google-vertex-anthropic", "google-vertex", "mistral", "openai", "openai-compatible", "openrouter", "xai"] as const;
 

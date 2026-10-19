@@ -1,7 +1,4 @@
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { createOpenAI } from "@ai-sdk/openai";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { extractReasoningMiddleware, wrapLanguageModel, type LanguageModel } from "ai";
+import type { LanguageModel } from "ai";
 import { env, getTokenFromConfig, loadConfig, type Token } from "@sbc/shared";
 
 /** A config `models` entry (Sourcebot's languageModel schema; the providers wired here). */
@@ -45,6 +42,7 @@ async function resolveRecord(r?: Record<string, string | Token>) {
   return out;
 }
 
+// The `ai` SDK and providers load here, on first model use, so a server that only lists tools never pays for them.
 export async function aiModel(m: LanguageModelConfig): Promise<{ model: LanguageModel; temperature?: number }> {
   const apiKey = m.token ? await getTokenFromConfig(m.token) : undefined;
   const headers = await resolveRecord(m.headers);
@@ -52,14 +50,19 @@ export async function aiModel(m: LanguageModelConfig): Promise<{ model: Language
   switch (m.provider) {
     case "openai-compatible": {
       if (!m.baseUrl) throw new Error(`openai-compatible model ${m.model} needs a baseUrl`);
+      const [{ createOpenAICompatible }, { extractReasoningMiddleware, wrapLanguageModel }] = await Promise.all([import("@ai-sdk/openai-compatible"), import("ai")]);
       const p = createOpenAICompatible({ baseURL: m.baseUrl, name: m.displayName ?? m.model, apiKey, headers, queryParams: await resolveRecord(m.queryParams) });
       // Reasoning models that inline <think> blocks get them split out, as in Sourcebot.
       return { model: wrapLanguageModel({ model: p.chatModel(m.model), middleware: [extractReasoningMiddleware({ tagName: m.reasoningTag ?? "think" })] }), temperature };
     }
-    case "openai":
+    case "openai": {
+      const { createOpenAI } = await import("@ai-sdk/openai");
       return { model: createOpenAI({ baseURL: m.baseUrl, apiKey: apiKey ?? process.env.OPENAI_API_KEY, headers })(m.model), temperature };
-    case "anthropic":
+    }
+    case "anthropic": {
+      const { createAnthropic } = await import("@ai-sdk/anthropic");
       return { model: createAnthropic({ baseURL: m.baseUrl, apiKey: apiKey ?? process.env.ANTHROPIC_API_KEY, headers })(m.model), temperature };
+    }
   }
   throw new Error(`language model provider "${m.provider}" is not supported here (supported: openai-compatible, openai, anthropic)`);
 }

@@ -79,3 +79,50 @@ Stack: current engine (main at 2ea50f2 plus S3/S5, no engine change), 42 O3 repo
 | clone-research | hidden | 0.943 / 0.923 | +0.020 [-0.062, 0.103] | FAIL | -0.025 | $0.052 |
 
 Reading: the gate as written fails all four rows. For clone-tools the means are within noise of the floor (dev -0.023, hidden +0.003) and match the earlier 0.967/0.948 clone measurement; the failure is the interval width at n=48 and n=32 (half-width about 0.05 to 0.09), which a point estimate near zero cannot clear. For clone-research dev the failure is real: the arm is worse on dev (CI excludes zero) with lower precision and 27% higher cost; on hidden it is not distinguishable from the floor. `research_codebase` was called first in 80 of 80 research runs. This is a rule miss, reported to the human at gate 2; nothing was rerun or retuned.
+
+## S24 memory lazy-loads
+
+Change: `ask_codebase` loads `./ask/chat` (and with it the `ai` SDK) by dynamic `import()` on first call; `aiModel` loads `ai` and the `@ai-sdk/*` provider it needs on first use; `AskError` moved to `ask/errors.ts` (re-exported from `chat.ts`) so `http.ts` no longer reaches `chat`; `packages/api/build.mjs` uses esbuild `splitting` (outdir `dist`, chunks in `dist/chunks`). Registration still depends only on `configuredLanguageModels()` (config), never on a provider, so tool order, schemas, descriptions and `tools/list` bytes are unchanged (contract and golden diff empty). A single-file bundle does not help: esbuild still evaluates `ai` at start (heapUsed 68 MB, same as before), so splitting is required.
+
+Docker: no change. The image builds in place (`pnpm --filter @sbc/api build`), compose still runs `node packages/api/dist/main.js`; `dist/` now holds `main.js` (3.1 MB, was 10 MB) plus `dist/chunks/*.js`, which resolve `node_modules` from the same tree. `packages/api/dist` is already ignored.
+
+Measured on macOS arm64, Node 24.11, esbuild bundle, no database, machine load about 3.5 (noisy: use the medians). Scratch scripts in the session scratchpad, `s24/`. Whole-stack Docker memory was not measured here (coordinator's step).
+
+| Measure (median of 9, interleaved) | Before | After |
+|---|---|---|
+| `node dist/main.js` idle RSS after 4s | 54.1 MB | 52.7 MB |
+| same, after forced gc | 56.2 MB | 53.8 MB |
+| heapUsed after 4s | 69.0 MB | 52.1 MB |
+| heapUsed after forced gc | 43.0 MB | 29.7 MB |
+| bundle `session.ts` (createMcpServer, initialize, tools/list), heapUsed | 31.4 MB | 20.1 MB |
+| same, RSS (3 runs each) | 145 to 163 MB | 134 to 139 MB |
+| `ask_codebase` first call in the split bundle | n/a | chunk loads, fake openai-compatible `generateText` returns `ok` |
+
+Reading: the heap saving is about 11 to 17 MB; RSS follows by 1.4 to 2.4 MB at idle for the api process and 10 to 25 MB in the larger session harness (which also loads Prisma). The RSS effect is smaller than the heap effect because V8 keeps freed pages; the Linux container figure may differ.
+
+Import cost, one fresh process per bundle, RSS after gc minus an empty process (single runs of 7, noisy, entries overlap so do not add up):
+
+| Import | RSS added |
+|---|---|
+| `ai` | 11.8 MB |
+| `@ai-sdk/{anthropic,openai,openai-compatible}` | 5.8 MB |
+| `ai` + the three providers | 12.5 MB |
+| `@modelcontextprotocol/sdk` server + http | 6.6 MB |
+| `zod` | 4.1 MB |
+| `@grpc/grpc-js` | 8.4 MB |
+| `@grpc/proto-loader` | 2.4 MB |
+| `ajv` | 0.3 MB |
+| `simple-git` | 2.6 MB |
+| `@nestjs/{core,common,platform-express}` | 24.0 MB |
+| `@sbc/shared` (whole) | 42.2 MB |
+| `@sbc/db` (`@prisma/client` external) | 19.2 MB |
+
+Eager source bytes in the current split bundle (esbuild metafile, bytes in output): zod 848 KB, `@grpc/grpc-js` 567 KB, iconv-lite 540 KB, mime-db 435 KB, `@nestjs/core` 423 KB, rxjs 368 KB, protobufjs 247 KB, `@nestjs/common` 222 KB, ajv 209 KB, MCP SDK 182 KB, simple-git 70 KB. Lazy now: `@google-cloud/secret-manager` 1603 KB, google-gax 922 KB, `ai` 415 KB, `@ai-sdk/openai` 248 KB, `@ai-sdk/anthropic` 201 KB.
+
+`@sbc/shared` import chain (not changed here; cycle 5 core merge owns it): `index.ts` re-exports the tool runners, Zoekt client and config loader eagerly; the Zoekt client pulls `@grpc/grpc-js` and `@grpc/proto-loader` (protobufjs); config validation pulls `ajv`; git tools pull `simple-git`; `@google-cloud/secret-manager` is already a dynamic import in `config.ts`. Recommendation: split the shared barrel into entry points so a consumer imports only what it runs (for the api service: `zoekt` client plus tool runners; for `config`: `ajv` only when a config file is read), and load the gRPC client on first search (`await import()` at the Zoekt transport), the same seam used here. Expected gain is the gRPC stack, about 8 to 11 MB by the numbers above, plus ajv and simple-git if made lazy; shared as a whole measures 42 MB but overlaps zod, MCP SDK and Nest. Also note: the secret-manager bundle fails to evaluate as an ES module (`__dirname` in google-gax), so its lazy import in `config.ts` would throw if ever used from the api bundle; it should be an esbuild external.
+
+Not measured: whole-stack Docker memory and ops-smoke; Linux RSS; a full `ask_codebase` run (needs Postgres and a model; the ask path was exercised to the first Prisma call plus a real `aiModel` call against a local fake server).
+
+Tests: `lazy.test.ts` (child process with a resolve-hook spy: after `tools/list` and `list_language_models` no `ai` or `@ai-sdk/*` specifier was resolved, `ask_codebase` resolves `ai`; verified red against the old `mcp.ts`), provider construction for each provider, and an openai-compatible `generateText` that still splits a `<think>` block. `pnpm typecheck && pnpm test`: 243 passes, 0 failures.
+
+Note on the S24 done condition: the heap figures above do not reach resident memory (V8 keeps freed pages), so the planned 625 MB ops-smoke target was not expected to be met by this change alone. The human deferred the memory-size goal on 2026-10-19 ("we can worry about size later"); the ops-smoke memory figure is recorded for information and is not a keep condition this cycle. The remaining lever is the `@sbc/shared` import chain (about 8 to 11 MB), which belongs to the cycle 5 core merge, and marking `@google-cloud/secret-manager` external in `packages/api/build.mjs`.
