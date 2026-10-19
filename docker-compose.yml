@@ -50,6 +50,24 @@ services:
     ports: ["3000:3000"]
     depends_on: [backend, zoekt]
 
+  # NestJS boundary (strangler): serves /mcp/<product> beside web's untouched /api/mcp.
+  # Published on host loopback only; API_HOST=0.0.0.0 is the bind inside the container.
+  api:
+    <<: *app
+    profiles: []
+    # The esbuild bundle under plain node: tsx would add ~90 MB of loader and esbuild service.
+    command: node packages/api/dist/main.js
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://sbc:sbc@postgres:5432/sbc
+      DATA_DIR: /data
+      ZOEKT_URL: http://zoekt:6070
+      CONFIG_PATH: /config/config.json
+      API_HOST: 0.0.0.0
+    volumes: [data:/data, "./config.json:/config/config.json:ro"]
+    ports: ["127.0.0.1:3001:3001"]
+    depends_on: [backend, zoekt]
+
 volumes:
   pgdata:
   data:

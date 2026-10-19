@@ -87,6 +87,8 @@ Streamable HTTP at `/api/mcp` (and `/api/ee/mcp`, Sourcebot's path), stateful se
   "headers": { "X-Sourcebot-Api-Key": "<key>" } } } }
 ```
 
+A second NestJS service (`packages/api`, compose service `api`) serves the same tools per Product at `POST|DELETE /mcp/<product>`, where `<product>` is a config `contexts` name; an unknown or malformed name is a 404 with no fallback. It runs beside the routes above, which are unchanged. It listens on `API_HOST` (default `127.0.0.1`) and `API_PORT` (default `3001`), and compose publishes it on host loopback only. It has no authentication yet: anyone who can reach the port sees the Product's repositories. Compose runs the esbuild bundle (`pnpm --filter @sbc/api build`, then `node packages/api/dist/main.js`); locally, `pnpm --filter @sbc/api start` runs the source under tsx.
+
 ## Ask
 
 MCP clients can research with their own model. Server instructions explain the tools, and `research_codebase` accepts `{ query, repos? }` and returns a short research brief without calling a server model. The `ask_codebase` MCP prompt returns the same brief, taking `query` and optional comma-separated `repos`. These are available even when no model is configured. Repository selections intersect the caller's access policy; unavailable names are reported and an empty selection stays empty. Follow the brief with the search, read, symbol and history tools, then answer in Markdown with `@file:{repo::path}` or `@file:{repo::path:start-end}` citations. The existing `ask_codebase` tool still runs the server model when configured.

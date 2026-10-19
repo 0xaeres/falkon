@@ -18,10 +18,12 @@ export interface GoldenQuery {
 export async function runGolden(baseUrl: string, queries: GoldenQuery[], request: typeof fetch = fetch) {
   const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json, text/event-stream" };
   if (process.env.API_KEY) headers.authorization = `Bearer ${process.env.API_KEY}`;
+  // MCP_PATH points the MCP steps at another endpoint: a path on baseUrl, or an absolute URL such as http://127.0.0.1:3001/mcp/<product>. The REST search steps stay on baseUrl.
+  const mcpPath = process.env.MCP_PATH ?? "/api/mcp";
   let session: string | null = null;
   let nextId = 0;
   async function rpc(method: string, params?: unknown, notification = false): Promise<any> {
-    const response = await request(new URL("/api/mcp", baseUrl), { method: "POST", headers, body: JSON.stringify({ jsonrpc: "2.0", ...(notification ? {} : { id: ++nextId }), method, ...(params ? { params } : {}) }), signal: AbortSignal.timeout(60_000) });
+    const response = await request(new URL(mcpPath, baseUrl), { method: "POST", headers, body: JSON.stringify({ jsonrpc: "2.0", ...(notification ? {} : { id: ++nextId }), method, ...(params ? { params } : {}) }), signal: AbortSignal.timeout(60_000) });
     if (!response.ok) throw new Error(`MCP ${method}: HTTP ${response.status}`);
     session = response.headers.get("mcp-session-id") ?? session;
     if (session) headers["mcp-session-id"] = session;
@@ -62,7 +64,7 @@ export async function runGolden(baseUrl: string, queries: GoldenQuery[], request
     return normalize(recorded.sort((a, b) => String(a.id).localeCompare(String(b.id), "en")));
   } finally {
     if (session) {
-      const response = await request(new URL("/api/mcp", baseUrl), { method: "DELETE", headers, signal: AbortSignal.timeout(10_000) });
+      const response = await request(new URL(mcpPath, baseUrl), { method: "DELETE", headers, signal: AbortSignal.timeout(10_000) });
       await response.body?.cancel();
       if (!response.ok) throw new Error(`MCP close: HTTP ${response.status}`);
     }
