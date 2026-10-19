@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process";
-import { DATASETS, hasRaw, readRaw, writeRaw, type Arm, type Raw } from "./data.js";
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { hasRaw, writeRaw, type Arm, type Raw } from "./data.js";
 import { parseAnswer, parseClaudeOutput } from "./harness.js";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 export type Task = { id: string; dataset: string; split: "dev" | "hidden"; question: string };
 type Launch = { command: string; args: string[]; cwd: string; env: NodeJS.ProcessEnv };
@@ -41,8 +42,9 @@ export function execute(launch: Launch, task: Task, arm: Arm, cap: number, lineC
   });
 }
 
-export type RunOptions = { runsRoot: string; arms: Arm[] | readonly string[]; concurrency: number; perRunCap: number; spendCap: number; run: (task: Task, arm: Arm) => Promise<Raw | undefined> };
-export const spentSoFar = (runsRoot: string) => DATASETS.flatMap((d) => readRaw(join(runsRoot, d))).reduce((s, r) => s + r.total_cost_usd, 0);
+/** `ledger` is one JSON-lines file of every recorded run's cost, shared by all models. */
+export type RunOptions = { runsRoot: string; ledger: string; arms: Arm[] | readonly string[]; concurrency: number; perRunCap: number; spendCap: number; run: (task: Task, arm: Arm) => Promise<Raw | undefined> };
+export const spentSoFar = (ledger: string) => existsSync(ledger) ? readFileSync(ledger, "utf8").split("\n").filter(Boolean).reduce((s, l) => s + (JSON.parse(l) as { cost: number }).cost, 0) : 0;
 
 /** Records one raw file per task and arm. Tasks run in batches; a task's arms run in turn, so a batch has at most `concurrency` runs in flight. */
 export async function runTasks(tasks: Task[], o: RunOptions): Promise<void> {
@@ -51,9 +53,9 @@ export async function runTasks(tasks: Task[], o: RunOptions): Promise<void> {
   const runOne = async (t: Task) => {
     for (const arm of missing(t)) {
       // Every run in flight may still cost its full cap, so reserve for all of them before starting another.
-      if (spentSoFar(o.runsRoot) + (inFlight + 1) * o.perRunCap > o.spendCap) throw new Error(`Agent spend cap $${o.spendCap} reached; stopping new runs.`);
+      if (spentSoFar(o.ledger) + (inFlight + 1) * o.perRunCap > o.spendCap) throw new Error(`Agent spend cap $${o.spendCap} reached; stopping new runs.`);
       inFlight++;
-      try { const run = await o.run(t, arm); if (run) writeRaw(join(o.runsRoot, t.dataset), run); } finally { inFlight--; }
+      try { const run = await o.run(t, arm); if (run) { writeRaw(join(o.runsRoot, t.dataset), run); mkdirSync(dirname(o.ledger), { recursive: true }); appendFileSync(o.ledger, JSON.stringify({ task: t.id, dataset: t.dataset, arm, cost: run.total_cost_usd }) + "\n"); } } finally { inFlight--; }
     }
   };
   for (let i = 0; i < tasks.length; i += o.concurrency) {

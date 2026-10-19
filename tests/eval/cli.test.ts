@@ -30,9 +30,64 @@ test("pilot --list prints each selected question with both arms' allowed tools a
     assert.equal(runLines.length, 10);
     assert.equal(runLines.filter((l) => l.includes(" clone-research: ") && l.includes("mcp__falkon__research_codebase")).length, 5);
     assert.equal(runLines.filter((l) => l.includes(" clone-tools: ") && l.includes("research_codebase")).length, 0);
-    assert.match(out[0]!, /10 runs.*cap \$15/);
+    assert.match(out[0]!, /10 runs.*model sonnet.*cap \$6 across all models\./);
     assert.equal(readRaw(runs).length, 0);
   });
+});
+
+test("pilot --list works offline for every arm and model, reading no key and creating nothing; the cap comes from EVAL_SPEND_CAP", async () => {
+  await withRuns(async (runs) => {
+    for (const model of ["sonnet", "haiku", "claude-haiku-5-5"]) {
+      const out = lines(await main(["pilot", "--list", "--model", model, "--arms", "v6-tools,clone-tools,clone-tools-noinstr,clone-research"], env(runs)));
+      assert.match(out[0]!, new RegExp(`20 runs \\(5 questions x 4 arms, model ${model.replace("claude-haiku-5-5", "haiku")}\\)`));
+      const runLines = out.slice(1);
+      assert.equal(runLines.length, 20);
+      for (const arm of ["v6-tools", "clone-tools", "clone-tools-noinstr"]) assert.equal(runLines.filter((l) => l.includes(` ${arm}: `) && !l.includes("research_codebase")).length, 5, arm);
+      assert.equal(runLines.filter((l) => l.includes(" clone-research: ") && l.includes("mcp__falkon__research_codebase")).length, 5);
+    }
+    assert.match(await main(["run", "--split", "dev", "--list", "--arms", "v6-tools"], { ...env(runs), EVAL_SPEND_CAP: "2.5" }), /48 runs.*ledger cap \$2\.5/);
+    assert.deepEqual(readdirSync(runs), []);
+    await assert.rejects(main(["pilot", "--list", "--model", "opus"], env(runs)), /--model/);
+    await assert.rejects(main(["pilot", "--list"], { ...env(runs), EVAL_SPEND_CAP: "0" }), /EVAL_SPEND_CAP/);
+  });
+});
+
+test("runs are stored per model, and Sonnet runs in the earlier layout stay readable as the sonnet set", async () => {
+  await withRuns(async (runs) => {
+    const d = loadDataset("openmrs-xrepo"), [id] = pilotIds(d);
+    writeRaw(join(runs, "openmrs-xrepo"), run(id!, "clone-tools", { firstTool: "grep" }));   // earlier layout
+    assert.match(await main(["report", "--pilot", "--arms", "clone-tools"], env(runs)), new RegExp(`${id} clone-tools first=grep`));
+    assert.match(await main(["report", "--pilot", "--model", "haiku", "--arms", "clone-tools"], env(runs)), new RegExp(`${id} clone-tools missing`));
+    writeRaw(join(runs, "haiku", "openmrs-xrepo"), run(id!, "clone-tools", { firstTool: "glob" }));
+    assert.match(await main(["report", "--pilot", "--model", "haiku", "--arms", "clone-tools"], env(runs)), new RegExp(`${id} clone-tools first=glob`));
+    assert.match(await main(["report", "--pilot", "--arms", "clone-tools"], env(runs)), new RegExp(`${id} clone-tools first=grep`));
+    writeRaw(join(runs, "sonnet", "openmrs-xrepo"), run(id!, "clone-tools", { firstTool: "list_tree" }));   // a per-model directory wins once it exists
+    assert.match(await main(["report", "--pilot", "--arms", "clone-tools"], env(runs)), new RegExp(`${id} clone-tools first=list_tree`));
+  });
+});
+
+test("a non-Sonnet report compares against the v6-tools runs of the same model, with no verdict for v6-tools itself", async () => {
+  await withRuns(async (runs) => {
+    const text = await main(["report", "--model", "haiku", "--arms", "v6-tools,clone-tools"], env(runs));
+    assert.match(text, /Model: haiku \(claude-haiku-5-5\)\. Reference: v6-tools runs of this model/);
+    assert.match(text, /clone-tools: withheld/);
+    assert.doesNotMatch(text, /v6-tools: withheld/);
+    assert.match(await main(["report"], env(runs)), /Reference: the recorded floor[\s\S]*Floor: n 48; recall 0\.9726/);
+  });
+});
+
+test("the v6-tools arm needs its URL and a key file before anything runs, and says so without echoing the key", async () => {
+  await withRuns(async (runs) => {
+    await assert.rejects(main(["preflight", "--arms", "v6-tools"], env(runs)), /EVAL_V6_URL/);
+    for (const bad of ["ftp://x", "https://user:pw@127.0.0.1/api/mcp", "http://example.com/api/mcp", "http://10.0.0.5/api/mcp"])
+      await assert.rejects(main(["preflight", "--arms", "v6-tools"], { ...env(runs), EVAL_V6_URL: bad }), (e: Error) => /EVAL_V6_URL/.test(e.message) && !e.message.includes("pw@"), bad);
+    await assert.rejects(main(["preflight", "--arms", "v6-tools"], { ...env(runs), EVAL_V6_URL: "http://127.0.0.1:1/api/mcp" }), /EVAL_V6_KEY_FILE/);
+    await assert.rejects(main(["preflight", "--arms", "v6-tools"], { ...env(runs), EVAL_V6_URL: "http://127.0.0.1:1/api/mcp", EVAL_V6_KEY_FILE: join(runs, "nokey") }), /missing/);
+  });
+});
+
+test("stack takes --instructions off only", async () => {
+  await assert.rejects(main(["stack", "up", "--instructions", "on"], {}), /--instructions must be off/);
 });
 
 test("run --list covers both datasets and the whole split; hidden needs no clean dev when only listing", async () => {
@@ -56,10 +111,12 @@ const run = (id: string, arm: string, extra: Partial<Raw> = {}): Raw => ({ taskI
 
 test("report prints the floor comparison from stored runs and writes nothing", async () => {
   await withRuns(async (runs) => {
-    const text = await main(["report", "--split", "hidden"], env(runs));
-    assert.match(text, /Falkon O3 Ask-quality check \(hidden\)/);
+    const text = await main(["report"], env(runs));
+    assert.match(text, /Falkon O3 Ask-quality check \(dev and hidden\)/);
     assert.match(text, /Floor: n 32; recall 0\.9229/);
+    assert.match(await main(["report", "--split", "hidden"], env(runs)), /Falkon O3 Ask-quality check \(hidden\)/);
     assert.match(text, /clone-tools: withheld/);
+    assert.match(text, /## dev[\s\S]*## hidden[\s\S]*## Pooled verdict/);
     assert.equal(readdirSync(runs).length, 0);
   });
 });
@@ -92,6 +149,13 @@ test("run refuses to start when a pilot run leaked", async () => {
   });
 });
 
+test("run refuses to start when a pilot stop rule is STOP, before any key, stack or spend", async () => {
+  await withRuns(async (runs) => {
+    allPilot(runs); // recall 0 on every pilot run
+    await assert.rejects(main(["run", "--split", "dev"], env(runs)), /stop rule failed[\s\S]*STOP: plain-arm pilot recall 0\.000/);
+  });
+});
+
 test("report --pilot prints the stop rules as PASS or STOP lines", async () => {
   await withRuns(async (runs) => {
     const empty = await main(["report", "--pilot"], env(runs));
@@ -101,12 +165,12 @@ test("report --pilot prints the stop rules as PASS or STOP lines", async () => {
     assert.match(low, /STOP: plain-arm pilot recall 0\.000/);
     assert.match(low, /PASS: no leaks \(0 of 10 runs\)/);
     assert.match(low, /PASS: research_codebase first in every research run \(5\/5\)/);
-    assert.match(low, /Denied research_codebase attempts by the plain arm: 0\./);
+    assert.match(low, /Denied research_codebase attempts by the plain arms: 0\./);
     allPilot(runs, (arm) => arm === "clone-research" ? { firstTool: "grep", leak: true, deniedAttempts: 0 } : { deniedAttempts: 2 });
     const bad = await main(["report", "--pilot"], env(runs));
     assert.match(bad, /STOP: no leaks \(5 of 10/);
     assert.match(bad, /STOP: research_codebase first in every research run \(0\/5\)/);
-    assert.match(bad, /attempts by the plain arm: 10\./);
+    assert.match(bad, /attempts by the plain arms: 10\./);
     assert.match(bad, /malformed=false/);
   });
 });

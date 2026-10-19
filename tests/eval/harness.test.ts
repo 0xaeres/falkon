@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { buildCommand, parseAnswer, parseClaudeOutput, prompt } from "./harness.js";
 import type { Arm } from "./data.js";
 
-const base = { question: "Where?", tree: "/chart", env: { PATH: "/bin", ANTHROPIC_API_KEY: "model-fixture", EVAL_MCP_KEY: "inherited" } as NodeJS.ProcessEnv, configPath: "/cfg.json", port: 3400, perRunCap: 1, denyPaths: ["/data/o3"] };
+const base = { question: "Where?", tree: "/chart", env: { PATH: "/bin", ANTHROPIC_API_KEY: "model-fixture", EVAL_MCP_KEY: "inherited" } as NodeJS.ProcessEnv, configPath: "/cfg.json", url: "http://127.0.0.1:3400/api/mcp", model: "claude-sonnet-5-5", perRunCap: 1, denyPaths: ["/data/o3"] };
 const flag = (args: string[], name: string) => args[args.indexOf(name) + 1]!;
 const seven = ["grep", "glob", "read_file", "list_tree", "list_repos", "find_symbol_definitions", "find_symbol_references"];
 const stream = (tools: string[], input: Record<string, unknown> = {}) => tools.map((name) => JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", name, input }] } })).join("\n");
@@ -80,9 +80,29 @@ test("answers keep the last json fence, drop unknown files and bare filenames, c
   assert.equal(parseAnswer(many, lines).answer.length, 20);
 });
 
-test("arm ids are the two named in the plan", () => {
-  const arms: Arm[] = ["clone-tools", "clone-research"];
+test("every arm carries the question; the three tools arms share one prompt", () => {
+  const arms: Arm[] = ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr"];
   for (const arm of arms) assert.ok(prompt(arm, "Q").includes("Question:\nQ"));
+  assert.equal(prompt("v6-tools", "Q"), prompt("clone-tools", "Q"));
+  assert.equal(prompt("clone-tools-noinstr", "Q"), prompt("clone-tools", "Q"));
+});
+
+test("--model reaches the claude command", () => {
+  assert.equal(flag(buildCommand("clone-tools", { ...base, model: "claude-haiku-5-5" }).args, "--model"), "claude-haiku-5-5");
+});
+
+test("the v6 and no-instructions arms expose the plain arm's tools and denials, at their own URL", () => {
+  const plain = buildCommand("clone-tools", base);
+  for (const [arm, url] of [["v6-tools", "http://127.0.0.1:3000/api/mcp"], ["clone-tools-noinstr", "http://127.0.0.1:3401/api/mcp"]] as const) {
+    const c = buildCommand(arm, { ...base, url, apiKey: "s3cret" });
+    assert.equal(flag(c.args, "--allowedTools"), flag(plain.args, "--allowedTools"), arm);
+    assert.equal(flag(c.args, "--disallowedTools"), flag(plain.args, "--disallowedTools"), arm);
+    assert.deepEqual(JSON.parse(c.mcpConfig).mcpServers, { falkon: { type: "http", url, headers: { Authorization: "Bearer ${EVAL_MCP_KEY}" } } });
+    assert.equal(c.env.EVAL_MCP_KEY, "s3cret");
+    assert.ok(!c.mcpConfig.includes("s3cret") && !c.args.join(" ").includes("s3cret"));
+    assert.equal(parseClaudeOutput(stream(["mcp__falkon__research_codebase", "mcp__falkon__grep"]), arm).deniedAttempts, 1, arm);
+    assert.equal(parseClaudeOutput(stream(["mcp__falkon__list_commits"]), arm).leak, true, arm);
+  }
 });
 
 test("the plain arm trying the denied research tool is counted, not a leak", () => {
@@ -95,5 +115,5 @@ test("the plain arm trying the denied research tool is counted, not a leak", () 
 });
 
 test("both prompts tell the agent to ignore the server's citation format", () => {
-  for (const arm of ["clone-tools", "clone-research"] as const) assert.match(prompt(arm, "Q"), /Ignore any citation format the server describes; end only with the json array described here\./);
+  for (const arm of ["clone-tools", "clone-research", "v6-tools"] as const) assert.match(prompt(arm, "Q"), /Ignore any citation format the server describes; end only with the json array described here\./);
 });

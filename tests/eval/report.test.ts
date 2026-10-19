@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { DATASETS, FLOOR_DIR, loadAccepted, loadDataset, readRaw, type Raw } from "./data.js";
-import { report, type ReportInput } from "./report.js";
+import { DATASETS, FLOOR_DIR, loadAccepted, loadDataset, readRaw, type Arm, type Raw } from "./data.js";
+import { d25, report, type ReportInput } from "./report.js";
 import { scoreAnswer } from "./score.js";
 import { join } from "node:path";
 
@@ -25,36 +25,99 @@ test("the recorded floor reproduces: dev 0.973 and hidden 0.923 mean recall", ()
   }
 });
 
-test("an arm that matches the floor passes the gate with a zero difference", () => {
+const dev = (input: ReportInput["datasets"], arms: Arm[] = ["clone-tools"]) => report({ datasets: input, accepted, split: "dev", arms });
+const pooled = (input: ReportInput["datasets"], arms: Arm[] = ["clone-tools"], extra: Partial<ReportInput> = {}) => report({ datasets: input, accepted, arms, ...extra });
+
+test("a per-split report keeps the recall, precision and cost table and the win, loss and tie counts, with no verdict", () => {
   const input = floorInput();
   cloneRuns(input, "clone-tools", (_q, f) => f.answer);
-  const text = report({ datasets: input, accepted, split: "dev", arms: ["clone-tools"] });
+  const text = dev(input);
   assert.match(text, /Floor: n 48; recall 0\.9726/);
   assert.match(text, /\| recall \| 0\.9726 \| 0\.9726 \| 48 \| 0\.0000 \[0\.0000, 0\.0000\]/);
-  assert.match(text, /clone-tools: PASS/);
+  assert.match(text, /Recall wins 0, losses 0, ties 48 against the reference\./);
   assert.match(text, /Coverage clone-tools: 48\/48 paired; failed 0; malformed 0; leaks 0\./);
+  assert.doesNotMatch(text, /PASS|FAIL|withheld/);
 });
 
-test("an arm that answers nothing fails the gate, and a missing run withholds it", () => {
+test("the pooled verdict passes a tie over all 80 questions, and prints mean, interval, wins, losses and ties", () => {
+  const input = floorInput();
+  cloneRuns(input, "clone-tools", (_q, f) => f.answer);
+  const text = pooled(input);
+  assert.match(text, /clone-tools: PASS\. n 80; recall difference 0\.0000 \[0\.0000, 0\.0000\]; wins 0, losses 0, ties 80\./);
+  assert.match(text, /## dev[\s\S]*## hidden[\s\S]*## Pooled verdict/);
+});
+
+test("an arm that answers nothing fails the pooled verdict, and a missing run withholds it", () => {
   const input = floorInput();
   cloneRuns(input, "clone-tools", () => []);
-  assert.match(report({ datasets: input, accepted, split: "dev", arms: ["clone-tools"] }), /clone-tools: FAIL/);
+  assert.match(pooled(input), /clone-tools: FAIL\. n 80; recall difference -0\.9\d+/);
   input[0]!.runs.pop();
-  assert.match(report({ datasets: input, accepted, split: "dev", arms: ["clone-tools"] }), /clone-tools: withheld/);
+  assert.match(pooled(input), /clone-tools: withheld/);
+});
+
+test("any failed, malformed or leaked run withholds the verdict even when recall is a tie", () => {
+  for (const bad of [{ is_error: true }, { malformed: true }, { leak: true }] as Partial<Raw>[]) {
+    const input = floorInput();
+    cloneRuns(input, "clone-tools", (_q, f) => f.answer);
+    Object.assign(input[1]!.runs[0]!, bad);
+    assert.match(pooled(input), /clone-tools: withheld/, JSON.stringify(bad));
+  }
+});
+
+test("a failed, malformed or leaked reference run withholds every verdict, and the reference counts are printed", () => {
+  for (const bad of [{ is_error: true }, { malformed: true }, { leak: true }] as Partial<Raw>[]) {
+    const input = floorInput();
+    cloneRuns(input, "clone-tools", (_q, f) => f.answer);
+    // The arm answers exactly what the (broken) reference run answered, so the tie would otherwise pass.
+    Object.assign(input[1]!.floor[0]!, bad);
+    const text = pooled(input);
+    assert.match(text, /clone-tools: withheld/, JSON.stringify(bad));
+    assert.match(text, /Reference: n 80, failed \d+, malformed \d+, leaks \d+\./);
+  }
+  const clean = pooled((() => { const i = floorInput(); cloneRuns(i, "clone-tools", (_q, f) => f.answer); return i; })());
+  assert.match(clean, /Reference: n 80, failed 0, malformed 0, leaks 0\./);
+  assert.match(clean, /clone-tools: PASS/);
+});
+
+test("D25: a synthetic tie passes at n=80, a 0.15 drop fails, three times as many losses as wins fails", () => {
+  const tie = d25(Array(80).fill(0));
+  assert.deepEqual([tie.pass, tie.wins, tie.losses, tie.ties, tie.mean, tie.lo], [true, 0, 0, 80, 0, 0]);
+  const drop = d25(Array(80).fill(-0.15));
+  assert.equal(drop.pass, false);
+  assert.ok(drop.lo < -0.10);
+  // 4 small wins and 12 small losses: the interval is nowhere near -0.10, so only the loss ratio fails it.
+  const skew = d25([...Array(4).fill(0.05), ...Array(12).fill(-0.02), ...Array(64).fill(0)]);
+  assert.ok(skew.lo > -0.10);
+  assert.deepEqual([skew.wins, skew.losses, skew.ties, skew.pass], [4, 12, 64, false]);
+  // Exactly twice as many losses as wins is allowed; a difference of 0.001 or less is a tie.
+  const edge = d25([0.05, 0.05, -0.02, -0.02, -0.02, -0.02, 0.001, -0.001, ...Array(72).fill(0)]);
+  assert.deepEqual([edge.wins, edge.losses, edge.ties, edge.pass], [2, 4, 74, true]);
+});
+
+test("the reference arm's own runs are the floor for another model, and it gets no verdict itself", () => {
+  const input = floorInput();
+  for (const d of input) { d.runs.push(...d.floor.map((f) => ({ ...f, arm: "v6-tools" }))); d.floor = d.runs.filter((r) => r.arm === "v6-tools"); }
+  cloneRuns(input, "clone-tools", (_q, f) => f.answer);
+  const text = pooled(input, ["v6-tools", "clone-tools"], { model: "haiku", referenceArm: "v6-tools" });
+  assert.match(text, /Model: haiku\. Reference: v6-tools runs of this model/);
+  assert.match(text, /clone-tools: PASS/);
+  assert.doesNotMatch(text, /v6-tools: (PASS|FAIL|withheld)/);
+  for (const d of input) d.floor = [];
+  assert.match(pooled(input, ["clone-tools"], { referenceArm: "v6-tools" }), /clone-tools: withheld/);
 });
 
 test("the research arm reports how often research_codebase came first", () => {
   const input = floorInput();
   cloneRuns(input, "clone-research", (_q, f) => f.answer);
   input[0]!.runs[0]!.firstTool = "grep";
-  assert.match(report({ datasets: input, accepted, split: "dev", arms: ["clone-research"] }), /research_codebase first in 47\/48 runs/);
+  assert.match(dev(input, ["clone-research"]), /research_codebase first in 47\/48 runs/);
 });
 
 test("the report shows the plain arm's denied research_codebase attempts and malformed count", () => {
   const input = floorInput();
   cloneRuns(input, "clone-tools", (_q, f) => f.answer);
   input[0]!.runs[0]!.deniedAttempts = 3; input[0]!.runs[1]!.malformed = true;
-  const text = report({ datasets: input, accepted, split: "dev", arms: ["clone-tools"] });
+  const text = dev(input);
   assert.match(text, /malformed 1; leaks 0\./);
   assert.match(text, /Denied research_codebase attempts: 3\./);
 });
