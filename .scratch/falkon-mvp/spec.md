@@ -234,3 +234,13 @@ Budget: 1.6M Claude subagent tokens (S4 on Opus doubled), 6 hours wall clock, $1
 Gate 1 decision for the human beyond the plan itself: P6 and the other items listed under "Out of scope" for S4 deviate from the ADR section 13 delivery plan, which lists P1 to P6 and P9 to P11 for this stage.
 
 Gate 1 approved by the human on 2026-10-19: plan as written, P6 deferred past S4.
+
+## Cycle 3 results (2026-10-19, waiting at gate 2)
+
+| Slice | Outcome | Evidence |
+|---|---|---|
+| S5 eval harness, floor comparison | harness kept (`3263aee`), gate item 3 NOT met (`34465ac`) | Floor reproduces (dev 0.9726, hidden 0.9229). 160 runs, 0 failed, 0 leaked, $7.54. clone-tools: dev -0.023 [-0.076, 0.021], hidden +0.003 [-0.094, 0.093]. clone-research: dev -0.068 [-0.122, -0.019], hidden +0.020 [-0.062, 0.103]. All four lower bounds are below -0.05. Details in `baseline.md`. |
+| S3 Nest boundary | kept (`29ef449`) | Contract and golden files untouched; golden through `/mcp/fixtures` has an empty diff; one fix round (api memory 218 MB under tsx, 79 MB as an esbuild bundle). |
+| S4 AccessPolicy and registry | built, held for human review (`3b2f6cc`) | Opus review and Sonnet attack pass found no isolation break; one fix round (sync lost-update, NUL 400). Open items for the human in `.loop/REVIEW.md`. |
+
+Ops memory at each slice (ceiling 654 MB, 462.55 MB before the cycle): S3 635.99 MB, S4 646.99 MB (651.33 MB on the first S4 run).
