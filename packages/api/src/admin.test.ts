@@ -8,6 +8,7 @@ import { createApp } from "./app";
 import { fakeDb } from "./fakeDb";
 import { PrismaProductRegistry } from "./product";
 
+const TOKEN = "t".repeat(40);
 const { db, rows } = fakeDb([{ slug: "core", source: "config", name: "core", description: "From config", definition: { include: ["github.com/acme/*"] }, repoNames: ["github.com/acme/app"] }]);
 const registry = new PrismaProductRegistry(db);
 let admin: INestApplication;
@@ -16,7 +17,7 @@ let base: string;
 let productBase: string;
 const url = (app: INestApplication) => `http://127.0.0.1:${(app.getHttpServer().address() as AddressInfo).port}`;
 before(async () => {
-  admin = await createAdminApp(registry, {});
+  admin = await createAdminApp(registry, TOKEN, {});
   await admin.listen(0, "127.0.0.1");
   base = url(admin);
   product = await createApp(registry, { post: async () => Response.json({ ok: true }), delete: async () => new Response(null, { status: 204 }) });
@@ -25,9 +26,9 @@ before(async () => {
 });
 after(async () => { await admin.close(); await product.close(); });
 
-const json = { "content-type": "application/json" };
+const json = { "content-type": "application/json", authorization: `Bearer ${TOKEN}` };
 const send = (method: string, path: string, body?: unknown, headers: Record<string, string> = json) =>
-  fetch(`${base}${path}`, { method, headers, body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body) });
+  fetch(`${base}${path}`, { method, headers: { authorization: `Bearer ${TOKEN}`, ...headers }, body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body) });
 type Body = Record<string, any>;
 const valid = { slug: "mine", name: "Mine", description: "Mine only", definition: { include: ["github.com/acme/app"], includeConnections: ["other"] } };
 
@@ -111,7 +112,7 @@ test("bodies: JSON only, 64 KiB cap, field limits", async () => {
   assert.equal((await send("POST", "/products", big)).status, 413);
   // a chunked body without Content-Length is capped while it streams
   const chunked = await new Promise<number>((resolve, reject) => {
-    const r = http.request(`${base}/products`, { method: "POST", headers: { "content-type": "application/json", "transfer-encoding": "chunked" } }, (res) => { res.resume(); resolve(res.statusCode!); });
+    const r = http.request(`${base}/products`, { method: "POST", headers: { ...json, "transfer-encoding": "chunked" } }, (res) => { res.resume(); resolve(res.statusCode!); });
     r.on("error", reject);
     for (let i = 0; i < 80; i++) r.write("x".repeat(1024));
     r.end();
@@ -146,7 +147,7 @@ test("P10: the admin listener serves the registry routes only; /mcp and every ot
 
 test("the admin listener refuses a non-loopback Host (DNS rebinding)", async () => {
   const status = await new Promise<number>((resolve, reject) => {
-    const r = http.request(`${base}/products`, { headers: { host: "attacker.example" } }, (res) => { res.resume(); resolve(res.statusCode!); });
+    const r = http.request(`${base}/products`, { headers: { host: "attacker.example", authorization: `Bearer ${TOKEN}` } }, (res) => { res.resume(); resolve(res.statusCode!); });
     r.on("error", reject);
     r.end();
   });

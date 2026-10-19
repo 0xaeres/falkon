@@ -53,7 +53,10 @@ if (command === 'date') {
   const method = args.includes('--request') ? args[args.indexOf('--request') + 1] : 'GET';
   const registry = process.env.SMOKE_EVENTS + '.registry';
   let code = scenario === 'api-down' ? '000' : '200';
-  if (url.endsWith('/mcp/no-such-product')) code = '404';
+  const header = args.map((a, i) => args[i - 1] === '--header' && a.startsWith('authorization:') ? a : '').find(Boolean);
+  const authed = scenario === 'admin-open' || /^authorization: Bearer [0-9a-f]{48}$/.test(header || '');
+  if (url.includes(':3302/') && !authed) code = '401';
+  else if (url.endsWith('/mcp/no-such-product')) code = '404';
   else if (url.endsWith('/products')) code = method === 'POST' ? (fs.writeFileSync(registry, '1'), '201') : scenario === 'admin-exposed' ? '200' : '404';
   else if (url.endsWith('/products/smoke-registry')) code = (fs.rmSync(registry, { force: true }), '204');
   else if (url.endsWith('/mcp/smoke-registry')) {
@@ -163,7 +166,15 @@ test("smoke round-trips an api Product through the admin port and proves the adm
   for (const expected of ["GET http://127.0.0.1:3301/products", "POST http://127.0.0.1:3302/products", "POST http://127.0.0.1:3301/mcp/smoke-registry", "DELETE http://127.0.0.1:3302/products/smoke-registry"]) assert.ok(curls.includes(expected), expected);
   const session = ok.events.find((event) => event.command === "curl" && event.args.includes("mcp-session-id: smoke-session"));
   assert.ok(session, "tools/list carries the session id from initialize");
-  for (const [scenario, message] of [["admin-exposed", /FAIL registry: admin routes answer on the product port/], ["registry-tools", /FAIL registry: tools\/list on the new Product failed/], ["registry-kept", /FAIL registry: a deleted Product is still served/]] as const) {
+  const admin = ok.events.filter((event) => event.command === "curl" && event.args.at(-1)!.includes(":3302/"));
+  const headers = admin.map((event) => event.args.find((arg, i) => event.args[i - 1] === "--header" && arg.startsWith("authorization:")));
+  const tokens = new Set(headers.filter((h) => h?.startsWith("authorization: Bearer ") && h !== "authorization: Bearer wrong-token"));
+  assert.equal(tokens.size, 1, "one random token is used for every authorised admin call");
+  assert.match([...tokens][0]!, /^authorization: Bearer [0-9a-f]{48}$/);
+  assert.ok(headers.includes(undefined), "a tokenless admin call is made");
+  assert.ok(headers.includes("authorization: Bearer wrong-token"), "a wrong-token admin call is made");
+  assert.equal(JSON.stringify(ok.events.filter((event) => event.command === "docker")).includes([...tokens][0]!.slice(22)), false, "the token never reaches a docker argument");
+  for (const [scenario, message] of [["admin-open", /FAIL registry: a tokenless admin call is not 401/], ["admin-exposed", /FAIL registry: admin routes answer on the product port/], ["registry-tools", /FAIL registry: tools\/list on the new Product failed/], ["registry-kept", /FAIL registry: a deleted Product is still served/]] as const) {
     const result = smoke({ scenario });
     assert.equal(result.status, 1, result.output);
     assert.match(result.output, message);
