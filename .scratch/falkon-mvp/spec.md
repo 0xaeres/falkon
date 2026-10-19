@@ -244,3 +244,13 @@ Gate 1 approved by the human on 2026-10-19: plan as written, P6 deferred past S4
 | S4 AccessPolicy and registry | built, held for human review (`3b2f6cc`) | Opus review and Sonnet attack pass found no isolation break; one fix round (sync lost-update, NUL 400). Open items for the human in `.loop/REVIEW.md`. |
 
 Ops memory at each slice (ceiling 654 MB, 462.55 MB before the cycle): S3 635.99 MB, S4 646.99 MB (651.33 MB on the first S4 run).
+
+## Gate 2 decision, cycle 3 (human, 2026-10-19: approve with notes)
+
+Landed on `main`. The parity-verified clone is preserved at tag `reference/v6-parity-clone` (2ea50f2, local, not pushed). Notes carried to cycle 4, in this order:
+
+1. **Admin token.** Admin listener requires `Authorization` with `ADMIN_TOKEN` (service refuses to start if unset while the admin listener is enabled); smoke registry step sends it. Small S4 follow-up, Sonnet with a review of that route.
+2. **Ask-quality rule.** Replace the gate-3 rule with a non-inferiority margin passable at the real sample size (pooled dev plus hidden, n=80), drafted for the human's approval before any rerun. `--model` option in the harness; Haiku floor from the real v6 image and our engine, paired per question, for fast iteration; one confirming Sonnet run. Ablation: plain tools with the server `instructions` suppressed, to see whether S18 instructions cost recall. `research_codebase` stays out of the advertised `instructions` until its brief is tuned and re-measured (it lost 0.068 recall on dev).
+3. **Memory.** Lazy-load the `ai` SDK and heavy `@sbc/shared` imports (edits `mcp.ts`/`shared`, gated by contract, golden and ops-smoke). Ceiling stays 654 MB.
+4. **Absorb the clone.** Rename `@sbc/*` to `@falkon/*` and fold `shared`, `db` and `backend` into one `packages/core`; `api` and `web` stay the HTTP surfaces, `contracts` and `ui` follow. This moves the rename forward from S14 and precedes the UI import (S19). Import-only, no behaviour change, gated by the contract snapshots, the golden set and ops-smoke.
+5. Accepted as is: esbuild, `@prisma/client` and `zod` in `@sbc/api`; the sync refactor; P6 deferred to the knowledge-base cycle.
