@@ -366,3 +366,4 @@ The engine already syncs incrementally: `cloneOrFetch` does `git fetch --prune` 
 ### Autonomy limits
 
 The loop may decide alone: test layout, module layout in `packages/api` and `packages/ui`, UI copy following D31/D32, adapter thresholds within the prep caps, one fix round per slice. It must stop (gate 2) for: a non-additive contract or golden change, a dependency not named in S19 or beyond the AI SDK React package, any change to existing datasets or gold, sync-path edits beyond D33, spend over $3, and any outward action (push, PR, publish). Gate 2 also fires after three kept slices, so the cycle is expected to need two gate-2 stops.
+Gate 1 approved by the human on 2026-10-20: cycle 5 plan as written, human asleep, loop runs autonomously to gate 2.
