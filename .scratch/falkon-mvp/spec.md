@@ -179,3 +179,7 @@ Autonomy limits, cycle 2: the loop may decide alone test layout, wording within 
 | S17 upstream Zoekt | kept (`91ea88e`, built by a side session) | Coordinator's own cold smoke: every step passes, empty golden diff, memory 462.55 MB of 654 MB. Remaining `sourcebot-dev` strings in shipped files are config-format references (`config.example.json`, config JSON schema), left to S13. |
 | S18 Ask via the client | kept (`e4bfb5b`) | Contract additions only; live run with the Claude Code CLI and no server model: `research_codebase` first, scoped calls, two exact verified citations. Brief bounded (50 names per list, sanitized). |
 
+## Roles from cycle 3 on (human, 2026-10-19)
+
+No Codex: the human no longer has a Codex plan. Every implementer and reviewer is a Claude agent: Sonnet by default, Opus for a slice marked `hard` and for architecture and wording review, Haiku for mechanical verification. Cross-family review is no longer possible; instead the reviewer is always a different agent instance from the builder, and an Opus review is required for security-sensitive or design-heavy slices. The main session stays on Opus as architect and coordinator.
+
