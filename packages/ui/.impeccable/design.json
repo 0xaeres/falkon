@@ -1,0 +1,468 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-11T11:27:25.572036+00:00",
+  "title": "Design System: Falkon",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Bg",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "s1": {
+        "role": "neutral",
+        "displayName": "S1",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "s2": {
+        "role": "neutral",
+        "displayName": "S2",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "s3": {
+        "role": "neutral",
+        "displayName": "S3",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "line2": {
+        "role": "neutral",
+        "displayName": "Line2",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "text": {
+        "role": "primary",
+        "displayName": "Text",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "faint": {
+        "role": "neutral",
+        "displayName": "Faint",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "blue": {
+        "role": "secondary",
+        "displayName": "Blue",
+        "tonalRamp": [
+          "oklch(15% 0.12 260)",
+          "oklch(26% 0.12 260)",
+          "oklch(38% 0.12 260)",
+          "oklch(49% 0.12 260)",
+          "oklch(61% 0.12 260)",
+          "oklch(72% 0.12 260)",
+          "oklch(84% 0.12 260)",
+          "oklch(95% 0.12 260)"
+        ]
+      },
+      "blue-soft": {
+        "role": "secondary",
+        "displayName": "Blue Soft",
+        "tonalRamp": [
+          "oklch(15% 0.12 260)",
+          "oklch(26% 0.12 260)",
+          "oklch(38% 0.12 260)",
+          "oklch(49% 0.12 260)",
+          "oklch(61% 0.12 260)",
+          "oklch(72% 0.12 260)",
+          "oklch(84% 0.12 260)",
+          "oklch(95% 0.12 260)"
+        ]
+      },
+      "amber": {
+        "role": "tertiary",
+        "displayName": "Amber",
+        "tonalRamp": [
+          "oklch(15% 0.1 75)",
+          "oklch(26% 0.1 75)",
+          "oklch(38% 0.1 75)",
+          "oklch(49% 0.1 75)",
+          "oklch(61% 0.1 75)",
+          "oklch(72% 0.1 75)",
+          "oklch(84% 0.1 75)",
+          "oklch(95% 0.1 75)"
+        ]
+      },
+      "amber-soft": {
+        "role": "tertiary",
+        "displayName": "Amber Soft",
+        "tonalRamp": [
+          "oklch(15% 0.1 75)",
+          "oklch(26% 0.1 75)",
+          "oklch(38% 0.1 75)",
+          "oklch(49% 0.1 75)",
+          "oklch(61% 0.1 75)",
+          "oklch(72% 0.1 75)",
+          "oklch(84% 0.1 75)",
+          "oklch(95% 0.1 75)"
+        ]
+      },
+      "red": {
+        "role": "tertiary",
+        "displayName": "Red",
+        "tonalRamp": [
+          "oklch(15% 0.12 25)",
+          "oklch(26% 0.12 25)",
+          "oklch(38% 0.12 25)",
+          "oklch(49% 0.12 25)",
+          "oklch(61% 0.12 25)",
+          "oklch(72% 0.12 25)",
+          "oklch(84% 0.12 25)",
+          "oklch(95% 0.12 25)"
+        ]
+      },
+      "red-soft": {
+        "role": "tertiary",
+        "displayName": "Red Soft",
+        "tonalRamp": [
+          "oklch(15% 0.12 25)",
+          "oklch(26% 0.12 25)",
+          "oklch(38% 0.12 25)",
+          "oklch(49% 0.12 25)",
+          "oklch(61% 0.12 25)",
+          "oklch(72% 0.12 25)",
+          "oklch(84% 0.12 25)",
+          "oklch(95% 0.12 25)"
+        ]
+      },
+      "green": {
+        "role": "tertiary",
+        "displayName": "Green",
+        "tonalRamp": [
+          "oklch(15% 0.1 150)",
+          "oklch(26% 0.1 150)",
+          "oklch(38% 0.1 150)",
+          "oklch(49% 0.1 150)",
+          "oklch(61% 0.1 150)",
+          "oklch(72% 0.1 150)",
+          "oklch(84% 0.1 150)",
+          "oklch(95% 0.1 150)"
+        ]
+      },
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "Sidebar",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "blue-active": {
+        "role": "secondary",
+        "displayName": "Blue Active",
+        "tonalRamp": [
+          "oklch(15% 0.12 260)",
+          "oklch(26% 0.12 260)",
+          "oklch(38% 0.12 260)",
+          "oklch(49% 0.12 260)",
+          "oklch(61% 0.12 260)",
+          "oklch(72% 0.12 260)",
+          "oklch(84% 0.12 260)",
+          "oklch(95% 0.12 260)"
+        ]
+      },
+      "primary-hover": {
+        "role": "neutral",
+        "displayName": "Primary Hover",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Status verdicts."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Setup card headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Interface prose."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels and compact controls."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Source excerpts and identifiers."
+      }
+    },
+    "shadows": [
+      {
+        "name": "product-menu",
+        "value": "0 16px 40px -12px rgba(0, 0, 0, 0.7)",
+        "purpose": "Floating Product and Account menus."
+      },
+      {
+        "name": "drawer",
+        "value": "12px 0 40px rgba(0, 0, 0, 0.5)",
+        "purpose": "Mobile navigation drawer."
+      },
+      {
+        "name": "toast",
+        "value": "0 8px 30px -12px rgba(0, 0, 0, 0.7)",
+        "purpose": "Queued-result toast."
+      },
+      {
+        "name": "focus",
+        "value": "0 0 0 3px var(--blue-soft)",
+        "purpose": "Focused fields."
+      },
+      {
+        "name": "status-navigation-current",
+        "value": "inset 0 0 0 1px var(--line2)",
+        "purpose": "Current status section boundary."
+      }
+    ],
+    "motion": [
+      {
+        "name": "background",
+        "value": "background-color 150ms ease",
+        "purpose": "Control and status navigation hover."
+      },
+      {
+        "name": "sheet-in",
+        "value": "180ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Evidence sheet entrance."
+      },
+      {
+        "name": "pulse",
+        "value": "1.2s ease-in-out infinite",
+        "purpose": "Streaming state dot; reduced-motion disables animation."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "768px"
+      },
+      {
+        "name": "status-rail",
+        "value": "1024px"
+      },
+      {
+        "name": "sidebar-auto",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Task action with visible focus and restrained hover.",
+      "html": "<button class=\"ds-btn ds-pri\">Continue</button>",
+      "css": ".ds-btn {\n  height: 36px;\n  padding: 0 14px;\n  border-radius: 8px;\n  border: 1px solid var(--line2);\n  background: var(--s2);\n  color: var(--text);\n  font-weight: 500;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 8px;\n  white-space: nowrap;\n  transition: background-color 150ms ease;\n}\n.ds-btn:hover:not(:disabled) {\n  background: var(--s3);\n}\n.ds-btn.ds-pri {\n  background: var(--text);\n  color: var(--bg);\n  border-color: var(--text);\n}\n.ds-btn.ds-pri:hover:not(:disabled) {\n  background: #dedee3;\n  border-color: #dedee3;\n}\n.ds-btn {font-family:var(--font-geist-sans, Geist),sans-serif;font-size:14px;line-height:1.5;}\n.ds-btn:focus-visible {outline:2px solid var(--blue);outline-offset:3px;}\n.ds-btn:disabled {cursor:not-allowed;color:var(--faint);background:var(--s3);border-color:var(--line);} .ds-btn {cursor:pointer;}"
+    },
+    {
+      "name": "Default button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "Task action with visible focus and restrained hover.",
+      "html": "<button class=\"ds-btn \">Continue</button>",
+      "css": ".ds-btn {\n  height: 36px;\n  padding: 0 14px;\n  border-radius: 8px;\n  border: 1px solid var(--line2);\n  background: var(--s2);\n  color: var(--text);\n  font-weight: 500;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 8px;\n  white-space: nowrap;\n  transition: background-color 150ms ease;\n}\n.ds-btn:hover:not(:disabled) {\n  background: var(--s3);\n}\n.ds-btn {font-family:var(--font-geist-sans, Geist),sans-serif;font-size:14px;line-height:1.5;}\n.ds-btn:focus-visible {outline:2px solid var(--blue);outline-offset:3px;}\n.ds-btn:disabled {cursor:not-allowed;color:var(--faint);background:var(--s3);border-color:var(--line);} .ds-btn {cursor:pointer;}"
+    },
+    {
+      "name": "Ghost button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Task action with visible focus and restrained hover.",
+      "html": "<button class=\"ds-btn ds-ghost\">Continue</button>",
+      "css": ".ds-btn {\n  height: 36px;\n  padding: 0 14px;\n  border-radius: 8px;\n  border: 1px solid var(--line2);\n  background: var(--s2);\n  color: var(--text);\n  font-weight: 500;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 8px;\n  white-space: nowrap;\n  transition: background-color 150ms ease;\n}\n.ds-btn:hover:not(:disabled) {\n  background: var(--s3);\n}\n.ds-btn.ds-ghost {\n  background: transparent;\n  border-color: transparent;\n  color: var(--muted);\n}\n.ds-btn.ds-ghost:hover:not(:disabled) {\n  background: var(--s2);\n  color: var(--text);\n}\n.ds-btn {font-family:var(--font-geist-sans, Geist),sans-serif;font-size:14px;line-height:1.5;}\n.ds-btn:focus-visible {outline:2px solid var(--blue);outline-offset:3px;}\n.ds-btn:disabled {cursor:not-allowed;color:var(--faint);background:var(--s3);border-color:var(--line);} .ds-btn {cursor:pointer;}"
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Labeled setup field with the observed focus ring.",
+      "html": "<div class=\"ds-field\"><label for=\"ds-product-name\">Product name</label><input id=\"ds-product-name\" class=\"ds-input\" placeholder=\"Payments Platform\" /></div>",
+      "css": ".ds-field {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  margin-bottom: 18px;\n}\n.ds-field label,\n.ds-field-label,\n.ds-connection-method legend {\n  font-size: 13px;\n  font-weight: 500;\n}\n.ds-input {\n  height: 38px;\n  border: 1px solid var(--line2);\n  background: var(--bg);\n  border-radius: 8px;\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding: 0 12px;\n  color: var(--text);\n  width: 100%;\n  min-width: 0;\n}\n.ds-input:focus {\n  outline: none;\n  border-color: var(--blue);\n  box-shadow: 0 0 0 3px var(--blue-soft);\n}\n.ds-field {font-family:var(--font-geist-sans, Geist),sans-serif;font-size:14px;line-height:1.5;}\n.ds-field:focus-visible {outline:2px solid var(--blue);outline-offset:3px;}\n.ds-input::placeholder {color:var(--faint)}"
+    },
+    {
+      "name": "Navigation item",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "Selected workspace destination.",
+      "html": "<a class=\"ds-nv ds-on\" href=\"#\" aria-current=\"page\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5\"/></svg><span>Status</span></a>",
+      "css": ".ds-nv {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  height: 34px;\n  padding: 0 10px;\n  border-radius: 7px;\n  color: var(--muted);\n  font-weight: 500;\n  position: relative;\n  border: 0;\n  background: transparent;\n  flex-shrink: 0;\n}\n.ds-nv.ds-on {\n  background: var(--s2);\n  color: var(--text);\n  box-shadow: inset 0 0 0 1px var(--line);\n}\n.ds-nv:hover {\n  background: var(--s2);\n  color: var(--text);\n}\n.ds-nv {font-family:var(--font-geist-sans, Geist),sans-serif;font-size:14px;line-height:1.5;}\n.ds-nv:focus-visible {outline:2px solid var(--blue);outline-offset:3px;}\n.ds-nv {text-decoration:none;}"
+    },
+    {
+      "name": "State badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "A labeled confirmation badge with state dot.",
+      "html": "<span class=\"ds-badge ds-green\"><span class=\"ds-pdot\"></span>Current</span>",
+      "css": ".ds-badge {\n  display: inline-flex;\n  align-items: center;\n  gap: 5px;\n  height: 22px;\n  padding: 0 8px;\n  border-radius: 999px;\n  border: 1px solid var(--line2);\n  font-size: 12px;\n  color: var(--muted);\n  white-space: nowrap;\n  flex-shrink: 0;\n}\n.ds-badge.ds-green {\n  color: var(--green);\n  border-color: rgba(74, 222, 128, 0.3);\n  background: rgba(74, 222, 128, 0.08);\n}\n.ds-pdot {\n  width: 7px;\n  height: 7px;\n  border-radius: 50%;\n  background: currentColor;\n  flex: none;\n}\n.ds-badge {font-family:var(--font-geist-sans, Geist),sans-serif;font-size:14px;line-height:1.5;}\n.ds-badge:focus-visible {outline:2px solid var(--blue);outline-offset:3px;}\n.ds-badge {font-size:12px;}"
+    },
+    {
+      "name": "Panel card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat bordered container with heading and body.",
+      "html": "<section class=\"ds-card\"><header class=\"ds-card-h\"><h1>Name your Product</h1><p>A visible scope for its repositories.</p></header><div class=\"ds-card-b\">Product-scoped context</div></section>",
+      "css": ".ds-card {\n  background: var(--s1);\n  border: 1px solid var(--line);\n  border-radius: 12px;\n  overflow: hidden;\n}\n.ds-card-h {\n  padding: 24px 28px 0;\n}\n.ds-card-h h1 {\n  font-size: 20px;\n  font-weight: 600;\n  letter-spacing: -0.015em;\n}\n.ds-card-h p {\n  color: var(--muted);\n  margin-top: 4px;\n  max-width: 600px;\n}\n.ds-card-b {\n  padding: 20px 28px 24px;\n}\n.ds-card {font-family:var(--font-geist-sans, Geist),sans-serif;font-size:14px;line-height:1.5;}\n.ds-card:focus-visible {outline:2px solid var(--blue);outline-offset:3px;}\n.ds-card h1,.ds-card p {margin:0;} .ds-card {color:var(--text);}"
+    },
+    {
+      "name": "Status section navigation",
+      "kind": "nav",
+      "refersTo": "status-navigation",
+      "description": "Secondary vertical navigation with labeled health, current section, and active evidence metadata. Mobile uses a native section picker.",
+      "html": "<nav class=\"ds-status-nav\" aria-label=\"Context status sections\"><h2 class=\"ds-status-nav-title\">Context status</h2><div class=\"ds-status-nav-items\"><button type=\"button\" class=\"ds-status-nav-item\" aria-current=\"true\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"/><path d=\"M14 2v6h6M8 13h8M8 17h8\"/></svg><span><strong>Evidence Generation</strong><small class=\"ds-green\"><span class=\"ds-pdot\"></span>Current</small></span></button><button type=\"button\" class=\"ds-status-nav-item\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 15.5-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.4L3 16M3 21v-5h5\"/></svg><span><strong>Sync</strong><small class=\"ds-red\"><span class=\"ds-pdot\"></span>1 failed</small></span></button><button type=\"button\" class=\"ds-status-nav-item\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M20 20H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2Z\"/></svg><span><strong>Repositories</strong><small><span class=\"ds-pdot\"></span>7</small></span></button><button type=\"button\" class=\"ds-status-nav-item ds-prediction\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5\"/></svg><span><strong>Semantic overlay</strong><small class=\"ds-amber\"><span class=\"ds-pdot\"></span>Catching up</small></span></button></div><div class=\"ds-status-nav-footer\"><span>Active evidence</span><strong class=\"ds-mono\">g-0087</strong><small>Published 14 min ago</small></div></nav>",
+      "css": ".ds-status-nav {\n  display: flex;\n  flex-direction: column;\n  min-height: 0;\n  overflow: auto;\n  border-right: 1px solid var(--line);\n  background: var(--s1);\n  padding: 24px 12px 20px;\n}\n.ds-status-nav-title {\n  font-size: 14px;\n  font-weight: 600;\n  margin: 0 12px 20px;\n}\n.ds-status-nav-items {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n.ds-status-nav-item {\n  display: flex;\n  align-items: flex-start;\n  gap: 10px;\n  width: 100%;\n  padding: 12px;\n  border: 0;\n  border-radius: 8px;\n  background: transparent;\n  color: var(--muted);\n  text-align: left;\n  transition: background-color 150ms ease;\n}\n.ds-status-nav-item > svg {\n  flex: none;\n  margin-top: 2px;\n}\n.ds-status-nav-item > span {\n  min-width: 0;\n}\n.ds-status-nav-item strong {\n  display: block;\n  font-size: 13px;\n  font-weight: 500;\n}\n.ds-status-nav-item small {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  margin-top: 4px;\n  font-size: 12px;\n}\n.ds-status-nav-item:hover {\n  background: var(--s2);\n  color: var(--text);\n}\n.ds-status-nav-item[aria-current] {\n  background: var(--s2);\n  color: var(--text);\n  box-shadow: inset 0 0 0 1px var(--line2);\n}\n.ds-status-nav-item.ds-prediction {\n  margin-top: 16px;\n}\n.ds-status-nav-footer {\n  margin: auto 12px 0;\n  padding-top: 32px;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  color: var(--muted);\n  font-size: 12px;\n}\n.ds-status-nav-footer strong {\n  color: var(--text);\n  font-weight: 500;\n}\n.ds-status-nav-footer small {\n  color: var(--faint);\n}\n\n.ds-status-nav {width:232px;min-height:420px;font-family:var(--font-geist-sans, Geist),sans-serif;font-size:14px;line-height:1.5;color:var(--text);}\n.ds-status-nav-item {font:inherit;cursor:pointer;}\n.ds-status-nav-item:focus-visible {outline:2px solid var(--blue);outline-offset:3px;}\n.ds-status-nav .ds-pdot {width:7px;height:7px;border-radius:50%;background:currentColor;flex:none;}\n.ds-status-nav .ds-green {color:var(--green);}\n.ds-status-nav .ds-red {color:var(--red);}\n.ds-status-nav .ds-amber {color:var(--amber);}\n.ds-status-nav .ds-mono {font-family:var(--font-geist-mono, Geist Mono),monospace;}\n@media (prefers-reduced-motion:reduce) {.ds-status-nav-item {transition:none;}}"
+    },
+    {
+      "name": "Citation marker",
+      "kind": "chip",
+      "refersTo": "citation",
+      "description": "Numbered answer citation with the selected evidence state.",
+      "html": "<button class=\"ds-citation ds-on\" aria-label=\"View citation 1\">1</button>",
+      "css": ".ds-citation {\n  display: inline-grid;\n  place-items: center;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 4px;\n  border-radius: 4px;\n  background: var(--s2);\n  border: 1px solid var(--line2);\n  font:\n    500 11px var(--font-geist-mono),\n    monospace;\n  color: var(--muted);\n  vertical-align: 1px;\n  margin: 0 1px;\n  cursor: pointer;\n}\n.ds-citation.ds-on,\n.ds-etabs .ds-on {\n  background: #2563eb;\n  border-color: #2563eb;\n  color: white;\n}\n.ds-citation:hover {\n  border-color: var(--blue);\n  color: var(--text);\n}\n.ds-citation {font-family:var(--font-geist-sans, Geist),sans-serif;font-size:14px;line-height:1.5;}\n.ds-citation:focus-visible {outline:2px solid var(--blue);outline-offset:3px;}\n.ds-citation {font:500 11px var(--font-geist-mono, Geist Mono),monospace;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Category-standard developer tool",
+    "overview": "Falkon uses the developer-tool category standard chosen and locked on 2026-10-11. Near-black surfaces, quiet borders, compact controls, and Geist typography keep source evidence and context state readable. The approved logo and the setup, status, and chat compositions remain the visual authority.\n\nWhite primary actions carry task progression. Blue identifies focus, selection, and work in progress. State color always accompanies a label; amber warnings and red failures do not compete with the main action. Code-native SVG marks and icons supply imagery. No raster asset ships.",
+    "keyCharacteristics": [
+      "Near-black tonal layering with hairline boundaries.",
+      "Compact Geist UI and Geist Mono source metadata.",
+      "White primary actions and semantic state color.",
+      "Evidence remains attached to the answer it supports."
+    ],
+    "rules": [
+      {
+        "name": "The State Color Rule",
+        "body": "Every state color has a readable label. Blue selection and white primary actions keep separate roles.",
+        "section": "colors"
+      },
+      {
+        "name": "The Source Type Rule",
+        "body": "Paths, product identifiers, generation identifiers, revisions, citation numbers, and source excerpts use Geist Mono. Interface sentences use Geist.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Surface Rule",
+        "body": "Keep resting cards flat. Reserve shadows for overlays and use borders or selection rings for ordinary hierarchy.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do retain the approved Falkon mark and proper source-provider logos.",
+      "Do show state labels alongside color and keep revisions, paths, and excerpts in Geist Mono.",
+      "Do retain keyboard focus, disabled reasons, and reduced-motion behavior.",
+      "Do use the locked surface briefs for page composition."
+    ],
+    "donts": [
+      "Don't add decorative gradients, ornamental imagery, or invented brand accents.",
+      "Don't turn the status view into telemetry charts or metric tiles.",
+      "Don't style predicted hints as verified source evidence.",
+      "Don't present the synthetic local API or demo account as a real integration."
+    ]
+  }
+}

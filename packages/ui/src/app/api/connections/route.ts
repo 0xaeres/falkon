@@ -1,0 +1,18 @@
+import { body, endpoint } from "@/lib/api/server";
+import { connectionRequestSchema } from "@/lib/contracts";
+import { MockError } from "@/lib/mock/store";
+export async function POST(request: Request) {
+  return endpoint(async () => {
+    const input = await body(request, connectionRequestSchema);
+    if (input.method === "token" && input.token !== "demo-readonly")
+      throw new MockError(
+        "This demo token cannot list organization repositories. Use demo-readonly to simulate repo and read:org access.",
+        422,
+      );
+    return {
+      id: crypto.randomUUID(),
+      host: new URL(input.host).host,
+      provider: input.provider,
+    };
+  });
+}
