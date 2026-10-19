@@ -298,3 +298,16 @@ The loop may decide alone: test layout, module layout, pilot parameters within t
 Budget: 1.0M Claude subagent tokens (no Opus), 4 hours wall clock, $6 eval spend.
 
 Gate 1 approved by the human on 2026-10-19: cycle 4 plan as written.
+
+## Scope reduction and revised cycle map (human, 2026-10-19)
+
+| # | Decision |
+|---|---|
+| D28 | The MVP does not build the graph. Slices S6 to S9 (GraphStore, SCIP ingestion, relate, trace and impact tools, their gate) and S10 (deterministic map) and S12 (knowledge base write-back tools) move out of the MVP. Change and impact questions are served by the existing ctags-backed tools (`sym:` search, `find_symbol_definitions`, `find_symbol_references`, search and read across the Product) driven by an "impact and change" recipe in the `research_codebase` brief and in the UI's Ask: find the definition, find references across repositories, separate real uses from name clashes, read the callers, and state what could not be checked. D4 is amended accordingly. The graph returns only if testers show impact questions this loop misses and it then beats plain search under D8. Principle: port what works into Falkon's shape; do not over-engineer. |
+
+Revised map for the remaining MVP (supersedes the earlier "Revised cycle map" from cycle 5 on):
+
+- Cycle 5: UI to testers. S19 `packages/contracts` plus the `packages/ui` import; S20 engine endpoints for the UI (products, repositories, connections, status, sync, threads) including server-side credential storage (security-sensitive, stops for human review); S21 chat transport (`useChat`, `data-evidence`, `productId` on chats); the impact and change recipe (brief plus UI Ask) with a small impact question set to measure it. Imports use the current `@sbc/*` names.
+- Cycle 6: core merge and rename (`@sbc/*` to `@falkon/*`, `shared`, `db` and `backend` folded into `packages/core`), then S11 knowledge base default-on semantics.
+- Cycle 7: S13 original rewrite of inherited text and the Falkon config schema with converter, then S14 package and database rename if any remains, S15 final regression gate, README and release notes.
+- Memory size (654 MB ceiling) is deferred by the human; recorded as information, not a keep condition, until the final gate.
