@@ -42,10 +42,10 @@ pnpm dev:web         # terminal 3
 
 Same architecture as Sourcebot 5.x, written independently:
 
-- **Zoekt fork.** Docker builds `sourcebot-dev/zoekt` at the commit Sourcebot pins (`ZOEKT_REF` in `docker/Dockerfile`). Upstream zoekt lacks the `-tenant_id`/`-repo_id` indexer flags. Go 1.26 is required.
+- **Zoekt.** Docker builds upstream `sourcegraph/zoekt` (Apache-2.0) at the commit pinned by `ZOEKT_REF` in `docker/Dockerfile`; the license text ships in the image under `/usr/share/licenses/zoekt/`. The repository name goes to the indexer through a `-meta` file containing `{"Name":"<repository name>"}`. Go 1.26 is required. **Upgrading from the fork build:** existing shards load under upstream Zoekt unchanged, and each repository reindexes once on its next sync because the indexer options changed; `repository_id` and `tenant_id` now read as 0 in results, and nothing in the engine uses them.
 - **Query path.** Search syntax string, then `queryParser.ts` (own recursive-descent parser) into a query IR (`ir.ts`, mirrors the `Q` proto), then a gRPC `Search`/`StreamSearch` call (`zoekt.ts`, protos in `packages/shared/proto`). User text only ever lands in IR leaves, so it cannot add an `or` or widen a repo scope.
 - **Defaults.** Without `rev:` a search is AND-ed with `branch HEAD` (the indexed default branch). The request asks zoekt for `n+1` matches so `isSearchExhaustive` can tell a complete result from a cut one.
-- **Indexing.** `zoekt-git-index -allow_missing_branches -max_trigram_count 20000 -file_limit 2MB -tenant_id 1 -repo_id <db id> -shard_prefix_override 1_<id>`, repo metadata (`zoekt.name`, `archived`, `fork`, `public`) via the bare repo's git config, revisions = default branch + `revisions.branches`/`tags` globs, capped at 64.
+- **Indexing.** `zoekt-git-index -allow_missing_branches -max_trigram_count 20000 -file_limit 2MB -meta <metadata.json> -shard_prefix_override 1_<id>`, repo metadata (`zoekt.name`, `archived`, `fork`, `public`) via the bare repo's git config, revisions = default branch + `revisions.branches`/`tags` globs, capped at 64.
 - **Zoekt has no auth.** It is `expose`d inside the compose network only. Never publish its port.
 
 ### Query syntax
@@ -113,5 +113,5 @@ Users/orgs/SSO, permission syncing, GitHub Apps, GitLab/Gitea/Gerrit/Bitbucket/A
 
 ## Verified vs not
 
-Verified: 63 unit tests (`pnpm test`: parser, IR mapping, config, auth scope, tools, Ask answer formatting and errors); typecheck; `docker compose up --build` with the Zoekt fork; gRPC search, streaming (SSE), every tool and Ask against a real LLM; repo removal; zoekt port not published.
+Verified: 63 unit tests (`pnpm test`: parser, IR mapping, config, auth scope, tools, Ask answer formatting and errors); typecheck; `docker compose up --build` with upstream Zoekt; gRPC search, streaming (SSE), every tool and Ask against a real LLM; repo removal; zoekt port not published.
 Not verified: GitHub connector, multi-branch/tag indexing against a large repo, ACCESS_FILE fail-closed path end to end (unit-tested only), search contexts (unsupported).

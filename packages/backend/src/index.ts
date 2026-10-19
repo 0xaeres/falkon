@@ -106,7 +106,7 @@ const worker = new Worker<{ repoId: number }>(
         // generated locally: nothing to clone or fetch, just (re)index main
         const dir = repoGitDir(repo.name);
         await writeZoektGitConfig(dir, repo);
-        await indexRepo(repo.id, dir, ["refs/heads/main"], signal, settings);
+        await indexRepo(repo.id, repo.name, dir, ["refs/heads/main"], signal, settings);
         if (!(await prisma.repo.findUnique({ where: { id: repo.id }, select: { id: true } }))) {
           removeShards(repo.id);
           return;
@@ -124,7 +124,7 @@ const worker = new Worker<{ repoId: number }>(
       }
       const dir = gitDirOf(path);
       const { revisions, defaultBranch } = await pickRevisions(dir, meta);
-      await indexRepo(repo.id, dir, revisions, signal, settings);
+      await indexRepo(repo.id, repo.name, dir, revisions, signal, settings);
       // The repo may have been dropped from config while we were indexing. Its row is gone, so
       // cleanup will never find the shards we just wrote; do it here.
       if (!(await prisma.repo.findUnique({ where: { id: repo.id }, select: { id: true } }))) {

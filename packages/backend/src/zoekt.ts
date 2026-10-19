@@ -1,12 +1,13 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { env } from "@sbc/shared";
 
 const run = promisify(execFile);
 
-/** One tenant; zoekt's -tenant_id exists in the Sourcebot fork so shards can be partitioned later. */
+/** One tenant; only part of the shard prefix (upstream zoekt-git-index has no -tenant_id flag). */
 export const TENANT_ID = 1;
 
 export const DEFAULT_SETTINGS = {
@@ -47,6 +48,7 @@ export async function writeZoektGitConfig(gitDir: string, m: ZoektRepoMeta) {
 /** Build/refresh the zoekt shards for one bare repo. `revisions` are full refs, e.g. refs/heads/main. */
 export async function indexRepo(
   repoId: number,
+  name: string,
   gitDir: string,
   revisions: string[],
   signal?: AbortSignal,
@@ -57,19 +59,27 @@ export async function indexRepo(
     .split(",")
     .map((p) => p.trim())
     .filter(Boolean);
-  const args = [
-    "-allow_missing_branches",
-    "-index", env.indexDir,
-    "-max_trigram_count", String(settings.maxTrigramCount),
-    "-file_limit", String(settings.maxFileSize),
-    "-branches", revisions.join(","),
-    "-tenant_id", String(TENANT_ID),
-    "-repo_id", String(repoId),
-    "-shard_prefix_override", shardPrefix(repoId),
-    ...largeFiles.flatMap((p) => ["-large_file", p]),
-    gitDir,
-  ];
-  return run("zoekt-git-index", args, { maxBuffer: 16 * 1024 * 1024, signal });
+  // Upstream zoekt-git-index names an in-place clone after its directory unless told otherwise;
+  // -meta carries the registry name, which the indexer keeps when the repo has no zoekt.name.
+  const metaDir = fs.mkdtempSync(path.join(os.tmpdir(), "zoekt-meta-"));
+  try {
+    const metaFile = path.join(metaDir, "meta.json");
+    fs.writeFileSync(metaFile, JSON.stringify({ Name: name }));
+    const args = [
+      "-meta", metaFile,
+      "-allow_missing_branches",
+      "-index", env.indexDir,
+      "-max_trigram_count", String(settings.maxTrigramCount),
+      "-file_limit", String(settings.maxFileSize),
+      "-branches", revisions.join(","),
+      "-shard_prefix_override", shardPrefix(repoId),
+      ...largeFiles.flatMap((p) => ["-large_file", p]),
+      gitDir,
+    ];
+    return await run("zoekt-git-index", args, { maxBuffer: 16 * 1024 * 1024, signal });
+  } finally {
+    fs.rmSync(metaDir, { recursive: true, force: true });
+  }
 }
 
 /** Remove every shard (and leftover .tmp file from an interrupted index) written for a repo. */
