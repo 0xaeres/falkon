@@ -296,3 +296,5 @@ S22 and S23 run in parallel in separate worktrees (each with its own `pnpm insta
 The loop may decide alone: test layout, module layout, pilot parameters within the cap, one fix round per slice. It must stop for: a contract snapshot change other than additive, any new dependency, any change to datasets or gold, any rule change beyond D25, spend over $6, S22 (gate 2), and any outward action. Long Docker steps run as tracked background commands in the main session, never inside a verifier agent.
 
 Budget: 1.0M Claude subagent tokens (no Opus), 4 hours wall clock, $6 eval spend.
+
+Gate 1 approved by the human on 2026-10-19: cycle 4 plan as written.
