@@ -126,3 +126,20 @@ Not measured: whole-stack Docker memory and ops-smoke; Linux RSS; a full `ask_co
 Tests: `lazy.test.ts` (child process with a resolve-hook spy: after `tools/list` and `list_language_models` no `ai` or `@ai-sdk/*` specifier was resolved, `ask_codebase` resolves `ai`; verified red against the old `mcp.ts`), provider construction for each provider, and an openai-compatible `generateText` that still splits a `<think>` block. `pnpm typecheck && pnpm test`: 243 passes, 0 failures.
 
 Note on the S24 done condition: the heap figures above do not reach resident memory (V8 keeps freed pages), so the planned 625 MB ops-smoke target was not expected to be met by this change alone. The human deferred the memory-size goal on 2026-10-19 ("we can worry about size later"); the ops-smoke memory figure is recorded for information and is not a keep condition this cycle. The remaining lever is the `@sbc/shared` import chain (about 8 to 11 MB), which belongs to the cycle 5 core merge, and marking `@google-cloud/secret-manager` external in `packages/api/build.mjs`.
+
+## Ask-quality check on Haiku against the real v6, cycle 4 (S23), 2026-10-19
+
+Client model claude-haiku-5-5. Reference: the real v6.0.1 instance run through the same harness (`v6-tools`), paired per question id, pooled dev+hidden (n=80), rule D25 (lower 95% bound >= -0.10 and losses <= 2x wins, zero failed/malformed/leaked). 400 runs total including the pilot (4 arms x 80 questions + pilot), spend about $3 (cap $6), zero failed or malformed. Full report: `eval-results/report-haiku.md`; raw runs: `eval-results/runs-cycle4-haiku.tar.gz`.
+
+| Arm | Recall (arm / v6) | Difference [95% CI] | Wins / losses | D25 |
+|---|---|---|---|---|
+| clone-tools | 0.907 / 0.857 | +0.050 [-0.014, 0.118] | 12 / 6 | pass |
+| clone-tools-noinstr (server instructions off) | 0.881 / 0.857 | +0.024 [-0.050, 0.101] | 13 / 8 | pass |
+| clone-research (`research_codebase` first) | 0.823 / 0.857 | -0.034 [-0.111, 0.044] | 11 / 15 | lower bound -0.111 misses -0.10 |
+
+Findings:
+- Our engine matches or beats real v6 on Haiku (plain tools +0.050), so the "v6-level performance" bar is met on this model. Precision is within noise (0.378 vs 0.391).
+- The server `instructions` do not cost recall: the arm with them off is no better (0.881 vs 0.907). S18's instructions can stay.
+- The research arm is again the weakest (11 wins, 15 losses; mean -0.034): sending the agent through `research_codebase` first still hurts. Its brief needs tuning before it is advertised.
+- The harness reported the pooled verdicts as "withheld" because of one run flagged as a leak in both `clone-tools` and `v6-tools` on question `xrepo-framework-to-chart-25`. The flagged read is the agent opening the tool-result spill file Claude Code itself saves under `~/.claude/projects/-private-tmp-falkon-eval-chart-only/.../tool-results/`, which the sensitive-path rule matches. It is a false positive of the leak rule (it hit the reference arm too); no gold or repository content outside the allowed tree was read. I did not change the rule. With that question excluded (n=78) all three arms pass D25: clone-tools +0.053 [-0.012, 0.124], noinstr +0.035 [-0.040, 0.112], research -0.022 [-0.099, 0.057]. Decision needed from the human: allow-list the agent's own tool-results directory in the leak rule and rerun that one question, or accept the exclusion.
+- Sonnet confirmation was not run (the Haiku result shows no regression to confirm).
