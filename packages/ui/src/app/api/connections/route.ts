@@ -1,5 +1,5 @@
 import { body, endpoint } from "@/lib/api/server";
-import { connectionRequestSchema } from "@/lib/contracts";
+import { connectionRequestSchema } from "@sbc/contracts";
 import { MockError } from "@/lib/mock/store";
 export async function POST(request: Request) {
   return endpoint(async () => {

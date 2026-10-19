@@ -19,7 +19,8 @@ export function agentTools(scope: Scope, selectedRepos: string[], onSource: (s: 
         name,
         tool({
           description: d.description,
-          inputSchema: jsonSchema(toolJsonSchema(d.inputSchema), {
+          // zod emits draft-2020-12 JSON Schema, wider than the JSONSchema7 type that @types/json-schema gives `ai` when it is installed.
+          inputSchema: jsonSchema(toolJsonSchema(d.inputSchema) as never, {
             validate: (value) => {
               const parsed = d.inputSchema.safeParse(value);
               return parsed.success ? { success: true, value: parsed.data } : { success: false, error: parsed.error };

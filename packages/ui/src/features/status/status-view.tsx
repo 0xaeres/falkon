@@ -8,7 +8,6 @@ import {
   FileText,
   Folder,
   Info,
-  Layers,
   MessageCircle,
   Pencil,
   RefreshCw,
@@ -25,17 +24,16 @@ import {
 import { Select } from "@/components/ui/select";
 import { ProviderLogo } from "@/components/ui/brand";
 import { api } from "@/lib/api/client";
-import type { Status } from "@/lib/contracts";
+import { useDismissed } from "@/lib/dismissed";
+import type { Status } from "@sbc/contracts";
 
-type Layer = "overlay" | "generation" | "sync" | "repositories";
+type Layer = "generation" | "sync" | "repositories";
 const names: Record<Layer, string> = {
-  overlay: "Semantic overlay",
   generation: "Evidence Generation",
   sync: "Sync",
   repositories: "Repositories",
 };
 const icons = {
-  overlay: Layers,
   generation: FileText,
   sync: RefreshCw,
   repositories: Folder,
@@ -82,6 +80,7 @@ export function StatusView() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
   const [toast, setToast] = useState(searchParams.get("queued") === "1");
+  const [dismissed, setDismissed] = useDismissed(product.id);
   if (statusError)
     return (
       <ErrorState error={statusError} retry={() => void refreshStatus()} />
@@ -89,18 +88,6 @@ export function StatusView() {
   if (!status) return <LoadingMark />;
   const selected = chosen ?? (status.sync === "failed" ? "sync" : "generation");
   const count = product.repositories.length;
-  const overlayTone =
-    status.overlay === "current"
-      ? "green"
-      : status.overlay === "catching-up"
-        ? "amber"
-        : "";
-  const overlayLabel = {
-    current: "Current",
-    "catching-up": "Catching up",
-    waiting: "Waiting",
-    unavailable: "Unavailable",
-  }[status.overlay];
   const generationTone =
     status.build === "failed"
       ? "red"
@@ -126,17 +113,6 @@ export function StatusView() {
   const layers: { id: Layer; summary: string; tone: string; label: string }[] =
     [
       {
-        id: "overlay",
-        summary:
-          status.overlay === "waiting"
-            ? "Starts after the first generation publishes"
-            : status.overlay === "unavailable"
-              ? "Labeling unavailable · evidence unaffected"
-              : `${status.overlayPercent}% ${status.overlay === "catching-up" ? "labeled · 18 min behind" : `of ${status.generation} labeled`}`,
-        tone: overlayTone,
-        label: overlayLabel,
-      },
-      {
         id: "generation",
         summary: status.generation
           ? `${status.generation} active · ${status.nextGeneration ? `${status.nextGeneration} ${status.build === "failed" ? "failed validation" : "building, index stage"}` : `published ${status.generationAge}`}`
@@ -157,18 +133,19 @@ export function StatusView() {
       },
       {
         id: "repositories",
-        summary: `${count} on ${product.host} · ${product.repositories.filter((repo) => repo.structural).length} structural`,
+        summary: `${count} on ${product.host}`,
         tone: "",
         label: String(count),
       },
     ];
   const selectedLayer = layers.find((layer) => layer.id === selected)!;
-  const navigationLayers = [layers[1], layers[2], layers[3], layers[0]];
-  async function action(action: "retry" | "dismiss") {
+  const navigationLayers = layers;
+  async function retry() {
     setBusy(true);
     setActionError("");
     try {
-      await api.sync(product.id, { action });
+      await api.sync(product.id, { action: "retry" });
+      setDismissed(false);
       await refresh();
     } catch (error) {
       setActionError(
@@ -226,7 +203,7 @@ export function StatusView() {
               return (
                 <button
                   key={layer.id}
-                  className={`status-nav-item ${layer.id === "overlay" ? "prediction" : ""}`}
+                  className={`status-nav-item`}
                   aria-current={layer.id === selected ? "true" : undefined}
                   aria-controls="status-detail"
                   onClick={() => setChosen(layer.id)}
@@ -340,23 +317,23 @@ export function StatusView() {
                         variant="primary"
                         className="sm"
                         busy={busy}
-                        onClick={() => void action("retry")}
+                        onClick={() => void retry()}
                       >
                         <RefreshCw size={14} />
                         Retry sync
                       </Button>
-                      {!product.dismissed && (
+                      {!dismissed && (
                         <Button
                           variant="ghost"
                           className="sm"
                           disabled={busy}
-                          onClick={() => void action("dismiss")}
+                          onClick={() => setDismissed(true)}
                         >
                           Dismiss
                         </Button>
                       )}
                     </div>
-                    {product.dismissed && (
+                    {dismissed && (
                       <p className="dis-note">
                         Failure highlight dismissed. The repository is still
                         behind.
@@ -421,7 +398,7 @@ export function StatusView() {
                     </Alert>
                     <Button
                       className="sm retry-build"
-                      onClick={() => void action("retry")}
+                      onClick={() => void retry()}
                       busy={busy}
                     >
                       <RefreshCw size={14} />
@@ -484,42 +461,6 @@ export function StatusView() {
                 )}
               </>
             )}
-            {selected === "overlay" && (
-              <>
-                <dl className="kv">
-                  <dt>Labeled</dt>
-                  <dd>
-                    {status.overlayPercent}% of{" "}
-                    {status.generation ?? "the first generation"}’s declaration
-                    units
-                    <progress
-                      className="progress amber"
-                      max={100}
-                      value={status.overlayPercent}
-                      aria-label="Semantic labeling progress"
-                    />
-                  </dd>
-                  <dt>Behind</dt>
-                  <dd>
-                    {status.overlay === "catching-up"
-                      ? "18 min · target 30 min"
-                      : status.overlay === "current"
-                        ? "Up to date"
-                        : "Not available"}
-                  </dd>
-                  <dt>Model</dt>
-                  <dd className="mono">falkon-semantic-ts-0.4</dd>
-                </dl>
-                <section className="sec">
-                  <Alert>
-                    The overlay adds labeled hints, such as “writes to the
-                    database”. Hints are marked <strong>predicted</strong> in
-                    chat and never count as evidence. When the overlay is behind
-                    or unavailable, grounded answers are unaffected.
-                  </Alert>
-                </section>
-              </>
-            )}
             {selected === "repositories" && (
               <>
                 <section className="sec first">
@@ -527,9 +468,6 @@ export function StatusView() {
                     <div className="repo-r" key={repo.id}>
                       <ProviderLogo provider={product.provider} size={14} />
                       <strong>{repo.name}</strong>
-                      {!repo.structural && (
-                        <Badge tone="amber">Text only</Badge>
-                      )}
                       <span className="sp" />
                       <span className="mono muted">{repo.branch}</span>
                     </div>

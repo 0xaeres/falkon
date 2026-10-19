@@ -9,12 +9,13 @@ import {
   statusSchema,
   streamEventSchema,
   threadSchema,
-} from "../src/lib/contracts";
+} from "@sbc/contracts";
 import { makeAnswer, makeStatus, seedProducts } from "../src/lib/mock/fixtures";
 
 const directory = await mkdtemp(path.join(tmpdir(), "falkon-ui-test-"));
 process.env.MOCK_DATA_DIR = directory;
 const products = await import("../src/app/api/products/route");
+const { transact } = await import("../src/lib/mock/store");
 const productRoute = await import("../src/app/api/products/[productId]/route");
 const connections = await import("../src/app/api/connections/route");
 const threads =
@@ -37,6 +38,7 @@ const input = {
   name: "API test Product",
   provider: "github" as const,
   host: "github.com",
+  connectionId: "conn-1",
   repositories: [{ id: "payments-api", branch: "main" }],
 };
 
@@ -201,10 +203,7 @@ test("threads cannot be read or queried through another Product", async () => {
 });
 
 test("a complete streamed answer persists once, survives reload, and cannot stream before publication", async () => {
-  await sync.POST(
-    request({ action: "scenario", scenario: "current" }),
-    context("payments-platform"),
-  );
+  await sync.POST(request({ action: "retry" }), context("payments-platform"));
   const created = threadSchema.parse(
     await (
       await threads.POST(request({}), context("payments-platform"))
@@ -234,10 +233,10 @@ test("a complete streamed answer persists once, survives reload, and cannot stre
   );
   assert.equal(saved.answers.length, 1);
   assert.equal(saved.answers[0].generation, "g-0042");
-  await sync.POST(
-    request({ action: "scenario", scenario: "building" }),
-    context("payments-platform"),
-  );
+  await transact((db) => {
+    db.products.find((item) => item.id === "payments-platform")!.scenario =
+      "building";
+  }, true);
   assert.equal(
     (
       await query.POST(
@@ -247,6 +246,24 @@ test("a complete streamed answer persists once, survives reload, and cannot stre
     ).status,
     409,
   );
+});
+
+test("sync accepts retry only and the mock keeps no dismissed state", async () => {
+  for (const action of ["dismiss", "scenario"])
+    assert.equal(
+      (await sync.POST(request({ action }), context("payments-platform")))
+        .status,
+      400,
+    );
+  const status = statusSchema.parse(
+    await (
+      await sync.POST(
+        request({ action: "retry" }),
+        context("payments-platform"),
+      )
+    ).json(),
+  );
+  assert.equal(status.scenario, "current");
 });
 
 test("malformed, empty, and oversized requests fail at the API boundary", async () => {

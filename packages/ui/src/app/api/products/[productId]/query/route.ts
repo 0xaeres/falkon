@@ -1,5 +1,5 @@
 import { apiError, body, type ProductRoute } from "@/lib/api/server";
-import { queryRequestSchema } from "@/lib/contracts";
+import { queryRequestSchema } from "@sbc/contracts";
 import { makeAnswer, makeStatus } from "@/lib/mock/fixtures";
 import { findProduct, findThread, MockError, transact } from "@/lib/mock/store";
 import { setTimeout } from "node:timers/promises";

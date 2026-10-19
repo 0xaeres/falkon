@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Check, Copy, ExternalLink, PanelRightClose } from "lucide-react";
-import type { Answer, Evidence } from "@/lib/contracts";
+import type { Answer, Evidence } from "@sbc/contracts";
 import { Button } from "@/components/ui/primitives";
 
 function CodeLine({ line }: { line: string }) {

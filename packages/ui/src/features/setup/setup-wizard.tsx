@@ -5,15 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR, { useSWRConfig } from "swr";
-import {
-  AppWindow,
-  Check,
-  Clock,
-  ExternalLink,
-  Info,
-  KeyRound,
-  LockKeyhole,
-} from "lucide-react";
+import { Check, Clock, Info, LockKeyhole } from "lucide-react";
 import { Logo, ProviderLogo } from "@/components/ui/brand";
 import {
   Alert,
@@ -23,7 +15,7 @@ import {
   LoadingMark,
 } from "@/components/ui/primitives";
 import { api, keys } from "@/lib/api/client";
-import type { Product, Provider } from "@/lib/contracts";
+import type { Product, Provider } from "@sbc/contracts";
 const RepositoryPicker = dynamic(() => import("./repository-picker"), {
   loading: () => <LoadingMark label="Loading repository picker" />,
 });
@@ -44,24 +36,6 @@ const providers: {
     name: "GitHub Enterprise",
     description: "Self-hosted",
     host: "https://github.acme.internal",
-  },
-  {
-    id: "gitlab",
-    name: "GitLab",
-    description: "Cloud or self-managed",
-    host: "https://gitlab.com",
-  },
-  {
-    id: "bitbucket",
-    name: "Bitbucket",
-    description: "Cloud or Data Center",
-    host: "https://bitbucket.org",
-  },
-  {
-    id: "azuredevops",
-    name: "Azure DevOps",
-    description: "Services or Server",
-    host: "https://dev.azure.com/acme",
   },
 ];
 const steps = ["Connect", "Name", "Repositories", "Sources", "Queue"];
@@ -117,11 +91,10 @@ function Wizard({ edit }: { edit?: Product }) {
   const [host, setHost] = useState(
     edit ? `https://${edit.host}` : "https://github.acme.internal",
   );
-  const [method, setMethod] = useState<"app" | "token">("app");
   const [token, setToken] = useState("");
   const [name, setName] = useState(edit?.name ?? "");
   const [connection, setConnection] = useState(
-    edit ? { host: edit.host } : null,
+    edit ? { id: "existing", host: edit.host } : null,
   );
   const [selected, setSelected] = useState<Record<string, string>>(
     edit
@@ -155,10 +128,9 @@ function Wizard({ edit }: { edit?: Product }) {
     ),
   ];
   const picked = repositories.filter((repo) => selected[repo.id]);
-  const github = provider === "github" || provider === "github-enterprise";
   const disabled =
     busy ||
-    (step === 0 && method === "token" && !token) ||
+    (step === 0 && !token) ||
     (step === 1 && (!id || !name.trim() || !available || !products)) ||
     (step === 2 && (!picked.length || !!repoError || !catalog));
   function nextStep(value: number) {
@@ -175,7 +147,7 @@ function Wizard({ edit }: { edit?: Product }) {
         const connected = await api.connect({
           provider,
           host,
-          method: github ? method : "token",
+          method: "token",
           token,
         });
         setConnection(connected);
@@ -200,6 +172,8 @@ function Wizard({ edit }: { edit?: Product }) {
             name: name.trim(),
             provider,
             host: connection?.host ?? new URL(host).host,
+            // ponytail: edits keep the Product's connection; the engine ignores this id until S20 defines edit semantics.
+            connectionId: connection?.id ?? "existing",
             repositories: picked.map((repo) => ({
               id: repo.id,
               branch: selected[repo.id],
@@ -292,11 +266,6 @@ function Wizard({ edit }: { edit?: Product }) {
                         onClick={() => {
                           setProvider(item.id);
                           setHost(item.host);
-                          if (
-                            item.id !== "github" &&
-                            item.id !== "github-enterprise"
-                          )
-                            setMethod("token");
                           setError("");
                         }}
                       >
@@ -321,50 +290,11 @@ function Wizard({ edit }: { edit?: Product }) {
                   </div>
                   <fieldset className="connection-method">
                     <legend>Connect with</legend>
-                    {github && (
-                      <div className="split">
-                        <button
-                          type="button"
-                          className={`opt ${method === "app" ? "on" : ""}`}
-                          aria-pressed={method === "app"}
-                          onClick={() => {
-                            setMethod("app");
-                            setError("");
-                          }}
-                        >
-                          <strong>
-                            <AppWindow size={16} />
-                            GitHub App <Badge tone="blue">Recommended</Badge>
-                          </strong>
-                          <p>
-                            Install on the organizations you choose. Read-only
-                            access, and webhooks keep context current.
-                          </p>
-                        </button>
-                        <button
-                          type="button"
-                          className={`opt ${method === "token" ? "on" : ""}`}
-                          aria-pressed={method === "token"}
-                          onClick={() => {
-                            setMethod("token");
-                            setError("");
-                          }}
-                        >
-                          <strong>
-                            <KeyRound size={16} />
-                            Personal access token
-                          </strong>
-                          <p>
-                            Paste a token with <code>repo</code> and{" "}
-                            <code>read:org</code>. Falkon checks it for changes
-                            on a schedule.
-                          </p>
-                        </button>
-                      </div>
-                    )}
-                    {method === "token" && (
+                    {
                       <div className="field token-field">
-                        <label htmlFor="demo-token">Demo token</label>
+                        <label htmlFor="demo-token">
+                          Personal access token
+                        </label>
                         <input
                           className={`input ${error ? "err" : ""}`}
                           id="demo-token"
@@ -383,7 +313,7 @@ function Wizard({ edit }: { edit?: Product }) {
                           needed or stored.
                         </p>
                       </div>
-                    )}
+                    }
                   </fieldset>
                 </>
               )}
@@ -432,8 +362,7 @@ function Wizard({ edit }: { edit?: Product }) {
                     <div className="connected input">
                       <ProviderLogo provider={provider} size={14} />
                       <span>
-                        Falkon {method === "app" ? "App" : "demo connection"} on{" "}
-                        <strong>{connection?.host}</strong>
+                        Token connection on <strong>{connection?.host}</strong>
                       </span>
                       <Badge tone="green">
                         <Check size={12} />
@@ -517,12 +446,7 @@ function Wizard({ edit }: { edit?: Product }) {
                   <dd className="review-repos">
                     {picked.map((repo) => (
                       <div key={repo.id}>
-                        <span>
-                          {repo.name}{" "}
-                          {!repo.structural && (
-                            <Badge tone="amber">Text only</Badge>
-                          )}
-                        </span>
+                        <span>{repo.name} </span>
                         <span className="mono">
                           {selected[repo.id]} · {repo.revision}
                         </span>
@@ -592,24 +516,13 @@ function Wizard({ edit }: { edit?: Product }) {
                 busy={busy}
                 disabled={disabled}
               >
-                {step === 0 ? (
-                  method === "app" ? (
-                    <>
-                      Install GitHub App
-                      <ExternalLink size={16} />
-                    </>
-                  ) : (
-                    "Check connection"
-                  )
-                ) : step === 4 ? (
-                  edit ? (
-                    "Queue replacement"
-                  ) : (
-                    "Queue ingestion"
-                  )
-                ) : (
-                  "Continue"
-                )}
+                {step === 0
+                  ? "Check connection"
+                  : step === 4
+                    ? edit
+                      ? "Queue replacement"
+                      : "Queue ingestion"
+                    : "Continue"}
               </Button>
             </footer>
           </form>

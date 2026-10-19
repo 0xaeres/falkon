@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { Provider } from "@/lib/contracts";
+import type { Provider } from "@sbc/contracts";
 export function Mark({ size = 24 }: { size?: number }) {
   return (
     <svg

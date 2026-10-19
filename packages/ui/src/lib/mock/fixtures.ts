@@ -4,56 +4,53 @@ import type {
   Product,
   Repository,
   Status,
-} from "../contracts";
+} from "@sbc/contracts";
+
+// Fixed offsets from startup keep the mock's ISO timestamps plausible without a clock in tests.
+const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
 
 export const repositories: Repository[] = [
   {
     id: "payments-api",
     name: "payments-api",
     language: "TypeScript",
-    structural: true,
     revision: "3f2a9c1",
-    updated: "12 min ago",
+    updated: ago(720000),
   },
   {
     id: "ledger-service",
     name: "ledger-service",
     language: "Java",
-    structural: true,
     revision: "a81e07d",
-    updated: "2 h ago",
+    updated: ago(7200000),
   },
   {
     id: "checkout-web",
     name: "checkout-web",
     language: "TypeScript",
-    structural: true,
     revision: "c09b44e",
-    updated: "yesterday",
+    updated: ago(108000000),
   },
   {
     id: "payments-infra",
     name: "payments-infra",
     language: "HCL",
-    structural: false,
     revision: "5d7713a",
-    updated: "3 days ago",
+    updated: ago(259200000),
   },
   {
     id: "fraud-rules",
     name: "fraud-rules",
     language: "Java",
-    structural: true,
     revision: "e44f120",
-    updated: "5 days ago",
+    updated: ago(432000000),
   },
   {
     id: "payments-docs",
     name: "payments-docs",
     language: "Markdown",
-    structural: false,
     revision: "91aa3b0",
-    updated: "2 weeks ago",
+    updated: ago(1209600000),
   },
 ].map((repo) => ({
   ...repo,
@@ -73,7 +70,6 @@ export const seedProducts: Product[] = [
     activeGeneration: "g-0042",
     scenario: "partly-behind",
     queuedAt: null,
-    dismissed: false,
   },
   {
     id: "identity-services",
@@ -93,7 +89,6 @@ export const seedProducts: Product[] = [
     activeGeneration: "g-0042",
     scenario: "current",
     queuedAt: null,
-    dismissed: false,
   },
   {
     id: "storefront",
@@ -113,7 +108,6 @@ export const seedProducts: Product[] = [
     activeGeneration: "g-0042",
     scenario: "updating",
     queuedAt: null,
-    dismissed: false,
   },
 ];
 
@@ -179,14 +173,6 @@ export function makeStatus(product: Product): Status {
       : scenario === "partly-behind"
         ? "failed"
         : "current",
-    overlay: first
-      ? "waiting"
-      : scenario === "overlay-unavailable"
-        ? "unavailable"
-        : updating
-          ? "catching-up"
-          : "current",
-    overlayPercent: first ? 0 : updating ? 92 : 100,
     gaps:
       product.id === "payments-platform"
         ? [

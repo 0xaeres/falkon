@@ -1,5 +1,5 @@
 import { body, endpoint } from "@/lib/api/server";
-import { setupRequestSchema } from "@/lib/contracts";
+import { setupRequestSchema } from "@sbc/contracts";
 import { repositories } from "@/lib/mock/fixtures";
 import { MockError, transact } from "@/lib/mock/store";
 
@@ -38,7 +38,6 @@ export async function POST(request: Request) {
         activeGeneration: null,
         scenario: "building" as const,
         queuedAt: Date.now(),
-        dismissed: false,
       };
       db.products.push(product);
       return product;

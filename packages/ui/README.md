@@ -1,23 +1,23 @@
 # Falkon UI
 
-A separate Next.js app implementing the approved Falkon Product setup, status dashboard, and evidence-backed chat. Everything served by the local API is synthetic. No real code host, identity provider, or backend is connected.
+The Next.js app (`@sbc/ui`, a workspace package) implementing the approved Falkon Product setup, status dashboard, and evidence-backed chat. Everything served by the local API is synthetic. No real code host, identity provider, or backend is connected.
 
 ## Run
 
 ```sh
-npm install
-npm run dev -- --hostname 127.0.0.1 --port 4311
+pnpm install  # from the repository root
+pnpm --filter @sbc/ui dev --hostname 127.0.0.1 --port 4311
 ```
 
 Open http://127.0.0.1:4311. The default page is the Payments Platform status view. Open Chat and select “Refund write path” to see the approved grounded-answer composition. “New thread” starts an empty conversation. `/setup` starts the five-step wizard.
 
 ```sh
-npm run typecheck
-npm run lint
-npm run format:check
-npm test
-npm run build
-npm start -- --hostname 127.0.0.1 --port 4311
+pnpm --filter @sbc/ui typecheck
+pnpm --filter @sbc/ui lint
+pnpm --filter @sbc/ui format:check
+pnpm --filter @sbc/ui test
+pnpm --filter @sbc/ui build
+pnpm --filter @sbc/ui start --hostname 127.0.0.1 --port 4311
 ```
 
 Tests run against a temporary store, never the app's demo data. `.data/mock.json` holds the local mock Products and threads and is ignored by Git. `MOCK_DATA_DIR` overrides its directory. It uses atomic file replacement and process-local write serialization; replace it with a transactional store before running multiple server processes. Deleting this app's local demo store resets it to the supplied fixtures.
@@ -30,7 +30,7 @@ Tests run against a temporary store, never the app's demo data. `.data/mock.json
 - `src/features/chat`: conversation, stream handling, and independently loaded evidence panel.
 - `src/components/ui`: shared controls and approved brand assets.
 - `src/components/layout`: persistent workspace shell, navigation, Product context, and mobile drawer.
-- `src/lib/contracts.ts`: runtime Zod contracts and inferred TypeScript types.
+- `@sbc/contracts` (`packages/contracts`): runtime Zod contracts and inferred TypeScript types, shared with the engine.
 - `src/lib/api/client.ts`: endpoint paths, typed HTTP client, timeout/error handling, and NDJSON stream decoder.
 - `src/lib/mock`: server-only persistent store and deterministic source/answer fixtures.
 - `tests`: runnable checks for request validation, Product isolation, citation provenance, publication state, concurrent writes, streamed-answer persistence, and workspace route rendering with an empty client cache.
@@ -76,6 +76,6 @@ The layout preserves the approved 240px sidebar / 56px rail, chat evidence pane,
 
 ## Design authority
 
-Original approved galleries and generator: `/Users/aeres/Desktop/projects/falkon/.impeccable/mocks/`. The locked surface briefs are copied under `.impeccable/surfaces/`. Implementation tokens are in `src/app/globals.css`; system documentation is in `DESIGN.md`.
+The locked surface briefs are copied under `.impeccable/surfaces/`. Implementation tokens are in `src/app/globals.css`; system documentation is in `DESIGN.md`.
 
 Tracked in https://github.com/0xaeres/nexus-v2/issues/24.

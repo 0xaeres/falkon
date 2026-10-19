@@ -1,5 +1,5 @@
 import { body, endpoint, type ProductRoute } from "@/lib/api/server";
-import { setupRequestSchema } from "@/lib/contracts";
+import { setupRequestSchema } from "@sbc/contracts";
 import { makeStatus, repositories } from "@/lib/mock/fixtures";
 import { findProduct, MockError, transact } from "@/lib/mock/store";
 export async function GET(_request: Request, context: ProductRoute) {
@@ -30,7 +30,6 @@ export async function PATCH(request: Request, context: ProductRoute) {
         activeGeneration,
         scenario: activeGeneration ? "updating" : "building",
         queuedAt: Date.now(),
-        dismissed: false,
       });
       return product;
     }, true);

@@ -37,7 +37,7 @@ Every answer is scoped to one Product and backed by citations to exact source ex
 - Company-internal tool behind Active Directory group access. A request targets one `productId`; the product registry, not the caller, decides which repositories belong to it.
 - Ingestion covers repository-resident material at pinned revisions. Git history, pull-request metadata, and reviewer suggestions are deferred.
 - The architecture record makes the evidence packet (no Falkon-generated prose) the core contract; prose is an optional human-facing layer. The UI's chat is that human layer.
-- Domain terms are defined in [CONTEXT.md](/Users/aeres/Desktop/projects/falkon/CONTEXT.md) (Product, Evidence Generation, Revision Manifest, Grounded answer, Abstention, Evidence packet, Semantic prediction, and others). The UI uses them.
+- Domain terms are defined in [CONTEXT.md](../../CONTEXT.md) (Product, Evidence Generation, Revision Manifest, Grounded answer, Abstention, Evidence packet, Semantic prediction, and others). The UI uses them.
 
 ## Capabilities and Constraints
 
@@ -55,17 +55,17 @@ Every answer is scoped to one Product and backed by citations to exact source ex
 
 ## Brand Commitments
 
-- The product name is **Falkon**. Existing docs (`CONTEXT.md`, the architecture record) still say "Falcon"; the UI and logo use Falkon.
-- The Falkon logo is approved and locked (2026-10-11): three swept bars forming an F and a stooping wing, with a Geist Semibold wordmark. Approved source assets and usage: [brand/](/Users/aeres/Desktop/projects/falkon/brand). Shipping SVG assets are in `public/brand/`.
+- The product name is **Falkon**.
+- The Falkon logo is approved and locked (2026-10-11): three swept bars forming an F and a stooping wing, with a Geist Semibold wordmark. Shipping SVG assets are in `public/brand/`.
 - Standing visual preference (user choice, 2026-10-11): every Falkon surface, including the logo, follows the developer-tool category standard, executed at full craft without irony. Quality bar: Vercel, Linear, and Sourcegraph/Greptile.
 - Third-party sources (GitHub, GitLab, Bitbucket, Azure DevOps, Jira, Confluence) appear with their proper brand logos.
 
 ## Evidence on Hand
 
-- Architecture: [single architecture record](/Users/aeres/Desktop/projects/falkon/docs/adr/0001-falcon-architecture.md). Delivery spec: [MVP spec](/Users/aeres/Desktop/projects/falkon/.scratch/enterprise-context-engine-mvp/spec.md).
-- Glossary: [CONTEXT.md](/Users/aeres/Desktop/projects/falkon/CONTEXT.md).
+- Architecture: [single architecture record](../../docs/adr/0001-falkon-architecture.md). Delivery spec: [MVP spec](../../.scratch/falkon-mvp/spec.md).
+- Glossary: [CONTEXT.md](../../CONTEXT.md).
 - Local synthetic UI exists in this app. Setup, status, chat, and settings are implemented under `src/features/`; routes are under `src/app/`. Synthetic fixtures and state live in `src/lib/mock/`; local HTTP handlers are under `src/app/api/`. No real code host, identity provider, or Falkon backend is connected.
-- Locked design source: [mock generator](/Users/aeres/Desktop/projects/falkon/.impeccable/mocks/build.py), [setup gallery](/Users/aeres/Desktop/projects/falkon/.impeccable/mocks/setup/index.html), [status gallery](/Users/aeres/Desktop/projects/falkon/.impeccable/mocks/status/index.html), and [chat gallery](/Users/aeres/Desktop/projects/falkon/.impeccable/mocks/chat/index.html). Copied direction contracts are in `.impeccable/surfaces/`; implementation review evidence is in `.impeccable/review/`.
+- Copied direction contracts are in `.impeccable/surfaces/`; implementation review evidence is in `.impeccable/review/`.
 - No customer research or usage data has been established. Synthetic demo data is not customer evidence.
 
 ## Product Principles

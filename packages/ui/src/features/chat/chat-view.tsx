@@ -24,7 +24,7 @@ import {
   LoadingMark,
 } from "@/components/ui/primitives";
 import { api, keys } from "@/lib/api/client";
-import type { Answer } from "@/lib/contracts";
+import type { Answer } from "@sbc/contracts";
 const EvidencePanel = dynamic(() => import("./evidence-panel"), {
   loading: () => <LoadingMark label="Loading evidence" />,
 });

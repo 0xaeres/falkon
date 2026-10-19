@@ -17,6 +17,8 @@ config.json ──► backend (BullMQ worker) ──► bare git clones + zoekt 
 | `packages/shared` | config schema, query parser + IR, gRPC Zoekt client, git readers, access scopes, **tool registry** (one definition used by MCP and Ask) |
 | `packages/backend` | syncs config `connections` (GitHub, generic git URL, `file://` in place), clone/fetch (bare), `zoekt-git-index`, reindex/resync on `settings` schedules and on config change, orphan cleanup, search contexts |
 | `packages/web` | search UI, repos page, Ask page, REST API |
+| `packages/contracts` | Zod 4 schemas shared by the engine and the Falkon UI |
+| `packages/ui` | Falkon UI (Next 16); runs on mock data until the engine endpoints land |
 
 ## Run (Docker)
 
@@ -26,6 +28,8 @@ docker compose up --build
 ```
 
 UI: http://localhost:3000
+
+Falkon UI (compose service `ui`, host loopback only): http://127.0.0.1:3100. Locally: `pnpm --filter @sbc/ui dev --hostname 127.0.0.1 --port 3100`.
 
 ## Run (local dev)
 

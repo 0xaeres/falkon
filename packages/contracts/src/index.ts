@@ -3,15 +3,8 @@ import { z } from "zod";
 export const productIdSchema = z
   .string()
   .min(1)
-  .max(64)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-export const providerSchema = z.enum([
-  "github",
-  "github-enterprise",
-  "gitlab",
-  "bitbucket",
-  "azuredevops",
-]);
+  .regex(/^[a-z0-9][a-z0-9-]{0,62}$/); // engine slug rule: isProductSlug in packages/backend/src/productResolve.ts
+export const providerSchema = z.enum(["github", "github-enterprise"]);
 export const scenarioSchema = z.enum([
   "partly-behind",
   "current",
@@ -19,16 +12,14 @@ export const scenarioSchema = z.enum([
   "building",
   "behind",
   "failed",
-  "overlay-unavailable",
 ]);
 export const repositorySchema = z.object({
   id: z.string(),
   name: z.string(),
   organization: z.string(),
   language: z.string(),
-  structural: z.boolean(),
   revision: z.string(),
-  updated: z.string(),
+  updated: z.iso.datetime(),
   branches: z.array(z.string()),
   branch: z.string(),
 });
@@ -42,7 +33,6 @@ export const productSchema = z.object({
   activeGeneration: z.string().nullable(),
   scenario: scenarioSchema,
   queuedAt: z.number().nullable(),
-  dismissed: z.boolean(),
 });
 export const gapSchema = z.object({
   count: z.number(),
@@ -60,8 +50,6 @@ export const statusSchema = z.object({
   stage: z.number().min(0).max(4),
   progress: z.number(),
   sync: z.enum(["current", "failed", "pinned"]),
-  overlay: z.enum(["current", "catching-up", "waiting", "unavailable"]),
-  overlayPercent: z.number(),
   gaps: z.array(gapSchema),
   scenario: scenarioSchema,
 });
@@ -121,7 +109,7 @@ export const threadSchema = z.object({
 export const threadSummarySchema = threadSchema.omit({ answers: true });
 export const connectionRequestSchema = z.object({
   provider: providerSchema,
-  method: z.enum(["app", "token"]),
+  method: z.literal("token"),
   host: z
     .string()
     .url()
@@ -130,7 +118,7 @@ export const connectionRequestSchema = z.object({
       (value) => new URL(value).protocol === "https:",
       "Use an HTTPS server URL.",
     ),
-  token: z.string().max(200).optional(),
+  token: z.string().min(1).max(200),
 });
 export const connectionSchema = z.object({
   id: z.string(),
@@ -142,15 +130,28 @@ export const setupRequestSchema = z.object({
   name: z.string().trim().min(1).max(80),
   provider: providerSchema,
   host: z.string().min(1).max(200),
+  connectionId: z.string().min(1).max(100),
   repositories: z
     .array(z.object({ id: z.string(), branch: z.string().min(1).max(100) }))
     .min(1)
     .max(100),
 });
+// Persisted chat parts (CONTEXT.md Evidence): data-evidence is one Evidence, data-answer the answer shape without ids or evidence.
+export const evidencePartSchema = evidenceSchema;
+export const answerPartSchema = answerSchema.pick({
+  kind: true,
+  generation: true,
+  paragraphs: true,
+  gaps: true,
+  partialReasons: true,
+  abstention: true,
+  suggestions: true,
+});
 export const queryRequestSchema = z.object({
   threadId: z.string().min(1).max(100),
   question: z.string().trim().min(1).max(4000),
 });
+export const syncRequestSchema = z.object({ action: z.literal("retry") });
 export const streamEventSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("start"), answer: answerSchema }),
   z.object({ type: z.literal("delta"), text: z.string() }),

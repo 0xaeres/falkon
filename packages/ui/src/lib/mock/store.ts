@@ -7,7 +7,7 @@ import {
   threadSchema,
   type Product,
   type Thread,
-} from "../contracts";
+} from "@sbc/contracts";
 import { makeAnswer, seedProducts } from "./fixtures";
 
 const databaseSchema = z.object({

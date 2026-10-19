@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { Check, ChevronDown, GitBranch, Search } from "lucide-react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
-import type { Repository } from "@/lib/contracts";
+import type { Repository } from "@sbc/contracts";
 import { Select } from "@/components/ui/select";
-import { Badge } from "@/components/ui/primitives";
+import { relativeTime } from "@/lib/format";
 
 export default function RepositoryPicker({
   repositories,
@@ -116,14 +116,9 @@ export default function RepositoryPicker({
                 </td>
                 <td className="repository-name">
                   <label htmlFor={`repository-${repo.id}`}>
-                    <strong>
-                      {repo.name}
-                      {!repo.structural && (
-                        <Badge tone="amber">Text only</Badge>
-                      )}
-                    </strong>
+                    <strong>{repo.name}</strong>
                     <small className="desktop-repo-meta">
-                      Updated {repo.updated}
+                      Updated {relativeTime(repo.updated)}
                     </small>
                     <small className="mobile-repo-meta">
                       {repo.language} · {repo.revision}
@@ -215,9 +210,7 @@ export default function RepositoryPicker({
             Showing {visible.length} of {repositories.length}
           </span>
           <span>
-            <strong>{selectedRepos.length} selected</strong> ·{" "}
-            {selectedRepos.filter((repo) => repo.structural).length} with
-            structural extraction
+            <strong>{selectedRepos.length} selected</strong>
           </span>
         </div>
       </div>

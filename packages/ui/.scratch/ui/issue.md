@@ -1,5 +1,5 @@
 ## Goal
-Build the approved Falkon setup, status, and chat UI as a separate Next.js application in `/Users/aeres/Desktop/projects/falkon-ui`.
+Build the approved Falkon setup, status, and chat UI as a separate Next.js application in `packages/ui`.
 
 ## Evidence and scope
 There is no UI implementation in the backend checkout. Approved compositions and states live in `.impeccable/mocks/setup/index.html`, `.impeccable/mocks/status/index.html`, `.impeccable/mocks/chat/index.html`, and their generator `build.py`. The three locked surface briefs govern the UI. Existing issues cover backend work, not this UI.
