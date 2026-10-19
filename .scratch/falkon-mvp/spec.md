@@ -369,3 +369,15 @@ The loop may decide alone: test layout, module layout in `packages/api` and `pac
 Gate 1 approved by the human on 2026-10-20: cycle 5 plan as written, human asleep, loop runs autonomously to gate 2.
 
 **S20 brief addition (from S19 review):** the wizard's edit mode sends `connectionId: "existing"` (placeholder, ponytail comment in `setup-wizard.tsx`). S20 must either make `connectionId` optional on edit or define what an edit sends; the engine ignores a placeholder id.
+
+## Cycle 5 results (2026-10-20, waiting at gate 2)
+
+| Slice | Outcome | Evidence |
+|---|---|---|
+| S19 contracts + UI import | kept (`b1d57bd`) | Subtree import with history; one fix round (stale UI copy, typed cast); both Next majors build; one Zod major; contract/golden diff empty. Marker helper moved to S21. |
+| S25 recipe + impact set | code half kept (`e371ceb`); paid runs NOT done | 11-question `o3-impact` set, `clone-tools-recipe` arm, recipe gated on impact-style queries (UI Ask) / `MCP_IMPACT_RECIPE=on` (MCP). Non-impact bytes hash-pinned. Eval image could not be built (Docker base-image pull hangs). |
+| S20a credentials, connections, repo search | kept (`37b2395`) | AES-256-GCM store, canary test, route allowlist test, D33 sync-path edits (api connections survive config sync). |
+| S20b products, status, sync | kept (`57e6bef`) | `/ui/products` routes, derived status, retry markers, union of repos per connection, UI proxies. |
+| S21 chat transport | kept (`ce97ee4`) | `useChat` over the AI SDK stream, `data-evidence`/`data-answer` parts, per-Product threads, NDJSON retired; 103/104 refs resolved on 10 real answers; one fix round (orphan user turn). |
+
+Tip verification (install, typecheck, all tests, contract and golden diff empty) green at `ce97ee4`. Not verified anywhere: Docker builds of the image and `ui` service, ops-smoke, `db push` on a real Postgres, a live GitHub token run through the wizard, a live model turn, a browser run of the chat UI.
