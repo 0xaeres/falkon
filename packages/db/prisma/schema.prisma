@@ -122,6 +122,25 @@ model SearchContext {
   updatedAt   DateTime @updatedAt
 }
 
+enum ProductSource {
+  config // imported from config.json `contexts` by the backend sync; read-only through the admin API
+  api // created through the admin API; config import never touches it
+}
+
+/// A Product: a named repository set served at /mcp/<slug>. `definition` has the shape of a config context
+/// (include/exclude globs, connections, topics); `repoNames` is its resolution against Repo rows.
+model Product {
+  id          Int           @id @default(autoincrement())
+  slug        String        @unique // ^[a-z0-9][a-z0-9-]{0,62}$, immutable
+  name        String
+  description String?
+  source      ProductSource
+  definition  Json
+  repoNames   String[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
 enum ChatVisibility {
   PRIVATE
   PUBLIC
