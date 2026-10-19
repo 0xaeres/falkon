@@ -66,3 +66,16 @@ Search pagination is a named non-goal of this baseline except where the route su
 - Docker, real golden captures, Ask evaluations and memory measurements were not run. No environment file was read.
 
 Graph use: project lookup, transport symbol search and path coverage check against the parent checkout index. The new worktree test/runner paths are missing from that index; current source was read directly, including route, transport and tool implementations. No graph absence claim was used.
+
+## Ask-quality check, cycle 3 (S5), 2026-10-19
+
+Stack: current engine (main at 2ea50f2 plus S3/S5, no engine change), 42 O3 repositories as generic git connections, no auth. Agent: headless `claude` CLI per `tests/eval`. Floor: the recorded reference v6 runs (`.scratch/falkon-mvp/eval-floor/`), reproduced exactly from the stored runs (dev 0.9726 n=48, hidden 0.9229 n=32). Pilot: 10 runs, all stop rules passed. Full runs: 160 runs, zero failed, zero malformed, zero leaked, zero denied-tool attempts. Spend $7.54 of the $15 cap. Raw runs: `eval-results/runs-cycle3.tar.gz`; reports: `eval-results/report-{dev,hidden}.md`.
+
+| Arm | Split | Recall (arm / floor) | Difference [95% CI] | Gate (lower bound >= -0.05) | Precision diff | Cost per run |
+|---|---|---|---|---|---|---|
+| clone-tools | dev | 0.950 / 0.973 | -0.023 [-0.076, 0.021] | FAIL | -0.033 | $0.042 |
+| clone-tools | hidden | 0.926 / 0.923 | +0.003 [-0.094, 0.093] | FAIL | +0.027 | $0.042 |
+| clone-research | dev | 0.905 / 0.973 | -0.068 [-0.122, -0.019] | FAIL | -0.107 | $0.053 |
+| clone-research | hidden | 0.943 / 0.923 | +0.020 [-0.062, 0.103] | FAIL | -0.025 | $0.052 |
+
+Reading: the gate as written fails all four rows. For clone-tools the means are within noise of the floor (dev -0.023, hidden +0.003) and match the earlier 0.967/0.948 clone measurement; the failure is the interval width at n=48 and n=32 (half-width about 0.05 to 0.09), which a point estimate near zero cannot clear. For clone-research dev the failure is real: the arm is worse on dev (CI excludes zero) with lower precision and 27% higher cost; on hidden it is not distinguishable from the floor. `research_codebase` was called first in 80 of 80 research runs. This is a rule miss, reported to the human at gate 2; nothing was rerun or retuned.
