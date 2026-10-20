@@ -10,7 +10,7 @@ import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
 
 // An AUTH_MODE other than none or apiKey throws here: the service refuses to start.
-// A set ADMIN_TOKEN shorter than 32 characters throws here too, before anything listens.
+// A set ADMIN_TOKEN shorter than 32 characters throws here too, and the admin token file is created, before anything listens.
 adminToken(process.env);
 const policy = accessPolicyFromEnv(process.env);
 const registry = new PrismaProductRegistry(prisma);

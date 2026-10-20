@@ -1,11 +1,31 @@
 import "server-only";
+import { readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { productSchema, type Product } from "@sbc/contracts";
 
 /** True when the UI talks to the engine; unset, the routes keep serving the local mock. */
 export const useEngine = () => !!process.env.ENGINE_URL;
 
+let cached: { key: string; token: string } | undefined;
 /**
- * Forwards one call to the engine's admin listener. ENGINE_ADMIN_TOKEN is read here, in server code only, and never
+ * ENGINE_ADMIN_TOKEN wins; else the api's `${DATA_DIR||/data}/secrets/admin.token`, read per request and re-read when its
+ * mtime or inode changes (read-only: the ui never generates it). Empty when neither exists.
+ */
+function adminToken() {
+  if (process.env.ENGINE_ADMIN_TOKEN) return process.env.ENGINE_ADMIN_TOKEN;
+  const file = join(process.env.DATA_DIR || "/data", "secrets", "admin.token");
+  try {
+    const st = statSync(file);
+    const key = `${file}:${st.mtimeMs}:${st.ino}:${st.size}`;
+    if (cached?.key !== key) cached = { key, token: readFileSync(file, "utf8").trim() };
+    return cached.token;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Forwards one call to the engine's admin listener. The admin token is read here, in server code only, and never
  * reaches the browser. Engine errors become the UI's `{ error: string }` using the engine's fixed message.
  */
 export async function forward(
@@ -17,7 +37,7 @@ export async function forward(
     res = await fetch(`${process.env.ENGINE_URL}${path}`, {
       method: init.method ?? "GET",
       headers: {
-        authorization: `Bearer ${process.env.ENGINE_ADMIN_TOKEN ?? ""}`,
+        authorization: `Bearer ${adminToken()}`,
         "content-type": "application/json",
       },
       ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
