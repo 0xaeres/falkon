@@ -1,8 +1,8 @@
 import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Put, Query, Req } from "@nestjs/common";
 import type { IncomingMessage } from "node:http";
-import { appConnectionRequestSchema, connectionDtoSchema, repositoriesQuery, type Repository, tokenConnectionRequestSchema } from "@sbc/contracts";
+import { connectionDtoSchema, connectionRequestSchema, repositoriesQuery, type Repository } from "@sbc/contracts";
 import type { PrismaClient } from "@sbc/db";
-import { clearInstallationTokens, githubApiBase, GithubAppError, installationRepositories, listInstallations, newCredentialId, openCredential, seal, sealAppSecret, tokenFromSecret, type AppSecret } from "@sbc/shared";
+import { newCredentialId, openCredential, seal } from "@sbc/shared";
 import { z } from "zod";
 import { body, error } from "./request";
 
@@ -18,8 +18,8 @@ interface HostRepo {
 export interface CodeHost {
   /** `GET /user`; resolves to the scopes in `x-oauth-scopes`. Rejects with CodeHostError("invalid") for a rejected token. */
   check(host: string, token: string): Promise<{ scopes: string[] }>;
-  /** `GET /user/repos?per_page=100&sort=pushed` (`GET /installation/repositories` for kind "app"), at most 3 pages (300 repositories). */
-  repos(host: string, token: string, kind?: "token" | "app"): Promise<HostRepo[]>;
+  /** `GET /user/repos?per_page=100&sort=pushed`, at most 3 pages (300 repositories). */
+  repos(host: string, token: string): Promise<HostRepo[]>;
 }
 
 export class CodeHostError extends Error {
@@ -30,7 +30,7 @@ export class CodeHostError extends Error {
 
 const PAGE_SIZE = 100;
 const MAX_PAGES = 3;
-const apiBase = githubApiBase;
+const apiBase = (host: string) => (host === "github.com" ? "https://api.github.com" : `https://${host}/api/v3`);
 
 /** Plain `fetch` rather than Octokit: two GETs do not justify adding @octokit/rest to this package. */
 export function githubCodeHost(fetchImpl: typeof fetch = fetch): CodeHost {
@@ -53,11 +53,7 @@ export function githubCodeHost(fetchImpl: typeof fetch = fetch): CodeHost {
       const res = await get(host, token, "/user");
       return { scopes: (res.headers.get("x-oauth-scopes") ?? "").split(",").map((s) => s.trim()).filter(Boolean) };
     },
-    async repos(host, token, kind) {
-      if (kind === "app")
-        return installationRepositories(host, token, { fetch: fetchImpl }).catch((e) => {
-          throw new CodeHostError(e instanceof GithubAppError ? e.kind : "unavailable");
-        });
+    async repos(host, token) {
       const out: HostRepo[] = [];
       for (let page = 1; page <= MAX_PAGES; page++) {
         const rows = (await (await get(host, token, `/user/repos?per_page=${PAGE_SIZE}&sort=pushed&page=${page}`)).json().catch(() => {
@@ -93,7 +89,7 @@ async function upstream<T>(call: () => Promise<T>): Promise<T> {
   try {
     return await call();
   } catch (e) {
-    throw (e instanceof CodeHostError || e instanceof GithubAppError) && e.kind === "invalid" ? FIXED.INVALID_TOKEN() : FIXED.UPSTREAM_UNAVAILABLE();
+    throw e instanceof CodeHostError && e.kind === "invalid" ? FIXED.INVALID_TOKEN() : FIXED.UPSTREAM_UNAVAILABLE();
   }
 }
 
@@ -110,7 +106,7 @@ const dto = (c: { id: string; host: string; scopes: string[]; createdAt: Date; l
   });
 
 export class ConnectionService {
-  constructor(private readonly db: Db, private readonly host: CodeHost = githubCodeHost(), private readonly fetchImpl: typeof fetch = fetch) {}
+  constructor(private readonly db: Db, private readonly host: CodeHost = githubCodeHost()) {}
 
   /** The api connection whose credential id is `id`; a malformed id is the same 404 as an unknown one. */
   private async find(id: string) {
@@ -119,38 +115,7 @@ export class ConnectionService {
     return { connectionId: row.id, syncError: row.syncError, credential: row.credential };
   }
 
-  /** App connection: one installation. Validated by minting a token and listing the installation's repositories. */
-  private async createApp(input: Extract<z.infer<typeof createBody>, { method: "app" }>) {
-    const url = new URL(input.host);
-    const id = newCredentialId();
-    const secret: AppSecret = { appId: input.appId, privateKey: input.privateKey, installationId: input.installationId };
-    try {
-      const token = await upstream(() => tokenFromSecret({ id, host: url.host, kind: "github-app" }, JSON.stringify(secret), { fetch: this.fetchImpl }));
-      await upstream(() => this.host.repos(url.host, token, "app"));
-    } catch (e) {
-      clearInstallationTokens(id);
-      throw e;
-    }
-    const created = await this.db.connection.create({
-      data: {
-        name: `ui-${id}`,
-        connectionType: "github",
-        source: "api",
-        config: { type: "github", ...(url.host === "github.com" ? {} : { url: url.origin }), repos: [], token: { stored: id } },
-        credential: { create: { id, kind: "github-app", host: url.host, ...sealAppSecret(secret, { id, host: url.host }), scopes: ["app"], lastCheckedAt: new Date() } },
-      },
-      include: { credential: meta },
-    });
-    return dto(created.credential!, null);
-  }
-
-  /** The App's installations; stateless, the key is used for this call only. */
-  async installations(input: z.infer<typeof installationsBody>) {
-    return upstream(() => listInstallations(new URL(input.host).host, input.appId, input.privateKey, { fetch: this.fetchImpl }));
-  }
-
   async create(input: z.infer<typeof createBody>) {
-    if (input.method === "app") return this.createApp(input);
     const url = new URL(input.host);
     const token = input.token.trim();
     const { scopes } = await upstream(() => this.host.check(url.host, token));
@@ -182,7 +147,6 @@ export class ConnectionService {
 
   async rotate(id: string, tokenInput: string) {
     const { credential, syncError } = await this.find(id);
-    if (credential.kind === "github-app") throw FIXED.NOT_FOUND(); // an App credential has no token to rotate
     const token = tokenInput.trim();
     const { scopes } = await upstream(() => this.host.check(credential.host, token));
     return dto(
@@ -198,23 +162,13 @@ export class ConnectionService {
   /** Every repository the connection's token can list (at most 300), with the connection row's id. */
   async listing(id: string): Promise<{ connectionId: number; repos: Repository[] }> {
     const { connectionId, credential } = await this.find(id);
-    let plain: string;
+    let token: string;
     try {
-      plain = openCredential(credential);
+      token = openCredential(credential);
     } catch {
       throw FIXED.DECRYPT_FAILED(); // a key or data problem, not an upstream outage
     }
-    const kind = credential.kind === "github-app" ? "app" : "token";
-    const attempt = async () => this.host.repos(credential.host, await tokenFromSecret(credential, plain, { fetch: this.fetchImpl }), kind);
-    const repos = await upstream(async () => {
-      try {
-        return await attempt();
-      } catch (e) {
-        if (kind !== "app" || !(e instanceof CodeHostError) || e.kind !== "invalid") throw e;
-        clearInstallationTokens(credential.id); // an installation token the host rejected: mint once more
-        return attempt();
-      }
-    });
+    const repos = await upstream(() => this.host.repos(credential.host, token));
     return {
       connectionId,
       repos: repos.map((r) => {
@@ -243,9 +197,8 @@ export class ConnectionService {
 
 // ---- routes ------------------------------------------------------------------------------------------
 
-const createBody = z.discriminatedUnion("method", [tokenConnectionRequestSchema.strict(), appConnectionRequestSchema.strict()]);
-const installationsBody = z.strictObject({ host: appConnectionRequestSchema.shape.host, appId: appConnectionRequestSchema.shape.appId, privateKey: appConnectionRequestSchema.shape.privateKey });
-const tokenBody = z.strictObject({ token: tokenConnectionRequestSchema.shape.token });
+const createBody = connectionRequestSchema.strict();
+const tokenBody = z.strictObject({ token: connectionRequestSchema.shape.token });
 
 @Controller("connections")
 export class ConnectionsController {
@@ -254,12 +207,6 @@ export class ConnectionsController {
   @Post()
   async create(@Req() req: IncomingMessage) {
     return this.connections.create(await body(req, createBody));
-  }
-
-  @Post("app-installations")
-  @HttpCode(200)
-  async installations(@Req() req: IncomingMessage) {
-    return this.connections.installations(await body(req, installationsBody));
   }
 
   @Get()

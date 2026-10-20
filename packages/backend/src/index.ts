@@ -3,7 +3,7 @@ import micromatch from "micromatch";
 import { Queue, Worker } from "bullmq";
 import { Redis } from "ioredis";
 import { prisma, ConnectionSource, RepoKind, RepoStatus, ScanStatus } from "@sbc/db";
-import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, credentialToken, repoGitDir, repoPath, resolveEnvironmentOverrides, setCredentialResolver, type Config } from "@sbc/shared";
+import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, openCredential, repoGitDir, repoPath, resolveEnvironmentOverrides, setCredentialResolver, type Config } from "@sbc/shared";
 import type { RepoMetadata } from "./connectors";
 import { credentialsFor } from "./credentials";
 import { cloneOrFetch, localDefaultBranch, repoStats, sortedRefs, upsertGitConfig } from "./git";
@@ -13,9 +13,8 @@ import { kbSelected, runKnowledgeScan } from "./kb/scan";
 
 const connection = new Redis(env.redisUrl, { maxRetriesPerRequest: null });
 
-// `{ stored }` tokens (source=api connections) come from the Credential table: a plain token, or a minted GitHub App installation token
-// (re-minted after 5 minutes, so a token GitHub revoked stops being served soon without touching the sync path).
-setCredentialResolver(async (id) => credentialToken(await prisma.credential.findUniqueOrThrow({ where: { id } }), { maxAgeMs: 5 * 60_000 }));
+// `{ stored }` tokens (source=api connections) are opened from the Credential table.
+setCredentialResolver(async (id) => openCredential(await prisma.credential.findUniqueOrThrow({ where: { id } })));
 
 let cfg: Config | undefined;
 let settings = DEFAULT_SETTINGS;

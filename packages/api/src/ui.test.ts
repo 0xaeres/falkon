@@ -179,7 +179,7 @@ test("route enumeration: the admin listener has exactly the S20a routes, the six
     "GET /ui/products", "GET /ui/products/:slug", "GET /ui/products/:slug/status",
     "GET /ui/products/:slug/threads", "GET /ui/products/:slug/threads/:id",
     "PATCH /ui/products/:slug",
-    "POST /connections", "POST /connections/app-installations", "POST /products", "POST /ui/products", "POST /ui/products/:slug/sync",
+    "POST /connections", "POST /products", "POST /ui/products", "POST /ui/products/:slug/sync",
     "POST /ui/products/:slug/threads", "POST /ui/products/:slug/threads/:id/messages",
     "PUT /connections/:id/token", "PUT /products/:slug",
   ].sort());

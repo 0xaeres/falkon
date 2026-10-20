@@ -11,4 +11,3 @@ export * from "./access";
 export * as kb from "./kb";
 export * from "./accessPolicy";
 export * from "./credentialStore";
-export * from "./githubApp";
