@@ -385,3 +385,15 @@ Tip verification (install, typecheck, all tests, contract and golden diff empty)
 ## Gate 2 decision, cycle 5 (human, 2026-10-20: approve with notes)
 
 Approved. Notes carried to the next cycle (cycle 5b), in this order: (1) get Docker green (image build, `ui` service), (2) run `scripts/ops-smoke.sh` and a real wizard-to-chat pass with a read-only GitHub token against a live model, (3) run the S25 Haiku pilot and full runs (cap $3) and record the results in `baseline.md`, (4) ADR amended to match D28 (done in this landing, `docs/adr/0001-falkon-architecture.md` 4.3 and summary). Carried non-blocking items: connector-skipped repos stay at "Building"; literal `[n]` in code gets a zero-width space; concurrent turns on one thread overwrite each other; a failed first message leaves an empty thread; `Credential.lastError` is a dead column.
+
+## Cycle 5b results (2026-10-20, branch `loop/falkon-mvp-c5b` from `loop/falkon-mvp-c5`)
+
+| Item | Outcome |
+|---|---|
+| Docker green | Image builds with the UI; both eval stacks and the smoke stack come up. The overnight `golang` pull hang did not recur. |
+| `scripts/ops-smoke.sh` | PASS on every step incl. golden, resync, delete, registry; memory 639.5 MB (ceiling 654 MB, not a gate). The new schema (Credential, Chat.productId, Connection and Product columns) pushed cleanly to a real Postgres. |
+| S25 Haiku pilot and runs | Recorded in `baseline.md` (cycle 5b section): impact set recipe recall 0.955 vs plain 0.780, D25 PASS (n=11); O3 control recall 0.915 vs 0.907, no loss; verdict on the 80-question control withheld only by the open leak false positive. Spend about $0.3. |
+| Live UI-to-engine pass (no GitHub token, no model key) | Products, status, threads, no-model error and bad-token rejection verified over the real stack and in the browser. Three bugs found and fixed with tests: products list 500 for config Products over generic-git repos (bare host), engine-backed product pages 404 (server layout read the mock store), home redirect under `cacheComponents` (runtime ENGINE_URL). |
+| ADR matches D28 | Done at cycle 5 landing. |
+
+Not verified, needs the human's credentials: wizard to a real product with a read-only GitHub token (connection create, repo search, product create, first sync, status building to current), and a real model answer with evidence in chat (needs `models` config and a provider key). Cosmetic leftovers for S13: the no-model error carries a docs link naming the old product; the chat empty state says "mock dataset"; a config Product over generic git shows provider "github-enterprise".
