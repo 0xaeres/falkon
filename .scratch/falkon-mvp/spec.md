@@ -398,7 +398,7 @@ Approved. Notes carried to the next cycle (cycle 5b), in this order: (1) get Doc
 
 Not verified, needs the human's credentials: wizard to a real product with a read-only GitHub token (connection create, repo search, product create, first sync, status building to current), and a real model answer with evidence in chat (needs `models` config and a provider key). Cosmetic leftovers for S13: the no-model error carries a docs link naming the old product; the chat empty state says "mock dataset"; a config Product over generic git shows provider "github-enterprise".
 
-## Cycle 6 plan: GitHub App, admin token (grilled 2026-10-20; gate 1 pending)
+## Cycle 6 plan: GitHub App, admin token (grilled 2026-10-20; gate 1 approved 2026-10-20)
 
 Detail, facts, rejected DeepSeek idea, question log: `.scratch/falkon-mvp/cycle6-auth-models.md`. The earlier "Cycle 6 = core merge and rename, then S11" in the revised map is renumbered to cycle 7 (core merge, S11) and cycle 8 (S13 to S15). Branch `loop/falkon-mvp-c6` from `claude/cycle6-auth-models-29b452` (base main 05fe517). Roles: Claude only; Sonnet builds, reviews, verifies; Haiku mechanical checks; Opus only if a slice is marked hard.
 
@@ -424,3 +424,5 @@ Order: S27 and S28a in parallel (own worktrees), then S28b, then S29. Docker com
 ### Autonomy limits (cycle 6)
 
 May decide alone: file and module layout inside the scopes above, UI copy, JWT/cache internals, the reset script's mechanism, one fix round per slice. Must stop at gate 2 (the cycle is expected to stop there anyway because S27 and S28a are security-sensitive code the human asked for): a non-additive contract or golden change, any change to `tests/contract` or `tests/golden/expected.json`, a new dependency, a sync-path change beyond the resolver hook, a Prisma column or migration, spend, and any push or PR. Budget: 1.5M subagent tokens and 8 hours wall-clock for the cycle (S28a double-weighted); quota is the binding limit.
+
+Gate 1 approved by the human on 2026-10-20: cycle 6 plan as written. Loop runs autonomously to gate 2.
