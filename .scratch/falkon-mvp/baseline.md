@@ -143,3 +143,28 @@ Findings:
 - The research arm is again the weakest (11 wins, 15 losses; mean -0.034): sending the agent through `research_codebase` first still hurts. Its brief needs tuning before it is advertised.
 - The harness reported the pooled verdicts as "withheld" because of one run flagged as a leak in both `clone-tools` and `v6-tools` on question `xrepo-framework-to-chart-25`. The flagged read is the agent opening the tool-result spill file Claude Code itself saves under `~/.claude/projects/-private-tmp-falkon-eval-chart-only/.../tool-results/`, which the sensitive-path rule matches. It is a false positive of the leak rule (it hit the reference arm too); no gold or repository content outside the allowed tree was read. I did not change the rule. With that question excluded (n=78) all three arms pass D25: clone-tools +0.053 [-0.012, 0.124], noinstr +0.035 [-0.040, 0.112], research -0.022 [-0.099, 0.057]. Decision needed from the human: allow-list the agent's own tool-results directory in the leak rule and rerun that one question, or accept the exclusion.
 - Sonnet confirmation was not run (the Haiku result shows no regression to confirm).
+
+
+## Cycle 5b: impact recipe (S25), Haiku (2026-10-20)
+
+Client model claude-haiku-5-5, stacks built from `loop/falkon-mvp-c5b` (recipe stack: `MCP_IMPACT_RECIPE=on`). Spend about $0.3 of the $3 allowed (ledger $2.28 -> about $2.6; the cap flag was raised to 12 only to clear the harness's $1-per-run reservation). Pilot: 12 runs, plain recall 0.875, recipe recall 0.917, 0 leaks, passed the stop rules.
+
+**Impact set `o3-impact` (n=11: dev 6, hidden 5), recipe vs plain tools (`--reference clone-tools`), rule D25:**
+
+| Split | Plain recall | Recipe recall | Difference [95% CI] | Wins / losses / ties |
+|---|---:|---:|---|---|
+| hidden (n=5) | 0.667 | 1.000 | +0.333 [0.033, 0.633] | 3 / 0 / 2 |
+| pooled (n=11) | 0.780 | 0.955 | +0.174 [-0.046, 0.409] | 4 / 1 / 6 |
+
+Precision 0.515 -> 0.647 (+0.132 [-0.101, 0.366]), cost 0.0071 -> 0.0063. D25: PASS (0 failed, 0 malformed, 0 leaked). n=11 is too small for a tight bound; read as direction, not proof. The plain arm already scores 0.78 here, so headroom exists (unlike the O3 stratum).
+
+**O3 control (80 questions, recipe arm vs real v6 on Haiku), checks that the recipe costs nothing elsewhere:**
+
+| Arm | Recall | Difference vs v6 [95% CI] | Wins / losses | Precision diff | Cost |
+|---|---:|---|---|---|---|
+| clone-tools (cycle 4) | 0.907 | +0.050 [-0.014, 0.118] | 12 / 6 | -0.014 [-0.062, 0.036] | 0.0075 |
+| clone-tools-recipe | 0.915 | +0.058 [0.005, 0.119] | 11 / 5 | -0.057 [-0.106, -0.008] | 0.0085 |
+
+Recall holds (recipe 0.915 vs plain 0.907; no loss). Precision falls 0.044 relative to plain (answers cite more spans) and cost rises about $0.001 per run. Both arms report the verdict as **withheld**: one run flagged as leaked in the 80, in the v6 reference too (n 80, leaks 1); this is the open harness false positive (an agent reading the client's own tool-result spill file) already awaiting the human, and the rule is not relaxed. Numbers are otherwise clean (0 failed, 0 malformed).
+
+Reading: the recipe helps impact questions on Haiku, holds recall on the general set and trades some precision. Whether it ships on by default for MCP clients is the human's call (`MCP_IMPACT_RECIPE`; the UI Ask already applies it to impact-style queries).
