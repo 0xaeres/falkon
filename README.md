@@ -62,7 +62,7 @@ Sourcebot v5.1.16 (the last open source release) is under FSL-1.1-ALv2, not MIT:
 
 ## Knowledge base
 
-Generated, citation-backed architecture docs per repo (`knowledgeBase` in `config.json`; off by default). A multi-stage LLM pipeline writes them:
+Generated, citation-backed architecture docs per repo (`knowledgeBase` in `config.json`; on by default, set `enabled: false` to turn it off). It needs the `LLM_*` environment variables: without them scans are skipped, nothing is spent, the backend logs `knowledge base skipped: no model configured` once at start, and no scan is recorded. One scan spends at most `tokenBudget` tokens (default 2,000,000). A repository's first scan logs `kb <repo> first scan estimate ~N tokens (cap M)` before the first model call, where N is the total size of the files in the repo's tree at the head commit divided by 4, capped at `tokenBudget` (an upper bound: agents read part of the tree). A multi-stage LLM pipeline writes them:
 
 | Stage | What it does |
 | --- | --- |

@@ -9,7 +9,7 @@ import { credentialsFor } from "./credentials";
 import { cloneOrFetch, localDefaultBranch, repoStats, sortedRefs, upsertGitConfig } from "./git";
 import { claimIndexRequests, claimSyncRequests, deleteKnowledge, removeOrphans, syncConnection, syncConnectionRows, syncSearchContexts } from "./sync";
 import { indexRepo, removeShards, writeZoektGitConfig } from "./zoekt";
-import { kbSelected, runKnowledgeScan } from "./kb/scan";
+import { kbModelReady, kbSelected, runKnowledgeScan } from "./kb/scan";
 
 const connection = new Redis(env.redisUrl, { maxRetriesPerRequest: null });
 
@@ -204,6 +204,8 @@ async function kbTick() {
   if (!cfg) return;
   const kbCfg = cfg.knowledgeBase;
   const now = Date.now();
+  // a disabled knowledge base never logs the no-model line (kbSelected is false for every repo then)
+  const modelReady = !kbCfg.enabled || kbModelReady();
   // knowledge repos whose new commits were never indexed (e.g. a crash between a scan and its hand-off)
   for (const k of await prisma.repo.findMany({ where: { kind: RepoKind.KNOWLEDGE, status: RepoStatus.PENDING } })) {
     await enqueueIndex(k.id);
@@ -211,6 +213,8 @@ async function kbTick() {
   for (const r of await prisma.repo.findMany({ where: { kind: RepoKind.CODE } })) {
     if (r.kbRequest) {
       const req = r.kbRequest;
+      // keep a scan request until a model exists; delete and include need none
+      if (req === "scan" && !modelReady) continue;
       // a delete must not race a running scan, which would write the documents straight back
       if (req === "delete" && (await prisma.knowledgeScan.findFirst({ where: { repoId: r.id, status: ScanStatus.RUNNING }, select: { id: true } }))) continue;
       // claim exactly the request we read; a newer one written meanwhile stays for the next tick
@@ -226,7 +230,7 @@ async function kbTick() {
       }
       continue;
     }
-    if (!kbSelected(kbCfg, r) || r.status !== RepoStatus.INDEXED || !r.headCommit || r.kbScannedCommit === r.headCommit) continue;
+    if (!modelReady || !kbSelected(kbCfg, r) || r.status !== RepoStatus.INDEXED || !r.headCommit || r.kbScannedCommit === r.headCommit) continue;
     const last = await prisma.knowledgeScan.findFirst({ where: { repoId: r.id }, orderBy: { startedAt: "desc" } });
     if (last?.status === ScanStatus.RUNNING) continue;
     if (last && now - last.startedAt.getTime() < kbCfg.refreshIntervalHours * 3_600_000) continue;

@@ -34,7 +34,7 @@ test("config loader reads local files and mocked HTTP/HTTPS, preserving source e
 });
 
 test("knowledge base defaults, configured values and validation remain stable", () => {
-  assert.deepEqual(parseConfig("{}").knowledgeBase, { enabled: false, repos: "all", refreshIntervalHours: 24, scanMode: "delta", tokenBudget: 2_000_000, parallelism: 4, citeRepos: [], models: {} });
+  assert.deepEqual(parseConfig("{}").knowledgeBase, { enabled: true, repos: "all", refreshIntervalHours: 24, scanMode: "delta", tokenBudget: 2_000_000, parallelism: 4, citeRepos: [], models: {} });
   const configured = { enabled: true, repos: ["fixtures.test/*"], refreshIntervalHours: 1, scanMode: "full", tokenBudget: 1, parallelism: 16, citeRepos: ["fixtures.test/atlas"], models: { discovery: "d", survey: "s", document: "w", overview: "o" } };
   assert.deepEqual(parseConfig(JSON.stringify({ knowledgeBase: configured })).knowledgeBase, configured);
   for (const override of [{ tokenBudget: 0 }, { parallelism: 17 }, { parallelism: 0 }, { refreshIntervalHours: 0 }, { scanMode: "other" }, { repos: 3 }]) {

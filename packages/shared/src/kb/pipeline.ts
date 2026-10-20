@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { demoteCitations } from "./citations";
 import { docTools, verifyCitations, type DocContext, type DocStore, type ItemScope } from "./docTools";
-import { BudgetExceededError, mapLimit, runAgent, tool, type LlmClient, type TokenBudget, type ToolDef } from "./llm";
+import { BudgetExceededError, estimateTokens, mapLimit, runAgent, tool, type LlmClient, type TokenBudget, type ToolDef } from "./llm";
 import { MAX_README_CHARS, README_NARRATIVE_WORDS } from "./limits";
 import { carveTerritories, effectiveBudget, filesUnder, isNoise, type Territory, type TerritoryOptions } from "./territories";
 import type { RepoSource } from "./source";
@@ -32,6 +32,8 @@ export interface ScanDeps {
   log?: (msg: string) => void;
   territory?: TerritoryOptions;
   maxSteps?: number;
+  /** No scan has ever completed for this repo: log a cost estimate before the first model call. */
+  firstScan?: boolean;
 }
 
 export interface ScanOutcome {
@@ -325,6 +327,8 @@ export async function runScan(d: ScanDeps, triage: Triage): Promise<ScanOutcome>
   let reasons = new Map<string, string[]>();
   let extra: (s: System) => Record<string, unknown> = () => ({});
   let mergeExtra: Record<string, unknown> = {};
+
+  if (d.firstScan) d.log?.(`kb ${d.owner.name} first scan estimate ~${estimateTokens(await d.owner.listFiles(), d.budget.limit).toLocaleString()} tokens (cap ${d.budget.limit.toLocaleString()})`);
 
   if (triage.mode === "full") {
     const found = await discover(d, tools);

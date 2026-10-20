@@ -31,6 +31,17 @@ export async function ensureKnowledgeRepo(owner: Repo): Promise<Repo> {
   });
 }
 
+let skipLogged = false;
+/** Whether a model is configured. Without one the knowledge base is skipped; that is logged once per process, not per tick. */
+export function kbModelReady(env: NodeJS.ProcessEnv = process.env, log: (m: string) => void = console.log): boolean {
+  if (kb.llmConfigured(env)) return true;
+  if (!skipLogged) {
+    skipLogged = true;
+    log("knowledge base skipped: no model configured");
+  }
+  return false;
+}
+
 export interface ScanResult {
   scanId: number;
   status: ScanStatus;
@@ -42,6 +53,8 @@ export interface ScanResult {
 /** Run one knowledge scan for a code repo. Returns undefined when the repo does not qualify right now. */
 export async function runKnowledgeScan(repoId: number, opts: { manual: boolean; log?: (m: string) => void }): Promise<ScanResult | undefined> {
   const log = opts.log ?? (() => {});
+  // nothing is spent and no row is created without a model; the scheduler logs the skip once
+  if (!kb.llmConfigured()) return undefined;
   const cfg = (await loadConfig(env.configPath)).knowledgeBase;
   const owner = await prisma.repo.findUnique({ where: { id: repoId } });
   if (!owner || !kbSelected(cfg, owner) || owner.status !== RepoStatus.INDEXED || !owner.headCommit) return undefined;
@@ -99,7 +112,7 @@ export async function runKnowledgeScan(repoId: number, opts: { manual: boolean; 
     const m = cfg.models;
     outcome = await kb.runScan(
       {
-        llm: kb.openAiClient(llmCfg), budget, owner: ownerSrc, resolveRepo, store, scanId: scan.id, parallelism: cfg.parallelism,
+        llm: kb.openAiClient(llmCfg), budget, owner: ownerSrc, firstScan: owner.kbScannedCommit === null, resolveRepo, store, scanId: scan.id, parallelism: cfg.parallelism,
         models: { discovery: m.discovery ?? llmCfg.model, survey: m.survey ?? m.discovery ?? llmCfg.model, document: m.document ?? llmCfg.model, overview: m.overview ?? m.survey ?? llmCfg.model },
         log,
       },

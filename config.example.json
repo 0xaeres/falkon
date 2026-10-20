@@ -19,9 +19,9 @@
   "contexts": {
     "web": { "include": ["github.com/sourcebot-dev/*"], "description": "Web repos" }
   },
-  // Clone-only: generated architecture docs (off by default).
+  // Clone-only: generated architecture docs (on by default; needs LLM_* env vars, skipped without them).
   "knowledgeBase": {
-    "enabled": false,
+    "enabled": true,
     "repos": "all",
     "scanMode": "delta",
     "refreshIntervalHours": 24,
