@@ -370,3 +370,27 @@ test("a client that goes away aborts the engine call", async () => {
     hanging.close();
   }
 });
+
+const productBody = {
+  id: "fixtures",
+  name: "fixtures",
+  initials: "F",
+  provider: "github",
+  host: "fixtures.test",
+  repositories: [],
+  activeGeneration: null,
+  scenario: "building",
+  queuedAt: null,
+};
+
+test("server pages read Products from the engine: list, one, and not found as null", async () => {
+  const { engineProduct, engineProducts } = await import("../src/lib/api/engine");
+  process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
+  reply = { status: 200, body: [productBody] };
+  assert.equal((await engineProducts())[0]?.id, "fixtures");
+  reply = { status: 200, body: productBody };
+  assert.equal((await engineProduct("fixtures"))?.id, "fixtures");
+  assert.equal(seen.at(-1)?.url, "/ui/products/fixtures");
+  reply = { status: 404, body: { message: "Product not found." } };
+  assert.equal(await engineProduct("nope"), null);
+});

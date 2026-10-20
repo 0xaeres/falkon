@@ -1,4 +1,8 @@
 import { redirect } from "next/navigation";
-export default function Home() {
-  redirect("/payments-platform/status");
+import { engineProducts, useEngine } from "@/lib/api/engine";
+export const dynamic = "force-dynamic";
+export default async function Home() {
+  if (!useEngine()) redirect("/payments-platform/status");
+  const [first] = await engineProducts();
+  redirect(first ? `/${first.id}/status` : "/setup");
 }

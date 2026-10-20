@@ -1,4 +1,5 @@
 import "server-only";
+import { productSchema, type Product } from "@sbc/contracts";
 
 /** True when the UI talks to the engine; unset, the routes keep serving the local mock. */
 export const useEngine = () => !!process.env.ENGINE_URL;
@@ -55,4 +56,17 @@ export async function forward(
     },
     { status: res.status },
   );
+}
+
+/** Server-rendered pages read Products straight from the engine (the mock store has none of them). Null = not found. */
+export async function engineProducts(): Promise<Product[]> {
+  const res = await forward("/ui/products");
+  if (!res.ok) throw new Error("engine products unavailable");
+  return productSchema.array().parse(await res.json());
+}
+export async function engineProduct(id: string): Promise<Product | null> {
+  const res = await forward(`/ui/products/${encodeURIComponent(id)}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("engine product unavailable");
+  return productSchema.parse(await res.json());
 }
