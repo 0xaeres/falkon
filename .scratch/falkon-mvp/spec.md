@@ -439,3 +439,7 @@ Gate 1 approved by the human on 2026-10-20: cycle 6 plan as written. Loop runs a
 Cycle tip: typecheck and all tests green; `tests/contract` and `tests/golden/expected.json` diff empty; no new dependency; no Prisma change.
 
 Not verified (needs the human): wizard to a real product through the GitHub App method on a real App (create connection, pick installation, first sync); wizard behaviour in a browser (disable-while-busy, file input, radio list); no wizard render test exists. Memory: ops-smoke whole stack 661.5 MB vs 654 MB ceiling (deferred, informational; D28 note). Known gaps: `sed`/scripts untested against a bad token file in a live container; `admin-token.sh reset` cannot run if the api refuses to start (documented recovery: delete the file).
+
+## Cycle 6b dropped (human, 2026-10-20)
+
+D40: "Sign in with GitHub" (device flow, D38/D39) is cancelled before any code landed: the personal access token stays the one connection path for testing, as the simplest. Nothing from 6b was merged; the half-built S30a worktree and branches were discarded. The GitHub App method from cycle 6 (S28a, S28b) stays merged but is unverified against a real App and is not the recommended path; remove it only if the human asks. The D38/D39 design (GitHub App user tokens, device flow, `GITHUB_CLIENT_ID`) is kept here as a record if Sign in returns.
