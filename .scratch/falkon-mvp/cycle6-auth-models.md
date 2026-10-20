@@ -57,3 +57,9 @@ Process
 16. Renumber cycle 6/7 in the spec map; new decision ids D35+.
 17. Budget/quota: live DeepSeek spend cap for the chat proof (suggest a few cents, about 5 turns).
 18. Which of S26-S28 to run in parallel worktrees vs sequential.
+
+## Human answers (2026-10-20, after prep)
+
+- **Model: DeepInfra, no change.** The human's `.env` already has working `LLM_*` for DeepInfra (`.env.example` default). The DeepSeek section and S26 above are dropped; no model code or config work. Only a live UI chat turn on the existing model remains, folded into the final verification. Q8, Q9, Q17 are void.
+- **All other recommendations accepted** (operator pre-creates the App and the wizard lists installations to pick; App key sealed in the credential store; token and App connections coexist; no webhooks; admin token file in the data volume, never logged, CLI show/reset, per-request UI re-read; renumbering cycle 6/7 and D35+).
+- **New admin rule (human):** the admin is whoever creates (registers) the product, and the admin cannot be changed after that. Interpretation to confirm in the grill: the admin token is claimed by the first registration and then fixed. This conflicts with "reset options" and with the no-user-model decision D5/D30 (one shared principal `"ui"`), so the grill must settle: (a) is "admin" an identity (first registrant's token) or just the token file; (b) what "cannot be changed" allows: no reset at all, or reset only by someone with host/volume access; (c) per Product or per install.
