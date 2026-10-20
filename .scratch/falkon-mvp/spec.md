@@ -446,7 +446,7 @@ D40: "Sign in with GitHub" (device flow, D38/D39) is cancelled before any code l
 
 D41 (human, 2026-10-20): the GitHub App method is removed to focus on the MVP; PAT is the only connection path. S28a and S28b were reverted on `main` (revert commits of their merges); D36 is superseded and the docs were edited to match. The admin token (S27, D37) stays. The App design remains in D36 above as a record.
 
-## Cycle 7 plan: knowledge base default-on (S11) (grilled 2026-10-21; gate 1 pending)
+## Cycle 7 plan: knowledge base default-on (S11) (grilled 2026-10-21; gate 1 approved 2026-10-21)
 
 Base `main` at `9f3cc54`. Roles: Claude only; Sonnet builds and reviews, Haiku verifies, no Opus. Cycle branch `loop/falkon-mvp-c7`. Map change (human, 2026-10-21, "focus on MVP"): the mechanical `@sbc/*` to `@falkon/*` rename moves to the last cycle with S13 to S15; the fold of `shared`, `db` and `backend` into `packages/core` (the old "absorb the clone" note) is dropped (no MVP benefit, large diff). Revised remaining map: cycle 7 = S11; cycle 8 = S13 (original rewrite, Falkon config schema and converter), rename, S15 final gate, README and release notes. Tester feedback from the PAT end-to-end run (not yet sent) gets its own fix slices when it arrives; the carried non-blocking items (connector-skipped repos stay "Building", concurrent turns overwrite, empty thread after a failed first message, dead `Credential.lastError`, literal `[n]` in code) wait for feedback to rank them.
 
@@ -471,3 +471,5 @@ Order: S11a and S11b in parallel (own worktrees, merge by hand), then S11c. Dock
 ### Autonomy limits (cycle 7)
 
 May decide alone: the estimate method, status copy, file layout inside the scopes, one fix round per slice. Must stop at gate 2 for: a non-additive contract change, any change to `tests/contract` or `tests/golden/expected.json`, a Prisma change, a new dependency, a sync-path change, spend beyond one fixture-repo scan, and any push or PR. Budget: 700k subagent tokens, 3 hours wall-clock.
+
+Gate 1 approved by the human on 2026-10-21: cycle 7 plan as written. Loop runs autonomously to gate 2.
