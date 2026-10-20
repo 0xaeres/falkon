@@ -473,3 +473,13 @@ Order: S11a and S11b in parallel (own worktrees, merge by hand), then S11c. Dock
 May decide alone: the estimate method, status copy, file layout inside the scopes, one fix round per slice. Must stop at gate 2 for: a non-additive contract change, any change to `tests/contract` or `tests/golden/expected.json`, a Prisma change, a new dependency, a sync-path change, spend beyond one fixture-repo scan, and any push or PR. Budget: 700k subagent tokens, 3 hours wall-clock.
 
 Gate 1 approved by the human on 2026-10-21: cycle 7 plan as written. Loop runs autonomously to gate 2.
+
+## Cycle 7 results (2026-10-21, waiting at gate 2)
+
+| Slice | Outcome | Evidence |
+|---|---|---|
+| S11a backend and config | kept (`825e609`) | `knowledgeBase.enabled` defaults true; no model: no scan row, no throw, one log line per process, `kbTick` schedules nothing; first scan logs `estimate ~N tokens (cap M)` before the first model call. Review clean (notes fixed: no-model log only when enabled). |
+| S11b status field | kept (`3cfd9b6`) | Additive optional `knowledge` on Product status, derived in the api (precedence scanning > failed > budget-exhausted > pending > ready; fixed failure text), one UI line per state. One fix round: config read cached 30 s with a 2 s load bound, latest-scan-per-repo in two bounded queries, `pending` only when not scanned at head, `knowledgeBase.repos` filter mirrored. |
+| S11c docs and live | kept (`ca214f7`) | ADR 4.2, 4.5, P6 as built. Live Docker: no-model run shows one skip log line, zero scans, status `no-model` and the UI line; with the `.env` model: estimate ~567 tokens logged first, status pending, scanning, ready, scan SUCCEEDED (17,416 tokens), knowledge repo indexed and searchable through the Product; cap 2000 run ends BUDGET_EXHAUSTED (2,405 tokens) with status `budget-exhausted`; ops-smoke passes every step, memory 525.7 MB (ceiling 654 MB). Total live spend 19,821 tokens. |
+
+Cycle tip: typecheck and all tests green; `tests/contract` and `tests/golden/expected.json` diff empty; no dependency or Prisma change. Not verified: knowledge `ready` for an api-created Product on a real stack (config Product only); browser look of the new line beyond the browser pane; the PAT wizard to real GitHub (needs the human's token); one timing-sensitive test (`opsSmoke.test.ts`) timed out once under parallel load and passed on rerun.
