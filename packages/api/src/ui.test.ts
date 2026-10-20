@@ -147,6 +147,14 @@ test("config Products are listed and read, but PATCH is 409; a slug conflict is 
   assert.ok((await call("GET", "/ui/products")).json.some((p: J) => p.id === "core"));
 });
 
+test("a config Product over generic-git repos (bare host, not a url) lists without error", async () => {
+  engine.addRepo("fixtures.test/atlas", { status: "INDEXED", headCommit: "abc1234def", lastIndexedAt: new Date(), external_codeHostUrl: "fixtures.test" });
+  await engine.product.create({ data: { slug: "gitonly", name: "gitonly", source: "config", definition: { include: ["fixtures.test/*"] }, repoNames: ["fixtures.test/atlas"] } });
+  const r = await call("GET", "/ui/products/gitonly");
+  assert.deepEqual([r.status, r.json.host], [200, "fixtures.test"]);
+  assert.equal((await call("GET", "/ui/products")).status, 200);
+});
+
 test("create validation: unknown connection, repo outside the listing, duplicates, extra keys, bad slug", async () => {
   const before = engine.product.rows.length;
   assert.equal((await call("POST", "/ui/products", setup("zzzzzzzzzzzzzzzzzzzzzz", "x1", [APP]))).status, 404);

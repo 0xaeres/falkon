@@ -21,6 +21,9 @@ const isUniqueViolation = (e: unknown) => (e as { code?: string } | null)?.code 
 type ConnectionRow = { id: number; config: unknown; syncError: string | null; syncRequestedAt: Date | null; credential: { id: string; host: string } | null };
 const withCredential = { credential: { select: { id: true, host: true } } } as const;
 
+/** A code host url (`https://github.com`) or a bare host (generic git stores `fixtures.test`). */
+const hostOf = (u: string) => { try { return new URL(u).host; } catch { return u; } };
+
 export class UiProductService {
   constructor(private readonly db: Db, private readonly connections: ConnectionService) {}
 
@@ -38,7 +41,7 @@ export class UiProductService {
       const connection: ConnectionFacts | null = c
         ? { credentialId: c.credential?.id ?? null, host: c.credential?.host ?? (c.config as { url?: string }).url?.replace(/^https?:\/\//, "") ?? "github.com", syncError: c.syncError, syncRequestedAt: c.syncRequestedAt }
         : mine[0]
-          ? { credentialId: null, host: new URL(mine[0].external_codeHostUrl).host, syncError: null, syncRequestedAt: null }
+          ? { credentialId: null, host: hostOf(mine[0].external_codeHostUrl), syncError: null, syncRequestedAt: null }
           : null;
       return { row, facts, connection };
     });
