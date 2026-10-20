@@ -1,7 +1,11 @@
 import { test, before, after } from "node:test";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
+import { knowledgeBaseSchema } from "@sbc/shared";
 import { createAdminApp } from "./admin";
 import { ConnectionService, type CodeHost } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";
@@ -25,11 +29,12 @@ const host: CodeHost = {
 };
 
 const engine = fakeEngineDb();
+let clock = 0; // the service's knowledge-config cache clock; tests advance it past the 30 s TTL to re-read the config file
 let admin: INestApplication;
 let base: string;
 before(async () => {
   const connections = new ConnectionService(engine.db as never, host);
-  const ui = new UiProductService(engine.db, connections);
+  const ui = new UiProductService(engine.db, connections, () => clock);
   admin = await createAdminApp(new PrismaProductRegistry(engine.db as never), TOKEN, {}, connections, ui, new ThreadService(engine.db, ui));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
@@ -188,4 +193,89 @@ test("route enumeration: the admin listener has exactly the S20a routes, the six
 test("other /ui paths and methods stay 404", async () => {
   for (const [method, p] of [["PUT", "/ui/products/alpha"], ["DELETE", "/ui/products/alpha"], ["GET", "/ui"], ["GET", "/ui/products/alpha/sync"], ["POST", "/ui/products/alpha"], ["GET", "/ui/products/alpha/status/x"], ["PATCH", "/ui/products"], ["PATCH", "/products/alpha"], ["PUT", "/ui/products/alpha/threads"], ["DELETE", "/ui/products/alpha/threads/x"], ["GET", "/ui/products/alpha/threads/x/messages"], ["POST", "/ui/products/alpha/threads/x"], ["PATCH", "/ui/products/alpha/threads/x"], ["GET", "/ui/products/alpha/threads/x/messages/y"], ["POST", "/ui/products/alpha/query"]] as const)
     assert.equal((await call(method, p, method === "GET" ? undefined : {})).status, 404, `${method} ${p}`);
+});
+
+test("status carries knowledge: off, no-model, then scan states from the latest scan (excluded and knowledge repos ignored, error text never leaked)", async () => {
+  const cfg = path.join(mkdtempSync(path.join(tmpdir(), "kb-")), "config.json");
+  process.env.CONFIG_PATH = cfg;
+  const knowledgeOf = async (slug = "kbp") => ((clock += 31_000), (await call("GET", `/ui/products/${slug}/status`)).json.knowledge);
+  const scan = (repoId: number, status: string, startedAt: number, error: string | null = null) => engine.scans.push({ id: engine.scans.length + 1, repoId, status, startedAt: new Date(startedAt), error });
+  try {
+    await call("POST", "/ui/products", setup(cid, "kbp", [TOOL]));
+    index(TOOL, { kbScannedCommit: null });
+    const tool = engine.repos.find((r) => r.name === TOOL)!;
+
+    writeFileSync(cfg, JSON.stringify({ knowledgeBase: { enabled: false } }));
+    assert.deepEqual(await knowledgeOf(), { state: "off" });
+
+    writeFileSync(cfg, JSON.stringify({ knowledgeBase: { enabled: true } }));
+    delete process.env.LLM_BASE_URL;
+    assert.deepEqual(await knowledgeOf(), { state: "no-model", detail: "No model configured" });
+
+    Object.assign(process.env, { LLM_BASE_URL: "http://llm.test", LLM_API_KEY: "k", LLM_MODEL: "m" });
+    assert.equal((await knowledgeOf()).state, "pending", "indexed, never scanned");
+    scan(tool.id, "SUCCEEDED", 1);
+    tool.kbScannedCommit = tool.headCommit;
+    assert.equal((await knowledgeOf()).state, "ready");
+    scan(tool.id, "FAILED", 2, "SECRET provider error text");
+    clock += 31_000;
+    const failed = await call("GET", "/ui/products/kbp/status");
+    assert.deepEqual(failed.json.knowledge, { state: "failed", detail: "Last scan failed" });
+    assert.ok(!JSON.stringify(failed.json).includes("SECRET"));
+    scan(tool.id, "SUCCEEDED", 3);
+    assert.equal((await knowledgeOf()).state, "ready", "only the latest scan counts");
+    tool.kbExcluded = true;
+    scan(tool.id, "RUNNING", 4);
+    assert.equal((await knowledgeOf()).state, "ready", "excluded repo ignored");
+    tool.kbExcluded = false;
+    assert.equal((await knowledgeOf()).state, "scanning");
+    const know = engine.addRepo("github.com/other/tool-knowledge", { kind: "KNOWLEDGE" });
+    scan(know.id, "FAILED", 5);
+    scan(tool.id, "BUDGET_EXHAUSTED", 6);
+    assert.equal((await knowledgeOf()).state, "budget-exhausted", "knowledge-kind repos are not members");
+
+    // a config-source Product gets it too: indexed at a head never scanned is pending, scanned at head is ready
+    assert.equal((await knowledgeOf("gitonly")).state, "pending");
+    engine.repos.find((r) => r.name === "fixtures.test/atlas")!.kbScannedCommit = "abc1234def";
+    assert.equal((await knowledgeOf("gitonly")).state, "ready", "no scan row but scanned at head");
+  } finally {
+    delete process.env.CONFIG_PATH;
+    for (const k of ["LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL"]) delete process.env[k];
+  }
+});
+
+test("knowledge config is cached for 30 s, a failing load keeps the last value, and the config repos list limits the derivation", async () => {
+  let now = 0;
+  let calls = 0;
+  let next: () => Promise<any> = async () => ({ enabled: true, repos: "all" });
+  Object.assign(process.env, { LLM_BASE_URL: "http://llm.test", LLM_API_KEY: "k", LLM_MODEL: "m" });
+  const svc = new UiProductService(engine.db, new ConnectionService(engine.db as never, host), () => now, () => (calls++, next()));
+  const know = async () => (await svc.status("kbp")).knowledge!.state;
+  try {
+    const tool = engine.repos.find((r) => r.name === TOOL)!;
+    tool.kbScannedCommit = "old"; // behind its head, no running/failed scan: pending when selected
+    engine.scans.length = 0;
+    assert.equal(await know(), "pending");
+    next = async () => ({ enabled: false, repos: "all" });
+    now = 29_999;
+    assert.equal(await know(), "pending");
+    assert.equal(calls, 1, "second call within the TTL does not reload");
+    now = 30_000;
+    assert.equal(await know(), "off");
+    assert.equal(calls, 2, "reloads after the TTL");
+    next = async () => { throw new Error("boom"); };
+    now = 60_000;
+    assert.equal(await know(), "off", "a throwing load keeps the last value");
+    assert.equal(calls, 3);
+    next = async () => ({ enabled: true, repos: ["github.com/nope/*"] });
+    now = 90_000;
+    assert.equal(await know(), "ready", "a repo the config does not select is never pending");
+    next = async () => ({ enabled: true, repos: [TOOL] });
+    now = 120_000;
+    assert.equal(await know(), "pending");
+  } finally {
+    for (const k of ["LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL"]) delete process.env[k];
+  }
+  const fresh = new UiProductService(engine.db, new ConnectionService(engine.db as never, host), () => 0, async () => { throw new Error("never loaded"); });
+  assert.equal((await fresh.status("kbp")).knowledge!.state, knowledgeBaseSchema.parse({}).enabled ? "no-model" : "off", "no value ever loaded: the schema default applies (no model env here)");
 });

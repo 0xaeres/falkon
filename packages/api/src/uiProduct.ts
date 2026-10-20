@@ -1,6 +1,7 @@
 // Pure mapping from engine rows to the UI contract (Product, Status). No I/O: callers load the rows.
 import { createHash } from "node:crypto";
 import type { Product, Status } from "@sbc/contracts";
+import type { ScanStatus } from "@sbc/db";
 
 export interface RepoFacts {
   name: string; // e.g. github.com/org/repo
@@ -12,6 +13,10 @@ export interface RepoFacts {
   lastIndexedAt: Date | null;
   indexRequestedAt: Date | null;
   createdAt: Date;
+  /** Knowledge base facts (D43), loaded with the repo: the commit last scanned, the exclusion flag, and the latest scan's status. */
+  kbScannedCommit?: string | null;
+  kbExcluded?: boolean;
+  scan?: ScanStatus | null;
 }
 export interface ConnectionFacts {
   /** The id the UI knows the connection by (its Credential id). */
@@ -125,4 +130,16 @@ export function deriveStatus(slug: string, repos: RepoFacts[], connection: Conne
     gaps: failed.map((r) => ({ count: 1, title: "Repository failed to sync", detail: r.name })),
     scenario,
   };
+}
+
+/** D43: the knowledge base state over the Product's member code repos. Failure detail is fixed text, never the stored scan error. */
+export function deriveKnowledge(enabled: boolean, modelConfigured: boolean, repos: RepoFacts[], selected: (name: string) => boolean = () => true): NonNullable<Status["knowledge"]> {
+  if (!enabled) return { state: "off" };
+  if (!modelConfigured) return { state: "no-model", detail: "No model configured" };
+  const mine = repos.filter((r) => !r.kbExcluded && selected(r.name)); // the backend's kbSelected filter
+  if (mine.some((r) => r.scan === "RUNNING")) return { state: "scanning" };
+  if (mine.some((r) => r.scan === "FAILED")) return { state: "failed", detail: "Last scan failed" };
+  if (mine.some((r) => r.scan === "BUDGET_EXHAUSTED")) return { state: "budget-exhausted" };
+  if (mine.some((r) => r.status === "INDEXED" && !!r.headCommit && r.kbScannedCommit !== r.headCommit)) return { state: "pending" };
+  return { state: "ready" };
 }
