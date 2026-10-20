@@ -176,7 +176,7 @@ export type EnvironmentOverride =
   | { type: "boolean"; value: boolean };
 
 export const knowledgeBaseSchema = z.object({
-  enabled: z.boolean().default(false),
+  enabled: z.boolean().default(true),
   /** "all" = every code repo, or a list of exact names / trailing-* prefixes. */
   repos: z.union([z.literal("all"), z.array(z.string())]).default("all"),
   refreshIntervalHours: z.number().positive().default(24),

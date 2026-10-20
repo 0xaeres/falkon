@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { DocStore } from "./docTools";
-import { BudgetExceededError, TokenBudget, type ChatRequest, type ChatResult, type LlmClient } from "./llm";
+import { BudgetExceededError, TokenBudget, estimateTokens, type ChatRequest, type ChatResult, type LlmClient } from "./llm";
 import { runScan } from "./pipeline";
 import type { RepoSource } from "./source";
 import { computeTriage, type DocRecord } from "./triage";
@@ -202,4 +202,26 @@ test("delta scan rewrites only affected docs and skips when nothing changed", as
   const quiet = await computeTriage({ requested: "delta", owner: next(false), existing, lastScanCommit: "c1", lastFullScanAt: new Date(), now: new Date(), resolveRepo: async () => undefined });
   const skipped = await runScan({ ...deps(m, scriptedLlm({ bodies: {} })), owner: next(false), scanId: 9 }, quiet);
   assert.equal(skipped.skipped, true);
+});
+
+test("first scan logs its token estimate before the first model call; a repeat scan does not", async () => {
+  const run = async (firstScan: boolean) => {
+    const events: string[] = [];
+    const inner = scriptedLlm({ bodies: { "engine/ordering-guarantee.md": [GOOD("engine")], "queue/retry-contract.md": [GOOD("queue")] } });
+    const llm: LlmClient = { chat: (req) => (events.push("call"), inner.chat(req)) };
+    await runScan({ ...deps(memoryStore(), llm), firstScan, log: (m) => events.push(m) }, { mode: "full", existing: [] });
+    return events;
+  };
+  const first = await run(true);
+  const n = estimateTokens(await owner().listFiles(), 10_000_000);
+  assert.equal(first[0], `kb acme/app first scan estimate ~${n} tokens (cap 10,000,000)`);
+  assert.equal(first.indexOf("call") > 0, true);
+  assert.equal((await run(false)).some((e) => e.includes("estimate")), false);
+});
+
+test("estimateTokens is total file bytes / 4, rounded up, capped", () => {
+  const files = [{ size: 10 }, { size: 30 }];
+  assert.equal(estimateTokens(files, 1000), 10);
+  assert.equal(estimateTokens([{ size: 5 }], 1000), 2);
+  assert.equal(estimateTokens(files, 4), 4);
 });

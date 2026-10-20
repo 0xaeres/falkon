@@ -6,8 +6,13 @@ import { DEFAULT_SETTINGS, getTokenFromConfig, parseConfig, resolveEnvironmentOv
 test("the example config parses: v3 format, comments, clone-only knowledgeBase", () => {
   const c = parseConfig(fs.readFileSync(new URL("../../../config.example.json", import.meta.url), "utf8"));
   assert.deepEqual(Object.keys(c.connections), ["github", "hello", "local"]);
-  assert.equal(c.knowledgeBase.enabled, false);
+  assert.equal(c.knowledgeBase.enabled, true);
   assert.equal(c.contexts.web?.include?.[0], "github.com/sourcebot-dev/*");
+});
+
+test("knowledge base is on by default and can be switched off", () => {
+  assert.equal(parseConfig("{}").knowledgeBase.enabled, true);
+  assert.equal(parseConfig(JSON.stringify({ knowledgeBase: { enabled: false } })).knowledgeBase.enabled, false);
 });
 
 test("settings fall back to Sourcebot's defaults", () => {

@@ -71,6 +71,15 @@ export function llmConfigFromEnv(env: NodeJS.ProcessEnv = process.env): LlmConfi
   return { baseUrl: baseUrl.replace(/\/$/, ""), apiKey, model };
 }
 
+/** Whether a model is configured: all of LLM_BASE_URL, LLM_API_KEY and LLM_MODEL are set. */
+export const llmConfigured = (env: NodeJS.ProcessEnv = process.env): boolean => !!(env.LLM_BASE_URL && env.LLM_API_KEY && env.LLM_MODEL);
+
+/**
+ * First-scan cost estimate: total bytes of every file in the owner's tree at the head commit / 4 (about
+ * four bytes per token), capped at the per-scan budget. An upper-bound guide: agents read only part of the tree.
+ */
+export const estimateTokens = (files: { size: number }[], cap: number): number => Math.min(cap, Math.ceil(files.reduce((n, f) => n + f.size, 0) / 4));
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** OpenAI-compatible chat completions. Retries rate limits and 5xx with backoff. */
