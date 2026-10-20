@@ -2,14 +2,15 @@
 import { Controller, Get, Inject, Param, Patch, Post, Req } from "@nestjs/common";
 import type { IncomingMessage } from "node:http";
 import { editRequestSchema, setupRequestSchema, syncRequestSchema, type EditRequest, type Product, type Repository, type SetupRequest, type Status } from "@sbc/contracts";
-import { RepoKind, type PrismaClient } from "@sbc/db";
+import { RepoKind, type PrismaClient, type ScanStatus } from "@sbc/db";
+import { env, knowledgeBaseSchema, loadConfig, scopeFor, type KnowledgeBaseConfig } from "@sbc/shared";
 import { loadContextResolver } from "../../backend/src/productResolve";
 import { ConnectionService } from "./connections";
 import { body, error } from "./request";
 import { isProductName } from "./product";
-import { deriveStatus, memberNames, toUiProduct, withPlaceholders, type ConnectionFacts, type RepoFacts } from "./uiProduct";
+import { deriveKnowledge, deriveStatus, memberNames, toUiProduct, withPlaceholders, type ConnectionFacts, type RepoFacts } from "./uiProduct";
 
-type Db = Pick<PrismaClient, "product" | "repo" | "connection" | "$transaction">;
+type Db = Pick<PrismaClient, "product" | "repo" | "connection" | "knowledgeScan" | "$transaction">;
 type Tx = Pick<PrismaClient, "product" | "repo" | "connection">;
 
 const notFound = () => error(404, "NOT_FOUND", "Product not found.");
@@ -18,6 +19,9 @@ const noConnection = () => error(409, "NO_CONNECTION", "Product has no connectio
 const badRepository = () => error(400, "INVALID_REPOSITORY", "A selected repository is not available on this connection.");
 const isUniqueViolation = (e: unknown) => (e as { code?: string } | null)?.code === "P2002";
 
+const KB_TTL_MS = 30_000;
+const KB_LOAD_MS = 2_000;
+
 type ConnectionRow = { id: number; config: unknown; syncError: string | null; syncRequestedAt: Date | null; credential: { id: string; host: string } | null };
 const withCredential = { credential: { select: { id: true, host: true } } } as const;
 
@@ -25,16 +29,54 @@ const withCredential = { credential: { select: { id: true, host: true } } } as c
 const hostOf = (u: string) => { try { return new URL(u).host; } catch { return u; } };
 
 export class UiProductService {
-  constructor(private readonly db: Db, private readonly connections: ConnectionService) {}
+  private kbCache?: { at: number; cfg: KnowledgeBaseConfig };
 
-  /** Loads everything the mappers need for `rows` in three queries. */
+  constructor(
+    private readonly db: Db,
+    private readonly connections: ConnectionService,
+    private readonly now: () => number = Date.now,
+    private readonly loadKb: () => Promise<KnowledgeBaseConfig> = async () => (await loadConfig(env.configPath)).knowledgeBase,
+  ) {}
+
+  /**
+   * The config's knowledgeBase block, cached for 30 s. A failed or slow (2 s) load keeps the last known value, or the
+   * schema default if none was ever loaded, and is retried after the next TTL, so a remote CONFIG_PATH never stalls polls.
+   */
+  private async knowledge(): Promise<KnowledgeBaseConfig> {
+    const t = this.now();
+    if (this.kbCache && t - this.kbCache.at < KB_TTL_MS) return this.kbCache.cfg;
+    let cfg = this.kbCache?.cfg ?? knowledgeBaseSchema.parse({});
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      cfg = await Promise.race([this.loadKb(), new Promise<never>((_, no) => (timer = setTimeout(() => no(new Error("config load timed out")), KB_LOAD_MS)))]);
+    } catch {
+      // keep cfg
+    } finally {
+      clearTimeout(timer);
+    }
+    this.kbCache = { at: t, cfg };
+    return cfg;
+  }
+
+  /** Loads everything the mappers need for `rows` in a fixed number of queries. */
   private async load(rows: { slug: string; name: string; source: "config" | "api"; definition: unknown; repoNames: string[]; connectionId: number | null; createdAt: Date }[]) {
     const names = [...new Set(rows.flatMap(memberNames))];
     const repos = await this.db.repo.findMany({ where: { name: { in: names }, kind: RepoKind.CODE } });
     const conns = await this.db.connection.findMany({ where: { id: { in: rows.flatMap((r) => (r.connectionId === null ? [] : [r.connectionId])) } }, include: withCredential });
     const byConn = new Map<number, ConnectionRow>(conns.map((c) => [c.id, c]));
+    // Latest scan per repo in two bounded queries (newest startedAt per repo, then those rows), whatever the history size.
+    const ids = repos.map((r) => r.id);
+    const newest = await this.db.knowledgeScan.groupBy({ by: ["repoId"], where: { repoId: { in: ids } }, _max: { startedAt: true } });
+    const scans = newest.length
+      ? await this.db.knowledgeScan.findMany({ where: { OR: newest.map((n) => ({ repoId: n.repoId, startedAt: n._max.startedAt! })) }, orderBy: { id: "desc" }, select: { repoId: true, status: true } })
+      : [];
+    const latest = new Map<number, ScanStatus>();
+    for (const s of scans) if (!latest.has(s.repoId)) latest.set(s.repoId, s.status); // newest id wins a startedAt tie
+    const kbCfg = await this.knowledge();
+    const selected = kbCfg.repos === "all" ? undefined : scopeFor(kbCfg.repos).allows;
+    const modelConfigured = !!(process.env.LLM_BASE_URL && process.env.LLM_API_KEY && process.env.LLM_MODEL);
     return rows.map((row) => {
-      const mine = repos.filter((r) => memberNames(row).includes(r.name));
+      const mine = repos.filter((r) => memberNames(row).includes(r.name)).map((r) => ({ ...r, scan: latest.get(r.id) ?? null }));
       const facts = withPlaceholders(memberNames(row), mine, row.createdAt);
       const c = row.connectionId === null ? undefined : byConn.get(row.connectionId);
       // A config Product has no connectionId: its host is the code host of its first repo.
@@ -43,13 +85,13 @@ export class UiProductService {
         : mine[0]
           ? { credentialId: null, host: hostOf(mine[0].external_codeHostUrl), syncError: null, syncRequestedAt: null }
           : null;
-      return { row, facts, connection };
+      return { row, facts, connection, knowledge: deriveKnowledge(kbCfg.enabled, modelConfigured, facts, selected) };
     });
   }
 
   private async uiProducts(rows: Parameters<UiProductService["load"]>[0]): Promise<{ product: Product; status: Status }[]> {
-    return (await this.load(rows)).map(({ row, facts, connection }) => {
-      const status = deriveStatus(row.slug, facts, connection);
+    return (await this.load(rows)).map(({ row, facts, connection, knowledge }) => {
+      const status = { ...deriveStatus(row.slug, facts, connection), knowledge };
       return { product: toUiProduct(row, facts, connection, status), status };
     });
   }

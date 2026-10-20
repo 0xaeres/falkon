@@ -22,6 +22,7 @@ export function fakeEngineDb() {
   const connections: Row[] = [];
   const repos: Row[] = [];
   const chats: Row[] = [];
+  const scans: Row[] = [];
   let nextConnection = 1;
   let nextRepo = 1;
   const product = fakeProductTable();
@@ -33,6 +34,17 @@ export function fakeEngineDb() {
     connections,
     repos,
     chats,
+    scans,
+    knowledgeScan: {
+      async groupBy({ where }: { where?: Where }) {
+        const max = new Map<number, Date>();
+        for (const x of scans.filter((x) => matches(x, where))) if (!max.has(x.repoId) || x.startedAt > max.get(x.repoId)!) max.set(x.repoId, x.startedAt);
+        return [...max].map(([repoId, startedAt]) => ({ repoId, _max: { startedAt } }));
+      },
+      async findMany({ where }: { where: { OR: { repoId: number; startedAt: Date }[] } }) {
+        return scans.filter((x) => where.OR.some((o) => o.repoId === x.repoId && o.startedAt.getTime() === x.startedAt.getTime())).sort((a, b) => b.id - a.id);
+      },
+    },
     credential: {
       async update({ where, data }: { where: Row; data: Row }) {
         return Object.assign(credentials.find((k) => k.id === where.id)!, data);
@@ -118,11 +130,11 @@ export function fakeEngineDb() {
   /** Adds a Repo row as the backend sync would after the first sync (`github.com/acme/app`). */
   const addRepo = (name: string, over: Row = {}) => {
     const row = {
-      id: nextRepo++, name, kind: "CODE", status: "PENDING", error: null, defaultBranch: "main", headCommit: null, metadata: {}, pushedAt: null, lastIndexedAt: null, indexRequestedAt: null,
+      id: nextRepo++, name, kind: "CODE", status: "PENDING", error: null, defaultBranch: "main", headCommit: null, metadata: {}, pushedAt: null, lastIndexedAt: null, indexRequestedAt: null, kbScannedCommit: null, kbExcluded: false,
       createdAt: new Date(), external_codeHostUrl: `https://${name.split("/")[0]}`, ...over,
     };
     repos.push(row);
     return row;
   };
-  return { db: db as unknown as Pick<PrismaClient, "product" | "repo" | "connection" | "chat" | "$transaction"> & Row, ...db, addRepo };
+  return { db: db as unknown as Pick<PrismaClient, "product" | "repo" | "connection" | "chat" | "knowledgeScan" | "$transaction"> & Row, ...db, addRepo };
 }

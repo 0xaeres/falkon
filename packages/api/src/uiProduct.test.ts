@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { productSchema, statusSchema } from "@sbc/contracts";
-import { deriveStatus, toUiProduct, withPlaceholders, type ConnectionFacts, type RepoFacts } from "./uiProduct";
+import { deriveKnowledge, deriveStatus, toUiProduct, withPlaceholders, type ConnectionFacts, type RepoFacts } from "./uiProduct";
 
 const NOW = new Date("2026-10-20T12:00:00Z");
 const at = (min: number) => new Date(NOW.getTime() - min * 60_000);
@@ -86,4 +86,44 @@ test("toUiProduct: GitHub Enterprise by host; a config Product with no connectio
   assert.deepEqual([ghe.provider, ghe.host], ["github-enterprise", "ghe.example.com"]);
   const none = toUiProduct(row, [], null, status([], null));
   assert.deepEqual([none.provider, none.host, none.connectionId, none.queuedAt], ["github", "", undefined, null]);
+});
+
+// ---- knowledge status (D43) ----
+type Scan = NonNullable<RepoFacts["scan"]>;
+const kb = (name: string, scan: Scan | null, over: Partial<RepoFacts> = {}) => repo(name, { kbScannedCommit: `${name}1234567890`, scan, ...over });
+const know = (repos: RepoFacts[], enabled = true, model = true) => deriveKnowledge(enabled, model, repos);
+
+test("knowledge: off wins, then no-model, regardless of scans", () => {
+  assert.deepEqual(know([kb("a", "RUNNING")], false, false), { state: "off" });
+  assert.deepEqual(know([kb("a", "RUNNING")], true, false), { state: "no-model", detail: "No model configured" });
+});
+
+test("knowledge: precedence scanning > failed > budget-exhausted > pending > ready", () => {
+  const ok = kb("ok", "SUCCEEDED");
+  assert.equal(know([ok]).state, "ready");
+  assert.equal(know([ok, repo("fresh", { scan: null, kbScannedCommit: null })]).state, "pending");
+  assert.equal(know([ok, repo("moved", { scan: "SUCCEEDED", kbScannedCommit: "old" })]).state, "pending");
+  assert.equal(know([repo("fresh", { scan: null }), kb("b", "BUDGET_EXHAUSTED")]).state, "budget-exhausted");
+  assert.equal(know([kb("b", "BUDGET_EXHAUSTED"), kb("f", "FAILED")]).state, "failed");
+  assert.equal(know([kb("f", "FAILED"), kb("r", "RUNNING")]).state, "scanning");
+});
+
+test("knowledge: unindexed repos do not make it pending; excluded repos are ignored; failure detail is fixed text", () => {
+  assert.equal(know([kb("a", "SUCCEEDED"), pending("b")]).state, "ready");
+  assert.equal(know([kb("a", "SUCCEEDED"), kb("x", "FAILED", { kbExcluded: true })]).state, "ready");
+  assert.equal(know([repo("x", { scan: null, kbExcluded: true })]).state, "ready");
+  assert.deepEqual(know([kb("f", "FAILED")]), { state: "failed", detail: "Last scan failed" });
+});
+
+test("knowledge: a SKIPPED latest scan is done when scanned at head, pending when not; no scan row but scanned at head is ready", () => {
+  assert.equal(know([kb("a", "SKIPPED")]).state, "ready");
+  assert.equal(know([repo("a", { scan: "SKIPPED", kbScannedCommit: "old" })]).state, "pending");
+  assert.equal(know([kb("a", null)]).state, "ready");
+});
+
+test("knowledge: repos the config does not select are ignored", () => {
+  const stale = repo("a", { scan: null, kbScannedCommit: null });
+  assert.equal(know([stale]).state, "pending");
+  assert.deepEqual(deriveKnowledge(true, true, [stale, kb("b", "FAILED")], (n) => n.endsWith("/a")), { state: "pending" });
+  assert.equal(deriveKnowledge(true, true, [stale], () => false).state, "ready");
 });

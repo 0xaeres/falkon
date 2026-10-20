@@ -26,6 +26,7 @@ import { ProviderLogo } from "@/components/ui/brand";
 import { api } from "@/lib/api/client";
 import { useDismissed } from "@/lib/dismissed";
 import type { Status } from "@sbc/contracts";
+import { knowledgeLine } from "@/lib/knowledge";
 
 type Layer = "generation" | "sync" | "repositories";
 const names: Record<Layer, string> = {
@@ -138,6 +139,7 @@ export function StatusView() {
         label: String(count),
       },
     ];
+  const kbLine = knowledgeLine(status.knowledge);
   const selectedLayer = layers.find((layer) => layer.id === selected)!;
   const navigationLayers = layers;
   async function retry() {
@@ -252,6 +254,7 @@ export function StatusView() {
             <div>
               <h1 className="vh">{status.verdict}</h1>
               <p className="vs">{status.sentence}</p>
+              {kbLine && <p className="vs">{kbLine}</p>}
             </div>
             <div className="acts">
               {status.generation ? (

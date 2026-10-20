@@ -41,6 +41,10 @@ export const gapSchema = z.object({
   title: z.string(),
   detail: z.string(),
 });
+export const knowledgeStatusSchema = z.object({
+  state: z.enum(["off", "no-model", "pending", "scanning", "ready", "budget-exhausted", "failed"]),
+  detail: z.string().optional(),
+});
 export const statusSchema = z.object({
   productId: productIdSchema,
   verdict: z.string(),
@@ -54,6 +58,7 @@ export const statusSchema = z.object({
   sync: z.enum(["current", "failed", "pinned"]),
   gaps: z.array(gapSchema),
   scenario: scenarioSchema,
+  knowledge: knowledgeStatusSchema.optional(),
 });
 export const evidenceSchema = z.object({
   id: z.number().int().positive(),
