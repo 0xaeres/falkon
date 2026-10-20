@@ -66,7 +66,7 @@ test("sync accepts retry only", () => {
     assert(!syncRequestSchema.safeParse(body).success);
 });
 
-test("connection requests are token-only for github and github-enterprise", () => {
+test("connection requests are token or GitHub App for github and github-enterprise", () => {
   const ok = {
     provider: "github",
     method: "token",
@@ -78,8 +78,14 @@ test("connection requests are token-only for github and github-enterprise", () =
     connectionRequestSchema.safeParse({ ...ok, provider: "github-enterprise" })
       .success,
   );
+  const app = { provider: "github", method: "app", host: "https://github.com", appId: "12345", privateKey: "pem", installationId: "9" };
+  assert(connectionRequestSchema.safeParse(app).success);
   for (const bad of [
-    { ...ok, method: "app" },
+    { ...ok, method: "app" }, // app fields missing
+    { ...app, appId: "abc" },
+    { ...app, installationId: undefined },
+    { ...app, privateKey: "" },
+    { ...ok, method: "oauth" },
     { ...ok, provider: "gitlab" },
     { ...ok, token: undefined },
     { ...ok, token: "" },
