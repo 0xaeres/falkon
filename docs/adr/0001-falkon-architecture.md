@@ -34,9 +34,9 @@ The engine already does locate and read (Zoekt search, git readers, the eleven M
 | # | Capability | Question it answers | Status |
 |---|---|---|---|
 | 1 | Locate and read | Where is X, and what does it say? | Shipped: `grep`, `glob`, `read_file`, `list_tree`, `find_symbol_definitions`, `find_symbol_references`, `list_repos` |
-| 2 | Relate and trace | What calls, uses, extends, or implements X; how does control reach B from A? | MVP: additive structural tools over SCIP edges (TypeScript, Java) |
-| 3 | Impact | What could a change to X affect? | MVP: potential impact over the same edges, with coverage gaps |
-| 4 | Overview | How does the Product fit together; where does a newcomer start? | MVP: deterministic map plus existing knowledge base documents |
+| 2 | Relate and trace | What calls, uses, extends, or implements X; how does control reach B from A? | Deferred (D28). Served meanwhile by the ctags-backed tools and the impact-and-change recipe |
+| 3 | Impact | What could a change to X affect? | MVP via the impact-and-change recipe over the shipped tools (D28); graph-based potential impact deferred |
+| 4 | Overview | How does the Product fit together; where does a newcomer start? | Existing knowledge base documents; the deterministic map is deferred (D28) |
 | 5 | Why and history | Why is it built this way; what changed and when? | Later. Raw access exists today: `list_commits`, `list_branches`, `get_diff` |
 | 6 | Effort | How large is this change likely to be? | Later: needs history |
 
@@ -46,7 +46,7 @@ Each capability ships only after it beats the engine without it on its own quest
 |---|---|
 | [4.1](#41-stack-postgres-graph-behind-a-graphstore-port-d2) | Keep Postgres, Prisma, Redis, BullMQ, Zoekt; the graph lives in Postgres behind a `GraphStore` port. |
 | [4.2](#42-serving-is-llm-free-the-knowledge-base-is-the-only-llm-feature-d3) | Serving is model-free; the knowledge base is the only LLM feature, on by default with auto-skip and a token cap. |
-| [4.3](#43-mvp-capabilities-d4) | MVP is locate, relate, trace, impact, overview; why, history, and effort are deferred. |
+| [4.3](#43-mvp-capabilities-d4) | MVP is locate and read plus an impact-and-change recipe over the shipped tools; the graph, relate, trace, and map are deferred (D28); why, history, and effort are deferred. |
 | [4.4](#44-delivery-shape-d5) | Self-hosted `docker compose`, GitHub and generic git only, no user model. |
 | [4.5](#45-accesspolicy-port-and-product-in-path-scoping-d6) | `AccessPolicy` port with `none` as default and the API key adapter retained; Product in the MCP path; localhost bind and a separate admin listener. |
 | [4.6](#46-nestjs-strangler-boundary-d7) | NestJS is a new boundary that delegates to the existing tool runners; sync and Zoekt stay untouched. |
@@ -171,6 +171,8 @@ Ports and their adapters. Domain and use cases depend only on ports; a backend c
 The human resolved the Ask exception in [12, item 1](#12-open-decisions-for-the-human). The existing `ask_codebase` tool still requires a configured server model. S18 adds server instructions, an `ask_codebase` MCP prompt, and a `research_codebase` tool that return guidance for the client's own model. The prompt and research tool share a brief builder, intersect requested repositories with the caller's visible inventory, and report unavailable names without expanding the selection. Citation examples use the existing formatter in `ask/prompt.ts`.
 
 ### 4.3 MVP capabilities (D4)
+
+**Amendment (D28, 2026-10-19).** The MVP does not build the graph. The `GraphStore`, SCIP ingestion, the relate, trace, and impact tools, and the deterministic map (spec slices S6 to S10) and knowledge base write-back (S12) are out of the MVP; sections [5](#5-graph-store-schema) and [6](#6-scip-ingestion-and-freshness) record the deferred design and are not built. Change and impact questions are served by the ctags-backed tools (`sym:` search, `find_symbol_definitions`, `find_symbol_references`, search and read across the Product) driven by an "impact and change" recipe in the `research_codebase` brief and in the UI Ask (spec S25). The graph returns only if testers show impact questions this loop misses and it then beats plain search under D8. The decision text below is the original D4 and applies only when the graph returns.
 
 **Decision.** MVP is locate and read (existing tools); relate, trace, and potential impact over SCIP edges for TypeScript and Java; overview as a deterministic map plus the existing knowledge base documents. Deferred: why and history, effort, the semantic overlay (*earlier ADR* 4.8), and cross-repository HTTP links. Package-level cross-repository edges from SCIP are not deferred by D4; whether the graph slices include them is open decision 2 in [12](#12-open-decisions-for-the-human).
 
@@ -542,7 +544,7 @@ Open questions:
 
 ## 13. Delivery plan
 
-Slices and their order come from the spec's cycle map; each cycle has its own gate 1.
+Slices and their order come from the spec's cycle map; each cycle has its own gate 1. Under D28 the graph, map, and knowledge base write-back slices (S6 to S10, S12) are out of the MVP; the spec's revised cycle map is the current order.
 
 | Cycle | Slices | Outcome |
 |---|---|---|
