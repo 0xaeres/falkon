@@ -394,3 +394,29 @@ test("server pages read Products from the engine: list, one, and not found as nu
   reply = { status: 404, body: { message: "Product not found." } };
   assert.equal(await engineProduct("nope"), null);
 });
+
+test("without ENGINE_ADMIN_TOKEN the bearer is read from the admin.token file per request, so a rotation needs no restart", async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync, renameSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = mkdtempSync(join(tmpdir(), "ui-admin-token-"));
+  mkdirSync(join(dir, "secrets"));
+  const file = join(dir, "secrets", "admin.token");
+  process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
+  delete process.env.ENGINE_ADMIN_TOKEN;
+  process.env.DATA_DIR = dir;
+  reply = { status: 200, body: [] };
+  const bearer = async () => {
+    await products.GET();
+    return seen.at(-1)!.authorization;
+  };
+  writeFileSync(file, "a".repeat(64));
+  assert.equal(await bearer(), `Bearer ${"a".repeat(64)}`);
+  writeFileSync(`${file}.new`, "b".repeat(64));
+  renameSync(`${file}.new`, file);
+  assert.equal(await bearer(), `Bearer ${"b".repeat(64)}`);
+  process.env.ENGINE_ADMIN_TOKEN = "env-wins";
+  assert.equal(await bearer(), "Bearer env-wins");
+  delete process.env.ENGINE_ADMIN_TOKEN;
+  delete process.env.DATA_DIR;
+});

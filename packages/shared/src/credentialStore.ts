@@ -20,18 +20,13 @@ const decodeKey = (b64: string, what: string) => {
 };
 
 /**
- * FALKON_SECRET_KEY (base64, 32 bytes), else the file named by FALKON_SECRET_KEY_FILE, else a key generated on first
- * use into ${DATA_DIR||/data}/secrets/master.key (mode 600, directory 700). Written to a temp file and hard-linked into
- * place, so a racing process either creates the key or reads the winner's complete one.
+ * Creates `file` (mode 600, directory 700) with `content` unless it exists. Written to a temp file and hard-linked
+ * into place, so a racing process either creates the file or finds the winner's complete one.
  */
-export function masterKey(env: Env = process.env): Buffer {
-  if (env.FALKON_SECRET_KEY) return decodeKey(env.FALKON_SECRET_KEY, "FALKON_SECRET_KEY");
-  if (env.FALKON_SECRET_KEY_FILE) return decodeKey(fs.readFileSync(env.FALKON_SECRET_KEY_FILE, "utf8"), "FALKON_SECRET_KEY_FILE");
-  const dir = path.join(env.DATA_DIR || "/data", "secrets");
-  const file = path.join(dir, "master.key");
-  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+export function writeSecretOnce(file: string, content: string) {
+  fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
   const tmp = `${file}.${process.pid}.${randomBytes(4).toString("hex")}`;
-  fs.writeFileSync(tmp, randomBytes(32).toString("base64"), { flag: "wx", mode: 0o600 });
+  fs.writeFileSync(tmp, content, { flag: "wx", mode: 0o600 });
   try {
     fs.linkSync(tmp, file);
   } catch (e) {
@@ -39,6 +34,17 @@ export function masterKey(env: Env = process.env): Buffer {
   } finally {
     fs.unlinkSync(tmp);
   }
+}
+
+/**
+ * FALKON_SECRET_KEY (base64, 32 bytes), else the file named by FALKON_SECRET_KEY_FILE, else a key generated on first
+ * use into ${DATA_DIR||/data}/secrets/master.key via writeSecretOnce.
+ */
+export function masterKey(env: Env = process.env): Buffer {
+  if (env.FALKON_SECRET_KEY) return decodeKey(env.FALKON_SECRET_KEY, "FALKON_SECRET_KEY");
+  if (env.FALKON_SECRET_KEY_FILE) return decodeKey(fs.readFileSync(env.FALKON_SECRET_KEY_FILE, "utf8"), "FALKON_SECRET_KEY_FILE");
+  const file = path.join(env.DATA_DIR || "/data", "secrets", "master.key");
+  writeSecretOnce(file, randomBytes(32).toString("base64"));
   return decodeKey(fs.readFileSync(file, "utf8"), "master.key");
 }
 
