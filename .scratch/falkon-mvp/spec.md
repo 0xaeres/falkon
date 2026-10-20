@@ -426,3 +426,16 @@ Order: S27 and S28a in parallel (own worktrees), then S28b, then S29. Docker com
 May decide alone: file and module layout inside the scopes above, UI copy, JWT/cache internals, the reset script's mechanism, one fix round per slice. Must stop at gate 2 (the cycle is expected to stop there anyway because S27 and S28a are security-sensitive code the human asked for): a non-additive contract or golden change, any change to `tests/contract` or `tests/golden/expected.json`, a new dependency, a sync-path change beyond the resolver hook, a Prisma column or migration, spend, and any push or PR. Budget: 1.5M subagent tokens and 8 hours wall-clock for the cycle (S28a double-weighted); quota is the binding limit.
 
 Gate 1 approved by the human on 2026-10-20: cycle 6 plan as written. Loop runs autonomously to gate 2.
+
+## Cycle 6 results (2026-10-20, waiting at gate 2)
+
+| Slice | Outcome | Evidence |
+|---|---|---|
+| S27 admin token | kept (`8e71e0b`) | Generated once into `${DATA_DIR}/secrets/admin.token`, env override, always-on admin listener, per-request re-read (api and ui), `scripts/admin-token.sh show|reset`. One fix round: an empty or short token file opened the admin API (review blocking); now fails closed. Live: reset swaps token, old 401 / new 200, ui keeps working with no restart. |
+| S28a GitHub App core | kept (`6b90e44`) | RS256 JWT with node:crypto, installation tokens (api cache ~50 min, backend resolver max 5 min), `github-app` Credential, `POST /connections` method app, `POST /connections/app-installations`, resolver hook only, no sync-path or schema change. One fix round: backend never refreshed a rejected token. |
+| S28b wizard App method | kept (`c53a258`) | Token / GitHub App toggle, installation picker, key only in React state, route proxy with strict body. One fix round (clear key on method switch, stale response guard, file size cap). |
+| S29 docs and live | kept (`9f24d2e`) | ADR 4.5 and P10, README Admin token and GitHub App subsections. Live stack: ops-smoke with no ADMIN_TOKEN passes every functional step; one real chat turn on the `.env` model, 200, grounded answer with evidence and 5 sources, 17,880 tokens. |
+
+Cycle tip: typecheck and all tests green; `tests/contract` and `tests/golden/expected.json` diff empty; no new dependency; no Prisma change.
+
+Not verified (needs the human): wizard to a real product through the GitHub App method on a real App (create connection, pick installation, first sync); wizard behaviour in a browser (disable-while-busy, file input, radio list); no wizard render test exists. Memory: ops-smoke whole stack 661.5 MB vs 654 MB ceiling (deferred, informational; D28 note). Known gaps: `sed`/scripts untested against a bad token file in a live container; `admin-token.sh reset` cannot run if the api refuses to start (documented recovery: delete the file).
