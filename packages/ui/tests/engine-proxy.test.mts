@@ -420,3 +420,92 @@ test("without ENGINE_ADMIN_TOKEN the bearer is read from the admin.token file pe
   delete process.env.ENGINE_ADMIN_TOKEN;
   delete process.env.DATA_DIR;
 });
+
+const installations =
+  await import("../src/app/api/connections/app-installations/route");
+const KEY =
+  "-----BEGIN RSA PRIVATE KEY-----\nSECRETKEYBODY\n-----END RSA PRIVATE KEY-----";
+const appBody = { host: "https://github.com", appId: "12345", privateKey: KEY };
+const installationsReq = (value: unknown) =>
+  new Request("http://localhost/api/connections/app-installations", {
+    method: "POST",
+    body: JSON.stringify(value),
+  });
+
+test("app-installations forwards to the engine route and never echoes the key", async () => {
+  process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
+  process.env.ENGINE_ADMIN_TOKEN = "admin-token-for-test";
+  reply = { status: 200, body: [{ id: "7", account: "acme" }] };
+  const res = await installations.POST(installationsReq(appBody));
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), [{ id: "7", account: "acme" }]);
+  const call = seen.at(-1)!;
+  assert.deepEqual(
+    [call.method, call.url, call.authorization],
+    ["POST", "/connections/app-installations", "Bearer admin-token-for-test"],
+  );
+  assert.deepEqual(JSON.parse(call.body), appBody);
+
+  reply = {
+    status: 422,
+    body: {
+      statusCode: 422,
+      message: "The code host rejected this GitHub App.",
+    },
+  };
+  const failed = await installations.POST(installationsReq(appBody));
+  const text = await failed.text();
+  assert.equal(failed.status, 422);
+  assert.deepEqual(JSON.parse(text), {
+    error: "The code host rejected this GitHub App.",
+  });
+  assert.ok(!text.includes("SECRETKEYBODY"));
+  process.env.ENGINE_URL = "http://127.0.0.1:1";
+  const down = await installations.POST(installationsReq(appBody));
+  const downText = await down.text();
+  assert.equal(down.status, 502);
+  assert.ok(!downText.includes("SECRETKEYBODY"));
+  process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
+});
+
+test("app-installations bodies are strict and validated before forwarding", async () => {
+  const before = seen.length;
+  const origError = console.error;
+  const logged: unknown[][] = [];
+  console.error = (...args) => void logged.push(args);
+  try {
+    for (const bad of [
+      { ...appBody, host: "http://github.com" },
+      { ...appBody, appId: "abc" },
+      { ...appBody, privateKey: "" },
+      { ...appBody, installationId: "1" },
+      { host: appBody.host, appId: appBody.appId },
+    ])
+      assert.equal(
+        (await installations.POST(installationsReq(bad))).status,
+        400,
+        JSON.stringify(bad),
+      );
+  } finally {
+    console.error = origError;
+  }
+  assert.equal(seen.length, before);
+  assert.ok(!JSON.stringify(logged).includes("SECRETKEYBODY"));
+});
+
+test("with ENGINE_URL unset app-installations says it needs an engine", async () => {
+  const { ENGINE_URL, ENGINE_ADMIN_TOKEN } = process.env;
+  delete process.env.ENGINE_URL;
+  try {
+    const res = await installations.POST(installationsReq(appBody));
+    assert.equal(res.status, 422);
+    assert.match(
+      ((await res.json()) as { error: string }).error,
+      /running engine/,
+    );
+  } finally {
+    if (ENGINE_URL !== undefined) process.env.ENGINE_URL = ENGINE_URL;
+    if (ENGINE_ADMIN_TOKEN !== undefined)
+      process.env.ENGINE_ADMIN_TOKEN = ENGINE_ADMIN_TOKEN;
+  }
+});
