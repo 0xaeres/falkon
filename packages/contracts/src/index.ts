@@ -109,19 +109,28 @@ export const threadSchema = z.object({
   answers: z.array(answerSchema),
 });
 export const threadSummarySchema = threadSchema.omit({ answers: true });
-export const connectionRequestSchema = z.object({
+const connectionHost = z
+  .string()
+  .url()
+  .max(200)
+  .refine((value) => new URL(value).protocol === "https:", "Use an HTTPS server URL.");
+const numericId = z.string().regex(/^\d{1,20}$/);
+export const tokenConnectionRequestSchema = z.object({
   provider: providerSchema,
   method: z.literal("token"),
-  host: z
-    .string()
-    .url()
-    .max(200)
-    .refine(
-      (value) => new URL(value).protocol === "https:",
-      "Use an HTTPS server URL.",
-    ),
+  host: connectionHost,
   token: z.string().min(1).max(200),
 });
+// GitHub App: the App's id and PEM plus the chosen installation. The PEM is write-only (never in any response).
+export const appConnectionRequestSchema = z.object({
+  provider: providerSchema,
+  method: z.literal("app"),
+  host: connectionHost,
+  appId: numericId,
+  privateKey: z.string().min(1).max(10_000),
+  installationId: numericId,
+});
+export const connectionRequestSchema = z.discriminatedUnion("method", [tokenConnectionRequestSchema, appConnectionRequestSchema]);
 export const connectionSchema = z.object({
   id: z.string(),
   host: z.string(),

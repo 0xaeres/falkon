@@ -87,6 +87,13 @@ export const api = {
     request(keys.product(id), productSchema, "PATCH", input),
   sync: (id: string, input: unknown) =>
     request(`${keys.product(id)}/sync`, statusSchema, "POST", input),
+  installations: (input: { host: string; appId: string; privateKey: string }) =>
+    request(
+      `${base}/connections/app-installations`,
+      z.array(z.object({ id: z.string(), account: z.string() })),
+      "POST",
+      input,
+    ),
   newThread: (id: string) => request(keys.threads(id), threadSchema, "POST"),
 };
 export { answerSchema };

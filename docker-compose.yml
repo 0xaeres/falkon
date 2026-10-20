@@ -52,8 +52,8 @@ services:
 
   # NestJS boundary (strangler): serves /mcp/<product> beside web's untouched /api/mcp, and the Product
   # registry admin API on a second listener (3002). Both are published on host loopback only; the 0.0.0.0
-  # binds are inside the container. The admin listener only runs when ADMIN_TOKEN (32+ characters) is set and
-  # then needs `Authorization: Bearer <token>`; unset, nothing listens on 3002 and the published port is unused.
+  # binds are inside the container. The admin listener always runs and needs `Authorization: Bearer <token>`: ADMIN_TOKEN
+  # (32+ characters) if set, else the token generated into /data/secrets/admin.token (`scripts/admin-token.sh show|reset`).
   # AUTH_MODE=apiKey needs ACCESS_FILE pointing at a mounted access file, or it denies everyone.
   api:
     <<: *app
@@ -80,8 +80,9 @@ services:
     depends_on: [backend, zoekt]
 
   # Falkon UI (Next standalone). Connections and repository search go to the engine's admin listener; the other
-  # routes stay on the mock until later slices. ENGINE_ADMIN_TOKEN is the api's ADMIN_TOKEN (set it in .env), kept in
-  # the server process and never sent to the browser. Published on host loopback only.
+  # routes stay on the mock until later slices. The admin token is read per request from the api's /data/secrets/admin.token
+  # (the data volume, read-only); ENGINE_ADMIN_TOKEN, when set, overrides it. Kept in the server process and never sent to
+  # the browser. Published on host loopback only.
   ui:
     <<: *app
     profiles: []
@@ -90,7 +91,9 @@ services:
       PORT: 3000
       HOSTNAME: 0.0.0.0
       ENGINE_URL: http://api:3002
-      ENGINE_ADMIN_TOKEN: ${ENGINE_ADMIN_TOKEN:-${ADMIN_TOKEN:-}}
+      DATA_DIR: /data
+      ENGINE_ADMIN_TOKEN: ${ENGINE_ADMIN_TOKEN:-}
+    volumes: [data:/data:ro]
     depends_on: [api]
     ports: ["127.0.0.1:3100:3000"]
 

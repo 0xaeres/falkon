@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/primitives";
 import { api, keys } from "@/lib/api/client";
 import type { Product, Provider } from "@sbc/contracts";
+import { connectReady, connectRequest, type Method } from "./connect-method";
 const RepositoryPicker = dynamic(() => import("./repository-picker"), {
   loading: () => <LoadingMark label="Loading repository picker" />,
 });
@@ -98,6 +99,14 @@ function Wizard({ edit }: { edit?: Product }) {
     edit ? `https://${edit.host}` : "https://github.acme.internal",
   );
   const [token, setToken] = useState("");
+  const [method, setMethod] = useState<Method>("token");
+  const [appId, setAppId] = useState("");
+  // Held in memory only; cleared once the connection is created. Never stored client-side or logged.
+  const [privateKey, setPrivateKey] = useState("");
+  const [installations, setInstallations] = useState<
+    { id: string; account: string }[] | null
+  >(null);
+  const [installationId, setInstallationId] = useState("");
   const [name, setName] = useState(edit?.name ?? "");
   const [selected, setSelected] = useState<Record<string, string>>(
     edit
@@ -133,12 +142,55 @@ function Wizard({ edit }: { edit?: Product }) {
   const picked = repositories.filter((repo) => selected[repo.id]);
   const disabled =
     busy ||
-    (step === 0 && !token) ||
+    (step === 0 &&
+      !connectReady(method, { token, appId, privateKey, installationId })) ||
     (step === 1 && (!id || !name.trim() || !available || !products)) ||
     (step === 2 && (!picked.length || !!repoError || !catalog));
   function nextStep(value: number) {
     setError("");
     setStep(value);
+  }
+  function resetInstallations() {
+    setInstallations(null);
+    setInstallationId("");
+    setError("");
+  }
+  function readKeyFile(file: File | undefined) {
+    if (!file) return;
+    const reader = new FileReader();
+    if (file.size > 16_000) {
+      setError("That file is too large for a private key.");
+      return;
+    }
+    reader.onerror = () => setError("Could not read that file. Try again.");
+    reader.onload = () => {
+      setPrivateKey(String(reader.result));
+      resetInstallations();
+    };
+    reader.readAsText(file);
+  }
+  async function findInstallations() {
+    setBusy(true);
+    setError("");
+    try {
+      const found = await api.installations({ host, appId, privateKey });
+      setInstallations(found);
+      setInstallationId(found.length === 1 ? found[0]!.id : "");
+      if (!found.length)
+        setError(
+          "This GitHub App has no installations. Install it on the account that owns the repositories.",
+        );
+    } catch (error) {
+      // The key stays in state so the user can retry.
+      setInstallations(null);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Could not list installations. Try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -147,16 +199,23 @@ function Wizard({ edit }: { edit?: Product }) {
     if (step === 0) {
       setBusy(true);
       try {
-        const connected = await api.connect({
-          provider,
-          host,
-          method: "token",
-          token,
-        });
+        const connected = await api.connect(
+          connectRequest(method, {
+            provider,
+            host,
+            token,
+            appId,
+            privateKey,
+            installationId,
+          }),
+        );
         setConnection(connected);
         setToken("");
+        setPrivateKey("");
+        resetInstallations();
         setStep(1);
       } catch (error) {
+        // The key stays in state so the user can retry.
         setError(
           error instanceof Error
             ? error.message
@@ -283,16 +342,49 @@ function Wizard({ edit }: { edit?: Product }) {
                     <input
                       className="input"
                       id="server-url"
+                      disabled={busy}
                       autoFocus
                       type="url"
                       required
                       value={host}
-                      onChange={(event) => setHost(event.target.value)}
+                      onChange={(event) => {
+                        setHost(event.target.value);
+                        resetInstallations();
+                      }}
                     />
                   </div>
                   <fieldset className="connection-method">
                     <legend>Connect with</legend>
-                    {
+                    <div
+                      className="prov"
+                      role="group"
+                      aria-label="Connect with"
+                    >
+                      {(
+                        [
+                          ["token", "Personal access token"],
+                          ["app", "GitHub App"],
+                        ] as const
+                      ).map(([id, label]) => (
+                        <button
+                          type="button"
+                          key={id}
+                          className={`pv ${method === id ? "on" : ""}`}
+                          aria-pressed={method === id}
+                          onClick={() => {
+                            setMethod(id);
+                            // The key must not survive a switch to token.
+                            setPrivateKey("");
+                            setAppId("");
+                            resetInstallations();
+                          }}
+                        >
+                          <span className="radio" />
+                          <strong>{label}</strong>
+                        </button>
+                      ))}
+                    </div>
+                    {method === "token" ? (
                       <div className="field token-field">
                         <label htmlFor="demo-token">
                           Personal access token
@@ -315,7 +407,87 @@ function Wizard({ edit }: { edit?: Product }) {
                           needed or stored.
                         </p>
                       </div>
-                    }
+                    ) : (
+                      <>
+                        <div className="field">
+                          <label htmlFor="app-id">App ID</label>
+                          <input
+                            className="input"
+                            id="app-id"
+                            disabled={busy}
+                            inputMode="numeric"
+                            pattern="[0-9]{1,20}"
+                            autoComplete="off"
+                            value={appId}
+                            onChange={(event) => {
+                              setAppId(event.target.value.trim());
+                              resetInstallations();
+                            }}
+                          />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="app-key">Private key (PEM)</label>
+                          <textarea
+                            className="input mono"
+                            id="app-key"
+                            disabled={busy}
+                            rows={4}
+                            autoComplete="off"
+                            spellCheck={false}
+                            aria-describedby="app-help"
+                            style={{ height: "auto", padding: 12 }}
+                            value={privateKey}
+                            onChange={(event) => {
+                              setPrivateKey(event.target.value);
+                              resetInstallations();
+                            }}
+                          />
+                          <input
+                            type="file"
+                            disabled={busy}
+                            accept=".pem,text/plain"
+                            aria-label="Load private key from a file"
+                            onChange={(event) => {
+                              readKeyFile(event.target.files?.[0]);
+                              event.target.value = "";
+                            }}
+                          />
+                          <p className="help" id="app-help">
+                            The App needs read-only Contents and Metadata
+                            permissions and must be installed on the
+                            repositories to search. The key is sent once to
+                            create the connection and is not kept in your
+                            browser.
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          disabled={busy || !appId || !privateKey}
+                          onClick={() => void findInstallations()}
+                        >
+                          Find installations
+                        </Button>
+                        {!!installations?.length && (
+                          <div
+                            className="field"
+                            role="radiogroup"
+                            aria-label="Installation"
+                          >
+                            {installations.map((item) => (
+                              <label key={item.id}>
+                                <input
+                                  type="radio"
+                                  name="installation"
+                                  checked={installationId === item.id}
+                                  onChange={() => setInstallationId(item.id)}
+                                />{" "}
+                                {item.account}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
                   </fieldset>
                 </>
               )}
@@ -364,7 +536,8 @@ function Wizard({ edit }: { edit?: Product }) {
                     <div className="connected input">
                       <ProviderLogo provider={provider} size={14} />
                       <span>
-                        Token connection on <strong>{connection?.host}</strong>
+                        {method === "app" ? "GitHub App" : "Token"} connection
+                        on <strong>{connection?.host}</strong>
                       </span>
                       <Badge tone="green">
                         <Check size={12} />

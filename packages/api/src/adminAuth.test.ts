@@ -1,7 +1,10 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
+import fs from "node:fs";
 import net from "node:net";
+import os from "node:os";
+import path from "node:path";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
 import { adminToken, createAdminApp, startAdmin } from "./admin";
@@ -123,23 +126,86 @@ test("the product listener neither needs nor reads the token", async () => {
   assert.equal((await fetch(url, { method: "POST", body: "{}", headers: { authorization: `Bearer ${TOKEN}` } })).status, 200);
 });
 
-test("ADMIN_TOKEN unset or empty: nothing listens on the admin port (real socket)", async () => {
+const freePort = async () => {
   const probe = net.createServer();
   await new Promise<void>((r) => probe.listen(0, "127.0.0.1", r));
   const free = (probe.address() as AddressInfo).port;
   await new Promise((r) => probe.close(r));
-  for (const env of [{ API_ADMIN_PORT: String(free) }, { API_ADMIN_PORT: String(free), ADMIN_TOKEN: "" }]) {
-    assert.equal(await startAdmin(registry, env), undefined);
-    const code = await new Promise<string>((resolve) => net.connect(free, "127.0.0.1").once("connect", function (this: net.Socket) { this.destroy(); resolve("connected"); }).once("error", (e: NodeJS.ErrnoException) => resolve(e.code ?? "error")));
-    assert.equal(code, "ECONNREFUSED");
+  return free;
+};
+const tmpData = () => fs.mkdtempSync(path.join(os.tmpdir(), "admin-token-"));
+const tokenFile = (dir: string) => path.join(dir, "secrets", "admin.token");
+
+test("no ADMIN_TOKEN: the first start generates a mode-600 64-hex file, the second reuses it", () => {
+  const DATA_DIR = tmpData();
+  const first = adminToken({ DATA_DIR })();
+  assert.match(first, /^[0-9a-f]{64}$/);
+  assert.equal(fs.readFileSync(tokenFile(DATA_DIR), "utf8"), first);
+  assert.equal(fs.statSync(tokenFile(DATA_DIR)).mode & 0o777, 0o600);
+  assert.equal(fs.statSync(path.dirname(tokenFile(DATA_DIR))).mode & 0o777, 0o700);
+  assert.equal(adminToken({ DATA_DIR, ADMIN_TOKEN: "" })(), first);
+});
+
+test("ADMIN_TOKEN overrides the file", () => {
+  const DATA_DIR = tmpData();
+  adminToken({ DATA_DIR })();
+  assert.equal(adminToken({ DATA_DIR, ADMIN_TOKEN: TOKEN })(), TOKEN);
+});
+
+test("no ADMIN_TOKEN: the admin listener still serves, with the generated token (real socket)", async () => {
+  const DATA_DIR = tmpData();
+  const free = await freePort();
+  const app = await startAdmin(registry, { API_ADMIN_PORT: String(free), DATA_DIR });
+  const file = fs.readFileSync(tokenFile(DATA_DIR), "utf8");
+  try {
+    assert.equal((await fetch(`http://127.0.0.1:${free}/products`)).status, 401);
+    const ok = await fetch(`http://127.0.0.1:${free}/products`, { headers: { authorization: `Bearer ${file}` } });
+    assert.equal(ok.status, 200);
+    assert.equal((await ok.text()).includes(file), false);
+    assert.equal(captured.join("").includes(file), false, "the generated token is never logged");
+  } finally { await app?.close(); }
+});
+
+test("rotating the file makes the new token work and the old one 401 on the next request, no restart", async () => {
+  const DATA_DIR = tmpData();
+  const free = await freePort();
+  const app = await startAdmin(registry, { API_ADMIN_PORT: String(free), DATA_DIR });
+  const old = fs.readFileSync(tokenFile(DATA_DIR), "utf8");
+  const status = async (t: string) => (await fetch(`http://127.0.0.1:${free}/products`, { headers: { authorization: `Bearer ${t}` } })).status;
+  try {
+    assert.equal(await status(old), 200);
+    const fresh = "f".repeat(64);
+    fs.writeFileSync(`${tokenFile(DATA_DIR)}.new`, fresh, { mode: 0o600 });
+    fs.renameSync(`${tokenFile(DATA_DIR)}.new`, tokenFile(DATA_DIR));
+    assert.equal(await status(fresh), 200);
+    assert.equal(await status(old), 401);
+  } finally { await app?.close(); }
+});
+
+test("an empty, whitespace-only or truncated admin.token never authorizes, and startup throws", async () => {
+  for (const content of ["", "  \n ", "a".repeat(31) + "\n"]) {
+    const DATA_DIR = tmpData();
+    fs.mkdirSync(path.dirname(tokenFile(DATA_DIR)), { recursive: true });
+    fs.writeFileSync(tokenFile(DATA_DIR), content);
+    assert.throws(() => adminToken({ DATA_DIR }), (e: Error) => /at least 32/.test(e.message) && !e.message.includes("aaaa"));
+    await assert.rejects(startAdmin(registry, { DATA_DIR, API_ADMIN_PORT: "0" }), /at least 32/);
+    // A running listener whose file becomes unusable answers every request with the same 401.
+    const good = tmpData();
+    const getter = adminToken({ DATA_DIR: good });
+    const app = await createAdminApp(registry, getter, {});
+    await app.listen(0, "127.0.0.1");
+    const url = `http://127.0.0.1:${port(app)}/products`;
+    try {
+      fs.writeFileSync(tokenFile(good), content);
+      for (const headers of [{} as Record<string, string>, { authorization: "Bearer " }, { authorization: "Bearer" }, { authorization: `Bearer ${content.trim()}` }]) assert.equal((await fetch(url, { headers })).status, 401, JSON.stringify([content, headers]));
+      fs.rmSync(tokenFile(good));
+      assert.equal((await fetch(url)).status, 401, "a deleted file also fails closed, not 500");
+    } finally { await app.close(); }
   }
 });
 
 test("a set ADMIN_TOKEN starts the listener and enforces it (real socket)", async () => {
-  const probe = net.createServer();
-  await new Promise<void>((r) => probe.listen(0, "127.0.0.1", r));
-  const free = (probe.address() as AddressInfo).port;
-  await new Promise((r) => probe.close(r));
+  const free = await freePort();
   const app = await startAdmin(registry, { API_ADMIN_PORT: String(free), ADMIN_TOKEN: TOKEN });
   try {
     assert.equal((await fetch(`http://127.0.0.1:${free}/products`)).status, 401);
@@ -154,8 +220,7 @@ test("a token shorter than 32 characters refuses to start, and the error does no
     assert.throws(() => adminToken({ ADMIN_TOKEN: bad }), (e: Error) => !e.message.includes("Zq9") && /at least 32/.test(e.message));
     await assert.rejects(startAdmin(registry, { ADMIN_TOKEN: bad, API_ADMIN_PORT: "0" }), /at least 32/);
   }
-  assert.equal(adminToken({ ADMIN_TOKEN: short }), short);
-  assert.equal(adminToken({}), undefined);
+  assert.equal(adminToken({ ADMIN_TOKEN: short })(), short);
 });
 
 test("the token never appears in a response or in anything written to stdout or stderr", async () => {
@@ -169,6 +234,9 @@ test("compose passes ADMIN_TOKEN through to the api service only", async () => {
   const { readFileSync } = await import("node:fs");
   const compose = readFileSync(new URL("../../../docker-compose.yml", import.meta.url), "utf8");
   assert.equal(compose.match(/ADMIN_TOKEN: \$\{ADMIN_TOKEN:-\}/g)?.length, 1);
+  assert.doesNotMatch(compose, /ENGINE_ADMIN_TOKEN: \$\{ENGINE_ADMIN_TOKEN:-\$/);
+  const ui = compose.slice(compose.indexOf("\n  ui:"), compose.indexOf("\nvolumes:"));
+  assert.match(ui, /data:\/data:ro/);
   const api = compose.slice(compose.indexOf("\n  api:"));
   assert.match(api, /ADMIN_TOKEN: \$\{ADMIN_TOKEN:-\}/);
   assert.match(api, /127\.0\.0\.1:3002:3002/);
