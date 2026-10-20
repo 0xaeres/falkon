@@ -443,3 +443,5 @@ Not verified (needs the human): wizard to a real product through the GitHub App 
 ## Cycle 6b dropped (human, 2026-10-20)
 
 D40: "Sign in with GitHub" (device flow, D38/D39) is cancelled before any code landed: the personal access token stays the one connection path for testing, as the simplest. Nothing from 6b was merged; the half-built S30a worktree and branches were discarded. The GitHub App method from cycle 6 (S28a, S28b) stays merged but is unverified against a real App and is not the recommended path; remove it only if the human asks. The D38/D39 design (GitHub App user tokens, device flow, `GITHUB_CLIENT_ID`) is kept here as a record if Sign in returns.
+
+D41 (human, 2026-10-20): the GitHub App method is removed to focus on the MVP; PAT is the only connection path. S28a and S28b were reverted on `main` (revert commits of their merges); D36 is superseded and the docs were edited to match. The admin token (S27, D37) stays. The App design remains in D36 above as a record.
