@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { Product } from "@sbc/contracts";
+import type { Product } from "@falkon/contracts";
 export function Mark({ size = 24 }: { size?: number }) {
   return (
     <svg

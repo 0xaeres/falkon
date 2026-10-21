@@ -2,7 +2,7 @@ import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { NextRequest } from "next/server";
 import type { UIMessage } from "ai";
-import { prisma } from "@sbc/db";
+import { prisma } from "@falkon/db";
 import { scopeOf } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";

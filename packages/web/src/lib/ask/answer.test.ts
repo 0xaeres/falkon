@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { ToolSource } from "@sbc/shared";
+import type { ToolSource } from "@falkon/shared";
 import type { UIMessage } from "ai";
 import { answerPart, sourcesOf, toPortableMarkdown } from "./answer";
 import { fileReferenceToString } from "./prompt";

@@ -1,7 +1,7 @@
 import { Controller, Delete, Get, Inject, Module, Param, Post, Req, Res } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { noneAccessPolicy, scopeFingerprint, scopeFor, type AccessPolicy, type Scope } from "@sbc/shared";
+import { noneAccessPolicy, scopeFingerprint, scopeFor, type AccessPolicy, type Scope } from "@falkon/shared";
 import { allowedHosts, restrict, sendJson } from "./http";
 import { isProductName, PRODUCT_REGISTRY, type ProductRegistry } from "./product";
 import { SessionBindings, type SessionBinding } from "./sessions";

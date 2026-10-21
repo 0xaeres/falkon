@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { UIMessage } from "ai";
-import type { Answer } from "@sbc/contracts";
+import type { Answer } from "@falkon/contracts";
 import {
   ReplyBody,
   answerLabel,

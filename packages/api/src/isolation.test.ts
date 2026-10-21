@@ -11,7 +11,7 @@ import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
-import { scopeFor, type WSearchRequest } from "@sbc/shared";
+import { scopeFor, type WSearchRequest } from "@falkon/shared";
 import { seedContractRepo } from "../../../tests/contract/fixture";
 
 const fixture = seedContractRepo();
@@ -59,8 +59,8 @@ let fx: string;
 before(async () => {
   const mcp = await import("../../web/src/lib/mcp");
   const { toolDeps } = await import("../../web/src/lib/tools");
-  // web's sources load as CommonJS, so they hold the require()d instance of @sbc/shared: inject into that one.
-  const { setZoektTransport } = createRequire(import.meta.url)("@sbc/shared") as typeof import("@sbc/shared");
+  // web's sources load as CommonJS, so they hold the require()d instance of @falkon/shared: inject into that one.
+  const { setZoektTransport } = createRequire(import.meta.url)("@falkon/shared") as typeof import("@falkon/shared");
   const { createApp } = await import("./app");
   toolDeps.baseUrl = "http://localhost:3000";
   mock.method(toolDeps, "getRepo", async (name: string) => rows.find((r) => r.name === name));

@@ -1,7 +1,7 @@
 // Pure mapping from engine rows to the UI contract (Product, Status). No I/O: callers load the rows.
 import { createHash } from "node:crypto";
-import type { Product, Status } from "@sbc/contracts";
-import type { ScanStatus } from "@sbc/db";
+import type { Product, Status } from "@falkon/contracts";
+import type { ScanStatus } from "@falkon/db";
 
 export interface RepoFacts {
   name: string; // e.g. github.com/org/repo

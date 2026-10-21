@@ -9,7 +9,7 @@ import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
-import { messagesToAnswers } from "@sbc/contracts";
+import { messagesToAnswers } from "@falkon/contracts";
 import { createAdminApp } from "./admin";
 import { ConnectionService } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";
@@ -52,9 +52,9 @@ before(async () => {
   process.env.LLM_BASE_URL = fake.url;
   process.env.LLM_MODEL = "fixture-model";
   process.env.LLM_API_KEY = "k";
-  // web's sources load as CommonJS, so they hold the require()d instance of @sbc/shared: configure that one.
+  // web's sources load as CommonJS, so they hold the require()d instance of @falkon/shared: configure that one.
   const { toolDeps } = await import("../../web/src/lib/tools");
-  const shared = createRequire(import.meta.url)("@sbc/shared") as typeof import("@sbc/shared");
+  const shared = createRequire(import.meta.url)("@falkon/shared") as typeof import("@falkon/shared");
   toolDeps.baseUrl = "http://localhost:3000";
   mock.method(toolDeps, "getRepo", async (name: string) => (dirs[name] ? row(name) : undefined));
   mock.method(toolDeps, "listRepos", async () => Object.keys(dirs).map(row));

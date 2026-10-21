@@ -1,5 +1,5 @@
 import { createUIMessageStreamResponse, type UIMessage } from "ai";
-import { gitRead, type Scope } from "@sbc/shared";
+import { gitRead, type Scope } from "@falkon/shared";
 import { createMessageStream } from "./agent";
 import { chatName, pickModel } from "./chat";
 import { buildEvidence } from "./evidence";

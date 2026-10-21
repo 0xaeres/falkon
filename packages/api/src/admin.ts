@@ -4,7 +4,7 @@ import { NestFactory } from "@nestjs/core";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { writeSecretOnce } from "@sbc/shared";
+import { writeSecretOnce } from "@falkon/shared";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
 export { MAX_BODY_BYTES } from "./request";

@@ -3,9 +3,9 @@
 import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, Res } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { chatMessageRequestSchema, messagesToAnswers, type ChatMessageLike, type Thread, type ThreadSummary } from "@sbc/contracts";
-import type { PrismaClient } from "@sbc/db";
-import { noneAccessPolicy, scopeFor } from "@sbc/shared";
+import { chatMessageRequestSchema, messagesToAnswers, type ChatMessageLike, type Thread, type ThreadSummary } from "@falkon/contracts";
+import type { PrismaClient } from "@falkon/db";
+import { noneAccessPolicy, scopeFor } from "@falkon/shared";
 import { AskError } from "../../web/src/lib/ask/errors";
 import { sendJson } from "./http";
 import { isProductName } from "./product";

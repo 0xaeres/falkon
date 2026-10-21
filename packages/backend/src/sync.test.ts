@@ -1,6 +1,6 @@
 import { test, mock } from "node:test";
 import assert from "node:assert/strict";
-import type { Config } from "@sbc/shared";
+import type { Config } from "@falkon/shared";
 import { isProductSlug, resolveContext, type ResolvableRepo } from "./productResolve";
 import { fakeProductTable } from "./productTable.fake";
 import { syncProducts } from "./sync";

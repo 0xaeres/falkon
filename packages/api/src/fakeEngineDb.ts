@@ -1,5 +1,5 @@
 // Test helper: the Prisma surface ConnectionService, UiProductService and ThreadService use (product, repo, connection, credential, chat), in memory.
-import type { PrismaClient } from "@sbc/db";
+import type { PrismaClient } from "@falkon/db";
 import { fakeProductTable } from "../../backend/src/productTable.fake";
 
 type Row = Record<string, any>;

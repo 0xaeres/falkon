@@ -1,6 +1,6 @@
 import { proxy } from "@/lib/api/server";
 import { atRequestTime } from "@/lib/api/engine";
-import { setupRequestSchema } from "@sbc/contracts";
+import { setupRequestSchema } from "@falkon/contracts";
 
 export async function GET() {
   await atRequestTime();

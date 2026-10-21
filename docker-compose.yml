@@ -10,9 +10,9 @@ x-image: &app
 services:
   postgres:
     image: postgres:17-alpine
-    environment: { POSTGRES_USER: sbc, POSTGRES_PASSWORD: sbc, POSTGRES_DB: sbc }
+    environment: { POSTGRES_USER: falkon, POSTGRES_PASSWORD: falkon, POSTGRES_DB: falkon }
     volumes: [pgdata:/var/lib/postgresql/data]
-    healthcheck: { test: ["CMD-SHELL", "pg_isready -U sbc"], interval: 3s, retries: 20 }
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U falkon"], interval: 3s, retries: 20 }
 
   redis:
     image: redis:7-alpine
@@ -21,10 +21,10 @@ services:
   backend:
     <<: *app
     build: { context: ., dockerfile: docker/Dockerfile }
-    command: sh -c "pnpm --filter @sbc/db push && pnpm --filter @sbc/backend start"
+    command: sh -c "pnpm --filter @falkon/db push && pnpm --filter @falkon/backend start"
     env_file: [.env]
     environment:
-      DATABASE_URL: postgresql://sbc:sbc@postgres:5432/sbc
+      DATABASE_URL: postgresql://falkon:falkon@postgres:5432/falkon
       REDIS_URL: redis://redis:6379
       DATA_DIR: /data
       CONFIG_PATH: /config/config.json
@@ -41,10 +41,10 @@ services:
 
   web:
     <<: *app
-    command: pnpm --filter @sbc/web start
+    command: pnpm --filter @falkon/web start
     env_file: [.env]
     environment:
-      DATABASE_URL: postgresql://sbc:sbc@postgres:5432/sbc
+      DATABASE_URL: postgresql://falkon:falkon@postgres:5432/falkon
       DATA_DIR: /data
       ZOEKT_URL: http://zoekt:6070
       CONFIG_PATH: /config/config.json
@@ -63,7 +63,7 @@ services:
     command: node packages/api/dist/main.js
     env_file: [.env]
     environment:
-      DATABASE_URL: postgresql://sbc:sbc@postgres:5432/sbc
+      DATABASE_URL: postgresql://falkon:falkon@postgres:5432/falkon
       DATA_DIR: /data
       ZOEKT_URL: http://zoekt:6070
       CONFIG_PATH: /config/config.json

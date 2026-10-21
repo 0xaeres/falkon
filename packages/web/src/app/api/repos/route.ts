@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { prisma } from "@sbc/db";
+import { prisma } from "@falkon/db";
 import { scopeOf, unauthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";

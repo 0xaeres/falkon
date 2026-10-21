@@ -1,6 +1,6 @@
 // Imports the Next-free runners from the web package in place (spec D19): no file moves, no copies.
-import { prisma } from "@sbc/db";
-import { accessPolicyFromEnv } from "@sbc/shared";
+import { prisma } from "@falkon/db";
+import { accessPolicyFromEnv } from "@falkon/shared";
 import { handleMcpDelete, handleMcpPost } from "../../web/src/lib/mcp";
 import { adminToken, startAdmin } from "./admin";
 import { createApp } from "./app";

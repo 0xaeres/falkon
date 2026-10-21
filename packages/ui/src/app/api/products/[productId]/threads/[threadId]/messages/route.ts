@@ -1,4 +1,4 @@
-import { chatMessageRequestSchema } from "@sbc/contracts";
+import { chatMessageRequestSchema } from "@falkon/contracts";
 import { apiError, body, type ThreadRoute } from "@/lib/api/server";
 import { forward } from "@/lib/api/engine";
 

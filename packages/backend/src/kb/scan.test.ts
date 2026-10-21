@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { kb } from "@sbc/shared";
+import { kb } from "@falkon/shared";
 import { kbModelReady, runKnowledgeScan } from "./scan";
 
 const model = { LLM_BASE_URL: "http://x", LLM_API_KEY: "k", LLM_MODEL: "m" };

@@ -9,7 +9,7 @@ for command in docker node git curl pnpm; do
     command -v "$command" >/dev/null 2>&1 || fail "prerequisites: missing $command"
 done
 docker compose version >/dev/null 2>&1 || fail 'prerequisites: docker compose unavailable'
-pnpm -C "$root" --filter @sbc/shared exec tsx -e "import '../../tests/golden/run.ts'; import '../../tests/golden/diff.ts'" >/dev/null 2>&1 ||
+pnpm -C "$root" --filter @falkon/shared exec tsx -e "import '../../tests/golden/run.ts'; import '../../tests/golden/diff.ts'" >/dev/null 2>&1 ||
     fail 'prerequisites: golden runner cannot start; run pnpm install in the worktree and retry'
 pass "$step"
 temp=$(mktemp -d)
@@ -49,14 +49,14 @@ sh "$root/tests/fixtures/build.sh" "$temp" >/dev/null
 ADMIN_TOKEN="$admin_token" node - "$root" "$temp" "$port" "$api_port" "$admin_port" docker/Dockerfile <<'JS'
 const fs = require('node:fs');
 const [root, temp, port, apiPort, adminPort, dockerfile] = process.argv.slice(2);
-const env = { DATABASE_URL: 'postgresql://sbc:sbc@postgres:5432/sbc', REDIS_URL: 'redis://redis:6379', DATA_DIR: '/data', CONFIG_PATH: '/fixtures/config.json', ZOEKT_URL: 'http://zoekt:6070', AUTH_URL: `http://127.0.0.1:${port}`, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'safe.directory', GIT_CONFIG_VALUE_0: '*' };
+const env = { DATABASE_URL: 'postgresql://falkon:falkon@postgres:5432/falkon', REDIS_URL: 'redis://redis:6379', DATA_DIR: '/data', CONFIG_PATH: '/fixtures/config.json', ZOEKT_URL: 'http://zoekt:6070', AUTH_URL: `http://127.0.0.1:${port}`, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'safe.directory', GIT_CONFIG_VALUE_0: '*' };
 const app = { image: 'falkon-smoke-app', pull_policy: 'never', environment: env, volumes: ['data:/data', `${temp}:/fixtures:ro`] };
 const compose = { services: {
-  postgres: { image: 'postgres:17-alpine', environment: { POSTGRES_USER: 'sbc', POSTGRES_PASSWORD: 'sbc', POSTGRES_DB: 'sbc' }, volumes: ['pgdata:/var/lib/postgresql/data'], healthcheck: { test: ['CMD-SHELL', 'pg_isready -U sbc'], interval: '3s', retries: 30 } },
+  postgres: { image: 'postgres:17-alpine', environment: { POSTGRES_USER: 'falkon', POSTGRES_PASSWORD: 'falkon', POSTGRES_DB: 'falkon' }, volumes: ['pgdata:/var/lib/postgresql/data'], healthcheck: { test: ['CMD-SHELL', 'pg_isready -U falkon'], interval: '3s', retries: 30 } },
   redis: { image: 'redis:7-alpine', healthcheck: { test: ['CMD', 'redis-cli', 'ping'], interval: '3s', retries: 30 } },
-  backend: { ...app, build: { context: root, dockerfile }, command: ['sh', '-c', 'pnpm --filter @sbc/db push && pnpm --filter @sbc/backend start'], depends_on: { postgres: { condition: 'service_healthy' }, redis: { condition: 'service_healthy' } } },
+  backend: { ...app, build: { context: root, dockerfile }, command: ['sh', '-c', 'pnpm --filter @falkon/db push && pnpm --filter @falkon/backend start'], depends_on: { postgres: { condition: 'service_healthy' }, redis: { condition: 'service_healthy' } } },
   zoekt: { ...app, command: ['zoekt-webserver', '-index', '/data/index', '-rpc', '-listen', ':6070'], depends_on: ['backend'] },
-  web: { ...app, command: ['pnpm', '--filter', '@sbc/web', 'start'], ports: [`127.0.0.1:${port}:3000`], depends_on: ['backend', 'zoekt'] },
+  web: { ...app, command: ['pnpm', '--filter', '@falkon/web', 'start'], ports: [`127.0.0.1:${port}:3000`], depends_on: ['backend', 'zoekt'] },
   api: { ...app, environment: { ...env, API_HOST: '0.0.0.0', API_ADMIN_HOST: '0.0.0.0', AUTH_MODE: 'none', ADMIN_TOKEN: process.env.ADMIN_TOKEN }, command: ['node', 'packages/api/dist/main.js'], ports: [`127.0.0.1:${apiPort}:3001`, `127.0.0.1:${adminPort}:3002`], depends_on: ['backend', 'zoekt'] }
 }, volumes: { pgdata: {}, data: {} } };
 fs.writeFileSync(`${temp}/compose.json`, JSON.stringify(compose));

@@ -18,10 +18,10 @@ COPY --from=zoekt /src/LICENSE /usr/share/licenses/zoekt/LICENSE
 WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile=false \
- && pnpm --filter @sbc/db generate \
- && pnpm --filter @sbc/web build \
- && pnpm --filter @sbc/api build \
- && pnpm --filter @sbc/ui build \
+ && pnpm --filter @falkon/db generate \
+ && pnpm --filter @falkon/web build \
+ && pnpm --filter @falkon/api build \
+ && pnpm --filter @falkon/ui build \
  && cp -r packages/ui/.next/static packages/ui/.next/standalone/packages/ui/.next/static \
  && cp -r packages/ui/public packages/ui/.next/standalone/packages/ui/public
 ENV NODE_ENV=production DATA_DIR=/data CTAGS_COMMAND=ctags

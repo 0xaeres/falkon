@@ -1,5 +1,5 @@
-import { prisma, RepoKind, RepoStatus, ScanMode, ScanStatus, type Repo } from "@sbc/db";
-import { env, gitDirOf, kb, knowledgeRepoName, loadConfig, repoGitDir, repoPath, scopeFor, type KnowledgeBaseConfig } from "@sbc/shared";
+import { prisma, RepoKind, RepoStatus, ScanMode, ScanStatus, type Repo } from "@falkon/db";
+import { env, gitDirOf, kb, knowledgeRepoName, loadConfig, repoGitDir, repoPath, scopeFor, type KnowledgeBaseConfig } from "@falkon/shared";
 import { GitDocStore } from "./gitStore";
 
 /** Whether the config selects this repo for a knowledge base. */

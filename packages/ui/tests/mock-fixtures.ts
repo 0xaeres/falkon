@@ -4,7 +4,7 @@ import type {
   Product,
   Repository,
   Status,
-} from "@sbc/contracts";
+} from "@falkon/contracts";
 
 // Fixed offsets from startup keep the mock's ISO timestamps plausible without a clock in tests.
 const ago = (ms: number) => new Date(Date.now() - ms).toISOString();

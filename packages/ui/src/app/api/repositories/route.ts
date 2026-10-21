@@ -1,5 +1,5 @@
 import { atRequestTime, forward } from "@/lib/api/engine";
-import { repositoriesQuery } from "@sbc/contracts";
+import { repositoriesQuery } from "@falkon/contracts";
 import { z } from "zod";
 
 // ?connection=<id>&q=&page= ; the engine searches the code host through that connection's stored token.

@@ -1,8 +1,8 @@
 import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Put, Query, Req } from "@nestjs/common";
 import type { IncomingMessage } from "node:http";
-import { connectionDtoSchema, connectionRequestSchema, repositoriesQuery, type Repository } from "@sbc/contracts";
-import type { PrismaClient } from "@sbc/db";
-import { newCredentialId, openCredential, seal } from "@sbc/shared";
+import { connectionDtoSchema, connectionRequestSchema, repositoriesQuery, type Repository } from "@falkon/contracts";
+import type { PrismaClient } from "@falkon/db";
+import { newCredentialId, openCredential, seal } from "@falkon/shared";
 import { z } from "zod";
 import { body, error } from "./request";
 

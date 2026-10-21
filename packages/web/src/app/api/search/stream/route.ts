@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { QuerySyntaxError, SearchContextNotFoundError, createStreamSummary, parseQuery, qRepo, streamIR } from "@sbc/shared";
+import { QuerySyntaxError, SearchContextNotFoundError, createStreamSummary, parseQuery, qRepo, streamIR } from "@falkon/shared";
 import { scopeOf, unauthorized } from "@/lib/auth";
 import { loadContexts } from "@/lib/repos";
 

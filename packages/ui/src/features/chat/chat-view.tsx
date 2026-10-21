@@ -41,7 +41,7 @@ import {
   type Answer,
   type Status,
   type Thread,
-} from "@sbc/contracts";
+} from "@falkon/contracts";
 import { Markdown } from "./markdown";
 const EvidencePanel = dynamic(() => import("./evidence-panel"), {
   loading: () => <LoadingMark label="Loading evidence" />,

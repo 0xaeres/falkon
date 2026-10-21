@@ -1,5 +1,5 @@
 {
-  "name": "@sbc/ui",
+  "name": "@falkon/ui",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -17,7 +17,7 @@
     "@ai-sdk/react": "3.0.169",
     "@radix-ui/react-dialog": "^1.2.0",
     "@radix-ui/react-dropdown-menu": "^2.1.25",
-    "@sbc/contracts": "workspace:*",
+    "@falkon/contracts": "workspace:*",
     "ai": "6.0.167",
     "geist": "^1.7.2",
     "lucide-react": "^1.55.0",

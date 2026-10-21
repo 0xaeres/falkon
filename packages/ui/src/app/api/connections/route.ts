@@ -1,6 +1,6 @@
 import { apiError, body } from "@/lib/api/server";
 import { forward } from "@/lib/api/engine";
-import { connectionRequestSchema } from "@sbc/contracts";
+import { connectionRequestSchema } from "@falkon/contracts";
 export async function POST(request: Request) {
   try {
     return await forward("/connections", {

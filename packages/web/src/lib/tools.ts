@@ -1,5 +1,5 @@
-import { prisma, RepoKind, type Repo } from "@sbc/db";
-import { createToolRunner, gitDirOf, repoPath, type ToolDeps, type ToolRepo } from "@sbc/shared";
+import { prisma, RepoKind, type Repo } from "@falkon/db";
+import { createToolRunner, gitDirOf, repoPath, type ToolDeps, type ToolRepo } from "@falkon/shared";
 import "./repos";
 
 const toToolRepo = (r: Repo): ToolRepo => ({

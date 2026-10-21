@@ -7,7 +7,7 @@ import {
   type AppRouterInstance,
 } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
-import type { Product, Repository, Status } from "@sbc/contracts";
+import type { Product, Repository, Status } from "@falkon/contracts";
 import { WorkspaceShell } from "../src/components/layout/workspace-shell";
 import { StatusView } from "../src/features/status/status-view";
 import { repoState } from "../src/features/status/repo-state";

@@ -4,7 +4,7 @@ import { promisify } from "node:util";
 import GitUrlParse from "git-url-parse";
 import { glob } from "glob";
 import pLimit from "p-limit";
-import type { GenericGitHostConnectionConfig } from "@sbc/shared";
+import type { GenericGitHostConnectionConfig } from "@falkon/shared";
 import { joinName, marshalBool, type RepoRecord } from "./types";
 
 const run = promisify(execFile);

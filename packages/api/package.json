@@ -1,5 +1,5 @@
 {
-  "name": "@sbc/api",
+  "name": "@falkon/api",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -15,9 +15,9 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@prisma/client": "^6.2.0",
-    "@sbc/contracts": "workspace:*",
-    "@sbc/db": "workspace:*",
-    "@sbc/shared": "workspace:*",
+    "@falkon/contracts": "workspace:*",
+    "@falkon/db": "workspace:*",
+    "@falkon/shared": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.0",
     "zod": "^4.6.5"

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { answerSchema, paragraphSchema, statusSchema } from "@sbc/contracts";
+import { answerSchema, paragraphSchema, statusSchema } from "@falkon/contracts";
 import { makeAnswer, makeStatus, seedProducts } from "./mock-fixtures";
 
 test("fixtures keep every citation attached to its generation; unknown and other-Product questions abstain", () => {

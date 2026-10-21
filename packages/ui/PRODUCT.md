@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-Next.js 16 App Router with React 19 and TypeScript (`@sbc/ui`, a workspace package). Shared CSS, local Geist fonts, Radix UI menus and dialogs, Lucide icons, and SWR support the interface. Same-origin Route Handlers under `src/app/api` forward to the Falkon engine's admin listener (`ENGINE_URL`) with an admin token that only the UI server reads; the browser never sees it. Without `ENGINE_URL` every route answers 503 "ENGINE_URL is not set". Mock data exists in `tests/` only.
+Next.js 16 App Router with React 19 and TypeScript (`@falkon/ui`, a workspace package). Shared CSS, local Geist fonts, Radix UI menus and dialogs, Lucide icons, and SWR support the interface. Same-origin Route Handlers under `src/app/api` forward to the Falkon engine's admin listener (`ENGINE_URL`) with an admin token that only the UI server reads; the browser never sees it. Without `ENGINE_URL` every route answers 503 "ENGINE_URL is not set". Mock data exists in `tests/` only.
 
 ## Users
 

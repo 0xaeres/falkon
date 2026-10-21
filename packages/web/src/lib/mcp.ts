@@ -2,7 +2,7 @@ import { McpServer, type RegisteredTool, type ToolCallback } from "@modelcontext
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { toolDefinitions, toolNames, toolJsonSchema, type AnyToolDefinition, type Scope } from "@sbc/shared";
+import { toolDefinitions, toolNames, toolJsonSchema, type AnyToolDefinition, type Scope } from "@falkon/shared";
 import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS } from "./ask/brief";
 import { IMPACT_INSTRUCTIONS } from "./ask/impact";
 import { configuredLanguageModels, languageModelsInfo } from "./ask/models";

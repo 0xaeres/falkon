@@ -1,6 +1,6 @@
 "use client";
 import { useState, type FormEvent } from "react";
-import type { SearchResponse } from "@sbc/shared";
+import type { SearchResponse } from "@falkon/shared";
 
 function Highlighted({ text, ranges }: { text: string; ranges: [number, number][] }) {
   const out: React.ReactNode[] = [];

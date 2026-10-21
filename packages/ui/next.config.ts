@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   output: "standalone",
-  transpilePackages: ["@sbc/contracts"],
+  transpilePackages: ["@falkon/contracts"],
 };
 
 export default nextConfig;

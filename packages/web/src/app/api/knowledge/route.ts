@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { prisma } from "@sbc/db";
-import { env, loadConfig, scopeFor } from "@sbc/shared";
+import { prisma } from "@falkon/db";
+import { env, loadConfig, scopeFor } from "@falkon/shared";
 import { scopeOf, unauthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";

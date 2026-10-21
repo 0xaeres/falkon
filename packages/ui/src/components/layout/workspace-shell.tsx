@@ -27,7 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { api, keys } from "@/lib/api/client";
-import type { Product, Status, ThreadSummary } from "@sbc/contracts";
+import type { Product, Status, ThreadSummary } from "@falkon/contracts";
 import { Logo } from "../ui/brand";
 import { ErrorState, LoadingMark } from "../ui/primitives";
 

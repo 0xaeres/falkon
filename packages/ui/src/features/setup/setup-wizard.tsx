@@ -15,7 +15,7 @@ import {
   LoadingMark,
 } from "@/components/ui/primitives";
 import { api, keys } from "@/lib/api/client";
-import type { Product, Provider } from "@sbc/contracts";
+import type { Product, Provider } from "@falkon/contracts";
 const RepositoryPicker = dynamic(() => import("./repository-picker"), {
   loading: () => <LoadingMark label="Loading repository picker" />,
 });

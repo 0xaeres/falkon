@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { QuerySyntaxError, SearchContextNotFoundError } from "@sbc/shared";
+import { QuerySyntaxError, SearchContextNotFoundError } from "@falkon/shared";
 
 /** The error body: `{ statusCode, errorCode, message }`. */
 export const serviceError = (statusCode: number, errorCode: string, message: string) =>

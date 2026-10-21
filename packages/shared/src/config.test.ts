@@ -29,10 +29,10 @@ test("the schema rejects what Falkon rejects", () => {
 });
 
 test("tokens and environment overrides resolve from env", async () => {
-  process.env.SBC_TEST_TOKEN = "  secret \n";
-  assert.equal(await getTokenFromConfig({ env: "SBC_TEST_TOKEN" }), "secret");
-  await assert.rejects(getTokenFromConfig({ env: "SBC_TEST_MISSING" }), /not found/);
-  const c = parseConfig(JSON.stringify({ environmentOverrides: { A: { type: "token", value: { env: "SBC_TEST_TOKEN" } }, B: { type: "number", value: 3 } } }));
+  process.env.FALKON_TEST_TOKEN = "  secret \n";
+  assert.equal(await getTokenFromConfig({ env: "FALKON_TEST_TOKEN" }), "secret");
+  await assert.rejects(getTokenFromConfig({ env: "FALKON_TEST_MISSING" }), /not found/);
+  const c = parseConfig(JSON.stringify({ environmentOverrides: { A: { type: "token", value: { env: "FALKON_TEST_TOKEN" } }, B: { type: "number", value: 3 } } }));
   assert.deepEqual(await resolveEnvironmentOverrides(c), { A: "secret", B: "3" });
 });
 

@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
 export default {
-  transpilePackages: ["@sbc/shared", "@sbc/db"],
+  transpilePackages: ["@falkon/shared", "@falkon/db"],
   serverExternalPackages: ["@prisma/client", "@grpc/grpc-js", "@grpc/proto-loader"],
 };

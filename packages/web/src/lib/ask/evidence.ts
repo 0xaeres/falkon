@@ -1,9 +1,9 @@
-import type { ToolSource } from "@sbc/shared";
+import type { ToolSource } from "@falkon/shared";
 import { ANSWER_TAG, FILE_REFERENCE_REGEX, REPLY_TAG } from "./prompt";
 
 // Turns an Ask answer (markdown with @file:{repo::path:a-b} references) into the UI's persisted parts:
 // data-evidence (cited source windows) and data-answer (paragraphs, citations, kind). Pure apart from `readFile`.
-// The shapes are @sbc/contracts' evidenceSchema and answerPartSchema; evidence.test.ts validates against them.
+// The shapes are @falkon/contracts' evidenceSchema and answerPartSchema; evidence.test.ts validates against them.
 
 export const MAX_EVIDENCE = 12;
 const CONTEXT = 3;

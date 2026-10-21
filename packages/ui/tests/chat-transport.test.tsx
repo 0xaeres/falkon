@@ -3,7 +3,7 @@ import http from "node:http";
 import type { AddressInfo } from "node:net";
 import { test, before, after } from "node:test";
 import { Chat } from "@ai-sdk/react";
-import { answerSchema, messagesToAnswers } from "@sbc/contracts";
+import { answerSchema, messagesToAnswers } from "@falkon/contracts";
 
 const evidence = {
   id: 1,

@@ -1,5 +1,5 @@
 {
-  "name": "@sbc/web",
+  "name": "@falkon/web",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -14,8 +14,8 @@
     "@ai-sdk/openai": "3.0.53",
     "@ai-sdk/openai-compatible": "2.0.41",
     "@modelcontextprotocol/sdk": "^1.18.0",
-    "@sbc/db": "workspace:*",
-    "@sbc/shared": "workspace:*",
+    "@falkon/db": "workspace:*",
+    "@falkon/shared": "workspace:*",
     "ai": "6.0.167",
     "dedent": "1.7.1",
     "next": "^15.1.0",
@@ -24,7 +24,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@sbc/contracts": "workspace:*",
+    "@falkon/contracts": "workspace:*",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

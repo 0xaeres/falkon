@@ -3,7 +3,7 @@ import { promisify } from "node:util";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { env } from "@sbc/shared";
+import { env } from "@falkon/shared";
 
 const run = promisify(execFile);
 

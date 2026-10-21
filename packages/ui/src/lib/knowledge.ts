@@ -1,4 +1,4 @@
-import type { Status } from "@sbc/contracts";
+import type { Status } from "@falkon/contracts";
 
 const LINES = {
   "no-model": "Knowledge base skipped: no model configured",
