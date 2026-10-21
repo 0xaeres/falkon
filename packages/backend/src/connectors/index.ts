@@ -5,7 +5,7 @@ import type { RepoRecord } from "./types";
 
 export type { RepoMetadata, RepoRecord } from "./types";
 
-/** Connection types this build syncs. The config schema accepts all of Sourcebot's; the rest fail the sync. */
+/** Connection types this build syncs. The config schema accepts only these; any other type that reaches here fails the sync. */
 export const SUPPORTED_CONNECTION_TYPES = ["github", "git"] as const;
 
 /** Lists the repos a connection selects, applying its include/exclude rules. */
@@ -16,7 +16,7 @@ export function compileConnection(config: ConnectionConfig, signal?: AbortSignal
     case "git":
       return compileGenericGit(config);
     default:
-      return Promise.reject(new Error(`connection type "${config.type}" is not supported (supported: ${SUPPORTED_CONNECTION_TYPES.join(", ")})`));
+      return Promise.reject(new Error(`connection type "${(config as { type: string }).type}" is not supported (supported: ${SUPPORTED_CONNECTION_TYPES.join(", ")})`));
   }
 }
 
