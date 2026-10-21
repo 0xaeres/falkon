@@ -104,7 +104,10 @@ export async function buildEvidence(i: EvidenceInput): Promise<Part[]> {
 
   const resolve = async (raw: string, repo: string, path: string, a?: string, b?: string): Promise<string> => {
     const matches = path.split("/").includes("..") || path.includes("\0") ? [] : [...files.values()].filter((s) => endsAt(s.repo, repo) && endsAt(s.path, path));
-    const source = matches.length === 1 && i.scopeAllows(matches[0]!.repo) ? matches[0]! : undefined;
+    // An exact path beats deeper files with the same name (README.md vs packages/ui/README.md).
+    const exact = matches.filter((s) => s.path === path);
+    const only = matches.length === 1 ? matches[0] : exact.length === 1 ? exact[0] : undefined;
+    const source = only && i.scopeAllows(only.repo) ? only : undefined;
     const fail = () => (dropped.add(raw), path);
     if (!source) return fail();
     let range: { start: number; end: number } | undefined;

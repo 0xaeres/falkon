@@ -91,6 +91,10 @@ test("resolution uses sources by repo suffix and path suffix, needs exactly one 
   const files = { ...FILES, [`${APP}::src/x/util.ts`]: file(20), [`${APP}::src/y/util.ts`]: file(20) };
   assert.equal(evidenceOf(await run({ text: ref("app", "util.ts", 1, 2), sources: ambiguous }, files)).length, 0, "two matches: unresolved");
   assert.equal(evidenceOf(await run({ text: ref("app", "x/util.ts", 1, 2), sources: ambiguous }, files)).length, 1, "a longer suffix is unique");
+  const rootAndNested = [src(APP, "README.md"), src(APP, "packages/ui/README.md")];
+  const readmes = { ...FILES, [`${APP}::README.md`]: file(20), [`${APP}::packages/ui/README.md`]: file(20) };
+  const [root] = evidenceOf(await run({ text: ref(APP, "README.md", 1, 2), sources: rootAndNested }, readmes));
+  assert.equal(root?.path, "README.md", "an exact path wins over deeper files with the same name");
   assert.equal(evidenceOf(await run({ text: ref("pp", "src/a.ts", 1, 2) }, FILES)).length, 0, "suffix must start at a segment boundary");
   assert.equal(evidenceOf(await run({ text: ref(APP, "a.ts", 1, 2), scopeAllows: () => false }, FILES)).length, 0, "out of scope");
   assert.equal(evidenceOf(await run({ text: ref(APP, "src/never-read.ts", 1, 2) }, FILES)).length, 0, "not among the sources");
