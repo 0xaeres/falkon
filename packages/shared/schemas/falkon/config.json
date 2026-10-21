@@ -1,0 +1,693 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:falkon:config",
+  "title": "FalkonConfig",
+  "description": "Falkon config file: JSON with comments and trailing commas. The `$schema` value is only an editor hint.",
+  "type": "object",
+  "definitions": {
+    "token": {
+      "description": "A secret read at use time: from an environment variable or a Google Cloud secret version.",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "env": {
+              "type": "string",
+              "description": "Environment variable holding the secret."
+            }
+          },
+          "required": [
+            "env"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "googleCloudSecret": {
+              "type": "string",
+              "description": "Secret version, as projects/<project>/secrets/<name>/versions/<version>."
+            }
+          },
+          "required": [
+            "googleCloudSecret"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "revisions": {
+      "type": "object",
+      "description": "Extra refs to index besides the default branch.",
+      "properties": {
+        "branches": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Branch names or globs."
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tag names or globs."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "settings": {
+      "type": "object",
+      "description": "Indexing and sync limits. Omitted keys use Falkon's defaults.",
+      "properties": {
+        "maxFileSize": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Largest file, in bytes, that gets indexed."
+        },
+        "maxTrigramCount": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Files with more distinct trigrams than this are skipped."
+        },
+        "reindexIntervalMs": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Gap between reindexes of a repo."
+        },
+        "resyncConnectionIntervalMs": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Gap between re-listing a connection's repos."
+        },
+        "resyncConnectionPollingIntervalMs": {
+          "type": "number",
+          "minimum": 1,
+          "description": "How often the backend looks for connections due to resync."
+        },
+        "reindexRepoPollingIntervalMs": {
+          "type": "number",
+          "minimum": 1,
+          "description": "How often the backend looks for repos due to reindex."
+        },
+        "maxConnectionSyncJobConcurrency": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Connection syncs that may run at once."
+        },
+        "maxRepoIndexingJobConcurrency": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Repo index jobs that may run at once."
+        },
+        "maxRepoGarbageCollectionJobConcurrency": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Repo cleanup jobs that may run at once."
+        },
+        "repoGarbageCollectionGracePeriodMs": {
+          "type": "number",
+          "minimum": 1,
+          "description": "How long a removed repo is kept before cleanup."
+        },
+        "repoIndexTimeoutMs": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Longest time one repo index job may take."
+        }
+      },
+      "additionalProperties": false
+    },
+    "contexts": {
+      "type": "object",
+      "description": "Named repo sets, selected in a query with `context:<name>`.",
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "type": "object",
+          "properties": {
+            "include": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Repo name globs to include, such as github.com/org/*."
+            },
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Repo name globs to leave out."
+            },
+            "includeConnections": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Connection names whose repos are included."
+            },
+            "excludeConnections": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Connection names whose repos are left out."
+            },
+            "includeTopics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Repos with any of these topics are included."
+            },
+            "excludeTopics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Repos with any of these topics are left out."
+            },
+            "description": {
+              "type": "string",
+              "description": "Free text shown next to the context."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "environmentOverrides": {
+      "type": "object",
+      "description": "Environment variables set from the config. CONFIG_PATH cannot be overridden.",
+      "not": {
+        "required": [
+          "CONFIG_PATH"
+        ]
+      },
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "token"
+                },
+                "value": {
+                  "$ref": "#/definitions/token"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "number"
+                },
+                "value": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "boolean"
+                },
+                "value": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "connections": {
+      "type": "object",
+      "description": "Where repos come from, keyed by a name of your choice. Types: github and git.",
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "oneOf": [
+            {
+              "title": "github",
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "github"
+                },
+                "token": {
+                  "$ref": "#/definitions/token",
+                  "description": "Access token; public repos work without one."
+                },
+                "url": {
+                  "type": "string",
+                  "pattern": "^https?:\\/\\/[^\\s/$.?#].[^\\s]*$",
+                  "description": "GitHub Enterprise address; github.com when omitted."
+                },
+                "users": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[\\w.-]+$"
+                  },
+                  "description": "User accounts whose repos are synced."
+                },
+                "orgs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[\\w.-]+$"
+                  },
+                  "description": "Organizations whose repos are synced."
+                },
+                "repos": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[\\w.-]+\\/[\\w.-]+$"
+                  },
+                  "description": "Single repos, as owner/name."
+                },
+                "topics": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Sync repos that have any of these topics.",
+                  "minItems": 1
+                },
+                "exclude": {
+                  "type": "object",
+                  "description": "Repos to skip after the lists above are resolved.",
+                  "properties": {
+                    "forks": {
+                      "type": "boolean",
+                      "description": "Skip forks."
+                    },
+                    "archived": {
+                      "type": "boolean",
+                      "description": "Skip archived repos."
+                    },
+                    "private": {
+                      "type": "boolean",
+                      "description": "Skip private repos."
+                    },
+                    "repos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Repo names or globs to skip."
+                    },
+                    "topics": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Skip repos with any of these topics."
+                    },
+                    "size": {
+                      "type": "object",
+                      "description": "Skip repos whose size is below min or above max (KB).",
+                      "properties": {
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "revisions": {
+                  "$ref": "#/definitions/revisions"
+                },
+                "enforcePermissions": {
+                  "type": "boolean",
+                  "description": "Stored with the connection; Falkon does not act on it."
+                },
+                "enforcePermissionsForPublicRepos": {
+                  "type": "boolean",
+                  "description": "Stored with the connection; Falkon does not act on it."
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "title": "git",
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "git"
+                },
+                "url": {
+                  "type": "string",
+                  "pattern": "^(https?:\\/\\/[^\\s/$.?#].[^\\s]*|file:\\/\\/\\/[^\\s]+)$",
+                  "description": "An http(s) remote, or a file:/// path to local repos, which may contain globs."
+                },
+                "revisions": {
+                  "$ref": "#/definitions/revisions"
+                },
+                "enforcePermissions": {
+                  "type": "boolean",
+                  "description": "Stored with the connection; Falkon does not act on it."
+                },
+                "enforcePermissionsForPublicRepos": {
+                  "type": "boolean",
+                  "description": "Stored with the connection; Falkon does not act on it."
+                }
+              },
+              "required": [
+                "type",
+                "url"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "models": {
+      "type": "array",
+      "description": "Language models for Ask. Providers: openai-compatible, openai, anthropic.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "const": "openai-compatible"
+              },
+              "model": {
+                "type": "string",
+                "description": "Model name sent to the provider."
+              },
+              "displayName": {
+                "type": "string",
+                "description": "Name shown in the UI instead of the model name."
+              },
+              "token": {
+                "$ref": "#/definitions/token",
+                "description": "API key."
+              },
+              "baseUrl": {
+                "type": "string",
+                "pattern": "^https?:\\/\\/[^\\s/$.?#].[^\\s]*$",
+                "description": "Endpoint to call instead of the provider default."
+              },
+              "temperature": {
+                "type": "number",
+                "description": "Sampling temperature."
+              },
+              "headers": {
+                "type": "object",
+                "description": "Extra request headers; a value is a string or a token.",
+                "patternProperties": {
+                  "^[!#$%&'*+\\-.^_`|~0-9A-Za-z]+$": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/token"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "queryParams": {
+                "type": "object",
+                "description": "Extra URL query parameters; a value is a string or a token.",
+                "patternProperties": {
+                  "^[!#$%&'*+\\-.^_`|~0-9A-Za-z]+$": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/token"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "reasoningTag": {
+                "type": "string",
+                "description": "Tag that wraps reasoning text in replies; think when omitted."
+              }
+            },
+            "required": [
+              "provider",
+              "model",
+              "baseUrl"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "const": "openai"
+              },
+              "model": {
+                "type": "string",
+                "description": "Model name sent to the provider."
+              },
+              "displayName": {
+                "type": "string",
+                "description": "Name shown in the UI instead of the model name."
+              },
+              "token": {
+                "$ref": "#/definitions/token",
+                "description": "API key."
+              },
+              "baseUrl": {
+                "type": "string",
+                "pattern": "^https?:\\/\\/[^\\s/$.?#].[^\\s]*$",
+                "description": "Endpoint to call instead of the provider default."
+              },
+              "temperature": {
+                "type": "number",
+                "description": "Sampling temperature."
+              },
+              "headers": {
+                "type": "object",
+                "description": "Extra request headers; a value is a string or a token.",
+                "patternProperties": {
+                  "^[!#$%&'*+\\-.^_`|~0-9A-Za-z]+$": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/token"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "reasoningEffort": {
+                "type": "string",
+                "description": "Reasoning effort passed through to the provider."
+              },
+              "reasoningSummary": {
+                "type": "string",
+                "description": "Reasoning summary mode passed through to the provider."
+              }
+            },
+            "required": [
+              "provider",
+              "model"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "const": "anthropic"
+              },
+              "model": {
+                "type": "string",
+                "description": "Model name sent to the provider."
+              },
+              "displayName": {
+                "type": "string",
+                "description": "Name shown in the UI instead of the model name."
+              },
+              "token": {
+                "$ref": "#/definitions/token",
+                "description": "API key."
+              },
+              "baseUrl": {
+                "type": "string",
+                "pattern": "^https?:\\/\\/[^\\s/$.?#].[^\\s]*$",
+                "description": "Endpoint to call instead of the provider default."
+              },
+              "temperature": {
+                "type": "number",
+                "description": "Sampling temperature."
+              },
+              "headers": {
+                "type": "object",
+                "description": "Extra request headers; a value is a string or a token.",
+                "patternProperties": {
+                  "^[!#$%&'*+\\-.^_`|~0-9A-Za-z]+$": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/token"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "authToken": {
+                "$ref": "#/definitions/token",
+                "description": "Bearer token, used instead of an API key."
+              }
+            },
+            "required": [
+              "provider",
+              "model"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "knowledgeBase": {
+      "type": "object",
+      "description": "Generated architecture docs. On by default; skipped when no LLM_* variables are set.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "repos": {
+          "description": "\"all\", or a list of repo names; a trailing * matches a prefix.",
+          "anyOf": [
+            {
+              "const": "all"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Repo names."
+            }
+          ],
+          "default": "all"
+        },
+        "refreshIntervalHours": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 24
+        },
+        "scanMode": {
+          "enum": [
+            "delta",
+            "full"
+          ],
+          "default": "delta"
+        },
+        "tokenBudget": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2000000,
+          "description": "Most tokens (prompt plus reply) one scan may use."
+        },
+        "parallelism": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "default": 4
+        },
+        "citeRepos": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Extra repos an agent may read and cite while documenting a repo; names or trailing-* prefixes.",
+          "default": []
+        },
+        "models": {
+          "type": "object",
+          "description": "Model per stage; unset stages use LLM_MODEL.",
+          "properties": {
+            "discovery": {
+              "type": "string"
+            },
+            "survey": {
+              "type": "string"
+            },
+            "document": {
+              "type": "string"
+            },
+            "overview": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -10,6 +10,7 @@
     "dev:backend": "pnpm --filter @sbc/backend dev",
     "dev:web": "pnpm --filter @sbc/web dev",
     "test": "pnpm -r --if-present test",
+    "convert-config": "pnpm --filter @sbc/shared exec tsx ../../scripts/convert-config.ts",
     "golden:record": "pnpm --filter @sbc/shared exec tsx ../../tests/golden/run.ts",
     "golden:diff": "pnpm --filter @sbc/shared exec tsx ../../tests/golden/diff.ts"
   },

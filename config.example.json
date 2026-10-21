@@ -1,4 +1,5 @@
 {
+  "$schema": "./packages/shared/schemas/falkon/config.json",
   // Falkon config: connections, settings, contexts, knowledgeBase. Comments allowed.
   "settings": {
     "reindexIntervalMs": 3600000,
@@ -18,7 +19,7 @@
   "contexts": {
     "octocat": { "include": ["github.com/octocat/*"], "description": "Octocat repos" }
   },
-  // Clone-only: generated architecture docs (on by default; needs LLM_* env vars, skipped without them).
+  // Generated architecture docs (on by default; needs LLM_* env vars, skipped without them).
   "knowledgeBase": {
     "enabled": true,
     "repos": "all",

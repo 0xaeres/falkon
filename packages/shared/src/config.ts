@@ -5,11 +5,10 @@ import stripJsonComments from "strip-json-comments";
 import { z } from "zod";
 
 /**
- * config.json in Sourcebot's v3 format, validated against its published JSON Schema
- * (schemas/v3/index.json, the file `$schema` points at), so a config one accepts the other does.
- * Comments are allowed and CONFIG_PATH may be an http(s) URL, as in Sourcebot.
- *
- * One clone-only key sits beside the schema: `knowledgeBase` (Sourcebot keeps that in the database).
+ * Falkon's config.json, validated against its JSON Schema (schemas/falkon/config.json). Supported:
+ * `github` and `git` connections, `settings`, `contexts`, `environmentOverrides`, `knowledgeBase`.
+ * `$schema` is an editor hint and is ignored. Comments and trailing commas are allowed and
+ * CONFIG_PATH may be an http(s) URL. `scripts/convert-config.ts` converts an older file.
  */
 
 /** `{ stored }` names a Credential row; only `source=api` connections carry it (the config file schema rejects it). */
@@ -48,87 +47,13 @@ export interface GithubConnectionConfig extends ConnectionBase {
   };
 }
 
-export interface GitlabConnectionConfig extends ConnectionBase {
-  type: "gitlab";
-  token?: Token;
-  url?: string;
-  webUrl?: string;
-  all?: boolean;
-  users?: string[];
-  groups?: string[];
-  projects?: string[];
-  topics?: string[];
-  exclude?: {
-    forks?: boolean;
-    archived?: boolean;
-    userOwnedProjects?: boolean;
-    projects?: string[];
-    topics?: string[];
-  };
-}
-
-export interface GiteaConnectionConfig extends ConnectionBase {
-  type: "gitea";
-  token?: Token;
-  url?: string;
-  orgs?: string[];
-  repos?: string[];
-  users?: string[];
-  exclude?: { forks?: boolean; archived?: boolean; repos?: string[] };
-}
-
-export interface GerritConnectionConfig extends ConnectionBase {
-  type: "gerrit";
-  url: string;
-  projects?: string[];
-  exclude?: { projects?: string[]; readOnly?: boolean; hidden?: boolean };
-}
-
-export interface BitbucketConnectionConfig extends ConnectionBase {
-  type: "bitbucket";
-  user?: string;
-  gitUser?: string;
-  token?: Token;
-  url?: string;
-  deploymentType?: "cloud" | "server";
-  all?: boolean;
-  workspaces?: string[];
-  projects?: string[];
-  repos?: string[];
-  exclude?: { archived?: boolean; forks?: boolean; repos?: string[] };
-}
-
-export interface AzureDevOpsConnectionConfig extends ConnectionBase {
-  type: "azuredevops";
-  token: Token;
-  url?: string;
-  deploymentType: "cloud" | "server";
-  useTfsPath?: boolean;
-  orgs?: string[];
-  projects?: string[];
-  repos?: string[];
-  exclude?: {
-    disabled?: boolean;
-    repos?: string[];
-    projects?: string[];
-    size?: { min?: number; max?: number };
-  };
-}
-
 export interface GenericGitHostConnectionConfig extends ConnectionBase {
   type: "git";
   /** http(s):// remote, or file:// path (globs allowed) to local repos indexed in place. */
   url: string;
 }
 
-export type ConnectionConfig =
-  | GithubConnectionConfig
-  | GitlabConnectionConfig
-  | GiteaConnectionConfig
-  | GerritConnectionConfig
-  | BitbucketConnectionConfig
-  | AzureDevOpsConnectionConfig
-  | GenericGitHostConnectionConfig;
+export type ConnectionConfig = GithubConnectionConfig | GenericGitHostConnectionConfig;
 
 export interface SearchContextConfig {
   include?: string[];
@@ -154,7 +79,7 @@ export interface Settings {
   repoIndexTimeoutMs: number;
 }
 
-/** Sourcebot's defaults for `settings`. */
+/** Defaults for `settings`. */
 export const DEFAULT_SETTINGS: Settings = {
   maxFileSize: 2 * 1024 * 1024,
   maxTrigramCount: 20_000,
@@ -198,8 +123,9 @@ export const knowledgeBaseSchema = z.object({
       document: z.string().optional(),
       overview: z.string().optional(),
     })
+    .strict()
     .default({}),
-});
+}).strict();
 export type KnowledgeBaseConfig = z.infer<typeof knowledgeBaseSchema>;
 
 export interface Config {
@@ -207,26 +133,57 @@ export interface Config {
   contexts: Record<string, SearchContextConfig>;
   connections: Record<string, ConnectionConfig>;
   environmentOverrides: Record<string, EnvironmentOverride>;
-  /** `models`, `apps`, `identityProviders`: passed through untouched. */
+  /** Language models for Ask; entries are validated by the schema and typed by the consumer. */
   models?: unknown[];
   knowledgeBase: KnowledgeBaseConfig;
 }
 
-const CLONE_ONLY_KEYS = ["knowledgeBase"] as const;
-
 const require = createRequire(import.meta.url);
-const indexSchema = require("../schemas/v3/index.json");
+const configSchema = require("../schemas/falkon/config.json");
+/** The schema's `$id`: the `$schema` value the converter writes. */
+export const SCHEMA_ID: string = configSchema.$id;
 const ajv = new Ajv({ validateFormats: false });
-const validate = ajv.compile(indexSchema);
+const validate = ajv.compile(configSchema);
 
 export const isRemotePath = (p: string) => p.startsWith("https://") || p.startsWith("http://");
 
+/** Parses JSON with comments and trailing commas. */
+export const parseJsonc = (text: string): unknown => JSON.parse(stripJsonComments(text, { trailingCommas: true }));
+
+/** Schema errors as text; an unknown key is named. */
+const errorsText = (errors: NonNullable<typeof validate.errors>) =>
+  errors
+    .map((e) => `${e.instancePath || "/"} ${e.keyword === "additionalProperties" ? `has unknown key '${e.params.additionalProperty}'` : e.message}`)
+    .join(", ");
+
+export const CONNECTION_TYPES = ["github", "git"];
+export const MODEL_PROVIDERS = ["openai-compatible", "openai", "anthropic"];
+const CONVERT_HINT = "convert old files with pnpm convert-config old.json > new.json";
+
+/** A clear message for a connection type or model provider the schema does not list (else `oneOf` errors are noise). */
+function unsupportedEntry(raw: Record<string, unknown>): string | undefined {
+  for (const [name, c] of Object.entries(isObject(raw.connections) ? raw.connections : {})) {
+    const type = isObject(c) ? c.type : undefined;
+    if (typeof type === "string" && !CONNECTION_TYPES.includes(type)) return `connection '${name}': type '${type}' is not supported (supported: ${CONNECTION_TYPES.join(", ")}); ${CONVERT_HINT}`;
+  }
+  for (const [i, m] of (Array.isArray(raw.models) ? raw.models : []).entries()) {
+    const provider = isObject(m) ? m.provider : undefined;
+    if (typeof provider === "string" && !MODEL_PROVIDERS.includes(provider)) return `models[${i}]: provider '${provider}' is not supported (supported: ${MODEL_PROVIDERS.join(", ")}); ${CONVERT_HINT}`;
+  }
+}
+
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
 /** Parses and validates config text. Throws with the schema errors when invalid. */
 export function parseConfig(text: string, source = "config"): Config {
-  const raw = JSON.parse(stripJsonComments(text)) as Record<string, unknown>;
-  const sourcebot = { ...raw };
-  for (const k of CLONE_ONLY_KEYS) delete sourcebot[k];
-  if (!validate(sourcebot)) throw new Error(`Config file '${source}' is invalid: ${ajv.errorsText(validate.errors)}`);
+  const invalid = (why: string) => new Error(`Config file '${source}' is invalid: ${why}`);
+  const raw = parseJsonc(text);
+  if (!isObject(raw)) throw invalid("must be a JSON object");
+  const unsupported = unsupportedEntry(raw);
+  if (unsupported) throw invalid(unsupported);
+  // `$schema` is an editor hint. `knowledgeBase` is in the schema for editors; Zod below validates it (and names an unknown key).
+  const { $schema: _hint, knowledgeBase: _kb, ...rest } = raw;
+  if (!validate(rest)) throw invalid(errorsText(validate.errors!));
   return {
     settings: { ...DEFAULT_SETTINGS, ...((raw.settings as Partial<Settings>) ?? {}) },
     contexts: (raw.contexts as Config["contexts"]) ?? {},

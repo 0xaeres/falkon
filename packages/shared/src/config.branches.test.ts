@@ -75,11 +75,6 @@ test("each supported connection kind and revision/permission settings survive lo
   const revisions = { branches: ["main", "feature"], tags: ["v1"] };
   const connections = {
     github: { type: "github", repos: ["acme/app"], exclude: { forks: true, archived: true } },
-    gitlab: { type: "gitlab", all: true },
-    gitea: { type: "gitea", url: "https://git.example.test", repos: ["acme/app"] },
-    gerrit: { type: "gerrit", url: "https://review.example.test" },
-    bitbucket: { type: "bitbucket", deploymentType: "server", url: "https://bitbucket.example.test" },
-    azure: { type: "azuredevops", deploymentType: "cloud", token: { env: "FIXTURE_TOKEN" } },
     local: { type: "git", url: "file:///fixtures/repos/atlas", revisions, enforcePermissions: true, enforcePermissionsForPublicRepos: true },
   };
   const contexts = { selected: { include: ["fixtures.test/*"], exclude: ["fixtures.test/archive"], includeConnections: ["local"], excludeConnections: ["github"], includeTopics: ["core"], excludeTopics: ["old"], description: "Fixture context" } };
@@ -88,5 +83,5 @@ test("each supported connection kind and revision/permission settings survive lo
   assert.deepEqual(parsed.connections, connections);
   assert.deepEqual(parsed.contexts, contexts);
   assert.deepEqual(parsed.models, models);
-  for (const connection of [{ type: "gerrit" }, { type: "azuredevops", deploymentType: "cloud" }, { type: "git", url: "file:///fixtures", unexpected: true }]) assert.throws(() => parseConfig(JSON.stringify({ connections: { invalid: connection } })), /invalid/);
+  for (const connection of [{ type: "gerrit", url: "https://review.example.test" }, { type: "gitlab", all: true }, { type: "git", url: "file:///fixtures", unexpected: true }]) assert.throws(() => parseConfig(JSON.stringify({ connections: { invalid: connection } })), /invalid/);
 });

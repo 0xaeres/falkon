@@ -132,9 +132,11 @@ Set `FALKON_API_KEY` to require `Authorization: Bearer <key>` on `/api/*`. The b
 
 ## Config
 
-`config.json` is Sourcebot's v3 format, validated against its published JSON Schema (`packages/shared/schemas/v3/index.json`), so the same file works for both. Comments are allowed and `CONFIG_PATH` may be an http(s) URL. Honoured: `connections`, `settings` (index limits, reindex/resync intervals, concurrency, timeouts), `contexts` (`context:` in queries), `environmentOverrides`, tokens as `{ "env" }` or `{ "googleCloudSecret" }`. The one extra key is `knowledgeBase`.
+`config.json` follows Falkon's own JSON Schema (`packages/shared/schemas/falkon/config.json`); `$schema` in the file is an editor hint and is ignored; a published URL comes later, until then point it at the schema file path (see `config.example.json`). Comments and trailing commas are allowed and `CONFIG_PATH` may be an http(s) URL. Keys: `connections`, `settings` (index limits, reindex/resync intervals, concurrency, timeouts), `contexts` (`context:` in queries), `environmentOverrides`, `models` (Ask language models; providers `openai-compatible`, `openai` and `anthropic`), `knowledgeBase`; tokens are `{ "env" }` or `{ "googleCloudSecret" }`. An unknown key is rejected and named in the error.
 
-Connectors: `github` (cloud and Enterprise: `orgs`, `repos`, `users`, `topics`, `exclude.*`, `revisions`) and `git` (an http(s) remote, or a `file://` glob of local repos indexed in place and named after their origin). Other Sourcebot connection types validate but fail the sync with "not supported". Repo identity, names, URLs and the `zoekt.*` git config match Sourcebot's (verified against v6.0.1 with a differential harness, since retired).
+Connectors: `github` (cloud and Enterprise: `orgs`, `repos`, `users`, `topics`, `exclude.*`, `revisions`) and `git` (an http(s) remote, or a `file://` glob of local repos indexed in place and named after their origin). No other connection type is accepted.
+
+To convert an older config file once (unsupported connection types and keys are dropped with a warning on stderr): `pnpm convert-config /absolute/path/old.json > new.json`.
 
 ## Not implemented (vs the reference engine)
 
