@@ -19,6 +19,10 @@ Read [`CONTEXT.md`](CONTEXT.md) and the sections of [`docs/adr/0001-falkon-archi
 
 The product is spelled Falkon, with a k. The predecessor product's name, in any case or spelling, and the misspelling of Falkon that swaps the k for a c, stay out of every shipped file (everything tracked outside `.scratch/`); planning files under `.scratch/` may name them to give scrub instructions.
 
+## Request-path code
+
+Code that runs per HTTP poll or request must not do remote I/O or unbounded reads: cache config with a TTL and a load timeout, and bound queries to the latest row per key.
+
 ## Cycle workflow
 
 The current delivery spec, with its decisions, regression gate, and slices, is `.scratch/falkon-mvp/spec.md`. Work one slice at a time against it. Neither the spec nor the ADR takes precedence: raise any conflict between them to the human, who resolves it explicitly.
