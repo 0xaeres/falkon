@@ -100,6 +100,52 @@ const preview = (message?: UIMessage) => {
     ),
   ).trimStart();
 };
+/** A first message that failed leaves a thread nobody can use: discard it unless this session did not create it or the server already took the question (an assistant message exists). */
+export const discardable = (createdHere: boolean, messages: UIMessage[]) =>
+  createdHere && !messages.some((message) => message.role === "assistant");
+export const answerLabel = (kind: Answer["kind"]) =>
+  ({
+    grounded: "Grounded answer",
+    partial: "Partial answer",
+    abstention: "Abstained",
+    reply: "Reply",
+  })[kind];
+export const answerText = (answer: Answer) =>
+  answer.abstention ??
+  answer.paragraphs
+    .map(
+      (paragraph) =>
+        paragraph.text +
+        paragraph.citations
+          .filter((id) => !paragraph.text.includes(`[${id}]`))
+          .map((id) => ` [${id}]`)
+          .join(""),
+    )
+    .join("\n\n");
+/** A conversational reply: plain prose and a few things to ask. */
+export function ReplyBody({ answer }: { answer: Answer }) {
+  return (
+    <>
+      <div className="answer-prose">
+        {answer.paragraphs.map((paragraph, index) => (
+          <div key={index} className="answer-para">
+            <Markdown text={paragraph.text} />
+          </div>
+        ))}
+      </div>
+      {answer.suggestions.length > 0 && (
+        <div className="try-asking">
+          <p>Try asking</p>
+          <ul>
+            {answer.suggestions.map((suggestion) => (
+              <li key={suggestion}>{suggestion}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+}
 /** A stopped or failed turn leaves a half-written assistant message; it is not an answer. */
 const dropIncomplete = (messages: UIMessage[]) => {
   const last = messages.at(-1);
@@ -166,6 +212,7 @@ function ChatSession({
   const [sheet, setSheet] = useState(false);
   const [copied, setCopied] = useState("");
   const target = useRef(threadId);
+  const created = useRef(false);
   const finished = useRef<(done: Finished) => void>(undefined);
   const threadArea = useRef<HTMLDivElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
@@ -184,6 +231,19 @@ function ChatSession({
   });
   useEffect(() => {
     finished.current = ({ messages, isAbort, isError }) => {
+      // A stopped turn keeps its question on the server: this thread is no longer disposable.
+      if (isAbort) created.current = false;
+      if (isError && discardable(created.current, messages)) {
+        // Nothing was answered: drop the thread made for this message so no empty thread stays in the list.
+        const id = target.current;
+        target.current = undefined;
+        created.current = false;
+        if (id)
+          void api
+            .deleteThread(product.id, id)
+            .catch(() => undefined)
+            .finally(() => void mutate(keys.threads(product.id)));
+      }
       if (isAbort || isError) return chat.setMessages(dropIncomplete(messages));
       setPendingQuestion("");
       void mutate(keys.threads(product.id));
@@ -252,8 +312,9 @@ function ChatSession({
     if (!target.current) {
       setCreating(true);
       try {
-        const created = await api.newThread(product.id);
-        target.current = created.id;
+        const made = await api.newThread(product.id);
+        target.current = made.id;
+        created.current = true;
         void mutate(keys.threads(product.id));
       } catch (failure) {
         setNotice(
@@ -271,19 +332,7 @@ function ChatSession({
   }
   async function copy(answer: Answer) {
     try {
-      await navigator.clipboard.writeText(
-        answer.abstention ??
-          answer.paragraphs
-            .map(
-              (paragraph) =>
-                paragraph.text +
-                paragraph.citations
-                  .filter((id) => !paragraph.text.includes(`[${id}]`))
-                  .map((id) => ` [${id}]`)
-                  .join(""),
-            )
-            .join("\n\n"),
-      );
+      await navigator.clipboard.writeText(answerText(answer));
       setCopied(answer.id);
     } catch {
       setNotice("Clipboard unavailable. Select the answer text to copy it.");
@@ -362,16 +411,10 @@ function ChatSession({
                 )}
               <div className="q">{answer.question}</div>
               <div className="answer-meta">
-                <span>
-                  {answer.kind === "grounded"
-                    ? "Grounded answer"
-                    : answer.kind === "partial"
-                      ? "Partial answer"
-                      : "Abstained"}
-                </span>
+                <span>{answerLabel(answer.kind)}</span>
                 <span>·</span>
                 <span className="mono">{answer.generation}</span>
-                {answer.kind !== "abstention" && (
+                {(answer.kind === "grounded" || answer.kind === "partial") && (
                   <span>· {answer.evidence.length} sources</span>
                 )}
                 <span className="sp" />
@@ -388,7 +431,9 @@ function ChatSession({
                   )}
                 </button>
               </div>
-              {answer.kind === "abstention" ? (
+              {answer.kind === "reply" ? (
+                <ReplyBody answer={answer} />
+              ) : answer.kind === "abstention" ? (
                 <div className="abstention">
                   <h2>
                     <Slash size={16} />

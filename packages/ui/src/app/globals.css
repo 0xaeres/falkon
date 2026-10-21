@@ -1830,6 +1830,18 @@ code {
 .abstention .btn {
   margin-top: 8px;
 }
+.try-asking {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.try-asking p {
+  font-weight: 600;
+}
+.try-asking ul {
+  margin: 4px 0 0 18px;
+  padding: 0;
+}
 .generation-divider {
   display: flex;
   align-items: center;

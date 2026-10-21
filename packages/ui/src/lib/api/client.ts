@@ -88,5 +88,13 @@ export const api = {
   sync: (id: string, input: unknown) =>
     request(`${keys.product(id)}/sync`, statusSchema, "POST", input),
   newThread: (id: string) => request(keys.threads(id), threadSchema, "POST"),
+  /** Best effort: the engine refuses a thread that has answers. */
+  deleteThread: async (productId: string, threadId: string) =>
+    void (await check(
+      await fetch(keys.thread(productId, threadId), {
+        method: "DELETE",
+        signal: AbortSignal.timeout(15000),
+      }),
+    )),
 };
 export { answerSchema };

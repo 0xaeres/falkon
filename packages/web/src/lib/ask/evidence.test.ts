@@ -4,7 +4,7 @@ import fs from "node:fs";
 import { answerPartSchema, answerSchema, evidencePartSchema, messagesToAnswers, paragraphSchema, type Evidence } from "@sbc/contracts";
 import type { ToolSource } from "@sbc/shared";
 import { buildEvidence } from "./evidence";
-import { ANSWER_TAG, FILE_REFERENCE_REGEX } from "./prompt";
+import { ANSWER_TAG, FILE_REFERENCE_REGEX, REPLY_TAG } from "./prompt";
 
 const APP = "github.com/acme/app";
 const LIB = "github.com/acme/lib";
@@ -244,4 +244,59 @@ test("fixture: real answers resolve at least 95% of their references and satisfy
   const resolved = distinct - unverified;
   console.log(`evidence fixture: ${resolved}/${distinct} distinct references resolved (${((100 * resolved) / distinct).toFixed(1)}%), ${capped} of them over the 12-item cap; ${marked}/${total} occurrences carry a marker; ${fixtures.length} answers`);
   assert(resolved / distinct >= 0.95, `${resolved}/${distinct}`);
+});
+
+test("reply: no evidence plus the marker is a conversational reply, marker stripped, fixed suggestions, no abstention text", async () => {
+  for (const text of ["Hey! I can search this Product's code.", "I can find code, trace callers and explain how things work."]) {
+    const a = answerOf(await run({ text: `${ANSWER_TAG}\n${REPLY_TAG}\n${text}`, sources: [] }, FILES));
+    assert.deepEqual([a.kind, a.paragraphs, a.abstention, a.partialReasons], ["reply", [{ text, citations: [] }], null, []]);
+    assert(a.suggestions.length >= 2 && a.suggestions.length <= 3);
+  }
+  const r = await run({ text: `${ANSWER_TAG}\n${REPLY_TAG}\nThanks, glad to help.`, sources: [] }, FILES);
+  assert.deepEqual(r.map((p) => p.type), ["data-answer"]);
+  assert(answerPartSchema.safeParse(answerOf(r)).success);
+  assert(!JSON.stringify(r).includes(REPLY_TAG));
+});
+
+test("reply: no marker stays an abstention with its text; a marker with an empty body falls back too", async () => {
+  const unsupported = answerOf(await run({ text: `${ANSWER_TAG}\nI could not find the billing cron in this Product.` }, FILES));
+  assert.deepEqual([unsupported.kind, unsupported.paragraphs, unsupported.abstention, unsupported.suggestions], ["abstention", [], "I could not find the billing cron in this Product.", []]);
+  const hey = answerOf(await run({ text: `${ANSWER_TAG}\nHey there!`, sources: [] }, FILES));
+  assert.equal(hey.kind, "abstention", "a model reply that omits the marker is the safe default");
+  const empty = answerOf(await run({ text: `${ANSWER_TAG}\n${REPLY_TAG}`, sources: [] }, FILES));
+  assert.deepEqual([empty.kind, empty.abstention], ["abstention", "No answer was produced."]);
+});
+
+test("reply: evidence wins over the marker (a greeting plus a code question is grounded or partial)", async () => {
+  const text = `${ANSWER_TAG}\n${REPLY_TAG}\nHey! Auth starts here ${ref(APP, "src/a.ts", 1, 2)}.`;
+  const a = answerOf(await run({ text }, FILES));
+  assert.deepEqual([a.kind, a.paragraphs[0]!.text, a.suggestions], ["grounded", "Hey! Auth starts here [1].", []]);
+  assert.equal(answerOf(await run({ text, stepCapHit: true }, FILES)).kind, "partial");
+});
+
+test("reply: the marker counts only as the first non-blank line after the answer tag; elsewhere it is left alone", async () => {
+  const first = answerOf(await run({ text: `${ANSWER_TAG}\n\n  ${REPLY_TAG}  \nHello.`, sources: [] }, FILES));
+  assert.deepEqual([first.kind, first.paragraphs[0]!.text], ["reply", "Hello."]);
+  const fence = answerOf(await run({ text: `${ANSWER_TAG}\nNothing found.\n\n\`\`\`\n${REPLY_TAG}\n\`\`\`` }, FILES));
+  assert.equal(fence.kind, "abstention");
+  assert(fence.abstention!.includes(REPLY_TAG), "not stripped");
+  const quoted = answerOf(await run({ text: `${ANSWER_TAG}\nNo such thing; I would tag a greeting with ${REPLY_TAG} here.` }, FILES));
+  assert.deepEqual([quoted.kind, quoted.abstention], ["abstention", `No such thing; I would tag a greeting with ${REPLY_TAG} here.`]);
+  const noTag = answerOf(await run({ text: `${REPLY_TAG}\nHi.`, sources: [] }, FILES));
+  assert.equal(noTag.kind, "reply", "a missing answer tag does not matter");
+});
+
+test("reply: a turn that read files or hit the step cap abstains even when tagged", async () => {
+  const text = `${ANSWER_TAG}\n${REPLY_TAG}\nI looked and found nothing.`;
+  const searched = answerOf(await run({ text }, FILES));
+  assert.equal(searched.kind, "abstention", "sources were read");
+  const none = answerOf(await run({ text, sources: [] }, FILES));
+  assert.equal(none.kind, "reply");
+  const capped = answerOf(await run({ text, sources: [], stepCapHit: true }, FILES));
+  assert.deepEqual([capped.kind, capped.partialReasons], ["abstention", ["The agent stopped at its step limit, so the answer may be incomplete."]]);
+});
+
+test("reply: a reply never carries partial reasons", async () => {
+  const a = answerOf(await run({ text: `${ANSWER_TAG}\n${REPLY_TAG}\nHi, see src/x.ts ${ref(APP, "src/gone.ts", 1, 2)}.`, sources: [] }, FILES));
+  assert.deepEqual([a.kind, a.partialReasons], ["reply", []]);
 });

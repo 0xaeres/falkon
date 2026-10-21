@@ -4,10 +4,10 @@ import { createHash } from "node:crypto";
 import { scopeFor } from "@sbc/shared";
 import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS } from "./brief";
 import { IMPACT_BRIEF_STEPS, IMPACT_INSTRUCTIONS, IMPACT_PROMPT, isImpactQuery } from "./impact";
-import { dynamicPrompt, RENDER_PROMPT, STATIC_PROMPT } from "./prompt";
+import { dynamicPrompt, RENDER_PROMPT, REPLY_PROMPT, STATIC_PROMPT } from "./prompt";
 
 // The rendering addendum is the only per-chat part for a non-impact question; the tests below see the prompt without it.
-const withoutRender = (p: string) => p.replace(RENDER_PROMPT, "").replace(/^\n\n|\n\n$/, "");
+const withoutRender = (p: string) => p.replace(`${RENDER_PROMPT}\n\n${REPLY_PROMPT}`, "").replace(/^\n\n|\n\n$/, "");
 
 // Pins are SHA-256 of the exact bytes as they were before the recipe existed.
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -42,14 +42,14 @@ test("recipe text names the tools it relies on, admits what was not checked, and
   for (const text of [IMPACT_BRIEF_STEPS, IMPACT_PROMPT, IMPACT_INSTRUCTIONS]) assert.doesNotMatch(text, forbidden);
 });
 
-test("the UI Ask prompt for a non-impact question is unchanged apart from the rendering addendum; impact adds one trailing section", () => {
+test("the UI Ask prompt for a non-impact question is unchanged apart from the rendering and reply addenda; impact adds one trailing section", () => {
   const args = { repos: ["a/b"], files: [] };
   assert.equal(dynamicPrompt({ ...args, query: plain }), dynamicPrompt(args));
-  assert.equal(dynamicPrompt({ repos: [], files: [], query: plain }), RENDER_PROMPT);
+  assert.equal(dynamicPrompt({ repos: [], files: [], query: plain }), `${RENDER_PROMPT}\n\n${REPLY_PROMPT}`);
   const withRecipe = dynamicPrompt({ ...args, query: impact });
   assert.ok(withRecipe.startsWith(dynamicPrompt(args)));
   assert.ok(withRecipe.endsWith(IMPACT_PROMPT));
-  assert.equal(dynamicPrompt({ repos: [], files: [], query: impact }), `${RENDER_PROMPT}\n\n${IMPACT_PROMPT}`);
+  assert.equal(dynamicPrompt({ repos: [], files: [], query: impact }), `${RENDER_PROMPT}\n\n${REPLY_PROMPT}\n\n${IMPACT_PROMPT}`);
 });
 
 test("pins: bytes of the static prompt, the non-impact brief and the client instructions are unchanged", () => {

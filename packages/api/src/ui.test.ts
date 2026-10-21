@@ -175,11 +175,11 @@ test("create validation: unknown connection, repo outside the listing, duplicate
   assert.equal((await call("GET", "/ui/products", undefined, false)).status, 401);
 });
 
-test("route enumeration: the admin listener has exactly the S20a routes, the six /ui/products routes and the four thread routes", () => {
+test("route enumeration: the admin listener has exactly the S20a routes, the six /ui/products routes and the five thread routes", () => {
   const router = (admin.getHttpAdapter().getInstance() as { router: { stack: { route?: { path: string; methods: Record<string, boolean> } }[] } }).router;
   const routes = router.stack.flatMap((l) => (l.route ? Object.keys(l.route.methods).map((m) => `${m.toUpperCase()} ${l.route!.path}`) : [])).sort();
   assert.deepEqual(routes, [
-    "DELETE /connections/:id", "DELETE /products/:slug",
+    "DELETE /connections/:id", "DELETE /products/:slug", "DELETE /ui/products/:slug/threads/:id",
     "GET /connections", "GET /connections/:id/repositories", "GET /products", "GET /products/:slug",
     "GET /ui/products", "GET /ui/products/:slug", "GET /ui/products/:slug/status",
     "GET /ui/products/:slug/threads", "GET /ui/products/:slug/threads/:id",
@@ -191,7 +191,7 @@ test("route enumeration: the admin listener has exactly the S20a routes, the six
 });
 
 test("other /ui paths and methods stay 404", async () => {
-  for (const [method, p] of [["PUT", "/ui/products/alpha"], ["DELETE", "/ui/products/alpha"], ["GET", "/ui"], ["GET", "/ui/products/alpha/sync"], ["POST", "/ui/products/alpha"], ["GET", "/ui/products/alpha/status/x"], ["PATCH", "/ui/products"], ["PATCH", "/products/alpha"], ["PUT", "/ui/products/alpha/threads"], ["DELETE", "/ui/products/alpha/threads/x"], ["GET", "/ui/products/alpha/threads/x/messages"], ["POST", "/ui/products/alpha/threads/x"], ["PATCH", "/ui/products/alpha/threads/x"], ["GET", "/ui/products/alpha/threads/x/messages/y"], ["POST", "/ui/products/alpha/query"]] as const)
+  for (const [method, p] of [["PUT", "/ui/products/alpha"], ["DELETE", "/ui/products/alpha"], ["GET", "/ui"], ["GET", "/ui/products/alpha/sync"], ["POST", "/ui/products/alpha"], ["GET", "/ui/products/alpha/status/x"], ["PATCH", "/ui/products"], ["PATCH", "/products/alpha"], ["PUT", "/ui/products/alpha/threads"], ["GET", "/ui/products/alpha/threads/x/messages"], ["POST", "/ui/products/alpha/threads/x"], ["PATCH", "/ui/products/alpha/threads/x"], ["GET", "/ui/products/alpha/threads/x/messages/y"], ["POST", "/ui/products/alpha/query"]] as const)
     assert.equal((await call(method, p, method === "GET" ? undefined : {})).status, 404, `${method} ${p}`);
 });
 

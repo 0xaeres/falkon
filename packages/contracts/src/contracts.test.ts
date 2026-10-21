@@ -151,6 +151,8 @@ test("evidence and answer parts validate the persisted data-parts", () => {
     }).success,
   );
   assert(!answerPartSchema.safeParse({ ...answer, kind: "other" }).success);
+  for (const kind of ["grounded", "partial", "abstention", "reply"])
+    assert(answerPartSchema.safeParse({ ...answer, kind, paragraphs: [{ text: "Hi there.", citations: [] }] }).success, kind);
 });
 
 test("connection DTO is a strict allowlist with no token field", () => {

@@ -222,12 +222,14 @@ test("thread routes forward to /ui/products/:slug/threads in engine mode", async
   await threads.GET(get(), ctx("alpha"));
   await threads.POST(json({}), ctx("alpha"));
   await threadRoute.GET(get(), threadCtx("alpha", "t 1"));
+  await threadRoute.DELETE(get(), threadCtx("alpha", "t 1"));
   assert.deepEqual(
     seen.slice(before).map((c) => [c.method, c.url]),
     [
       ["GET", "/ui/products/alpha/threads"],
       ["POST", "/ui/products/alpha/threads"],
       ["GET", "/ui/products/alpha/threads/t%201"],
+      ["DELETE", "/ui/products/alpha/threads/t%201"],
     ],
   );
   delete process.env.ENGINE_URL;

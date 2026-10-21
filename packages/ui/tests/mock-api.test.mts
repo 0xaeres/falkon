@@ -219,6 +219,20 @@ test("a new thread starts empty and is listed first", async () => {
   assert.equal(listed[0].id, created.id);
 });
 
+test("DELETE removes an empty thread and keeps one that has answers", async () => {
+  const created = threadSchema.parse(
+    await (await threads.POST(request({}), context("payments-platform"))).json(),
+  );
+  const ctx = (threadId: string) => ({
+    params: Promise.resolve({ productId: "payments-platform", threadId }),
+  });
+  assert.equal((await threadRoute.DELETE(request({}), ctx(created.id))).status, 200);
+  assert.equal((await threadRoute.GET(request({}), ctx(created.id))).status, 404);
+  assert.equal((await threadRoute.DELETE(request({}), ctx(created.id))).status, 404);
+  assert.equal((await threadRoute.DELETE(request({}), ctx("refund-write-path"))).status, 409);
+  assert.equal((await threadRoute.GET(request({}), ctx("refund-write-path"))).status, 200);
+});
+
 test("sync accepts retry only and the mock keeps no dismissed state", async () => {
   for (const action of ["dismiss", "scenario"])
     assert.equal(

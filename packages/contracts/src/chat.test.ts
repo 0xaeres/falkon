@@ -97,3 +97,10 @@ test("answersToMessages and messagesToAnswers round-trip", () => {
   assert.deepEqual(messages.map((m) => m.role), ["user", "assistant", "user", "assistant"]);
   assert.deepEqual(messagesToAnswers("pay", messages), answers);
 });
+
+test("a reply answer (no citations, no evidence) round-trips through the stored messages", () => {
+  const reply: Answer = { id: "a1", productId: "pay", question: "hey", generation: "g-1", kind: "reply", paragraphs: [{ text: "Hi! Ask me about the code.", citations: [] }], evidence: [], gaps: [], partialReasons: [], abstention: null, suggestions: ["What does this Product do?"] };
+  const messages = answersToMessages([reply]);
+  assert.deepEqual(messagesToAnswers("pay", messages), [reply]);
+  assert(answerSchema.safeParse(reply).success);
+});

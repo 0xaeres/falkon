@@ -116,8 +116,19 @@ export function fakeEngineDb() {
         const c = chats.find((row) => matches(row, where));
         return c ? structuredClone(c) : null;
       },
+      async delete({ where }: { where: Where }) {
+        const at = chats.findIndex((row) => matches(row, where));
+        if (at < 0) throw Object.assign(new Error("Record to delete does not exist."), { code: "P2025" });
+        return structuredClone(chats.splice(at, 1)[0]);
+      },
+      async deleteMany({ where }: { where: Where }) {
+        const hit = chats.filter((row) => matches(row, where));
+        for (const row of hit) chats.splice(chats.indexOf(row), 1);
+        return { count: hit.length };
+      },
       async update({ where, data }: { where: Where; data: Row }) {
-        const c = chats.find((row) => matches(row, where))!;
+        const c = chats.find((row) => matches(row, where));
+        if (!c) throw Object.assign(new Error("Record to update not found."), { code: "P2025" });
         Object.assign(c, structuredClone(data), { updatedAt: new Date(Math.max(Date.now(), c.updatedAt.getTime() + 1)) });
         return structuredClone(c);
       },

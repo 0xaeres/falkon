@@ -260,3 +260,51 @@ test("a model that stops without an answer part is stored and mapped as the fixe
   const [a] = (await call("GET", `/ui/products/alpha/threads/${id}`)).json.answers;
   assert.deepEqual([a.kind, a.abstention, a.evidence], ["abstention", "No reference here, and no tag.", []]);
 });
+
+test("DELETE removes a thread with no answer (never started or failed first send) and refuses one that has an answer", async () => {
+  const empty = await newThread("alpha");
+  assert.equal((await call("DELETE", `/ui/products/beta/threads/${empty}`)).status, 404, "another Product's thread is 404");
+  assert.equal((await call("DELETE", `/ui/products/alpha/threads/${empty}`)).status, 204);
+  assert.equal(engine.chats.some((c) => c.id === empty), false);
+  assert.equal((await call("GET", `/ui/products/alpha/threads/${empty}`)).status, 404);
+  assert.equal((await call("DELETE", `/ui/products/alpha/threads/${empty}`)).status, 404);
+
+  const questionOnly = await newThread("alpha");
+  await engine.db.chat.update({ where: { id: questionOnly }, data: { messages: [{ id: "u", role: "user", parts: [{ type: "text", text: "q" }] }] } });
+  assert.equal((await call("DELETE", `/ui/products/alpha/threads/${questionOnly}`)).status, 204, "a question with no answer is not an answer");
+
+  const answered = await newThread("alpha");
+  fake.play([{ text: ANSWER }]);
+  assert.equal((await chat("alpha", answered, "hello")).status, 200);
+  await until(() => stored(answered).messages.length === 2);
+  const refused = await call("DELETE", `/ui/products/alpha/threads/${answered}`);
+  assert.equal(refused.status, 409);
+  assert.equal(stored(answered).messages.length, 2, "an answered thread is untouched");
+});
+
+test("DELETE is atomic: an answer that lands after the check keeps the thread; a missing row is 404", async () => {
+  const id = await newThread("alpha");
+  const turn = [{ id: "u", role: "user", parts: [{ type: "text", text: "q" }] }, { id: "a", role: "assistant", parts: [{ type: "data-answer", data: { kind: "abstention", generation: "g", paragraphs: [], gaps: [], partialReasons: [], abstention: "x", suggestions: [] } }] }];
+  const racing = { ...engine.db, chat: { ...engine.db.chat, findUnique: async (a: never) => { const row = await engine.db.chat.findUnique(a); await engine.db.chat.update({ where: { id }, data: { messages: turn } }); return row; } } };
+  const svc = new ThreadService(racing as never, { status: async () => ({ generation: "g" }) } as never);
+  await assert.rejects(svc.remove("alpha", id), (e: any) => e.getStatus() === 404);
+  assert.equal((stored(id).messages as J[]).length, 2, "the answered thread is still there");
+  const gone = await newThread("alpha");
+  engine.chats.splice(engine.chats.findIndex((c) => c.id === gone), 1);
+  assert.equal((await call("DELETE", `/ui/products/alpha/threads/${gone}`)).status, 404);
+});
+
+test("a turn that finishes after its thread was deleted does not fail", async () => {
+  const id = await newThread("alpha");
+  const original = engine.db.chat.update;
+  const spy = mock.method(engine.db.chat, "update", async (args: any) => {
+    if (args.data.messages?.length === 2) engine.chats.splice(engine.chats.findIndex((c) => c.id === id), 1);
+    return original(args);
+  });
+  fake.play([{ text: ANSWER }]);
+  assert.equal((await chat("alpha", id, "hello")).status, 200);
+  await until(() => spy.mock.calls.length >= 2);
+  await new Promise((r) => setTimeout(r, 100));
+  assert.equal(engine.chats.some((c) => c.id === id), false);
+  spy.mock.restore();
+});

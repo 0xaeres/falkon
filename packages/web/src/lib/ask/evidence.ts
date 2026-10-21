@@ -1,5 +1,5 @@
 import type { ToolSource } from "@sbc/shared";
-import { ANSWER_TAG, FILE_REFERENCE_REGEX } from "./prompt";
+import { ANSWER_TAG, FILE_REFERENCE_REGEX, REPLY_TAG } from "./prompt";
 
 // Turns an Ask answer (markdown with @file:{repo::path:a-b} references) into the UI's persisted parts:
 // data-evidence (cited source windows) and data-answer (paragraphs, citations, kind). Pure apart from `readFile`.
@@ -10,6 +10,8 @@ const CONTEXT = 3;
 const MAX_WINDOW = 60;
 const DEFAULT_WINDOW = 30;
 const MAX_LINE = 500;
+/** Shown under a conversational reply. */
+const REPLY_SUGGESTIONS = ["What does this Product do?", "Where is authentication handled?", "Which repositories are in this Product?"];
 
 type Part = { type: `data-${string}`; data: unknown };
 type Window = { startLine: number; code: string[]; highlightedLines: number[] };
@@ -82,7 +84,11 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 
 export async function buildEvidence(i: EvidenceInput): Promise<Part[]> {
   const idx = i.text.indexOf(ANSWER_TAG);
-  const answer = (idx === -1 ? i.text : i.text.slice(idx + ANSWER_TAG.length)).trim();
+  const body = (idx === -1 ? i.text : i.text.slice(idx + ANSWER_TAG.length)).trim();
+  // The marker counts only as the first line, exactly; anywhere else (prose, a fence, a quote) it is ordinary text.
+  const firstLine = body.split("\n", 1)[0]!;
+  const marked = firstLine.trim() === REPLY_TAG;
+  const answer = marked ? body.slice(firstLine.length).trim() : body;
   const files = new Map<string, ToolSource>();
   for (const s of i.sources) if (s.type === "file" && !files.has(`${s.repo}\0${s.path}`)) files.set(`${s.repo}\0${s.path}`, s);
 
@@ -143,15 +149,18 @@ export async function buildEvidence(i: EvidenceInput): Promise<Part[]> {
   if (i.stepCapHit) reasons.push("The agent stopped at its step limit, so the answer may be incomplete.");
 
   const none = evidence.length === 0;
-  const kind = none ? "abstention" : reasons.length ? "partial" : "grounded";
+  // Evidence decides first; the marker only turns an evidence-free, non-empty text into a reply (no marker: abstention, as before).
+  // A turn that read files or hit the step cap did research: it abstains, tagged or not.
+  const reply = none && marked && texts.length > 0 && i.sources.length === 0 && !i.stepCapHit;
+  const kind = reply ? "reply" : none ? "abstention" : reasons.length ? "partial" : "grounded";
   const data = {
     kind,
     generation: i.generation,
-    paragraphs: none ? [] : texts.map((text) => ({ text, citations: [...new Set([...text.matchAll(/\[(\d+)\]/g)].map((m) => Number(m[1])))] })),
+    paragraphs: none && !reply ? [] : texts.map((text) => ({ text, citations: [...new Set([...text.matchAll(/\[(\d+)\]/g)].map((m) => Number(m[1])))] })),
     gaps: [],
-    partialReasons: reasons,
-    abstention: none ? texts.join("\n\n") || "No answer was produced." : null,
-    suggestions: [],
+    partialReasons: reply ? [] : reasons,
+    abstention: none && !reply ? texts.join("\n\n") || "No answer was produced." : null,
+    suggestions: reply ? REPLY_SUGGESTIONS : [],
   };
   return [...evidence, { type: "data-answer", data }];
 }

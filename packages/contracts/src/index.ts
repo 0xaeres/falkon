@@ -100,7 +100,7 @@ export const answerSchema = z.object({
   productId: productIdSchema,
   question: z.string(),
   generation: z.string(),
-  kind: z.enum(["grounded", "partial", "abstention"]),
+  kind: z.enum(["grounded", "partial", "abstention", "reply"]),
   paragraphs: z.array(paragraphSchema),
   evidence: z.array(evidenceSchema),
   gaps: z.array(z.string()),

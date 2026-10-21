@@ -2,6 +2,8 @@ import dedent from "dedent";
 import { IMPACT_PROMPT, isImpactQuery } from "./impact";
 
 export const ANSWER_TAG = "<!--answer-->";
+/** Marks a purely conversational reply (greeting, thanks, "what can you do"); evidence.ts reads it. */
+export const REPLY_TAG = "<!--reply-->";
 export const FILE_REFERENCE_PREFIX = "@file:";
 export const FILE_REFERENCE_REGEX = new RegExp(`${FILE_REFERENCE_PREFIX}\\{([^:}]+(:\\d+)?[^:}]*)::([^:}]+)(?::(\\d+)(?:-(\\d+))?)?\\}`, "g");
 
@@ -88,6 +90,9 @@ export const STATIC_PROMPT = d`
 /** Added to every per-chat prompt: what the chat UI renders. */
 export const RENDER_PROMPT = `<rendering>\nThe chat renders GFM (GitHub-flavored Markdown) (headings, lists, tables, task lists, inline code, links) and \`\`\`mermaid diagram blocks. Raw HTML and images are not rendered; do not use them. Keep tables small.\n</rendering>`;
 
+/** Added to every per-chat prompt: how to mark a conversational reply. Only evidence-free replies are read this way. */
+export const REPLY_PROMPT = `<conversational_replies>\nIf the user's message is only conversational (a greeting, thanks, or a question about what you can do) and needs no code lookup, do not use tools. Reply in one or two short sentences, say you can search this Product's code, trace callers and explain how things work, and put \`${REPLY_TAG}\` on its own line right after \`${ANSWER_TAG}\`. Never use \`${REPLY_TAG}\` when the message asks about code, even if it also greets you.\n</conversational_replies>`;
+
 /** Per-chat context: selected repos and files the user mentioned. */
 export function dynamicPrompt({ repos, files, query }: { repos: string[]; files: { path: string; repo: string; language: string; revision: string; source: string }[]; query?: string }) {
   const parts: string[] = [];
@@ -118,7 +123,7 @@ export function dynamicPrompt({ repos, files, query }: { repos: string[]; files:
         </files>
         `);
   }
-  parts.push(RENDER_PROMPT);
+  parts.push(RENDER_PROMPT, REPLY_PROMPT);
   // The recipe goes in this per-chat part, not STATIC_PROMPT: the static part stays byte-identical and prompt-cached, and only this part can see the question.
   if (query !== undefined && isImpactQuery(query)) parts.push(IMPACT_PROMPT);
   return parts.join("\n\n");
