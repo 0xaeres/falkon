@@ -27,7 +27,7 @@ Tests run against a temporary store, never the app's demo data. `.data/mock.json
 - `src/app`: App Router pages, metadata, shared layout, route loading/error states, and API handlers.
 - `src/features/setup`: five-step wizard and independently loaded repository picker.
 - `src/features/status`: section navigation, shared detail workspace, and preview settings.
-- `src/features/chat`: conversation, stream handling, and independently loaded evidence panel.
+- `src/features/chat`: conversation, stream handling, GFM Markdown and lazy mermaid answer rendering, and independently loaded evidence panel.
 - `src/components/ui`: shared controls and approved brand assets.
 - `src/components/layout`: persistent workspace shell, navigation, Product context, and mobile drawer.
 - `@sbc/contracts` (`packages/contracts`): runtime Zod contracts and inferred TypeScript types, shared with the engine.

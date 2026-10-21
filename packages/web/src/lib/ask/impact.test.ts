@@ -4,7 +4,10 @@ import { createHash } from "node:crypto";
 import { scopeFor } from "@sbc/shared";
 import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS } from "./brief";
 import { IMPACT_BRIEF_STEPS, IMPACT_INSTRUCTIONS, IMPACT_PROMPT, isImpactQuery } from "./impact";
-import { dynamicPrompt, STATIC_PROMPT } from "./prompt";
+import { dynamicPrompt, RENDER_PROMPT, STATIC_PROMPT } from "./prompt";
+
+// The rendering addendum is the only per-chat part for a non-impact question; the tests below see the prompt without it.
+const withoutRender = (p: string) => p.replace(RENDER_PROMPT, "").replace(/^\n\n|\n\n$/, "");
 
 // Pins are SHA-256 of the exact bytes as they were before the recipe existed.
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -39,14 +42,14 @@ test("recipe text names the tools it relies on, admits what was not checked, and
   for (const text of [IMPACT_BRIEF_STEPS, IMPACT_PROMPT, IMPACT_INSTRUCTIONS]) assert.doesNotMatch(text, forbidden);
 });
 
-test("the UI Ask prompt for a non-impact question is byte-identical to before; impact adds one trailing section", () => {
+test("the UI Ask prompt for a non-impact question is unchanged apart from the rendering addendum; impact adds one trailing section", () => {
   const args = { repos: ["a/b"], files: [] };
   assert.equal(dynamicPrompt({ ...args, query: plain }), dynamicPrompt(args));
-  assert.equal(dynamicPrompt({ repos: [], files: [], query: plain }), "");
+  assert.equal(dynamicPrompt({ repos: [], files: [], query: plain }), RENDER_PROMPT);
   const withRecipe = dynamicPrompt({ ...args, query: impact });
   assert.ok(withRecipe.startsWith(dynamicPrompt(args)));
   assert.ok(withRecipe.endsWith(IMPACT_PROMPT));
-  assert.equal(dynamicPrompt({ repos: [], files: [], query: impact }), IMPACT_PROMPT);
+  assert.equal(dynamicPrompt({ repos: [], files: [], query: impact }), `${RENDER_PROMPT}\n\n${IMPACT_PROMPT}`);
 });
 
 test("pins: bytes of the static prompt, the non-impact brief and the client instructions are unchanged", () => {
@@ -55,5 +58,5 @@ test("pins: bytes of the static prompt, the non-impact brief and the client inst
   assert.equal(sha(buildResearchBrief({ ...input, query: plain, repos: [], impactRecipe: true })), "8c3cd554a34b6efc5321426432d1fc2527b6f39fa72d08f9945bf7077e59b783");
   assert.equal(sha(STATIC_PROMPT), "cfda33adf6553c1b6c06fcbf6a8d2e03830180da17973832c1057165684f9f90");
   assert.equal(sha(CLIENT_RESEARCH_INSTRUCTIONS), "9050bcb16e670ddb5ea4da4b5992f7fb462c63988c91aa858b9ee8b5272151d6");
-  assert.equal(sha(dynamicPrompt({ repos: ["a/b"], files: [] })), "cda9040acf4fbac3da4d6e28833bb99f05afb7008221551c54d9f4849c944026");
+  assert.equal(sha(withoutRender(dynamicPrompt({ repos: ["a/b"], files: [] }))), "cda9040acf4fbac3da4d6e28833bb99f05afb7008221551c54d9f4849c944026");
 });

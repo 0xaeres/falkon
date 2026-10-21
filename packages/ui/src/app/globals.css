@@ -1708,6 +1708,66 @@ code {
 .answer-prose p:last-child {
   margin-bottom: 0;
 }
+.answer-prose .answer-para {
+  margin-bottom: 12px;
+  max-width: 66ch;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.answer-prose .answer-para > :where(p, ul, ol, pre, .code-block, .md-table, h1, h2, h3, h4) {
+  margin: 0 0 10px;
+}
+.answer-prose .answer-para :where(ul, ol) {
+  padding-left: 22px;
+}
+.answer-prose .answer-para :where(h1, h2, h3, h4) {
+  font-size: 15px;
+  font-weight: 600;
+}
+.answer-prose .answer-para :where(code):not(pre code) {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.92em;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--s2);
+}
+.code-block,
+.mermaid-diagram {
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  background: var(--s2);
+  max-width: 100%;
+}
+.code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--line2);
+}
+.code-lang {
+  font-size: 11px;
+  color: var(--muted, inherit);
+}
+.code-block pre {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.mermaid-diagram {
+  padding: 10px;
+  overflow-x: auto;
+}
+.md-table {
+  overflow-x: auto;
+}
+.md-table :where(th, td) {
+  border: 1px solid var(--line2);
+  padding: 4px 8px;
+  text-align: left;
+}
 .citation {
   display: inline-grid;
   place-items: center;
