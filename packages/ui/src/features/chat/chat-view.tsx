@@ -42,6 +42,7 @@ import {
   type Status,
   type Thread,
 } from "@sbc/contracts";
+import { Markdown } from "./markdown";
 const EvidencePanel = dynamic(() => import("./evidence-panel"), {
   loading: () => <LoadingMark label="Loading evidence" />,
 });
@@ -426,12 +427,12 @@ function ChatSession({
                       ]),
                     );
                     return (
-                      <p key={index}>
-                        <Prose text={paragraph.text} citations={citations} />{" "}
+                      <div key={index} className="answer-para">
+                        <Markdown text={paragraph.text} citations={citations} />
                         {paragraph.citations
                           .filter((id) => !paragraph.text.includes(`[${id}]`))
                           .map((id) => citations[id])}
-                      </p>
+                      </div>
                     );
                   })}
                 </div>
@@ -469,10 +470,8 @@ function ChatSession({
                     </div>
                   </div>
                   <div className="answer-prose streaming">
-                    <p>
-                      {streamText}
-                      <span className="cursor" />
-                    </p>
+                    <Markdown text={streamText} final={false} />
+                    <span className="cursor" />
                   </div>
                   <p className="sr-only" role="status">
                     Answer streaming. Stop to cancel.

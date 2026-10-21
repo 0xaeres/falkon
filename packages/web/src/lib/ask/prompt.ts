@@ -85,6 +85,9 @@ export const STATIC_PROMPT = d`
     </answer_instructions>
     `;
 
+/** Added to every per-chat prompt: what the chat UI renders. */
+export const RENDER_PROMPT = `<rendering>\nThe chat renders GFM (GitHub-flavored Markdown) (headings, lists, tables, task lists, inline code, links) and \`\`\`mermaid diagram blocks. Raw HTML and images are not rendered; do not use them. Keep tables small.\n</rendering>`;
+
 /** Per-chat context: selected repos and files the user mentioned. */
 export function dynamicPrompt({ repos, files, query }: { repos: string[]; files: { path: string; repo: string; language: string; revision: string; source: string }[]; query?: string }) {
   const parts: string[] = [];
@@ -115,6 +118,7 @@ export function dynamicPrompt({ repos, files, query }: { repos: string[]; files:
         </files>
         `);
   }
+  parts.push(RENDER_PROMPT);
   // The recipe goes in this per-chat part, not STATIC_PROMPT: the static part stays byte-identical and prompt-cached, and only this part can see the question.
   if (query !== undefined && isImpactQuery(query)) parts.push(IMPACT_PROMPT);
   return parts.join("\n\n");
