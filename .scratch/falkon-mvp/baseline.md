@@ -195,6 +195,32 @@ Precision +0.012 [-0.033, 0.059]; cost 0.0077 vs 0.0074 per run. **D25: PASS** (
 
 One dev run (`xrepo-framework-to-chart-24`) was first flagged as a leak by the existing traversal rule: the agent called `Read` on `/private/tmp/falkon-eval/chart-only/../../../private/tmp/falkon-eval/chart-only`, which resolves to its own work directory (nothing outside it was read). The harness then refused the hidden split. The run was set aside (kept in the scratch runs dir), that one question was rerun, and the hidden split followed. Sensitivity: with the original run restored and its flag cleared, the pooled verdict is identical (PASS, +0.090 [0.040, 0.149], 17 / 2). The traversal rule itself was not changed.
 
-## Cycle 9: UI-Ask smoke (D57), not run
+## Cycle 9: UI-Ask smoke (D57), before and after the rewrite
 
-The before smoke ran on a disposable stack (`falkon-c9base`, image built from `bca8673`, before S36; corpus = a clone of `bca8673` with `.scratch/` removed and a fixed https origin; one config Product `falkon`, Evidence Generation current) with the human's model environment. All 15 turns failed in the model call: the provider answered "You need positive balance to do inference". No after smoke was run. The question list and script are in the session scratchpad, not in the repository. The image `falkon-c9base-app` is kept so the before smoke can run on pre-S36 code once the provider has balance.
+The human's model (DeepInfra, through the main checkout's env file by absolute path; never read) on disposable stacks: before = image built from `bca8673` (pre-S36), after = image built from `9d9ef89` (cycle tip). Same corpus for both: a clone of `bca8673` with `.scratch/` removed and a fixed https origin, one config Product `falkon`, Evidence Generation `g-7eae52` on both. 15 questions (10 code questions, 3 small talk, 1 off-topic, 1 code question with no such code), one turn each in a new thread; script and list in the session notes folder, not in the repository. The first attempt failed in every model call (provider balance); the run below followed the human's top-up.
+
+| # | Question (short) | Before: kind, evidence / refs, time | After: kind, evidence / refs, time |
+|---|---|---|---|
+| 1 | auth for the HTTP API | partial 12/14 45 s | partial 12/18 40 s |
+| 2 | what the Product does | grounded 2/2 8 s | partial 1/2 6 s |
+| 3 | config load and validation | partial 12/23 50 s | partial 12/27 32 s |
+| 4 | query string to Zoekt | grounded 5/5 13 s | grounded 12/12 17 s |
+| 5 | resync after push | partial 12/16 150 s | partial 12/18 37 s |
+| 6 | MCP tool registration | grounded 11/11 31 s | grounded 12/12 16 s |
+| 7 | KB citation checks | partial 12/20 52 s | partial 12/24 33 s |
+| 8 | chat step limit | grounded 10/10 41 s | partial 12/19 22 s |
+| 9 | credential encryption | partial 12/19 40 s | partial 12/20 26 s |
+| 10 | admin token | partial 12/18 50 s | partial 12/16 18 s |
+| 11 to 13 | hey / what can you do? / thanks! | reply x3 | reply x3 |
+| 14 | swallow airspeed | reply | reply |
+| 15 | Kubernetes operator (none exists) | grounded 5/5 | grounded 5/5 |
+
+Evidence is capped at 12 per answer, so a reference counts as dropped only when evidence is below min(distinct references, 12).
+
+| Rule (D57) | Before | After | Verdict |
+|---|---|---|---|
+| Grounded or partial, code questions | 10/10 | 10/10 | not lower: pass |
+| Dropped references | 0 | 1 (question 2) | strictly worse by one |
+| Failed turns | 0 | 0 | pass |
+
+Diagnosis of the one drop: question 2 rerun twice on each image (diagnostic only; the table keeps the first runs). After: 3 and 1 unresolved references, all `README.md` cited without a tool having read it. Before: 2 and 1 unresolved, the same `README.md` pattern, and one of the two reruns abstained. The failure mode exists on the base and is not caused by the rewrite; the single drop in the recorded run is this question's run-to-run variation. Secondary observations: after is faster on the long questions (median code-question time 24 s vs 43 s) and gives fewer `grounded` labels (2 vs 4 among the code questions, both counted in the rule's grounded-or-partial). Question 15 was `grounded` on both: the model cites code to explain that no such operator exists, so it is not an abstention test on this corpus. Note: if the operator's env file still sets the old chat env names, the after stack ignores them (S34 clean break), so step count and temperature can differ between the two stacks.
