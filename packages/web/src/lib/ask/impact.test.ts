@@ -38,7 +38,7 @@ test("recipe text names the tools it relies on, admits what was not checked, and
   assert.ok(IMPACT_BRIEF_STEPS.split(/\s+/).length < 260);
   assert.ok(IMPACT_PROMPT.split(/\s+/).length < 260);
   assert.ok(IMPACT_INSTRUCTIONS.split(/\s+/).length < 260);
-  const forbidden = /powerful agentic|world's best|code-intelligence platform|Phase 1:|Phase 2:|MANDATORY|sourcebot/i;
+  const forbidden = /powerful agentic|world's best|code-intelligence platform|Phase 1:|Phase 2:|MANDATORY/i;
   for (const text of [IMPACT_BRIEF_STEPS, IMPACT_PROMPT, IMPACT_INSTRUCTIONS]) assert.doesNotMatch(text, forbidden);
 });
 
@@ -52,11 +52,11 @@ test("the UI Ask prompt for a non-impact question is unchanged apart from the re
   assert.equal(dynamicPrompt({ repos: [], files: [], query: impact }), `${RENDER_PROMPT}\n\n${REPLY_PROMPT}\n\n${IMPACT_PROMPT}`);
 });
 
-test("pins: bytes of the static prompt, the non-impact brief and the client instructions are unchanged", () => {
+test("pins: bytes of the static and per-chat prompts (rewritten in cycle 9), the non-impact brief and the client instructions", () => {
   const brief = buildResearchBrief({ ...input, query: plain });
   assert.equal(sha(brief), "4ee97b238a01456ffd70b4e77d371c19ef11f980d5f8bb516d0e27897d252d22");
   assert.equal(sha(buildResearchBrief({ ...input, query: plain, repos: [], impactRecipe: true })), "8c3cd554a34b6efc5321426432d1fc2527b6f39fa72d08f9945bf7077e59b783");
-  assert.equal(sha(STATIC_PROMPT), "cfda33adf6553c1b6c06fcbf6a8d2e03830180da17973832c1057165684f9f90");
+  assert.equal(sha(STATIC_PROMPT), "6a0d45f30168cb6d336a0db998ed3e5c9720b04fc5a30141de868c0144ef0209");
   assert.equal(sha(CLIENT_RESEARCH_INSTRUCTIONS), "9050bcb16e670ddb5ea4da4b5992f7fb462c63988c91aa858b9ee8b5272151d6");
-  assert.equal(sha(withoutRender(dynamicPrompt({ repos: ["a/b"], files: [] }))), "cda9040acf4fbac3da4d6e28833bb99f05afb7008221551c54d9f4849c944026");
+  assert.equal(sha(withoutRender(dynamicPrompt({ repos: ["a/b"], files: [] }))), "2e1557c3daac0bebb47928c9d2584576e11287c8dc199ca79fbd9904b4751060");
 });

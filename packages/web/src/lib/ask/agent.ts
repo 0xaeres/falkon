@@ -80,7 +80,7 @@ export async function createMessageStream(o: {
   /** Stops the model run (a client that went away). */
   abortSignal?: AbortSignal;
   /** Extra data parts written (and persisted) once the model stream has ended, before the finish chunk. */
-  postProcess?: (ctx: { text: string; sources: ToolSource[]; stepCapHit: boolean }) => Promise<{ type: `data-${string}`; data: unknown }[]>;
+  postProcess?: (ctx: { text: string; sources: ToolSource[]; stepCapHit: boolean; toolCalls: number }) => Promise<{ type: `data-${string}`; data: unknown }[]>;
 }) {
   const { model, temperature } = await aiModel(o.model);
   const repos = [...o.selectedRepos].sort((a, b) => a.localeCompare(b));
@@ -118,7 +118,7 @@ export async function createMessageStream(o: {
       if (o.postProcess) {
         // A failed model run already put an error chunk in the stream: it gets no answer parts.
         const done = await Promise.all([result.text, result.steps]).catch(() => undefined);
-        if (done) for (const part of await o.postProcess({ text: done[0], sources, stepCapHit: done[1].length >= MAX_STEPS() })) writer.write(part);
+        if (done) for (const part of await o.postProcess({ text: done[0], sources, stepCapHit: done[1].length >= MAX_STEPS(), toolCalls: done[1].reduce((n, s) => n + s.toolCalls.length, 0) })) writer.write(part);
       }
       const usage = await result.totalUsage;
       writer.write({

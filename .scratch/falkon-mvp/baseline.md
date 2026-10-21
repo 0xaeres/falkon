@@ -168,3 +168,15 @@ Precision 0.515 -> 0.647 (+0.132 [-0.101, 0.366]), cost 0.0071 -> 0.0063. D25: P
 Recall holds (recipe 0.915 vs plain 0.907; no loss). Precision falls 0.044 relative to plain (answers cite more spans) and cost rises about $0.001 per run. Both arms report the verdict as **withheld**: one run flagged as leaked in the 80, in the v6 reference too (n 80, leaks 1); this is the open harness false positive (an agent reading the client's own tool-result spill file) already awaiting the human, and the rule is not relaxed. Numbers are otherwise clean (0 failed, 0 malformed).
 
 Reading: the recipe helps impact questions on Haiku, holds recall on the general set and trades some precision. Whether it ships on by default for MCP clients is the human's call (`MCP_IMPACT_RECIPE`; the UI Ask already applies it to impact-style queries).
+
+## Cycle 9 (S36): leak rule fix and offline re-score
+
+D58. The harness leak rule (`tests/eval/harness.ts`) no longer flags a path of the exact shape `<home>/.claude/projects/<project dir>/<session>/tool-results/<file>` (Claude Code's own spill file for an oversized tool result); every other path under `~/.claude` or elsewhere still leaks (tested, including `..` and nested forms). The D25 rule, datasets and gold are unchanged.
+
+Offline re-score (no spend): the stored cycle 4 Haiku runs (`eval-results/runs-cycle4-haiku.tar.gz`, 320 raw runs) were extracted to a temp dir, each run's `leak` was recomputed from its stored stream with the new rule (denied path `/data/o3`), and `report --model haiku` was rerun. Stored leaks before: 2 (v6-tools and clone-tools, both on `xrepo-framework-to-chart-25`, both reads of a spill file under `.claude/projects/.../tool-results/`); after: 0. Every arm now reports leaks 0, failed 0, malformed 0, n 80 paired (reference leaks 0).
+
+Pooled verdict lines (80 questions, vs v6 on Haiku):
+
+- clone-tools: PASS. n 80; recall difference 0.0496 [-0.0140, 0.1177]; wins 12, losses 6, ties 62.
+- clone-research: FAIL. n 80; recall difference -0.0344 [-0.1115, 0.0444]; wins 11, losses 15, ties 54.
+- clone-tools-noinstr: PASS. n 80; recall difference 0.0237 [-0.0502, 0.1008]; wins 13, losses 8, ties 59.

@@ -1,146 +1,112 @@
 {
   "grep": {
     "title": null,
-    "description": "- Fast content search tool that works with any codebase size\n- Searches file contents using regular expressions\n- Supports full regex syntax (eg. \"log.*Error\", \"function\\s+\\w+\", etc.)\n- Filter files by pattern with the include parameter (eg. \"*.js\", \"*.{ts,tsx}\")\n- Returns file paths and line numbers with at least one match\n- Use this tool when you need to find files containing specific patterns\n- When using the `repo` param, if the repository name is not known, use `list_repos` first to discover the correct name.\n- Use `groupByRepo: true` when searching across many repositories and you want to identify which repos are most relevant before drilling in. This returns a per-repository summary (match and file counts) instead of individual file results, and automatically uses a higher match limit for accuracy.\n",
+    "description": "Regex search over file contents, fast on any repository size.\n\nHow it works:\n- `pattern` is a regular expression (for example \"log.*Error\" or \"function\\s+\\w+\"); the full regex syntax is available.\n- Each result is a file path with the line numbers that matched at least once.\n- `include` limits the search to files matching a glob such as \"*.js\" or \"*.{ts,tsx}\", and `path` limits it to one directory.\n- `repo` names the repository to search; if you do not know its name, call `list_repos` first. Leave it out to search every repository. `ref` picks a branch, tag or commit (default branch otherwise).\n- `limit` caps the number of matches.\n- Set `groupByRepo: true` to see how matches spread over many repositories before you dig into one. It returns per-repository match and file counts instead of file results, and applies a higher limit so the counts are accurate.\n",
     "params": {
-      "pattern": "The regex pattern to search for in file contents",
-      "path": "The directory to search in. Defaults to the repository root.",
-      "include": "File pattern to include in the search (e.g. \"*.js\", \"*.{ts,tsx}\")",
-      "repo": "The name of the repository to search in. If not provided, searches all repositories.",
-      "ref": "The commit SHA, branch or tag name to search on. If not provided, defaults to the default branch (usually 'main' or 'master').",
-      "limit": "The maximum number of matches to return (default: 100 when groupByRepo=false, 10000 when groupByRepo=true)",
-      "groupByRepo": "If true, returns a summary of match counts grouped by repository instead of individual file results."
+      "pattern": "Regular expression to look for inside files.",
+      "path": "Only search this directory (default: the repository root).",
+      "include": "Glob that file names must match, e.g. \"*.js\" or \"*.{ts,tsx}\".",
+      "repo": "Repository to search. Omit to search all of them.",
+      "ref": "Commit SHA, branch or tag to search (default: the default branch).",
+      "limit": "Most matches to return (default 100, or 10000 when groupByRepo is true).",
+      "groupByRepo": "When true, return match and file counts per repository rather than individual file results."
     }
   },
   "glob": {
     "title": null,
-    "description": "- Find files by name/path pattern using glob syntax (e.g. \"**/*.ts\", \"src/**/*.test.{ts,tsx}\")\n- Returns matching file paths only — does NOT search file contents\n- Use this tool when you need to enumerate files by type or naming convention\n- Use grep instead if you need to find files containing specific content\n- Supports standard glob syntax: * matches within a path segment, ** matches across segments, {a,b} matches alternatives\n- When using the repo param, if the repository name is not known, use list_repos first to discover the correct name\n",
+    "description": "Lists file paths whose name or path matches a glob pattern. It never looks inside files; use `grep` for content.\n\nHow it works:\n- `pattern` uses glob syntax: `*` stays within one path segment, `**` crosses segments, `{a,b}` offers alternatives (for example \"**/*.ts\" or \"src/**/*.test.{ts,tsx}\").\n- `path` restricts matches to one subdirectory, `ref` picks a branch, tag or commit, and `limit` caps how many files come back.\n- `repo` names the repository to search; if you do not know its name, call `list_repos` first. Leave it out to search every repository.\n- Reach for this when you want every file of some kind or naming convention.\n",
     "params": {
-      "pattern": "The glob pattern to match file paths against (e.g. \"**/*.ts\", \"src/**/*.test.{ts,tsx}\")",
-      "path": "Restrict results to files under this subdirectory.",
-      "repo": "The name of the repository to search in. If not provided, searches all repositories.",
-      "ref": "The commit SHA, branch or tag name to search on. If not provided, defaults to the default branch (usually 'main' or 'master').",
-      "limit": "The maximum number of files to return (default: 100)"
+      "pattern": "Glob matched against file paths, e.g. \"**/*.ts\" or \"src/**/*.test.{ts,tsx}\".",
+      "path": "Only return files below this subdirectory.",
+      "repo": "Repository to search. Omit to search all of them.",
+      "ref": "Commit SHA, branch or tag to search (default: the default branch).",
+      "limit": "Most files to return (default 100)."
     }
   },
   "get_diff": {
     "title": null,
-    "description": "Returns a structured git diff between two refs in a repository.\n\nUse this tool when you need patch details (added, removed, and context lines) between a base and head revision.\nThe output includes changed files and hunks with line ranges and diff body content.\n",
+    "description": "Shows what changed between two git refs of a repository, as a structured diff.\n\nPass `repo`, a `base` ref and a `head` ref (each a branch, tag or commit SHA); add `path` to look at one file only. The result lists the changed files with their hunks: line ranges plus the added, removed and surrounding lines. Use it when you need the actual patch, not just the list of commits.\n",
     "params": {
-      "repo": "The fully-qualified repository name.",
-      "base": "The base git ref (branch, tag, or commit SHA) to diff from.",
-      "head": "The head git ref (branch, tag, or commit SHA) to diff to.",
-      "path": "Restrict the diff to changes touching this file path. Omit to diff all changes between the two refs."
+      "repo": "Full repository name.",
+      "base": "Ref (branch, tag or commit SHA) to compare from.",
+      "head": "Ref (branch, tag or commit SHA) to compare to.",
+      "path": "Only include changes to this file. Omit to include every change between the two refs."
     }
   },
   "list_commits": {
     "title": null,
-    "description": "Lists commits in a repository with optional filtering by message, date range, author, branch, and path.\n\nUsage:\n- Use `query` to search commit messages (case-insensitive). Supports substrings and simple patterns.\n- Use `since`/`until` for date filtering. Both ISO 8601 dates (e.g., \"2024-01-01\") and relative formats (e.g., \"30 days ago\", \"last week\", \"yesterday\") are supported.\n- Use `author` to filter by author name or email (case-insensitive, partial match).\n- Use `path` to limit results to commits that touched a specific file or directory.\n- History for a `knowledge-base/` path comes back under the repository's knowledge repository (named in the result's `repo`), with `path` relative to it. Use that repository and path for follow-up calls on those commits.\n- Use `ref` to list commits on a specific branch, tag, or from a specific commit SHA. Defaults to the default branch.\n- Use `page`/`perPage` to paginate through large result sets. Check `totalCount` in the response to know if more pages exist.\n- If the repository name is not known, use `list_repos` first to discover the correct name.\n",
+    "description": "Lists the commits of a repository, newest first, with optional filters.\n\nParameters:\n- `repo`: the repository; if you do not know its name, call `list_repos` first.\n- `query`: match against commit messages (case-insensitive, substrings and simple patterns).\n- `since` and `until`: bound the dates, as ISO 8601 (\"2024-01-01\") or relative text (\"30 days ago\", \"last week\", \"yesterday\").\n- `author`: part of an author's name or email (case-insensitive).\n- `path`: only commits that touched this file or directory. For a path under `knowledge-base/` the history lives in the repository's knowledge repository: the result's `repo` names it and `path` is relative to it, so use that pair for follow-up calls on those commits.\n- `ref`: a branch, tag or commit SHA to list from (default branch otherwise).\n- `page` and `perPage`: paging; compare the response's `totalCount` with what you have seen to know whether more pages exist.\n",
     "params": {
-      "repo": "The repository to list commits from",
-      "query": "Search query to filter commits by message (case-insensitive)",
-      "since": "Start date for commit range (e.g., '30 days ago', '2024-01-01', 'last week')",
-      "until": "End date for commit range (e.g., 'yesterday', '2024-12-31', 'today')",
-      "author": "Filter commits by author name or email (case-insensitive)",
-      "ref": "Commit SHA, branch or tag name to list commits of. If not provided, uses the default branch.",
-      "path": "Filter commits to only those that touched this file or directory path (relative to repo root).",
-      "page": "Page number for pagination (min 1). Default: 1",
-      "perPage": "Results per page for pagination (min 1, max 100). Default: 50"
+      "repo": "Repository whose commits to list.",
+      "query": "Text to find in commit messages (case-insensitive).",
+      "since": "Earliest date to include: an ISO date like '2024-01-01' or relative text like 'last week'.",
+      "until": "Latest date to include: an ISO date like '2024-12-31' or relative text like 'yesterday'.",
+      "author": "Part of an author's name or email (case-insensitive).",
+      "ref": "Commit SHA, branch or tag to list history of (default: the default branch).",
+      "path": "Only commits touching this file or directory, relative to the repository root.",
+      "page": "Page number, starting at 1 (default 1).",
+      "perPage": "Commits per page, 1 to 100 (default 50)."
     }
   },
   "list_branches": {
     "title": null,
-    "description": "Lists branches in a repository, sorted by latest commit date (newest first).\n\nUsage:\n- Results come from Sourcebot's most recent local snapshot of the repository, not live from the code host. Branches created or deleted on the code host appear here only after Sourcebot next fetches the repository.\n- Use `query` to filter branch names (case-insensitive substring match).\n- Use `page`/`perPage` to paginate through large branch lists. Check `totalCount` in the response to know if more pages exist.\n- `isDefault` marks the repository's default branch.\n- `isIndexed` marks branches that are searchable with code search tools (e.g. `grep`, `glob`). Branches with `isIndexed: false` exist in the repository but cannot be searched.\n- If the repository name is not known, use `list_repos` first to discover the correct name.\n",
+    "description": "Lists the branches of a repository, most recently committed first.\n\nParameters and fields:\n- `repo`: the repository; if you do not know its name, call `list_repos` first.\n- The data is Falkon's last fetch of the repository, not the live code host: a branch created or deleted there shows up here only after the next fetch.\n- `query` keeps branches whose name contains the text (case-insensitive).\n- `page` and `perPage` page through long lists; compare `totalCount` in the response with what you have seen to know whether more exist.\n- `isDefault` flags the default branch. `isIndexed` says whether the branch can be searched with `grep` and `glob`; a branch with `isIndexed: false` exists but is not searchable.\n",
     "params": {
-      "repo": "The repository to list branches from",
-      "query": "Filter branches by name (case-insensitive substring match)",
-      "page": "Page number for pagination (min 1). Default: 1",
-      "perPage": "Results per page for pagination (min 1, max 100). Default: 50"
+      "repo": "Repository whose branches to list.",
+      "query": "Keep only branches whose name contains this text (case-insensitive).",
+      "page": "Page number, starting at 1 (default 1).",
+      "perPage": "Branches per page, 1 to 100 (default 50)."
     }
   },
   "list_repos": {
     "title": null,
-    "description": "Lists repositories in the organization with optional filtering and pagination.\n",
+    "description": "Lists the repositories you can see, with optional name filter, sorting and paging. `query` filters by name, `sort` orders by name or latest push, `direction` flips the order, and `page` with `perPage` pages through the result.\n",
     "params": {
-      "query": "Filter repositories by name (case-insensitive)",
-      "page": "Page number for pagination (min 1). Default: 1",
-      "perPage": "Results per page for pagination (min 1, max 100). Default: 30",
-      "sort": "Sort repositories by 'name' or 'pushed' (most recent commit). Default: 'name'",
-      "direction": "Sort direction: 'asc' or 'desc'. Default: 'asc'"
+      "query": "Keep only repositories whose name contains this text (case-insensitive).",
+      "page": "Page number, starting at 1 (default 1).",
+      "perPage": "Repositories per page, 1 to 100 (default 30).",
+      "sort": "Order by 'name' or by 'pushed' (latest commit). Default 'name'.",
+      "direction": "'asc' or 'desc'. Default 'asc'."
     }
   },
   "read_file": {
     "title": null,
-    "description": "Read the contents of a file in a repository.\n\nUsage:\n- Use offset/limit to read a specific portion of a file, which is strongly preferred for large files when only a specific section is needed.\n- Maximum 500 lines per call. Output is also capped at 5KB — if the cap is hit, call again with a larger offset to continue reading.\n- Any line longer than 2000 characters is truncated.\n- The response content includes the line range read and total line count. If the output was truncated, the next offset to continue reading is also included.\n- Call this tool in parallel when you need to read multiple files simultaneously.\n- Avoid tiny repeated slices. If you need more context, read a larger window.\n",
+    "description": "Returns the text of one file in a repository, with line numbers.\n\nParameters and limits:\n- `repo` and `path` identify the file; `ref` picks a branch, tag or commit (default branch otherwise).\n- `offset` (first line, 1-based) and `limit` (line count) select a slice. Prefer a slice over the whole file when you only need one section.\n- One call returns at most 500 lines and about 5KB. If that cap cuts the output short, call again with a later `offset` to continue.\n- Lines longer than 2000 characters are cut off.\n- The response states the range it returned and the file's total line count, plus the next `offset` when it was truncated.\n- Independent files can be read in parallel calls. Prefer one larger window over many tiny slices.\n",
     "params": {
-      "path": "The path to the file",
-      "repo": "The repository to read the file from",
-      "ref": "Commit SHA, branch or tag name to read the file from. If not provided, uses the default branch.",
-      "offset": "Line number to start reading from (1-indexed). Omit to start from the beginning.",
-      "limit": "Maximum number of lines to read (max: 500). Omit to read up to 500 lines."
+      "path": "Path of the file inside the repository.",
+      "repo": "Repository that holds the file.",
+      "ref": "Commit SHA, branch or tag to read the file at (default: the default branch).",
+      "offset": "First line to return, 1-based. Omit to start at the top.",
+      "limit": "Number of lines to return, at most 500. Omit for up to 500."
     }
   },
   "list_tree": {
     "title": null,
-    "description": "Lists files and directories from a repository path. This can be used as a repo tree tool or directory listing tool. Returns a flat list of entries with path metadata and depth relative to the requested path.\n\nUsage:\n- If the repository name is not known, use `list_repos` first to discover the correct name.\n- Start with a shallow depth (default: 1) to get a high-level overview, then drill into specific subdirectories as needed.\n- Use `path` to scope the listing to a subdirectory rather than fetching the entire tree at once.\n- Set `includeFiles: false` to list only directories when you only need the directory structure.\n- Set `includeDirectories: false` to list only files when you only need leaf nodes.\n- Call this tool in parallel when you need to explore multiple directories simultaneously.\n",
+    "description": "Lists the files and directories under a path of a repository, as flat entries with their path and depth below the requested path. Use it as a directory listing or a repository tree.\n\nParameters:\n- `repo`: the repository; if you do not know its name, call `list_repos` first.\n- `path`: the directory to list, so you can look at one subtree instead of everything; `ref` picks a branch, tag or commit.\n- `depth`: how many levels to descend (default 1). Start shallow for an overview, then go deeper into the directories that matter.\n- `includeFiles: false` keeps only directories; `includeDirectories: false` keeps only files.\n- `maxEntries` caps the number of entries.\n- Exploring several directories? Make the calls in parallel.\n",
     "params": {
-      "repo": "The name of the repository to list files from.",
-      "path": "Directory path (relative to repo root). If omitted, the repo root is used.",
-      "ref": "Commit SHA, branch or tag name to list files from. If not provided, uses the default branch.",
-      "depth": "How many directory levels to traverse below `path` (min 1, max 10, default 1).",
-      "includeFiles": "Whether to include files in the output (default: true).",
-      "includeDirectories": "Whether to include directories in the output (default: true).",
-      "maxEntries": "Maximum number of entries to return (min 1, max 10000, default 1000)."
+      "repo": "Repository to list.",
+      "path": "Directory to list, relative to the repository root. Omit for the root.",
+      "ref": "Commit SHA, branch or tag to list at (default: the default branch).",
+      "depth": "Directory levels to descend below `path`, 1 to 10 (default 1).",
+      "includeFiles": "Return file entries (default true).",
+      "includeDirectories": "Return directory entries (default true).",
+      "maxEntries": "Most entries to return, 1 to 10000 (default 1000)."
     }
   },
   "find_symbol_definitions": {
     "title": null,
-    "description": "Finds where a symbol (function, class, variable, method, type, etc.) is defined in a repository.\n\nUsage:\n- Use this to answer \"where is X defined/implemented?\" questions.\n- Results include file paths and line numbers for each definition site, grouped by file.\n- Symbol matching is exact — use the precise identifier name, not a description (e.g., \"UserService\" not \"user service class\").\n- Prefer this over `grep` for symbol lookups: it understands symbol boundaries and won't match partial strings or comments.\n- If the repository name is not known, use `list_repos` first to discover the correct name.\n",
+    "description": "Locates where a named symbol (function, class, variable, method, type and so on) is defined.\n\nHow it works:\n- Answers \"where is X defined or implemented?\".\n- Give the exact identifier as `symbol` (\"UserService\", not \"user service class\"); `repo` limits the search to one repository, and if you do not know its name, call `list_repos` first.\n- The result lists each definition site as a file path with line numbers, grouped by file.\n- Better than `grep` for this job: matching respects symbol boundaries, so partial words and comments do not show up.\n",
     "params": {
-      "symbol": "The symbol to find definitions of",
-      "repo": "The repository to scope the search to"
+      "symbol": "Exact name of the symbol to find definitions of.",
+      "repo": "Repository to search in."
     }
   },
   "find_symbol_references": {
     "title": null,
-    "description": "Finds all usages of a symbol (function, class, variable, method, type, etc.) across a repository.\n\nUsage:\n- Use this to answer \"where is X used/called?\" questions.\n- Results include file paths and line numbers for each reference, grouped by file.\n- Symbol matching is exact — use the precise identifier name, not a description (e.g., \"getUserById\" not \"get user by id\").\n- Prefer this over `grep` for symbol lookups: it understands symbol boundaries and won't match partial strings or comments.\n- If the repository name is not known, use `list_repos` first to discover the correct name.\n",
+    "description": "Lists the places where a named symbol (function, class, variable, method, type and so on) is used.\n\nHow it works:\n- Answers \"where is X used or called?\".\n- Give the exact identifier as `symbol` (\"getUserById\", not \"get user by id\"); `repo` limits the search to one repository, and if you do not know its name, call `list_repos` first.\n- The result lists each use as a file path with line numbers, grouped by file.\n- Better than `grep` for this job: matching respects symbol boundaries, so partial words and comments do not show up.\n",
     "params": {
-      "symbol": "The symbol to find references to",
-      "repo": "The repository to scope the search to"
+      "symbol": "Exact name of the symbol to find uses of.",
+      "repo": "Repository to search in."
     }
-  },
-  "create_skill": {
-    "title": null,
-    "description": "Creates a new agent skill: a reusable, named instruction set the user can invoke later.\n\nUsage:\n- ONLY call this tool when the user explicitly asks to create or save a skill. NEVER invent skills from conversation context on your own initiative.\n- The skill is personal to the requesting user and enabled immediately. In later messages it can be invoked manually as `/<slug>` or loaded automatically when a request matches its description.\n- `slug` becomes the skill's slash command (without the leading `/`). It must be unique among the user's skills; if it already exists, the tool fails and you can retry with a different slug. Use `list_skills` to check which slugs are taken.\n- `description` should say when the skill applies — it is what the agent matches against to auto-load the skill.\n- `instructions` are the markdown instructions the agent follows when the skill is invoked.\n- The result includes a `url` to the skill in Settings → Skills, where the user can edit, share, or delete it. To change a skill later, use `update_skill`.\n",
-    "params": {
-      "name": "Display name for the skill, 1-80 characters.",
-      "slug": "Slash command for the skill, without the leading '/'. Lowercase letters, numbers, and hyphens; at most 64 characters (e.g. 'review-pr').",
-      "description": "When to use the skill, 1-500 characters. Shown in the skill catalog the agent uses to auto-load skills.",
-      "instructions": "Markdown instructions the agent follows when the skill is invoked, 1-20,000 characters."
-    }
-  },
-  "update_skill": {
-    "title": null,
-    "description": "Updates an existing agent skill in place.\n\nUsage:\n- ONLY call this tool when the user explicitly asks to change a skill. NEVER rewrite a skill on your own initiative.\n- Identify the skill by its current `slug` (without the leading `/`) and `scope` (`personal` or `shared`). Use `list_skills` to discover both.\n- All content fields (`name`, `newSlug`, `description`, `instructions`) are optional; omitted fields keep their current values. `newSlug` renames the skill's slash command.\n- Personal skills are editable by their owner. Shared skills are editable only by the user who created them, and only while enabled.\n- Skills synced from a repository file cannot be edited here; they must be edited in Settings → Skills so they stay linked to their source file.\n- This tool never enables/disables a skill and never moves it between the personal and shared catalogs — those actions belong to Settings → Skills.\n- Editing a shared skill changes it immediately for everyone in the organization who has adopted it.\n",
-    "params": {
-      "slug": "Current slash command of the skill to update, without the leading '/'.",
-      "scope": "Which catalog the skill lives in: 'personal' (your skills) or 'shared' (the organization catalog).",
-      "name": "New display name, 1-80 characters. Omit to keep the current name.",
-      "newSlug": "New slash command, without the leading '/'. Lowercase letters, numbers, and hyphens; at most 64 characters. Omit to keep the current command.",
-      "description": "New description of when to use the skill, 1-500 characters. Omit to keep the current description.",
-      "instructions": "New markdown instructions, 1-20,000 characters. Omit to keep the current instructions."
-    }
-  },
-  "list_skills": {
-    "title": null,
-    "description": "Lists the agent skills visible to the requesting user: their personal skills plus the organization's shared skill catalog (including shared skills they have not adopted or authored).\n\nUsage:\n- Use `scope` to list only `personal` or only `shared` skills; omit it to list both.\n- Each row carries `slug` and `scope`, the identifier pair `update_skill` needs, plus `enabled`, `isSynced` (linked to a repository file), `canEdit` (whether `update_skill` can edit it), and, on shared rows, `adopted` (whether the skill is active for this user).\n- Skill instructions are never included in the results.\n- Use this before `create_skill` to avoid slug conflicts, and before `update_skill` to locate the target skill and check whether it is editable.\n",
-    "params": {
-      "scope": "Filter to one catalog: 'personal' or 'shared'. Omit to list both."
-    }
-  },
-  "list_language_models": {
-    "title": null,
-    "description": "Lists the available language models configured on the Sourcebot instance. Use this to discover which models can be specified when calling ask_codebase.",
-    "params": {}
   }
 }

@@ -72,7 +72,7 @@ test("repo-bound tools refuse a repo outside the scope with the same error as a 
     ["grep", { pattern: "needle", repo: SECRET }],
     ["glob", { pattern: "*.ts", repo: SECRET }],
   ];
-  // list_branches reports every failure as "Failed to list branches." (as Sourcebot does): still no difference between hidden and missing.
+  // list_branches reports every failure as "Failed to list branches.": still no difference between hidden and missing.
   for (const [name, args] of calls) {
     await assert.rejects(run(name, args, scope), name === "list_branches" ? /^Error: Failed to list branches\.$/ : new RegExp(`Repository "${SECRET}" not found`), name);
   }

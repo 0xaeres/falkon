@@ -2,17 +2,17 @@ import path from "node:path";
 
 /** File names that say nothing about the concept a document covers. */
 export const GENERIC_NAMES = new Set([
-  "overview", "readme", "index", "doc", "docs", "documentation", "about", "misc", "general",
-  "summary", "notes", "info", "main", "other", "todo", "claude", "agents",
+  "about", "agents", "claude", "doc", "docs", "documentation", "general", "index", "info",
+  "main", "misc", "notes", "other", "overview", "readme", "summary", "todo",
 ]);
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 export const CONCEPT_PATH_RULE =
-  "New document paths must be exactly system-slug/concept-slug.md: two segments, each lowercase kebab-case " +
-  "(a-z, 0-9, hyphens) of at most 64 characters. The file name names a specific concept: not a generic word " +
-  "like overview, index or notes, and not a repeat of the folder name.";
+  "A new document's path has the form system-slug/concept-slug.md: exactly two segments, each in lowercase kebab-case " +
+  "(letters a-z, digits, hyphens) and no longer than 64 characters. The file name must name a particular concept, " +
+  "so a generic word such as overview, index or notes will not do, and neither will a repeat of the folder name.";
 
 /** Any path a document may live at: relative, normalized, markdown, no glob or escape characters. */
 export function isDocPath(p: string): boolean {

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { openAiTools } from "./tools";
+import { openAiTools, toolDefinitions, toolNames, type AnyToolDefinition } from "./tools";
 import { TokenBudget, type ChatRequest, type LlmClient } from "./kb/llm";
 import { runScan } from "./kb/pipeline";
 import type { RepoSource } from "./kb/source";
@@ -76,4 +76,11 @@ async function kbSchemas() {
 
 test("every KB tool schema sent to the LLM remains byte-identical to the Zod 3 output", async () => {
   assert.equal(JSON.stringify(await kbSchemas()), JSON.stringify(previous().kb));
+});
+
+test("every tool description names each of the tool's parameters", () => {
+  for (const name of toolNames) {
+    const d = toolDefinitions[name] as unknown as AnyToolDefinition;
+    for (const param of Object.keys(d.inputSchema.shape)) assert.ok(d.description.includes(param), `${name}: ${param}`);
+  }
 });

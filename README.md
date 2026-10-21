@@ -118,13 +118,13 @@ Setting `ADMIN_TOKEN` (at least 32 characters) on `api` overrides the file; `res
 
 MCP clients can research with their own model. Server instructions explain the tools, and `research_codebase` accepts `{ query, repos? }` and returns a short research brief without calling a server model. The `ask_codebase` MCP prompt returns the same brief, taking `query` and optional comma-separated `repos`. These are available even when no model is configured. Repository selections intersect the caller's access policy; unavailable names are reported and an empty selection stays empty. Follow the brief with the search, read, symbol and history tools, then answer in Markdown with `@file:{repo::path}` or `@file:{repo::path:start-end}` citations. The existing `ask_codebase` tool still runs the server model when configured.
 
-The Ask agent runs on the AI SDK (`ai` 6): static and per-chat system prompts, the same ten tools in the same order as MCP (scoped to the chat's selected repos), up to `FALKON_CHAT_MAX_STEP_COUNT` steps (default 100), lowercase tool-name repair, an answer after the `<!--answer-->` tag with `@file:{repo::path:a-b}` citations, and a chat title from a naming prompt. Models come from config `models` (providers `openai-compatible`, `openai`, `anthropic`; `temperature` or `FALKON_CHAT_MODEL_TEMPERATURE`), else one openai-compatible model from `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. Input capabilities are looked up on models.dev, as v6 does.
+The Ask agent runs on the AI SDK (`ai` 6): static and per-chat system prompts, the same ten tools in the same order as MCP (scoped to the chat's selected repos), up to `FALKON_CHAT_MAX_STEP_COUNT` steps (default 100), lowercase tool-name repair, an answer after the `<!--answer-->` tag with `@file:{repo::path:a-b}` citations, and a chat title from a naming prompt. Models come from config `models` (providers `openai-compatible`, `openai`, `anthropic`; `temperature` or `FALKON_CHAT_MODEL_TEMPERATURE`), else one openai-compatible model from `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. Input capabilities are looked up on models.dev.
 
 - `POST /api/chat/blocking` `{ query, repos?, languageModel?, visibility? }` → `{ answer, chatId, chatUrl, languageModel }`, the answer as portable markdown (citations become browse links with `highlightRange`). `/api/ask` is an alias.
 - `POST /api/chat` streams one turn as an AI SDK UI message stream; `GET /api/chats` lists and reads stored chats.
-- MCP `ask_codebase` and `list_language_models` return the reference engine's text.
+- MCP `ask_codebase` and `list_language_models` return Falkon's own tool text.
 
-A differential run against the reference engine with a scripted LLM found the LLM requests (system messages, tool schemas, tool results, params) and the answers identical. Not implemented: skills tools, external MCP servers inside Ask, attachments, prompt caching options.
+The prompts and tool descriptions are Falkon's own wording; `ORIGINALITY_REF_DIR=<dir> pnpm originality` fails when any run of 8 or more words in them matches a reference text set. Not implemented: skills tools, external MCP servers inside Ask, attachments, prompt caching options.
 
 ## Auth
 

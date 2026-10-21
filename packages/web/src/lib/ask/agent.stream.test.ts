@@ -37,7 +37,7 @@ test("postProcess gets the final text, sources and step-cap flag, and its parts 
         postProcess: async (ctx) => ((seen = ctx), [{ type: "data-evidence", data: { n: 1 } }, { type: "data-answer", data: { ok: true } }]),
       }),
     );
-    assert.deepEqual(seen, { text: "<!--answer-->\nfinal words", sources: [], stepCapHit: false });
+    assert.deepEqual(seen, { text: "<!--answer-->\nfinal words", sources: [], stepCapHit: false, toolCalls: 1 });
     const types = out.map((c) => c.type);
     const finish = types.indexOf("finish");
     assert(types.indexOf("data-evidence") < types.indexOf("data-answer") && types.indexOf("data-answer") < types.indexOf("message-metadata") && types.indexOf("message-metadata") < finish);

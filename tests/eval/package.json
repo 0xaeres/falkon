@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc -p .",
-    "test": "node --import tsx --test *.test.ts",
+    "test": "node --import tsx --test *.test.ts ../originality/*.test.ts",
     "eval": "tsx cli.ts"
   },
   "dependencies": {

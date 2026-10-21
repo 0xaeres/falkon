@@ -213,3 +213,9 @@ test("MCP output text, empty results, truncation and errors stay frozen", async 
     snapshot("outputs", results);
   } finally { await session.close(); }
 });
+
+test("the mcp.ts tool descriptions (ask_codebase, list_language_models) name each parameter", () => {
+  const registered = JSON.parse(fs.readFileSync(new URL("../../../../../tests/contract/registration-model.json", import.meta.url), "utf8")) as { name: string; description: string; inputSchema: { properties?: object } }[];
+  assert.ok(registered.some((t) => t.name === "ask_codebase"));
+  for (const t of registered.filter((t) => ["ask_codebase", "list_language_models"].includes(t.name))) for (const param of Object.keys(t.inputSchema.properties ?? {})) assert.ok(t.description.includes(param), `${t.name}: ${param}`);
+});

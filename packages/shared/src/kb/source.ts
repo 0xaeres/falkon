@@ -111,7 +111,7 @@ export function gitSource(name: string, gitDir: string, commit: string): RepoSou
     async diff(base) {
       safeRev(base);
       if (base === commit) return [];
-      const r = await git(["-c", "diff.renames=true", "diff", "--name-status", "-z", "-M", base, commit], [128, 129]);
+      const r = await git(["-c", "diff.renames=true", "diff", "-M", "--name-status", "-z", base, commit], [128, 129]);
       if (r.code !== 0) {
         if (missingBase.test(r.err ?? "")) return "missing-base";
         throw new Error(`git diff failed: ${r.err}`);

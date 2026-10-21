@@ -62,6 +62,18 @@ test("leak checks inspect paths but not Grep or Glob patterns", () => {
   assert.equal(leak("Read", { file_path: "/USERS/me" }), true);
   for (const path of [".env", ".local/x", "eval/gold.json", "/Users/me", "/private/tmp/claude-501/x", "../up", "/data/o3/openmrs-core/a"]) assert.equal(leak("Read", { file_path: path }), true, path);
   assert.equal(leak("Grep", { pattern: "x", path: "/data/o3" }), true);
+  // Claude Code's own spill files for oversized tool results are not a leak, but only that exact shape.
+  const spill = "/Users/me/.claude/projects/-Users-me-work-falkon/0b1c-session/tool-results/toolu_01AB.txt";
+  assert.equal(leak("Read", { file_path: spill }), false);
+  assert.equal(leak("Read", { path: spill }), false);
+  for (const path of [
+    "/Users/me/.claude/settings.json", "/Users/me/.claude/projects/p/s/other/toolu_01.txt", "/Users/me/.claude/projects/p/tool-results/toolu_01.txt",
+    "/Users/me/.claude/projects/p/s/tool-results/a/b.txt", "/Users/me/.claude/projects/p/s/tool-results/../../secret.json", "/Users/me/.claude/projects/p/../q/s/tool-results/f",
+    "/Users/me/x/.claude/projects/p/s/tool-results/f", "/Users/me/.claude/projects/p/s/tool-results/", "/Users/me/.claude/projects/p/s/tool-results",
+    "/Users/me/.claude/projects/p/s/tool-results/.env", "/Users/me/.claude/projects/p/s/tool-results/.local", "/Users/me/.claude/projects/p/s/tool-results/*",
+    "/Users/me/.claude/projects/*/s/tool-results/f", "/Users/me/.claude/projects/p/?/tool-results/f", "/Users/me/.claude/projects/p/s/tool-results/[a-z]",
+    `${spill}/../../../../.env`, "/Users/me/.claude/projects/p/s/tool-results/f ",
+  ]) assert.equal(leak("Read", { file_path: path }), true, path);
   assert.equal(leak("Read", { file_path: "openmrs-esm-patient-chart/src/a.ts" }), false);
 });
 

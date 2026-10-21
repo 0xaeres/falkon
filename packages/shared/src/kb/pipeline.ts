@@ -93,40 +93,40 @@ export function readTools(d: Pick<ScanDeps, "owner" | "resolveRepo">): ToolDef[]
 // ---- prompts ---------------------------------------------------------------
 
 const GOAL =
-  "The knowledge base is a short engineer's handbook, not an encyclopedia. It exists to preserve understanding that is expensive to " +
-  "rebuild from source: architectural invariants, cross-cutting flows, tricky contracts, and the reasons behind decisions. " +
-  "Prefer a few dense, load-bearing documents over broad coverage of every feature or folder.";
+  "The knowledge base is a compact handbook for engineers, not an encyclopedia. Its job is to keep the understanding that is costly to " +
+  "recover from reading source: design invariants, flows that cut across modules, subtle contracts, and the reasoning behind decisions. " +
+  "A few dense documents that carry the load beat wide coverage of every feature or folder.";
 
 const P = {
   scout:
-    `${GOAL}\n\nYou are a scout. Explore only your assigned territory with the read tools and identify the load-bearing systems and ideas whose code lives there ` +
-    "(a system may reach beyond the territory; cite anchors anywhere). Skip folder-shaped or shallow non-systems. " +
-    "If the territory is too large to survey honestly, submit with territoryTooBig set. Finish by calling submit_candidate_systems.",
+    `${GOAL}\n\nYou are a scout for one territory. Stay inside it, use the read tools, and name the systems and ideas that hold the design together and whose code sits there ` +
+    "(a system can extend past the territory, and its evidence anchors may point anywhere). Ignore shallow items and ones that are just a folder. " +
+    "When the territory is too big to survey honestly, set territoryTooBig in your submission. Your last step is a call to submit_candidate_systems.",
   reconcile:
-    `${GOAL}\n\nYou are the reconciler. Merge the scouts' candidates into one canonical system list: fuse duplicates seen from different territories, fold satellites into parents, ` +
-    "split genuine grab-bags, drop low-value non-systems. Aim for the fewest coherent systems that carry the architecture. Give each a stable kebab-case slug and assign every " +
-    "existing document to exactly one system. Do not explore. Finish by calling submit_system_list.",
+    `${GOAL}\n\nYou are the reconciler. Combine the scouts' candidates into a single system list: join duplicates that different territories both found, fold minor satellites into the system they serve, ` +
+    "break apart true grab-bags, and discard low-value entries. Prefer the smallest set of coherent systems that still carries the architecture. Every system needs a stable kebab-case slug, and each " +
+    "existing document goes under exactly one system. Do no exploring of your own. Your last step is a call to submit_system_list.",
   survey:
-    `${GOAL}\n\nYou are a surveyor for one system. Use its evidence anchors as starting points, read deeply, and give every assigned existing document a disposition (keep, merge, delete). ` +
-    "Propose the concept documents this system truly deserves, typically one to four. Each proposed path is system-slug/concept-slug.md where the file name names the concept, and must be a path that does not exist yet: improve an existing document through its disposition (keep, with keyClaims and keyFiles), never by proposing it again. " +
-    "For each proposal state in the rationale what understanding it preserves, then list 3-8 claims, each naming the file that proves it. Finish by calling submit_system_report.",
+    `${GOAL}\n\nYou are the surveyor of one system. Start from its evidence anchors, read thoroughly, and decide keep, merge or delete for each existing document assigned to it. ` +
+    "Then propose the concept documents the system really warrants, usually one to four. A proposed path looks like system-slug/concept-slug.md, the file name names the concept, and the path must not exist yet: to improve a document that exists, give it the keep disposition with keyClaims and keyFiles instead of proposing it again. " +
+    "In each proposal's rationale say what understanding the document would preserve, then list 3 to 8 claims, each with the file that backs it up. Your last step is a call to submit_system_report.",
   merge:
-    `${GOAL}\n\nYou are the merge agent. Turn the surveyors' reports into one complete document work list. Do not explore. Every required path appears exactly once (as a keep or merge item, an absorb target, or a delete). ` +
-    "New documents are create items (or merge items with a new path) at system-slug/concept-slug.md, each naming its sources as (system slug, proposal path) pairs. A merge item must absorb at least one existing document. " +
-    "When reports overlap or overreach, prefer fewer, denser documents. Finish by calling submit_work_list.",
+    `${GOAL}\n\nYou are the merge agent. Convert the surveyors' reports into one full work list for the documents, and do no exploring. Every required path must appear exactly once, as a keep or merge item, an absorbed document, or a delete. ` +
+    "Each new document is a create item (or a merge item with a new path) at system-slug/concept-slug.md that lists its sources as (system slug, proposal path) pairs. A merge item has to absorb at least one existing document. " +
+    "If reports overlap or claim too much, choose fewer and denser documents. Your last step is a call to submit_work_list.",
   doc:
-    "You are writing one document for engineers and coding agents who are about to change this repository. Start from BRIEF: verify each claim by reading the cited file at the pinned commit, keep what holds, " +
-    "correct or drop what does not, and add only what you find while verifying.\n\n" +
-    "Preserve understanding that takes real work to reconstruct from source: architecture, contracts, domain concepts, algorithms, relationships between parts, invariants, and why decisions were made. " +
-    "Explain concepts and make implicit connections explicit. Do not transcribe what a file already says; enumerations, schemas and config tables become one sentence plus a citation.\n\n" +
-    "Aim for 4,000 to 8,000 characters (20,000 is a hard cap). No frontmatter: begin with a single H1 and a one-sentence first paragraph saying when to read the document. " +
-    "Write about the system, not about this task or the knowledge base. Cite evidence as @file:{<repo>::<path>} using exact repository names and paths you have read.\n\n" +
-    "Work efficiently: read only the handful of files you need to verify the main claims (roughly ten reads), then write the COMPLETE document in a single write_doc call and call finish_doc. " +
-    "Use edit_doc only to repair what finish_doc refuses; do not polish in many small edits. You MUST call finish_doc for your own path with a one-sentence summary. " +
-    "If the item absorbs other documents, their bodies are in BRIEF: fold their content in before finishing, then call delete_absorbed_doc for each.",
+    "Write one document for engineers and coding agents who are about to modify this repository. BRIEF is your starting point: go through the claims one at a time, open the cited file at the pinned commit, retain the claims that stand, " +
+    "fix or remove the ones that do not, and add only what the checking turns up.\n\n" +
+    "Capture what costs real effort to rebuild from the source: the architecture, contracts, domain concepts, algorithms, how parts relate, the invariants, and why choices were made. " +
+    "Explain the concepts and spell out connections that the code leaves implicit. Do not restate what a file plainly says; lists of options, schemas and configuration tables shrink to a sentence and a citation.\n\n" +
+    "Aim for roughly 4,000 to 8,000 characters, and never above 20,000. Skip frontmatter. Open with one H1, then a first paragraph of one sentence telling the reader when to consult the document. " +
+    "Describe the system itself, never this task or the knowledge base. Cite evidence as @file:{<repo>::<path>}, with repository names and paths exactly as you read them.\n\n" +
+    "Stay economical: about ten file reads should be enough to verify the main claims. Then write the WHOLE document in one write_doc call and call finish_doc. " +
+    "Use edit_doc only to fix problems finish_doc reports, not for step-by-step polishing. Your own path must be passed to finish_doc, with a one-sentence summary. " +
+    "When the item absorbs other documents, BRIEF contains their text: merge their content into yours first, then call delete_absorbed_doc once per absorbed document.",
   readme:
-    `Write a concise narrative overview (at most ${README_NARRATIVE_WORDS} words) of this repository's knowledge base from the document list you are given. ` +
-    "Return the narrative text only; the document index and dependency list are added by code. You may use the read tools to check a detail.",
+    `From the list of documents you are given, write a brief narrative overview of this repository's knowledge base, no longer than ${README_NARRATIVE_WORDS} words. ` +
+    "Reply with the narrative only, because code adds the document index and the dependency list afterwards. The read tools are available if you want to confirm a detail.",
 };
 
 // ---- helpers ---------------------------------------------------------------
@@ -352,7 +352,7 @@ export async function runScan(d: ScanDeps, triage: Triage): Promise<ScanOutcome>
       uncoveredNote: "These changed files are cited by no document. Propose a new document only if one reveals a doc-worthy change.",
       recentCommits: triage.commitLog.slice(0, 50).map((c) => `${c.sha.slice(0, 7)} ${c.subject}`),
     });
-    mergeExtra = { affected: triage.affected, note: "A delete plus an add may be a move; an uncovered new path may be an affected document's moved citation target." };
+    mergeExtra = { affected: triage.affected, note: "A deleted path and an added one can be a single move, so a new path nobody cites yet may be where an affected document's citation now points." };
   }
 
   const tick = (stage: string) => d.log?.(`${stage} done; tokens used: ${d.budget.used.toLocaleString()} of ${d.budget.limit.toLocaleString()}`);

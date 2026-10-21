@@ -11,20 +11,17 @@ import { toolDeps } from "./tools";
 
 export const MCP_SERVER_NAME = "falkon-mcp-server";
 
-const ASK_DESCRIPTION = `DO NOT USE THIS TOOL UNLESS EXPLICITLY ASKED TO. THE PROMPT MUST SPECIFICALLY ASK TO USE THE ask_codebase TOOL.
+const ASK_DESCRIPTION = `Only call this tool when the user's request names ask_codebase explicitly; otherwise use the search and read tools yourself.
 
-Ask a natural language question about the codebase. This tool uses an AI agent to autonomously search code, read files, and find symbol references/definitions to answer your question.
+Puts a natural-language question about the code to a Falkon agent. The agent runs its own searches, reads files and follows symbol definitions and references, then writes the answer.
 
-This is a blocking operation that may take 60+ seconds to research the codebase, so only invoke it if the user has explicitly asked you to by specifying the ask_codebase tool call in the prompt.
+Pass the question as \`query\`; optionally narrow the agent with \`repos\` and choose a model with \`languageModel\` (see list_language_models).
 
-The agent will:
-- Analyze your question and determine what context it needs
-- Search the codebase using multiple strategies (code search, symbol lookup, file reading)
-- Synthesize findings into a comprehensive answer with code references
+The call blocks while the agent works and can take a minute or more.
 
-Returns a detailed answer in markdown format with code references, plus a link to view the full research session (including all tool calls and reasoning) in the Sourcebot web UI.
+Returns markdown with code references, followed by a link to the saved chat in the Falkon web UI, where every tool call and step of the research can be reviewed.
 
-When using this in shared environments (e.g., Slack), you can set the visibility parameter to 'PUBLIC' to ensure everyone can access the chat link.`;
+For a chat shared with others (a Slack thread, say), pass visibility 'PUBLIC' so the link opens for everyone.`;
 
 const RESEARCH_DESCRIPTION = "Prepare a repository-scoped research brief for your model to answer a code question with Falkon's search and read tools. Returns a workflow and citation guidance without calling a server model.";
 
@@ -72,7 +69,7 @@ export async function createMcpServer(scope: Scope) {
   add(
     "list_language_models",
     {
-      description: "Lists the available language models configured on the Sourcebot instance. Use this to discover which models can be specified when calling ask_codebase.",
+      description: "Returns the language models this Falkon instance is configured with, so you can pick one for the languageModel parameter of ask_codebase.",
       annotations: { readOnlyHint: true, idempotentHint: true },
     },
     async () => ({ content: [{ type: "text" as const, text: JSON.stringify(await languageModelsInfo()) }] }),
@@ -80,11 +77,11 @@ export async function createMcpServer(scope: Scope) {
   if (models.length > 0) {
     const schema = z.object({
       query: z.string().describe("The query to ask about the codebase."),
-      repos: z.array(z.string()).optional().describe("The repositories accessible to the agent. If not provided, all repositories are accessible."),
+      repos: z.array(z.string()).optional().describe("Repositories the agent may search. Omit to let it use every repository you can see."),
       languageModel: languageModelInfo
         .optional()
-        .describe("The language model to use. If not provided, defaults to the first model in the config."),
-      visibility: z.enum(["PRIVATE", "PUBLIC"]).optional().describe("The visibility of the chat session. Defaults to PRIVATE for authenticated users."),
+        .describe("Model that runs the agent. Omit to use the first configured model."),
+      visibility: z.enum(["PRIVATE", "PUBLIC"]).optional().describe("Who can open the saved chat. Defaults to PRIVATE for signed-in callers."),
     });
     add(
       "ask_codebase",
@@ -161,7 +158,7 @@ export async function handleMcpPost(req: Request, scope: Scope): Promise<Respons
   const id = req.headers.get(SESSION_HEADER);
   const existing = id ? sessions.get(id) : undefined;
   if (existing) {
-    if (existing.owner !== owner) return json(403, "INSUFFICIENT_PERMISSIONS", "Session does not belong to the authenticated user.");
+    if (existing.owner !== owner) return json(403, "INSUFFICIENT_PERMISSIONS", "This session was opened by a different caller.");
     return existing.transport.handleRequest(req);
   }
   const server = await createMcpServer(scope);
@@ -187,6 +184,6 @@ export async function handleMcpDelete(req: Request, scope: Scope): Promise<Respo
   const id = req.headers.get(SESSION_HEADER);
   const s = id ? sessions.get(id) : undefined;
   if (!s) return json(404, "NOT_FOUND", "Session not found.");
-  if (s.owner !== (scope.principal ?? "anonymous")) return json(403, "INSUFFICIENT_PERMISSIONS", "Session does not belong to the authenticated user.");
+  if (s.owner !== (scope.principal ?? "anonymous")) return json(403, "INSUFFICIENT_PERMISSIONS", "This session was opened by a different caller.");
   return s.transport.handleRequest(req);
 }

@@ -26,6 +26,8 @@ export interface EvidenceInput {
   generation: string;
   readFile: (repo: string, path: string, revision: string) => Promise<string>;
   stepCapHit: boolean;
+  /** Tool calls the turn made, whether or not they returned anything. */
+  toolCalls: number;
 }
 
 /** `suffix` is `whole` or ends it at a path-segment boundary. */
@@ -150,8 +152,8 @@ export async function buildEvidence(i: EvidenceInput): Promise<Part[]> {
 
   const none = evidence.length === 0;
   // Evidence decides first; the marker only turns an evidence-free, non-empty text into a reply (no marker: abstention, as before).
-  // A turn that read files or hit the step cap did research: it abstains, tagged or not.
-  const reply = none && marked && texts.length > 0 && i.sources.length === 0 && !i.stepCapHit;
+  // A turn that ran any tool (even one that found nothing), read files or hit the step cap did research: it abstains, tagged or not.
+  const reply = none && marked && texts.length > 0 && i.sources.length === 0 && i.toolCalls === 0 && !i.stepCapHit;
   const kind = reply ? "reply" : none ? "abstention" : reasons.length ? "partial" : "grounded";
   const data = {
     kind,

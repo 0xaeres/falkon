@@ -21,6 +21,7 @@ const run = (o: Partial<Parameters<typeof buildEvidence>[0]> & { text: string },
     productId: "pay",
     generation: "g-abc123",
     stepCapHit: false,
+    toolCalls: 0,
     readFile: async (repo, path) => {
       const content = files[`${repo}::${path}`];
       if (content === undefined) throw new Error("ENOENT");
@@ -227,7 +228,7 @@ test("fixture: real answers resolve at least 95% of their references and satisfy
   let capped = 0;
   for (const f of fixtures) {
     const sources = f.sources.map((s) => src(s.repo, s.path));
-    const r = await buildEvidence({ text: f.text, sources, scopeAllows: () => true, productId: "openmrs", generation: "g-000000", stepCapHit: false, readFile: async () => file(5000) });
+    const r = await buildEvidence({ text: f.text, sources, scopeAllows: () => true, productId: "openmrs", generation: "g-000000", stepCapHit: false, toolCalls: 0, readFile: async () => file(5000) });
     const refs = [...f.text.matchAll(new RegExp(FILE_REFERENCE_REGEX))];
     total += refs.length;
     distinct += new Set(refs.map((m) => m[0])).size;
@@ -294,6 +295,13 @@ test("reply: a turn that read files or hit the step cap abstains even when tagge
   assert.equal(none.kind, "reply");
   const capped = answerOf(await run({ text, sources: [], stepCapHit: true }, FILES));
   assert.deepEqual([capped.kind, capped.partialReasons], ["abstention", ["The agent stopped at its step limit, so the answer may be incomplete."]]);
+});
+
+test("reply: a search that ran and found nothing, then the marker, abstains", async () => {
+  const text = `${ANSWER_TAG}\n${REPLY_TAG}\nThe auth module validates tokens in src/auth.ts.`;
+  const ranNothingFound = answerOf(await run({ text, sources: [], toolCalls: 1 }, FILES));
+  assert.deepEqual([ranNothingFound.kind, ranNothingFound.paragraphs], ["abstention", []]);
+  assert.equal(answerOf(await run({ text, sources: [], toolCalls: 0 }, FILES)).kind, "reply");
 });
 
 test("reply: a reply never carries partial reasons", async () => {

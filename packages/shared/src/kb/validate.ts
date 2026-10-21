@@ -75,9 +75,9 @@ const dupes = (xs: string[]) => {
 const blank = (s: string) => s.trim().length === 0;
 
 export function checkCandidates(c: Candidates): Check<Candidates> {
-  if (!c.systems.length && !c.territoryTooBig) return fail("empty", "Report at least one candidate system, or set territoryTooBig.");
+  if (!c.systems.length && !c.territoryTooBig) return fail("empty", "Submit one or more candidate systems, or else set territoryTooBig.");
   if (c.systems.some((s) => blank(s.name) || blank(s.thesis) || !s.evidenceAnchors.length))
-    return fail("incomplete", "Every candidate needs a name, a thesis and at least one evidence anchor (a repository file path).");
+    return fail("incomplete", "Each candidate must carry a name, a thesis, and one or more evidence anchors (repository file paths).");
   return { ok: true, value: c };
 }
 
@@ -89,7 +89,7 @@ export function checkSystemList(input: SystemList, existing: string[], required:
   const dupSlugs = dupes(systems.map((s) => s.slug));
   if (dupSlugs.length) return fail("duplicate_slugs", "System slugs must be unique.", { dupSlugs });
   if (systems.some((s) => blank(s.name) || blank(s.thesis) || !s.evidenceAnchors.length))
-    return fail("incomplete", "Every system needs a name, a thesis and at least one evidence anchor.");
+    return fail("incomplete", "Each system must carry a name, a thesis, and one or more evidence anchors.");
   const assigned = systems.flatMap((s) => s.assignedDocPaths);
   if (assigned.includes("README.md")) return fail("readme", "README.md is generated separately and cannot be assigned.");
   const have = new Set(existing);
@@ -101,7 +101,7 @@ export function checkSystemList(input: SystemList, existing: string[], required:
   const missing = required.filter((p) => !got.has(p));
   if (missing.length) return fail("unassigned", "Every existing document must be assigned to a system.", { missing });
   if (systems.length > MAX_SYSTEMS)
-    return fail("too_many", `At most ${MAX_SYSTEMS} systems. Fold satellites into their parents; keep only systems that carry the architecture.`);
+    return fail("too_many", `No more than ${MAX_SYSTEMS} systems are allowed. Fold satellites into the systems they serve; only systems that hold the architecture up should remain.`);
   return { ok: true, value: input };
 }
 
@@ -146,7 +146,7 @@ export function checkReport(input: Report, assigned: string[]): Check<Report> {
   const noClaims = input.proposedNewDocs.filter((p) => !p.keyClaims.length).map((p) => p.path);
   if (noClaims.length) return fail("no_claims", "Every proposed document needs claims, each naming the repository file that proves it.", { noClaims });
   if (input.proposedNewDocs.length > MAX_DOCS_PER_SYSTEM)
-    return fail("too_many", `At most ${MAX_DOCS_PER_SYSTEM} proposed documents per system. Keep the highest-value concepts.`);
+    return fail("too_many", `Propose no more than ${MAX_DOCS_PER_SYSTEM} documents for a system. Keep the concepts that matter most.`);
   return { ok: true, value: input };
 }
 
@@ -183,7 +183,7 @@ export function checkWorkList(
   const createAbsorb = input.items.filter((i) => i.action === "create" && i.absorbs?.length).map((i) => i.path);
   if (createAbsorb.length) return fail("create_absorbs", "Use a merge item to absorb existing documents.", { createAbsorb });
   const mergeNone = input.items.filter((i) => i.action === "merge" && !i.absorbs?.length).map((i) => i.path);
-  if (mergeNone.length) return fail("merge_without_absorbs", "A merge item must absorb at least one existing document.", { mergeNone });
+  if (mergeNone.length) return fail("merge_without_absorbs", "A merge item has to absorb one or more existing documents.", { mergeNone });
   const tooMany = input.items.filter((i) => (i.absorbs?.length ?? 0) > MAX_ABSORBS).map((i) => i.path);
   if (tooMany.length) return fail("too_many_absorbs", `Absorb at most ${MAX_ABSORBS} documents per item; leave the rest as keep items.`, { tooMany });
 
@@ -231,7 +231,7 @@ export function checkWorkList(
     if (unknown.length) return fail("unknown_sources", "Every source must match a (system slug, proposal path) from the reports.", { path: i.path, unknown });
     const have2 = new Set(src.map(srcKey));
     const omitted = proposals.filter((p) => p.path === i.path && !have2.has(srcKey(p)));
-    if (omitted.length) return fail("incomplete_sources", "Include every survey proposal for the item's own path in sources.", { path: i.path, omitted });
+    if (omitted.length) return fail("incomplete_sources", "The sources must list each survey proposal made for the item's own path.", { path: i.path, omitted });
   }
   return { ok: true, value: input };
 }

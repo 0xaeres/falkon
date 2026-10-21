@@ -38,6 +38,9 @@ export function buildCommand(arm: Arm, o: CommandOptions): { command: string; ar
 }
 
 const sensitive = /(?:^|[\/ ])(?:\.env(?:[.\/ ]|$)|\.local(?:[\/ ]|$)|eval(?:[\/ ]|$))|\/Users(?:\/|$)|\/(?:private\/)?tmp\/claude-501(?:\/|$)|\.\.\//i;
+/** Claude Code's own spill file for an oversized tool result: <home>/.claude/projects/<project>/<session>/tool-results/<file>. Nothing else under ~/.claude. */
+const toolResultSpill = /^\/(?:Users|home)\/[^\/*?[]+\/\.claude\/projects\/[^\/*?[]+\/[^\/*?[]+\/tool-results\/\w[\w.-]*$/;
+const isLeakPath = (path: string) => !(toolResultSpill.test(path) && !path.includes("..")) && sensitive.test(path.replaceAll("\\", "/"));
 /** Input fields that name files; Grep's regex `pattern` is code, not a path. */
 const pathFields: Record<string, string[]> = { Read: ["file_path", "path"], Grep: ["path", "glob"], Glob: ["pattern", "path"] };
 
@@ -59,7 +62,7 @@ export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] 
       if (Object.hasOwn(pathFields, item.name)) {
         for (const field of pathFields[item.name]!) {
           const path = (item.input as Record<string, unknown> | undefined)?.[field];
-          if (typeof path === "string" && (sensitive.test(path.replaceAll("\\", "/")) || denyPaths.some((d) => path === d || path.startsWith(`${d}/`)))) out.leak = true;
+          if (typeof path === "string" && (isLeakPath(path) || denyPaths.some((d) => path === d || path.startsWith(`${d}/`)))) out.leak = true;
         }
       }
     }

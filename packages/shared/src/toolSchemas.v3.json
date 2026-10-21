@@ -5,31 +5,31 @@
       "properties": {
         "pattern": {
           "type": "string",
-          "description": "The regex pattern to search for in file contents"
+          "description": "Regular expression to look for inside files."
         },
         "path": {
           "type": "string",
-          "description": "The directory to search in. Defaults to the repository root."
+          "description": "Only search this directory (default: the repository root)."
         },
         "include": {
           "type": "string",
-          "description": "File pattern to include in the search (e.g. \"*.js\", \"*.{ts,tsx}\")"
+          "description": "Glob that file names must match, e.g. \"*.js\" or \"*.{ts,tsx}\"."
         },
         "repo": {
           "type": "string",
-          "description": "The name of the repository to search in. If not provided, searches all repositories."
+          "description": "Repository to search. Omit to search all of them."
         },
         "ref": {
           "type": "string",
-          "description": "The commit SHA, branch or tag name to search on. If not provided, defaults to the default branch (usually 'main' or 'master')."
+          "description": "Commit SHA, branch or tag to search (default: the default branch)."
         },
         "limit": {
           "type": "number",
-          "description": "The maximum number of matches to return (default: 100 when groupByRepo=false, 10000 when groupByRepo=true)"
+          "description": "Most matches to return (default 100, or 10000 when groupByRepo is true)."
         },
         "groupByRepo": {
           "type": "boolean",
-          "description": "If true, returns a summary of match counts grouped by repository instead of individual file results."
+          "description": "When true, return match and file counts per repository rather than individual file results."
         }
       },
       "required": [
@@ -43,23 +43,23 @@
       "properties": {
         "pattern": {
           "type": "string",
-          "description": "The glob pattern to match file paths against (e.g. \"**/*.ts\", \"src/**/*.test.{ts,tsx}\")"
+          "description": "Glob matched against file paths, e.g. \"**/*.ts\" or \"src/**/*.test.{ts,tsx}\"."
         },
         "path": {
           "type": "string",
-          "description": "Restrict results to files under this subdirectory."
+          "description": "Only return files below this subdirectory."
         },
         "repo": {
           "type": "string",
-          "description": "The name of the repository to search in. If not provided, searches all repositories."
+          "description": "Repository to search. Omit to search all of them."
         },
         "ref": {
           "type": "string",
-          "description": "The commit SHA, branch or tag name to search on. If not provided, defaults to the default branch (usually 'main' or 'master')."
+          "description": "Commit SHA, branch or tag to search (default: the default branch)."
         },
         "limit": {
           "type": "number",
-          "description": "The maximum number of files to return (default: 100)"
+          "description": "Most files to return (default 100)."
         }
       },
       "required": [
@@ -73,19 +73,19 @@
       "properties": {
         "repo": {
           "type": "string",
-          "description": "The fully-qualified repository name."
+          "description": "Full repository name."
         },
         "base": {
           "type": "string",
-          "description": "The base git ref (branch, tag, or commit SHA) to diff from."
+          "description": "Ref (branch, tag or commit SHA) to compare from."
         },
         "head": {
           "type": "string",
-          "description": "The head git ref (branch, tag, or commit SHA) to diff to."
+          "description": "Ref (branch, tag or commit SHA) to compare to."
         },
         "path": {
           "type": "string",
-          "description": "Restrict the diff to changes touching this file path. Omit to diff all changes between the two refs."
+          "description": "Only include changes to this file. Omit to include every change between the two refs."
         }
       },
       "required": [
@@ -101,43 +101,43 @@
       "properties": {
         "repo": {
           "type": "string",
-          "description": "The repository to list commits from"
+          "description": "Repository whose commits to list."
         },
         "query": {
           "type": "string",
-          "description": "Search query to filter commits by message (case-insensitive)"
+          "description": "Text to find in commit messages (case-insensitive)."
         },
         "since": {
           "type": "string",
-          "description": "Start date for commit range (e.g., '30 days ago', '2024-01-01', 'last week')"
+          "description": "Earliest date to include: an ISO date like '2024-01-01' or relative text like 'last week'."
         },
         "until": {
           "type": "string",
-          "description": "End date for commit range (e.g., 'yesterday', '2024-12-31', 'today')"
+          "description": "Latest date to include: an ISO date like '2024-12-31' or relative text like 'yesterday'."
         },
         "author": {
           "type": "string",
-          "description": "Filter commits by author name or email (case-insensitive)"
+          "description": "Part of an author's name or email (case-insensitive)."
         },
         "ref": {
           "type": "string",
-          "description": "Commit SHA, branch or tag name to list commits of. If not provided, uses the default branch."
+          "description": "Commit SHA, branch or tag to list history of (default: the default branch)."
         },
         "path": {
           "type": "string",
-          "description": "Filter commits to only those that touched this file or directory path (relative to repo root)."
+          "description": "Only commits touching this file or directory, relative to the repository root."
         },
         "page": {
           "type": "integer",
           "exclusiveMinimum": 0,
-          "description": "Page number for pagination (min 1). Default: 1",
+          "description": "Page number, starting at 1 (default 1).",
           "default": 1
         },
         "perPage": {
           "type": "integer",
           "exclusiveMinimum": 0,
           "maximum": 100,
-          "description": "Results per page for pagination (min 1, max 100). Default: 50",
+          "description": "Commits per page, 1 to 100 (default 50).",
           "default": 50
         }
       },
@@ -152,23 +152,23 @@
       "properties": {
         "repo": {
           "type": "string",
-          "description": "The repository to list branches from"
+          "description": "Repository whose branches to list."
         },
         "query": {
           "type": "string",
-          "description": "Filter branches by name (case-insensitive substring match)"
+          "description": "Keep only branches whose name contains this text (case-insensitive)."
         },
         "page": {
           "type": "integer",
           "exclusiveMinimum": 0,
-          "description": "Page number for pagination (min 1). Default: 1",
+          "description": "Page number, starting at 1 (default 1).",
           "default": 1
         },
         "perPage": {
           "type": "integer",
           "exclusiveMinimum": 0,
           "maximum": 100,
-          "description": "Results per page for pagination (min 1, max 100). Default: 50",
+          "description": "Branches per page, 1 to 100 (default 50).",
           "default": 50
         }
       },
@@ -183,19 +183,19 @@
       "properties": {
         "query": {
           "type": "string",
-          "description": "Filter repositories by name (case-insensitive)"
+          "description": "Keep only repositories whose name contains this text (case-insensitive)."
         },
         "page": {
           "type": "integer",
           "exclusiveMinimum": 0,
-          "description": "Page number for pagination (min 1). Default: 1",
+          "description": "Page number, starting at 1 (default 1).",
           "default": 1
         },
         "perPage": {
           "type": "integer",
           "exclusiveMinimum": 0,
           "maximum": 100,
-          "description": "Results per page for pagination (min 1, max 100). Default: 30",
+          "description": "Repositories per page, 1 to 100 (default 30).",
           "default": 30
         },
         "sort": {
@@ -204,7 +204,7 @@
             "name",
             "pushed"
           ],
-          "description": "Sort repositories by 'name' or 'pushed' (most recent commit). Default: 'name'",
+          "description": "Order by 'name' or by 'pushed' (latest commit). Default 'name'.",
           "default": "name"
         },
         "direction": {
@@ -213,7 +213,7 @@
             "asc",
             "desc"
           ],
-          "description": "Sort direction: 'asc' or 'desc'. Default: 'asc'",
+          "description": "'asc' or 'desc'. Default 'asc'.",
           "default": "asc"
         }
       },
@@ -225,26 +225,26 @@
       "properties": {
         "path": {
           "type": "string",
-          "description": "The path to the file"
+          "description": "Path of the file inside the repository."
         },
         "repo": {
           "type": "string",
-          "description": "The repository to read the file from"
+          "description": "Repository that holds the file."
         },
         "ref": {
           "type": "string",
-          "description": "Commit SHA, branch or tag name to read the file from. If not provided, uses the default branch.",
+          "description": "Commit SHA, branch or tag to read the file at (default: the default branch).",
           "default": "HEAD"
         },
         "offset": {
           "type": "integer",
           "exclusiveMinimum": 0,
-          "description": "Line number to start reading from (1-indexed). Omit to start from the beginning."
+          "description": "First line to return, 1-based. Omit to start at the top."
         },
         "limit": {
           "type": "integer",
           "exclusiveMinimum": 0,
-          "description": "Maximum number of lines to read (max: 500). Omit to read up to 500 lines."
+          "description": "Number of lines to return, at most 500. Omit for up to 500."
         }
       },
       "required": [
@@ -259,40 +259,40 @@
       "properties": {
         "repo": {
           "type": "string",
-          "description": "The name of the repository to list files from."
+          "description": "Repository to list."
         },
         "path": {
           "type": "string",
-          "description": "Directory path (relative to repo root). If omitted, the repo root is used.",
+          "description": "Directory to list, relative to the repository root. Omit for the root.",
           "default": ""
         },
         "ref": {
           "type": "string",
-          "description": "Commit SHA, branch or tag name to list files from. If not provided, uses the default branch.",
+          "description": "Commit SHA, branch or tag to list at (default: the default branch).",
           "default": "HEAD"
         },
         "depth": {
           "type": "integer",
           "exclusiveMinimum": 0,
           "maximum": 10,
-          "description": "How many directory levels to traverse below `path` (min 1, max 10, default 1).",
+          "description": "Directory levels to descend below `path`, 1 to 10 (default 1).",
           "default": 1
         },
         "includeFiles": {
           "type": "boolean",
-          "description": "Whether to include files in the output (default: true).",
+          "description": "Return file entries (default true).",
           "default": true
         },
         "includeDirectories": {
           "type": "boolean",
-          "description": "Whether to include directories in the output (default: true).",
+          "description": "Return directory entries (default true).",
           "default": true
         },
         "maxEntries": {
           "type": "integer",
           "exclusiveMinimum": 0,
           "maximum": 10000,
-          "description": "Maximum number of entries to return (min 1, max 10000, default 1000).",
+          "description": "Most entries to return, 1 to 10000 (default 1000).",
           "default": 1000
         }
       },
@@ -307,11 +307,11 @@
       "properties": {
         "symbol": {
           "type": "string",
-          "description": "The symbol to find definitions of"
+          "description": "Exact name of the symbol to find definitions of."
         },
         "repo": {
           "type": "string",
-          "description": "The repository to scope the search to"
+          "description": "Repository to search in."
         }
       },
       "required": [
@@ -326,11 +326,11 @@
       "properties": {
         "symbol": {
           "type": "string",
-          "description": "The symbol to find references to"
+          "description": "Exact name of the symbol to find uses of."
         },
         "repo": {
           "type": "string",
-          "description": "The repository to scope the search to"
+          "description": "Repository to search in."
         }
       },
       "required": [

@@ -10,9 +10,8 @@ import type { Scope } from "./access";
 import text from "./toolText.json" with { type: "json" };
 
 /**
- * The tools behind MCP and the Ask agent, defined like Sourcebot's: same names,
- * input schemas, descriptions and output text (parity/mcp checks them against v6). Each
- * returns `{ output }`, the text an agent sees.
+ * The tools behind MCP and the Ask agent. Names, input schemas and output text are pinned by
+ * tests/contract; descriptions live in toolText.json. Each returns `{ output }`, the text an agent sees.
  */
 
 /** A repository row as the tools need it. */
@@ -36,7 +35,7 @@ export interface ToolDeps {
   getRepo(name: string): Promise<ToolRepo | undefined>;
   /** Every code repo whose name contains `query` (case-insensitive), in the requested order. The tool applies scope and paging. */
   listRepos(o: { query?: string; sort: "name" | "pushed"; direction: "asc" | "desc" }): Promise<ToolRepo[]>;
-  /** The web app's public base URL (Sourcebot's AUTH_URL). */
+  /** The web app's public base URL (the AUTH_URL setting). */
   baseUrl: string;
 }
 
@@ -74,7 +73,7 @@ const t = text as Record<string, { description: string; params: Record<string, s
 const p = (tool: string, param: string) => t[tool]!.params[param]!;
 const define = <S extends z.ZodRawShape>(d: ToolDefinition<S>) => d;
 
-// ---- service errors (Sourcebot's messages) ----
+// ---- service errors ----
 
 const notFound = (repo: string) => new Error(`Repository "${repo}" not found.`);
 const fileNotFound = (path: string, repo: string) => new Error(`File "${path}" not found in repository "${repo}"`);
@@ -118,14 +117,14 @@ export function codeHostFileUrl(webUrl: string | null, codeHostType: string, bra
   return undefined;
 }
 
-/** The web UI path for a repo tree/blob, as Sourcebot builds it. */
+/** The web UI path for a repo tree/blob. */
 export const browsePath = (repo: string, path: string, type: "tree" | "blob", revision?: string) =>
   `/browse/${repo}${revision ? `@${revision}` : ""}/-/${type}/${encodeURIComponent(path.replace(/^\/+/, ""))}`;
 
 // ---- search-backed tools ----
 
 const re = (regexp: string, fileName: boolean): Q => ({ regexp: { regexp, case_sensitive: true, file_name: fileName, content: !fileName } });
-/** Glob to an unanchored-start regex (glob-to-regexp, extended + globstar), as Sourcebot does. */
+/** Glob to an unanchored-start regex (glob-to-regexp, extended + globstar). */
 const globRe = (glob: string) => globToRegExp(glob, { extended: true, globstar: true }).source.replace(/^\^/, "");
 const escapePath = (path: string) => path.replace(/[\\.^$|?*+()[\]{}]/g, "\\$&");
 const and = (nodes: (Q | undefined)[]): Q => {
@@ -146,7 +145,7 @@ async function toolSearch(ctx: ToolContext, q: Q, matches: number): Promise<Sear
   const files = r.files.filter((f) => ctx.scope.allows(f.repo));
   return files.length === r.files.length ? r : { ...r, files, fileCount: files.length, matchCount: files.reduce((n, f) => n + f.occurrences, 0) };
 }
-/** Sourcebot's actualMatchCount: content ranges plus file-name ranges. */
+/** Match count: content ranges plus file-name ranges. */
 const actualMatches = (r: SearchResponse) => r.files.reduce((n, f) => n + f.chunks.reduce((m, c) => m + c.matchRanges.length, 0) + f.fileNameRanges.length, 0);
 
 const TRUNCATED_GREP = "(Results truncated. Consider using a more specific path or pattern, specifying a repo, or increasing the limit.)";
@@ -319,7 +318,7 @@ const readFile = define({
     const more = end < lines.length;
     const first = offset ?? 1;
     const last = first + shown.length - 1;
-    // Sourcebot prints the code host link as-is, so a host without one shows "undefined".
+    // The code host link is printed as-is, so a host without one shows "undefined".
     let out = `<repo>${r.name}</repo>\n<path>${path}</path>\n<url>${codeHostFileUrl(r.webUrl, r.codeHostType, ref, path)}</url>\n<content>\n`;
     out += shown.map((l, i) => `${first + i}: ${l}`).join("\n");
     if (capped) out += `\n\n(Output capped at 5KB. Showing lines ${first}-${last} of ${lines.length}. Use offset=${last + 1} to continue.)`;
@@ -709,7 +708,7 @@ export const toolDefinitions = {
 } as const;
 
 export type ToolName = keyof typeof toolDefinitions;
-/** In Sourcebot's MCP registration order. */
+/** In MCP registration order. */
 export const toolNames = Object.keys(toolDefinitions) as ToolName[];
 export type AnyToolDefinition = ToolDefinition<z.ZodRawShape>;
 

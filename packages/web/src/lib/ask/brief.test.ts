@@ -45,7 +45,7 @@ test("omitting repos uses all visible repositories, while empty and unavailable 
 
 test("client guidance uses original wording", () => {
   const brief = buildResearchBrief({ query: "Where is greeting implemented?", scope: scopeFor(["*"]), availableRepos: [] });
-  const forbidden = /powerful agentic|world's best|code-intelligence platform|Phase 1:|Phase 2:|MANDATORY|sourcebot/i;
+  const forbidden = /powerful agentic|world's best|code-intelligence platform|Phase 1:|Phase 2:|MANDATORY/i;
   assert.doesNotMatch(brief, forbidden);
   assert.doesNotMatch(CLIENT_RESEARCH_INSTRUCTIONS, forbidden);
 });
