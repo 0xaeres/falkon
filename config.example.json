@@ -1,6 +1,5 @@
 {
-  // Sourcebot v3 config format (https://docs.sourcebot.dev/docs/configuration/config-file); comments allowed.
-  "$schema": "https://raw.githubusercontent.com/sourcebot-dev/sourcebot/main/schemas/v3/index.json",
+  // Falkon config: connections, settings, contexts, knowledgeBase. Comments allowed.
   "settings": {
     "reindexIntervalMs": 3600000,
     "resyncConnectionIntervalMs": 86400000
@@ -9,7 +8,7 @@
     "github": {
       "type": "github",
       "token": { "env": "GITHUB_TOKEN" },
-      "repos": ["sourcebot-dev/sourcebot"],
+      "repos": ["octocat/Hello-World"],
       "orgs": [],
       "exclude": { "forks": true, "archived": true }
     },
@@ -17,7 +16,7 @@
     "local": { "type": "git", "url": "file:///absolute/path/to/repos/*" }
   },
   "contexts": {
-    "web": { "include": ["github.com/sourcebot-dev/*"], "description": "Web repos" }
+    "octocat": { "include": ["github.com/octocat/*"], "description": "Octocat repos" }
   },
   // Clone-only: generated architecture docs (on by default; needs LLM_* env vars, skipped without them).
   "knowledgeBase": {
