@@ -76,8 +76,8 @@ test("toUiProduct maps rows to the contract Product", () => {
   const p = toUiProduct({ slug: "pay", name: "Payments platform", source: "api", definition: {}, repoNames: [], createdAt: at(90) }, repos, c, status(repos, c));
   assert.deepEqual(productSchema.parse(p), p);
   assert.deepEqual([p.id, p.initials, p.provider, p.host, p.scenario, p.queuedAt, p.connectionId, p.activeGeneration], ["pay", "PP", "github", "github.com", "updating", at(1).getTime(), "c".repeat(22), status(repos, c).generation]);
-  assert.deepEqual(p.repositories[0], { id: "github.com/acme/a", name: "a", organization: "acme", language: "Go", revision: "a123456", updated: at(30).toISOString(), branches: ["main"], branch: "main" });
-  assert.deepEqual(p.repositories[1], { id: "github.com/acme/new", name: "new", organization: "acme", language: "", revision: "", updated: at(30).toISOString(), branches: ["main"], branch: "main" });
+  assert.deepEqual(p.repositories[0], { id: "github.com/acme/a", name: "a", organization: "acme", language: "Go", revision: "a123456", updated: at(30).toISOString(), branches: ["main"], branch: "main", state: "indexed" });
+  assert.deepEqual(p.repositories[1], { id: "github.com/acme/new", name: "new", organization: "acme", language: "", revision: "", updated: at(30).toISOString(), branches: ["main"], branch: "main", state: "pending" });
 });
 
 test("toUiProduct: GitHub Enterprise by host; a config Product with no connection is github with an empty host", () => {
@@ -126,4 +126,41 @@ test("knowledge: repos the config does not select are ignored", () => {
   assert.equal(know([stale]).state, "pending");
   assert.deepEqual(deriveKnowledge(true, true, [stale, kb("b", "FAILED")], (n) => n.endsWith("/a")), { state: "pending" });
   assert.equal(deriveKnowledge(true, true, [stale], () => false).state, "ready");
+});
+
+// D69: a name the connection's last clean sync did not return has no Repo row; it is Skipped, not forever Pending.
+const skipped = (name: string) => repo(name, { status: "SKIPPED", headCommit: null, lastIndexedAt: null });
+
+test("withPlaceholders marks a name with no Repo row SKIPPED once its connection has synced cleanly", () => {
+  const out = withPlaceholders(["github.com/acme/a", "github.com/acme/gone"], [repo("a")], at(5), true);
+  assert.deepEqual(out.map((r) => [r.name, r.status]), [["github.com/acme/a", "INDEXED"], ["github.com/acme/gone", "SKIPPED"]]);
+});
+
+test("every repo skipped: 'No repositories could be indexed', not Building, and nothing counts as indexing", () => {
+  const s = status([skipped("a"), skipped("b")]);
+  assert.deepEqual([s.verdict, s.scenario, s.build, s.progress, s.generation], ["No repositories could be indexed", "failed", "failed", 0, null]);
+  assert.ok(!/Indexing/.test(s.sentence));
+  assert.deepEqual(s.gaps.map((g) => g.detail), ["github.com/acme/a", "github.com/acme/b"]);
+  statusSchema.parse(s);
+});
+
+test("one skipped plus one indexed: the skipped repo is out of 'N of M' and the Product is current, with a gap naming it", () => {
+  const s = status([repo("a"), skipped("b")]);
+  assert.deepEqual([s.scenario, s.build, s.progress, s.verdict], ["current", "idle", 100, "Current"]);
+  assert.match(s.sentence, /all 1 repository\b/);
+  assert.deepEqual(s.gaps, [{ count: 1, title: "Repository skipped", detail: "github.com/acme/b" }]);
+  const building = status([pending("a"), skipped("b")]);
+  assert.deepEqual([building.verdict, building.sentence], ["Building", "Indexing 0 of 1 repository."]);
+});
+
+test("none skipped: unchanged, no skipped gap", () => {
+  const s = status([repo("a"), pending("b")]);
+  assert.deepEqual([s.sentence, s.gaps], [`Answers use ${s.generation}. Indexing 1 of 2 repositories.`, []]);
+});
+
+test("toUiProduct gives each repository a state; a skipped one has state skipped and no reason when none is recorded", () => {
+  const repos = [repo("a"), pending("b"), repo("c", { status: "SYNCING" }), repo("d", { status: "FAILED" }), skipped("e")];
+  const p = toUiProduct({ slug: "pay", name: "Pay", source: "api", definition: {}, repoNames: [], createdAt: at(90) }, repos, conn(), status(repos));
+  assert.deepEqual(productSchema.parse(p).repositories.map((r) => r.state), ["indexed", "pending", "indexing", "failed", "skipped"]);
+  assert.ok(!("reason" in p.repositories[4]!));
 });

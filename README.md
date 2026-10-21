@@ -142,6 +142,11 @@ To convert an older config file once (unsupported connection types and keys are 
 
 Users/orgs/SSO, permission syncing, GitHub Apps, GitLab/Gitea/Gerrit/Bitbucket/Azure DevOps connectors, Knowledge Base, skills tools, Ask attachments and external MCP servers, file viewer UI, symbol navigation UI.
 
+## Known limits
+
+- Two turns running at once on the same Ask thread overwrite each other's messages; the last write wins.
+- `Credential.lastError` is never written or read.
+
 ## Verified vs not
 
 Verified: 63 unit tests (`pnpm test`: parser, IR mapping, config, auth scope, tools, Ask answer formatting and errors); typecheck; `docker compose up --build` with upstream Zoekt; gRPC search, streaming (SSE), every tool and Ask against a real LLM; repo removal; zoekt port not published.

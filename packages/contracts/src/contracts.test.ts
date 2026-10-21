@@ -186,3 +186,10 @@ test("status knowledge is optional and its state is a closed set", () => {
   assert(statusSchema.safeParse({ ...base, knowledge: { state: "ready" } }).success);
   assert(!statusSchema.safeParse({ ...base, knowledge: { state: "weird" } }).success);
 });
+
+test("a repository's state is optional and a closed set that includes skipped", () => {
+  const base = { id: "h/o/r", name: "r", organization: "o", language: "", revision: "", updated: "2026-10-21T10:00:00Z", branches: ["main"], branch: "main" };
+  assert(repositorySchema.safeParse(base).success);
+  for (const state of ["pending", "indexing", "indexed", "failed", "skipped"]) assert(repositorySchema.safeParse({ ...base, state }).success, state);
+  assert(!repositorySchema.safeParse({ ...base, state: "weird" }).success);
+});

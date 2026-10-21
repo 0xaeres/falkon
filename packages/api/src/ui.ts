@@ -22,7 +22,7 @@ const isUniqueViolation = (e: unknown) => (e as { code?: string } | null)?.code 
 const KB_TTL_MS = 30_000;
 const KB_LOAD_MS = 2_000;
 
-type ConnectionRow = { id: number; config: unknown; syncError: string | null; syncRequestedAt: Date | null; credential: { id: string; host: string } | null };
+type ConnectionRow = { id: number; config: unknown; syncError: string | null; syncedAt: Date | null; syncRequestedAt: Date | null; credential: { id: string; host: string } | null };
 const withCredential = { credential: { select: { id: true, host: true } } } as const;
 
 /** A code host url (`https://github.com`) or a bare host (generic git stores `fixtures.test`). */
@@ -59,7 +59,7 @@ export class UiProductService {
   }
 
   /** Loads everything the mappers need for `rows` in a fixed number of queries. */
-  private async load(rows: { slug: string; name: string; source: "config" | "api"; definition: unknown; repoNames: string[]; connectionId: number | null; createdAt: Date }[]) {
+  private async load(rows: { slug: string; name: string; source: "config" | "api"; definition: unknown; repoNames: string[]; connectionId: number | null; createdAt: Date; updatedAt: Date }[]) {
     const names = [...new Set(rows.flatMap(memberNames))];
     const repos = await this.db.repo.findMany({ where: { name: { in: names }, kind: RepoKind.CODE } });
     const conns = await this.db.connection.findMany({ where: { id: { in: rows.flatMap((r) => (r.connectionId === null ? [] : [r.connectionId])) } }, include: withCredential });
@@ -77,8 +77,9 @@ export class UiProductService {
     const modelConfigured = !!(process.env.LLM_BASE_URL && process.env.LLM_API_KEY && process.env.LLM_MODEL);
     return rows.map((row) => {
       const mine = repos.filter((r) => memberNames(row).includes(r.name)).map((r) => ({ ...r, scan: latest.get(r.id) ?? null }));
-      const facts = withPlaceholders(memberNames(row), mine, row.createdAt);
       const c = row.connectionId === null ? undefined : byConn.get(row.connectionId);
+      // ponytail: a sync already running when the Product was edited can finish after the edit and briefly mark a new member Skipped until the queued sync ends; a syncStartedAt column would close that window. Config Products have no connection, so they never infer Skipped.
+      const facts = withPlaceholders(memberNames(row), mine, row.createdAt, !!c?.syncedAt && c.syncedAt > row.updatedAt && !c.syncError && !c.syncRequestedAt); // a sync that finished after the last edit, with none pending
       // A config Product has no connectionId: its host is the code host of its first repo.
       const connection: ConnectionFacts | null = c
         ? { credentialId: c.credential?.id ?? null, host: c.credential?.host ?? (c.config as { url?: string }).url?.replace(/^https?:\/\//, "") ?? "github.com", syncError: c.syncError, syncRequestedAt: c.syncRequestedAt }

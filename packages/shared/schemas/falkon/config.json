@@ -365,14 +365,6 @@
                 },
                 "revisions": {
                   "$ref": "#/definitions/revisions"
-                },
-                "enforcePermissions": {
-                  "type": "boolean",
-                  "description": "Stored with the connection; Falkon does not act on it."
-                },
-                "enforcePermissionsForPublicRepos": {
-                  "type": "boolean",
-                  "description": "Stored with the connection; Falkon does not act on it."
                 }
               },
               "required": [
@@ -394,14 +386,6 @@
                 },
                 "revisions": {
                   "$ref": "#/definitions/revisions"
-                },
-                "enforcePermissions": {
-                  "type": "boolean",
-                  "description": "Stored with the connection; Falkon does not act on it."
-                },
-                "enforcePermissionsForPublicRepos": {
-                  "type": "boolean",
-                  "description": "Stored with the connection; Falkon does not act on it."
                 }
               },
               "required": [

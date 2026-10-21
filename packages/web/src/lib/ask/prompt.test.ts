@@ -27,3 +27,9 @@ test("the prompt the agent sends names the exact answer tag, reply marker and ci
     assert.equal([...example.matchAll(FILE_REFERENCE_REGEX)].length, 1, "the regex evidence.ts uses accepts it");
   }
 });
+
+test("the static prompt says to cite only shown lines and to read a file seen only by name, without forbidding read_file after grep", () => {
+  assert.match(STATIC_PROMPT, /cite only lines a tool has shown you in this conversation/i);
+  assert.match(STATIC_PROMPT, /only by name[^.]*read with `read_file` before citing/i);
+  assert.doesNotMatch(STATIC_PROMPT, /never cite a file you (found|read) (with|via) `?grep/i);
+});

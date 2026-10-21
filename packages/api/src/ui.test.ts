@@ -279,3 +279,17 @@ test("knowledge config is cached for 30 s, a failing load keeps the last value, 
   const fresh = new UiProductService(engine.db, new ConnectionService(engine.db as never, host), () => 0, async () => { throw new Error("never loaded"); });
   assert.equal((await fresh.status("kbp")).knowledge!.state, knowledgeBaseSchema.parse({}).enabled ? "no-model" : "off", "no value ever loaded: the schema default applies (no model env here)");
 });
+
+test("a member the connection's clean sync did not return is Skipped; before that sync it is only pending", async () => {
+  const GONE = LIB; // listed by the code host, but the backend never made a Repo row for it
+  engine.repos.splice(0, engine.repos.length);
+  await call("POST", "/ui/products", setup(cid, "skp", [APP, GONE]));
+  index(APP);
+  const stateOf = async () => (await call("GET", "/ui/products/skp")).json.repositories.map((r: J) => [r.id, r.state]);
+  assert.deepEqual(await stateOf(), [[APP, "indexed"], [GONE, "pending"]], "no sync since the Product was saved");
+  Object.assign(connectionRow(cid), { syncedAt: new Date(Date.now() + 60_000), syncError: null, syncRequestedAt: null });
+  assert.deepEqual(await stateOf(), [[APP, "indexed"], [GONE, "skipped"]]);
+  const s = (await call("GET", "/ui/products/skp/status")).json;
+  assert.deepEqual([s.scenario, s.sentence, s.gaps], ["current", `Answers use ${s.generation}, published just now from the latest revision of all 1 repository.`, [{ count: 1, title: "Repository skipped", detail: GONE }]]);
+  connectionRow(cid).syncedAt = null;
+});

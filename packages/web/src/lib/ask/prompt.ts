@@ -55,6 +55,7 @@ export const STATIC_PROMPT = d`
     - Broken: @file:{acme/app::src/cart.ts:10-25,30-35} (one range only)
     - Broken: @file:{src/cart.ts} (no repository)
     - Be clear and very concise, and use bullets where they help.
+    - Cite only lines a tool has shown you in this conversation. A file you have seen only by name (in search or tree results) must be read with \`read_file\` before citing it; a file you read that way after a \`grep\` is fine to cite.
     - Never describe code without its location. If you cannot give a reference for something, leave it out.
     - Quote code through \`${FILE_REFERENCE_PREFIX}\` references instead of pasting code blocks.
 

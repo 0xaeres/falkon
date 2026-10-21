@@ -164,7 +164,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/hello.ts:\n  1: export function greet() { return \"hello world\"; }\n  2: greet();\n  3: // second commit\n\n(Results truncated. Consider using a more specific path or pattern, specifying a repo, or increasing the limit.)"
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/hello.ts:\n  1: export function greet() { return \"hello world\"; }\n  2: greet();\n  3: // second commit\n\n(Output was cut short: narrow the path or pattern, name a repo, or raise the limit.)"
         }
       ]
     }
@@ -211,7 +211,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Found matches in 1 repository:\n  fixtures.test/atlas: 1 match in 1 file\n\n(Results truncated. Consider using a more specific path or pattern, specifying a repo, or increasing the limit.)"
+          "text": "Found matches in 1 repository:\n  fixtures.test/atlas: 1 match in 1 file\n\n(Output was cut short: narrow the path or pattern, name a repo, or raise the limit.)"
         }
       ]
     }
@@ -373,7 +373,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Found 1 file matching \"**/*.ts\":\n\n[fixtures.test/atlas]\n  src/hello.ts\n\n(Results truncated. Consider using a more specific pattern, specifying a repo, or increasing the limit.)"
+          "text": "Found 1 file matching \"**/*.ts\":\n\n[fixtures.test/atlas]\n  src/hello.ts\n\n(Output was cut short: narrow the pattern, name a repo, or raise the limit.)"
         }
       ]
     }

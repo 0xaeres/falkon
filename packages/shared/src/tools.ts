@@ -148,8 +148,8 @@ async function toolSearch(ctx: ToolContext, q: Q, matches: number): Promise<Sear
 /** Match count: content ranges plus file-name ranges. */
 const actualMatches = (r: SearchResponse) => r.files.reduce((n, f) => n + f.chunks.reduce((m, c) => m + c.matchRanges.length, 0) + f.fileNameRanges.length, 0);
 
-const TRUNCATED_GREP = "(Results truncated. Consider using a more specific path or pattern, specifying a repo, or increasing the limit.)";
-const TRUNCATED_GLOB = "(Results truncated. Consider using a more specific pattern, specifying a repo, or increasing the limit.)";
+const TRUNCATED_GREP = "(Output was cut short: narrow the path or pattern, name a repo, or raise the limit.)";
+const TRUNCATED_GLOB = "(Output was cut short: narrow the pattern, name a repo, or raise the limit.)";
 
 const grep = define({
   name: "grep",

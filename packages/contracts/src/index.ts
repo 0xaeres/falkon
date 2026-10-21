@@ -26,6 +26,8 @@ export const repositorySchema = z.object({
   branch: z.string(),
   // Code host private flag; absent when unknown (older payloads, mock data).
   private: z.boolean().optional(),
+  // Absent in older payloads and the mock. "skipped": the connection's last sync did not return this repository.
+  state: z.enum(["pending", "indexing", "indexed", "failed", "skipped"]).optional(),
 });
 export const productSchema = z.object({
   id: productIdSchema,

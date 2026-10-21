@@ -83,3 +83,20 @@ test("CLI: warnings on stderr, JSON on stdout, non-zero exit on invalid JSON", (
   assert.match(arr.stderr, /'connections' must be an object/);
   assert.match(bad.stderr, /invalid JSON/);
 });
+
+test("drops the permission-sync and public-access settings and the connections' enforcePermissions keys, one warning each; output validates", () => {
+  const old = JSON.stringify({
+    settings: { maxFileSize: 1000, enablePublicAccess: true, experiment_repoDrivenPermissionSyncIntervalMs: 1, experiment_userDrivenPermissionSyncIntervalMs: 2 },
+    connections: { gh: { type: "github", repos: ["a/b"], enforcePermissions: true, enforcePermissionsForPublicRepos: false }, g: { type: "git", url: "https://x.io/r.git", enforcePermissions: true } },
+  });
+  const { output, warnings } = convertConfig(old);
+  const out = JSON.parse(output);
+  assert.deepEqual(out.settings, { maxFileSize: 1000 });
+  assert.deepEqual(out.connections, { gh: { type: "github", repos: ["a/b"] }, g: { type: "git", url: "https://x.io/r.git" } });
+  for (const key of ["settings.enablePublicAccess", "settings.experiment_repoDrivenPermissionSyncIntervalMs", "settings.experiment_userDrivenPermissionSyncIntervalMs", "connections.gh.enforcePermissions", "connections.gh.enforcePermissionsForPublicRepos", "connections.g.enforcePermissions"]) {
+    assert.equal(warnings.filter((w) => w.includes(`'${key}'`)).length, 1, key);
+  }
+  assert.equal(warnings.length, 6);
+  parseConfig(output);
+  assert.deepEqual(convertConfig(output).warnings, [], "idempotent");
+});

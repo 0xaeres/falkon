@@ -25,8 +25,6 @@ export interface GitRevisions {
 
 interface ConnectionBase {
   revisions?: GitRevisions;
-  enforcePermissions?: boolean;
-  enforcePermissionsForPublicRepos?: boolean;
 }
 
 export interface GithubConnectionConfig extends ConnectionBase {
