@@ -592,7 +592,7 @@ UI-Ask smoke (D57), after the human topped up the model provider: before (image 
 
 Approved as built: S34, S35 and S36 kept; the UI-Ask smoke's one-reference miss (question 2) accepted as run-to-run variation. Open for cycle 10 (from the digest, not decided): rewording the two contract-pinned truncation hints (originality hits), trimming unused schema keys, a published schema URL, and the unread-file citation drop seen on both images. The loop edit and project lesson were not accepted (no `+loop`, no `+project`). Cycle 10: `@sbc/*` to `@falkon/*` and DB names, then S15.
 
-## Cycle 10 plan: fixes, UI distill and Connect page, rename (grilled 2026-10-21; gate 1 pending)
+## Cycle 10 plan: fixes, UI distill and Connect page, rename (grilled 2026-10-21; gate 1 approved 2026-10-21)
 
 Base `main` at `c788fbf`. Roles: Claude only; Sonnet builds and reviews, Haiku verifies, Opus plans and decides (main session), Opus builders only if a slice misses after one fix round. Cycle branch `loop/falkon-mvp-c10`. The memory-ceiling decision and all live gates move to cycle 11 (S15), with the ops-smoke probe of `c788fbf` as input.
 
@@ -629,3 +629,5 @@ Adversarial cases the reviewer checks: S38 a Product whose repositories are all 
 May decide alone: UI copy and layout within `DESIGN.md`, what the critique removes, prompt wording for D68, hint wording for D67, the converter's warning text, one fix round per slice. Must stop at gate 2 for: a new dependency, a Prisma schema change, any contract snapshot change beyond the 3 `outputs.json` hint lines, any change to `tests/golden/expected.json`, a change to eval data, gold or the D25 rule, a new feature beyond the Connect page, model spend beyond the question-2 reruns, any push or PR. Budget: 1.5M subagent tokens, 4 hours wall clock.
 
 Probe for cycle 11 (ops-smoke on `c788fbf`, 2026-10-21): every functional step passes (cold start, indexing, api, registry, oversized file, golden baseline, stability and api, resync, delete, teardown); memory FAIL at 665.67 MB against the 654 MB ceiling (545 MB +20%), 11.7 MB over. The memory decision for S15 starts from this number.
+
+Gate 1 approved by the human on 2026-10-21: cycle 10 plan as written. Main session stays on Opus (planner and decider); builders and reviewers Sonnet, verifiers Haiku.
