@@ -1,3 +1,12 @@
+name: falkon
+
+# One image for every Falkon service. Only backend builds it; the others start after backend, so parallel
+# builds cannot race to export the same tag. pull_policy never: the tag exists only locally, so compose must
+# not try to pull it before backend has built it.
+x-image: &app
+  image: falkon-app
+  pull_policy: never
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -9,14 +18,9 @@ services:
     image: redis:7-alpine
     healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 3s, retries: 20 }
 
-  app-base: &app
-    image: sourcebot-clone-app
-    build: { context: ., dockerfile: docker/Dockerfile }
-    profiles: [build-only]
-
   backend:
     <<: *app
-    profiles: []
+    build: { context: ., dockerfile: docker/Dockerfile }
     command: sh -c "pnpm --filter @sbc/db push && pnpm --filter @sbc/backend start"
     env_file: [.env]
     environment:
@@ -29,7 +33,6 @@ services:
 
   zoekt:
     <<: *app
-    profiles: []
     command: zoekt-webserver -index /data/index -rpc -listen :6070
     volumes: [data:/data]
     # Not published to the host: zoekt has no auth, so it must only be reachable by web inside the compose network.
@@ -38,7 +41,6 @@ services:
 
   web:
     <<: *app
-    profiles: []
     command: pnpm --filter @sbc/web start
     env_file: [.env]
     environment:
@@ -57,7 +59,6 @@ services:
   # AUTH_MODE=apiKey needs ACCESS_FILE pointing at a mounted access file, or it denies everyone.
   api:
     <<: *app
-    profiles: []
     # The esbuild bundle under plain node: tsx would add ~90 MB of loader and esbuild service.
     command: node packages/api/dist/main.js
     env_file: [.env]
@@ -85,7 +86,6 @@ services:
   # the browser. Published on host loopback only.
   ui:
     <<: *app
-    profiles: []
     command: node packages/ui/.next/standalone/packages/ui/server.js
     environment:
       PORT: 3000

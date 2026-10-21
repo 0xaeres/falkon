@@ -1,10 +1,11 @@
 import { body, endpoint, proxy } from "@/lib/api/server";
-import { useEngine } from "@/lib/api/engine";
+import { atRequestTime, useEngine } from "@/lib/api/engine";
 import { setupRequestSchema } from "@sbc/contracts";
 import { repositories } from "@/lib/mock/fixtures";
 import { MockError, transact } from "@/lib/mock/store";
 
 export async function GET() {
+  await atRequestTime();
   if (useEngine()) return proxy("/ui/products", "GET");
   return endpoint(() => transact((db) => db.products));
 }

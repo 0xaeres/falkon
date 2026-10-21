@@ -47,7 +47,7 @@ const titles = [
   "Review and queue ingestion",
 ];
 const descriptions = [
-  "Falkon reads repositories through this connection. This local demo simulates a connection; use demo values only.",
+  "Falkon reads repositories through this connection. Use a token with read-only access to the repositories you want.",
   "A Product groups the repositories Falkon answers questions about together. Name it the way your teams already refer to it.",
   "Falkon pins each repository at the head of its branch and builds evidence from what it contains.",
   "This release builds evidence from repository contents only. These sources are planned; nothing is connected or read from them.",
@@ -311,8 +311,8 @@ function Wizard({ edit }: { edit?: Product }) {
                           }}
                         />
                         <p className="help" id="token-help">
-                          Use <code>demo-readonly</code>. No real token is
-                          needed or stored.
+                          Read-only access is enough. Falkon stores the token
+                          encrypted.
                         </p>
                       </div>
                     }
@@ -477,7 +477,7 @@ function Wizard({ edit }: { edit?: Product }) {
                 {step === 0 ? (
                   <>
                     <LockKeyhole size={16} />
-                    Read-only demo. No connection is made to your code host.
+                    Falkon only reads from your code host.
                   </>
                 ) : step === 2 ? (
                   <>

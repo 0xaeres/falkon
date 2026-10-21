@@ -1,4 +1,4 @@
-# sourcebot-clone
+# Falkon
 
 Self-hosted code search + Ask agent + MCP server, modeled on Sourcebot v6.
 
@@ -87,7 +87,7 @@ Design is from Sourcebot's public docs and my reading of its `ee/` code in the v
 Streamable HTTP at `/api/mcp` (and `/api/ee/mcp`, Sourcebot's path), stateful sessions owned by the caller, API key via `X-Sourcebot-Api-Key` or `Authorization: Bearer`. No OAuth. Tools match Sourcebot v6's names, input schemas, descriptions, annotations, registration order and output text: `grep`, `glob`, `get_diff`, `list_commits`, `list_branches`, `list_repos`, `read_file`, `list_tree`, `find_symbol_definitions`, `find_symbol_references`, `list_language_models`, and `ask_codebase` when a model is configured (verified against v6.0.1 with a differential harness, since retired). Not implemented: the skills tools (`create_skill`, `update_skill`, `list_skills`).
 
 ```json
-{ "mcpServers": { "sourcebot-clone": { "type": "http", "url": "http://localhost:3000/api/mcp",
+{ "mcpServers": { "falkon": { "type": "http", "url": "http://localhost:3000/api/mcp",
   "headers": { "X-Sourcebot-Api-Key": "<key>" } } } }
 ```
 

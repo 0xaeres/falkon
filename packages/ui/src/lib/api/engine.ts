@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import "server-only";
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -5,6 +6,18 @@ import { productSchema, type Product } from "@sbc/contracts";
 
 /** True when the UI talks to the engine; unset, the routes keep serving the local mock. */
 export const useEngine = () => !!process.env.ENGINE_URL;
+
+/**
+ * Await first in a route that reads ENGINE_URL: without it `next build` prerenders the mock answer into the image.
+ * Outside a Next request (unit tests) connection() throws; that case is ignored.
+ */
+export async function atRequestTime() {
+  try {
+    await connection();
+  } catch (error) {
+    if (!String(error).includes("outside a request scope")) throw error;
+  }
+}
 
 let cached: { key: string; token: string } | undefined;
 /**
