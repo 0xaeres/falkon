@@ -528,3 +528,14 @@ Gate 1 approved by the human on 2026-10-21: cycle 8 plan as written. Loop runs a
 Cycle tip `19b24bb`: typecheck green; 430 tests pass, 0 fail across 8 packages on the S32 tree; UI build green with the API routes dynamic; `tests/contract` and `tests/golden/expected.json` diff empty; no Prisma or sync-path change; dependencies only `react-markdown`, `remark-gfm`, `mermaid` (D46). Each slice: independent Haiku verify green, Sonnet review with 0 blocking after one fix round.
 
 Live smoke (disposable `falkon-c8` stack from the cycle tip, this repository indexed as one Product, the human's model through an absolute-path env file; about 1.5 minutes of model time): 8 of 10 as expected. Code questions 1 to 5 partial with 1 to 12 cited sources (16 to 59 s); "hey", "what can you do?", "thanks!" gave `reply` with 3 suggestions (3 to 7 s); "hey, where is auth?" stayed grounded-or-partial (12 sources). Two misses against the list's expectation of abstention: the swallow question got a polite `reply` (arguably better than the abstain card; the expectation was wrong) and the Kubernetes-operator question was `partial` with 4 sources and an answer that says none exists (the indexed clone contained the smoke list itself, so the model quoted the test case; not a reliable abstention test). Known gaps: a tagged reply after a search that finds nothing can still be a `reply` with code claims (needs a tool-call count from `agent.ts`); `onAccepted`'s update can throw not-found if a thread is deleted before it runs (practically unreachable); mermaid drawing, streaming flicker, the toast wiring and the failed-first-send flow were not exercised in a real browser (no DOM test library).
+
+## Gate 2 decision, cycle 8 (human, 2026-10-21: approve)
+
+| # | Decision |
+|---|---|
+| D51 | The admin route `DELETE ui/products/:slug/threads/:id` stays (the failed-first-message fix uses it; 409 once the thread has an answer). |
+| D52 | For an off-topic question with no code evidence, a plain friendly `reply` is accepted (it replaces the abstain card there); abstention stays for code questions retrieval could not support. |
+| D53 | The reply-guard gap (a tagged reply after a search that finds nothing can still carry code claims) is left for S13, where the tool-call count from `agent.ts` is added under the Ask-quality gate. |
+| D54 | Smoke fixtures stay out of the indexed corpus: a live smoke clones from a commit that predates the question list, or excludes `.scratch/`. |
+
+Carry-forward to cycle 9 (S13): the three items above, the prune pass for the loop skill (SKILL.md over its word budget, on the human's yes), and the carried non-blocking items (connector-skipped repos stay "Building", concurrent turns on one thread overwrite each other, dead `Credential.lastError`). Cycle 10: `@sbc/*` to `@falkon/*` and DB names, then S15.
