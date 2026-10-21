@@ -29,7 +29,7 @@ docker compose up --build
 
 UI: http://localhost:3000
 
-Falkon UI (compose service `ui`, host loopback only): http://127.0.0.1:3100. Locally: `pnpm --filter @sbc/ui dev --hostname 127.0.0.1 --port 3100`.
+Falkon UI (compose service `ui`, host loopback only): http://127.0.0.1:3100. Locally: `pnpm --filter @falkon/ui dev --hostname 127.0.0.1 --port 3100`.
 
 ## Run (local dev)
 
@@ -91,7 +91,7 @@ Streamable HTTP at `/api/mcp`, stateful sessions owned by the caller, API key vi
   "headers": { "Authorization": "Bearer <key>" } } } }
 ```
 
-A second NestJS service (`packages/api`, compose service `api`) serves the same tools per Product at `POST|DELETE /mcp/<product>`; an unknown or malformed name (`^[a-z0-9][a-z0-9-]{0,62}$`) is a 404 with no fallback. It runs beside the routes above, which are unchanged. It listens on `API_HOST` (default `127.0.0.1`) and `API_PORT` (default `3001`), and compose publishes it on host loopback only. Compose runs the esbuild bundle (`pnpm --filter @sbc/api build`, then `node packages/api/dist/main.js`); locally, `pnpm --filter @sbc/api start` runs the source under tsx.
+A second NestJS service (`packages/api`, compose service `api`) serves the same tools per Product at `POST|DELETE /mcp/<product>`; an unknown or malformed name (`^[a-z0-9][a-z0-9-]{0,62}$`) is a 404 with no fallback. It runs beside the routes above, which are unchanged. It listens on `API_HOST` (default `127.0.0.1`) and `API_PORT` (default `3001`), and compose publishes it on host loopback only. Compose runs the esbuild bundle (`pnpm --filter @falkon/api build`, then `node packages/api/dist/main.js`); locally, `pnpm --filter @falkon/api start` runs the source under tsx.
 
 Products live in Postgres (`Product` rows). Config `contexts` are imported as read-only `source=config` Products on every sync (a context whose name is not a valid slug, or whose slug an API-created Product holds, is skipped with a log line). Products created through the admin API (`source=api`) are never touched by the import; their `definition` (the shape of a config context: `include`, `includeConnections`, `includeTopics` and the `exclude*` counterparts) is resolved to repositories when written and again on every sync. The admin API is a second listener in the same process on `API_ADMIN_HOST` (default `127.0.0.1`) and `API_ADMIN_PORT` (default `3002`), published on host loopback only. It is always on and needs the admin token (see "Admin token" below). Every request needs exactly one `Authorization: Bearer <admin token>` header (the scheme is case-sensitive); anything else is the same `401`, whatever the path. The token is read from that header only and is never logged. The admin API is for operators on the host and for the UI container (`api` is in `API_ALLOWED_HOSTS`): `GET|POST /products`, `GET|PUT|DELETE /products/<slug>`, `POST|GET /connections`, `DELETE /connections/<id>`, `PUT /connections/<id>/token`, `GET /connections/<id>/repositories`, and the UI-shaped Product routes `GET|POST /ui/products`, `GET|PATCH /ui/products/<slug>`, `GET /ui/products/<slug>/status`, `POST /ui/products/<slug>/sync`, and the chat routes `GET|POST /ui/products/<slug>/threads`, `GET /ui/products/<slug>/threads/<id>`, `POST /ui/products/<slug>/threads/<id>/messages` (the UI chat: body `{ text }` only, history is kept by the engine, the answer streams as an AI SDK UI message stream with `data-evidence` and `data-answer` parts; needs a configured language model and the Product's first generation) (JSON only, 64 KiB bodies; the slug is fixed at creation; config Products answer 409 to writes). Both listeners answer only `Host` names on loopback; add names behind a proxy with `API_ALLOWED_HOSTS` (comma-separated).
 
@@ -114,6 +114,21 @@ scripts/admin-token.sh reset   # api and ui pick it up on the next request, no r
 Setting `ADMIN_TOKEN` (at least 32 characters) on `api` overrides the file; `reset` then refuses. In compose the `ui` service then needs `ENGINE_ADMIN_TOKEN` set to the same value. If the file is shorter than 32 characters the `api` refuses to start: delete the file on the data volume and restart to generate a new one.
 
 
+## Upgrading from an earlier build
+
+Earlier builds named the Postgres role, password and database `sbc`; they are now `falkon`. A fresh `docker compose up` needs nothing. An existing Postgres volume keeps the old names, so rename them once, from the repository root, before starting the new build. No data is lost. `sbc` is the only superuser and a role cannot be renamed while connected as it, so a temporary superuser does the rename:
+
+```
+docker compose stop backend web api ui
+docker compose up -d postgres
+docker compose exec postgres psql -U sbc -d postgres -c "CREATE ROLE falkon_tmp SUPERUSER LOGIN"
+docker compose exec postgres psql -U falkon_tmp -d postgres -c "ALTER DATABASE sbc RENAME TO falkon" -c "ALTER ROLE sbc RENAME TO falkon" -c "ALTER ROLE falkon PASSWORD 'falkon'"
+docker compose exec postgres psql -U falkon -d postgres -c "DROP ROLE falkon_tmp"
+docker compose up -d
+```
+
+Renaming a role clears an MD5 password; Postgres 17 defaults to SCRAM, which keeps it, but the `PASSWORD` statement sets it again either way. The browser cookie is now `falkon_key`; sign in again if `FALKON_API_KEY` is set.
+
 ## Ask
 
 MCP clients can research with their own model. Server instructions explain the tools, and `research_codebase` accepts `{ query, repos? }` and returns a short research brief without calling a server model. The `ask_codebase` MCP prompt returns the same brief, taking `query` and optional comma-separated `repos`. These are available even when no model is configured. Repository selections intersect the caller's access policy; unavailable names are reported and an empty selection stays empty. Follow the brief with the search, read, symbol and history tools, then answer in Markdown with `@file:{repo::path}` or `@file:{repo::path:start-end}` citations. The existing `ask_codebase` tool still runs the server model when configured.
@@ -128,7 +143,7 @@ The prompts and tool descriptions are Falkon's own wording; `ORIGINALITY_REF_DIR
 
 ## Auth
 
-Set `FALKON_API_KEY` to require `Authorization: Bearer <key>` on `/api/*`. The browser UI then also needs a cookie `sbc_key=<key>`. There is no user model, permission sync, or SSO. Only `FALKON_*` variables and the `Authorization: Bearer` header have effect; the earlier product-prefixed variables and API-key header are ignored (clean break, no aliases).
+Set `FALKON_API_KEY` to require `Authorization: Bearer <key>` on `/api/*`. The browser UI then also needs a cookie `falkon_key=<key>`. There is no user model, permission sync, or SSO. Only `FALKON_*` variables and the `Authorization: Bearer` header have effect; the earlier product-prefixed variables and API-key header are ignored (clean break, no aliases).
 
 ## Config
 

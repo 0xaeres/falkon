@@ -1,6 +1,6 @@
 import fs from "node:fs";
-import { prisma, ConnectionSource, Prisma, ProductSource, RepoKind, type ConnectionType, type PrismaClient } from "@sbc/db";
-import { KB_SUFFIX, ownerOfKnowledgeRepo, repoGitDir, repoPath, type Config, type ConnectionConfig } from "@sbc/shared";
+import { prisma, ConnectionSource, Prisma, ProductSource, RepoKind, type ConnectionType, type PrismaClient } from "@falkon/db";
+import { KB_SUFFIX, ownerOfKnowledgeRepo, repoGitDir, repoPath, type Config, type ConnectionConfig } from "@falkon/shared";
 import { compileConnection, dedupeRecords, type RepoRecord } from "./connectors";
 import { isProductSlug, loadContextResolver, type ProductDefinition } from "./productResolve";
 import { removeShards } from "./zoekt";

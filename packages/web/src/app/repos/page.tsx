@@ -1,4 +1,4 @@
-import { prisma } from "@sbc/db";
+import { prisma } from "@falkon/db";
 
 export const dynamic = "force-dynamic";
 

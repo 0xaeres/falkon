@@ -14,14 +14,14 @@ import { registerHooks, createRequire } from "node:module";
 // Pin the workspace package to this tree, as the contract test does.
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
-    return nextResolve(specifier === "@sbc/shared" ? new URL("../../../../shared/src/index.ts", import.meta.url).href : specifier, context);
+    return nextResolve(specifier === "@falkon/shared" ? new URL("../../../../shared/src/index.ts", import.meta.url).href : specifier, context);
   },
 });
 let createMcpServer: typeof import("../mcp").createMcpServer;
-let scopeFor: typeof import("@sbc/shared").scopeFor;
+let scopeFor: typeof import("@falkon/shared").scopeFor;
 before(async () => {
   ({ createMcpServer } = await import("../mcp"));
-  ({ scopeFor } = createRequire(import.meta.url)("@sbc/shared"));
+  ({ scopeFor } = createRequire(import.meta.url)("@falkon/shared"));
 });
 after(() => { hooks.deregister(); mock.restoreAll(); fs.rmSync(dir, { recursive: true, force: true }); delete process.env.MCP_INSTRUCTIONS; });
 

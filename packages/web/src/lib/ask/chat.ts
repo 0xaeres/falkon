@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { generateText, type UIMessage } from "ai";
-import { prisma, type ChatVisibility } from "@sbc/db";
-import type { Scope } from "@sbc/shared";
+import { prisma, type ChatVisibility } from "@falkon/db";
+import type { Scope } from "@falkon/shared";
 import { AskError } from "./errors";
 import { answerPart, sourcesOf, toPortableMarkdown } from "./answer";
 import { createMessageStream } from "./agent";

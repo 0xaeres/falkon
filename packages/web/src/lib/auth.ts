@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { NextResponse, type NextRequest } from "next/server";
-import { authenticate, loadAccessKeys, type AccessKey, type Scope } from "@sbc/shared";
+import { authenticate, loadAccessKeys, type AccessKey, type Scope } from "@falkon/shared";
 
 let cached: { mtimeMs: number; keys: AccessKey[] } | undefined;
 
@@ -21,10 +21,10 @@ function keys(): AccessKey[] | null {
   }
 }
 
-/** Bearer token or the `sbc_key` cookie the UI sets. Returns the caller's scope, or null (401). */
+/** Bearer token or the `falkon_key` cookie the UI sets. Returns the caller's scope, or null (401). */
 export function scopeOf(req: NextRequest | Request): Scope | null {
   const bearer = req.headers.get("authorization")?.match(/^Bearer (.+)$/)?.[1];
-  const cookie = "cookies" in req ? req.cookies.get("sbc_key")?.value : undefined;
+  const cookie = "cookies" in req ? req.cookies.get("falkon_key")?.value : undefined;
   const k = keys();
   if (k === null) return null;
   return authenticate(bearer ?? cookie, k, process.env.FALKON_API_KEY || undefined, !!process.env.ACCESS_FILE);

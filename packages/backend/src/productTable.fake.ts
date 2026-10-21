@@ -1,6 +1,6 @@
 // In-memory stand-in for `prisma.product` (tests have no database): the subset of calls the sync and the admin
 // registry make, with the unique-slug violation Prisma raises (code P2002).
-import type { PrismaClient } from "@sbc/db";
+import type { PrismaClient } from "@falkon/db";
 
 export interface ProductRow {
   id: number;

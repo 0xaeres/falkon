@@ -1,4 +1,4 @@
-import type { CodeHostType } from "@sbc/db";
+import type { CodeHostType } from "@falkon/db";
 
 /** What a code host contributes to `Repo.metadata`. */
 export interface RepoMetadata {

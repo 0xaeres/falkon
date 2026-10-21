@@ -1,8 +1,8 @@
 // Context resolution shared by the backend sync (SearchContext and Product rows) and the api's admin writes.
 // Kept free of the sync path's other imports so the api bundle only pulls micromatch and the Prisma types.
 import micromatch from "micromatch";
-import { RepoKind, type PrismaClient } from "@sbc/db";
-import type { SearchContextConfig } from "@sbc/shared";
+import { RepoKind, type PrismaClient } from "@falkon/db";
+import type { SearchContextConfig } from "@falkon/shared";
 
 /** A Product's definition: a config context without its description. */
 export type ProductDefinition = Omit<SearchContextConfig, "description">;

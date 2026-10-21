@@ -6,7 +6,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 
 // env is read lazily, so set it before the modules do any work
-const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "sbc-auth-"));
+const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-auth-"));
 process.env.DATA_DIR = dataDir;
 const { createToolRunner } = await import("./tools");
 const { setZoektTransport } = await import("./zoekt");

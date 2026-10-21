@@ -6,7 +6,7 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import type { AddressInfo } from "node:net";
-import { apiKeyAccessPolicy, type Scope } from "@sbc/shared";
+import { apiKeyAccessPolicy, type Scope } from "@falkon/shared";
 import { createApp, SESSIONS, type McpHandlers } from "./app";
 import type { SessionBindings } from "./sessions";
 import type { ProductRegistry } from "./product";

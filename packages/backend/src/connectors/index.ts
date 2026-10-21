@@ -1,4 +1,4 @@
-import type { ConnectionConfig } from "@sbc/shared";
+import type { ConnectionConfig } from "@falkon/shared";
 import { compileGenericGit } from "./genericGit";
 import { compileGithub } from "./github";
 import type { RepoRecord } from "./types";

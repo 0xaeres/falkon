@@ -4,16 +4,16 @@
   "packageManager": "pnpm@10.28.0",
   "scripts": {
     "typecheck": "pnpm -r typecheck",
-    "db:generate": "pnpm --filter @sbc/db generate",
-    "db:push": "pnpm --filter @sbc/db push",
-    "eval": "pnpm --filter @sbc/eval eval",
-    "dev:backend": "pnpm --filter @sbc/backend dev",
-    "dev:web": "pnpm --filter @sbc/web dev",
+    "db:generate": "pnpm --filter @falkon/db generate",
+    "db:push": "pnpm --filter @falkon/db push",
+    "eval": "pnpm --filter @falkon/eval eval",
+    "dev:backend": "pnpm --filter @falkon/backend dev",
+    "dev:web": "pnpm --filter @falkon/web dev",
     "test": "pnpm -r --if-present test",
-    "convert-config": "pnpm --filter @sbc/shared exec tsx ../../scripts/convert-config.ts",
-    "golden:record": "pnpm --filter @sbc/shared exec tsx ../../tests/golden/run.ts",
-    "golden:diff": "pnpm --filter @sbc/shared exec tsx ../../tests/golden/diff.ts",
-    "originality": "pnpm --filter @sbc/eval exec tsx ../originality/originality.ts"
+    "convert-config": "pnpm --filter @falkon/shared exec tsx ../../scripts/convert-config.ts",
+    "golden:record": "pnpm --filter @falkon/shared exec tsx ../../tests/golden/run.ts",
+    "golden:diff": "pnpm --filter @falkon/shared exec tsx ../../tests/golden/diff.ts",
+    "originality": "pnpm --filter @falkon/eval exec tsx ../originality/originality.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

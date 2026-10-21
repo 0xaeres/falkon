@@ -1,5 +1,5 @@
 {
-  "name": "@sbc/backend",
+  "name": "@falkon/backend",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@octokit/rest": "21.1.1",
-    "@sbc/db": "workspace:*",
-    "@sbc/shared": "workspace:*",
+    "@falkon/db": "workspace:*",
+    "@falkon/shared": "workspace:*",
     "bullmq": "^5.34.0",
     "git-url-parse": "16.1.0",
     "glob": "^11.1.0",

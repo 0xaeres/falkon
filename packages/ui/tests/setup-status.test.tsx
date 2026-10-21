@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { repositorySchema, type Repository } from "@sbc/contracts";
+import { repositorySchema, type Repository } from "@falkon/contracts";
 import RepositoryPicker, {
   countLine,
   privateOnly,

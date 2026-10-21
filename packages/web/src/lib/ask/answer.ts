@@ -1,4 +1,4 @@
-import { browsePath, type ToolSource } from "@sbc/shared";
+import { browsePath, type ToolSource } from "@falkon/shared";
 import type { UIMessage } from "ai";
 import { ANSWER_TAG, FILE_REFERENCE_REGEX } from "./prompt";
 

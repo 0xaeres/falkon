@@ -1,5 +1,5 @@
 // Test helper: the Prisma surface PrismaProductRegistry uses, in memory.
-import type { PrismaClient } from "@sbc/db";
+import type { PrismaClient } from "@falkon/db";
 import { fakeProductTable } from "../../backend/src/productTable.fake";
 
 export function fakeDb(seed: Parameters<typeof fakeProductTable>[0] = [], repos = ["github.com/acme/app", "github.com/acme/lib", "github.com/other/tool"]) {

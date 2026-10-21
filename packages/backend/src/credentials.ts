@@ -1,4 +1,4 @@
-import { getTokenFromConfig, type ConnectionConfig } from "@sbc/shared";
+import { getTokenFromConfig, type ConnectionConfig } from "@falkon/shared";
 import type { GitCredentials } from "./git";
 
 /**

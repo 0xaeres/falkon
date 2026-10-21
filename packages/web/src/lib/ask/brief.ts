@@ -1,4 +1,4 @@
-import type { Scope } from "@sbc/shared";
+import type { Scope } from "@falkon/shared";
 import { IMPACT_BRIEF_STEPS, isImpactQuery } from "./impact";
 import { fileReferenceToString } from "./prompt";
 

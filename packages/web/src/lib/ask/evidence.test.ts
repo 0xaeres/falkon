@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { answerPartSchema, answerSchema, evidencePartSchema, messagesToAnswers, paragraphSchema, type Evidence } from "@sbc/contracts";
-import type { ToolSource } from "@sbc/shared";
+import { answerPartSchema, answerSchema, evidencePartSchema, messagesToAnswers, paragraphSchema, type Evidence } from "@falkon/contracts";
+import type { ToolSource } from "@falkon/shared";
 import { buildEvidence } from "./evidence";
 import { ANSWER_TAG, FILE_REFERENCE_REGEX, REPLY_TAG } from "./prompt";
 

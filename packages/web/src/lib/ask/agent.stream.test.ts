@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { scopeFor } from "@sbc/shared";
+import { scopeFor } from "@falkon/shared";
 import { createMessageStream } from "./agent";
 import { fakeOpenAi } from "./fakeOpenAi";
 

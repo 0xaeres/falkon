@@ -1,5 +1,5 @@
 import type { LanguageModel } from "ai";
-import { env, getTokenFromConfig, loadConfig, type Token } from "@sbc/shared";
+import { env, getTokenFromConfig, loadConfig, type Token } from "@falkon/shared";
 
 /** A config `models` entry (the providers wired here). */
 export interface LanguageModelConfig {

@@ -1,5 +1,5 @@
 import { createUIMessageStream, jsonSchema, NoSuchToolError, streamText, tool, type ModelMessage, type UIMessage } from "ai";
-import { gitRead, toolDefinitions, toolJsonSchema, toolNames, type AnyToolDefinition, type Scope, type ToolSource } from "@sbc/shared";
+import { gitRead, toolDefinitions, toolJsonSchema, toolNames, type AnyToolDefinition, type Scope, type ToolSource } from "@falkon/shared";
 import { toolDeps } from "../tools";
 import { answerPart } from "./answer";
 import { aiModel, type LanguageModelConfig } from "./models";

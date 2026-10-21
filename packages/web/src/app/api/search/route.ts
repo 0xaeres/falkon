@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { MAX_MATCHES, qRepo, search } from "@sbc/shared";
+import { MAX_MATCHES, qRepo, search } from "@falkon/shared";
 import { searchError, serviceError } from "@/lib/serviceError";
 import { scopeOf, unauthorized } from "@/lib/auth";
 import { loadContexts } from "@/lib/repos";

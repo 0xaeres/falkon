@@ -5,7 +5,7 @@ import path from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { snapshot } from "../../../../../tests/contract/snapshot";
-import type { WSearchRequest } from "@sbc/shared";
+import type { WSearchRequest } from "@falkon/shared";
 import { seedContractRepo } from "../../../../../tests/contract/fixture";
 
 const fixture = seedContractRepo();
@@ -20,19 +20,19 @@ import { registerHooks, createRequire } from "node:module";
 const localShared = new URL("../../../../shared/src/index.ts", import.meta.url).href;
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
-    return nextResolve(specifier === "@sbc/shared" ? localShared : specifier, context);
+    return nextResolve(specifier === "@falkon/shared" ? localShared : specifier, context);
   },
 });
 let createMcpServer: typeof import("../mcp").createMcpServer;
 let toolDeps: typeof import("../tools").toolDeps;
-let scopeFor: typeof import("@sbc/shared").scopeFor;
-let setZoektTransport: typeof import("@sbc/shared").setZoektTransport;
+let scopeFor: typeof import("@falkon/shared").scopeFor;
+let setZoektTransport: typeof import("@falkon/shared").setZoektTransport;
 const REPO = "fixtures.test/atlas";
 const row = { name: REPO, displayName: null, codeHostType: "genericGitHost", webUrl: null, defaultBranch: "refs/heads/main", isFork: false, isArchived: false, pushedAt: new Date("2026-01-02T00:00:00Z"), indexedAt: new Date("2026-01-03T00:00:00Z"), indexedRevisions: ["HEAD", "refs/heads/feature"], path: fixture.bare };
 before(async () => {
   ({ createMcpServer } = await import("../mcp"));
   ({ toolDeps } = await import("../tools"));
-  ({ scopeFor, setZoektTransport } = createRequire(import.meta.url)("@sbc/shared"));
+  ({ scopeFor, setZoektTransport } = createRequire(import.meta.url)("@falkon/shared"));
   toolDeps.baseUrl = "http://localhost:3000";
   mock.method(toolDeps, "getRepo", async (name: string) => name === REPO ? row : undefined);
   mock.method(toolDeps, "listRepos", async ({ query }: { query?: string }) => !query || REPO.includes(query.toLowerCase()) ? [row] : []);

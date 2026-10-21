@@ -3,8 +3,8 @@ import { promisify } from "node:util";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { prisma } from "@sbc/db";
-import { kb } from "@sbc/shared";
+import { prisma } from "@falkon/db";
+import { kb } from "@falkon/shared";
 
 const run = promisify(execFile);
 

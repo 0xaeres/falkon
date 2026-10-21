@@ -1,6 +1,6 @@
 # Falkon UI
 
-The Next.js app (`@sbc/ui`, a workspace package): Product setup, status, chat, Connect and settings for a self-hosted Falkon engine.
+The Next.js app (`@falkon/ui`, a workspace package): Product setup, status, chat, Connect and settings for a self-hosted Falkon engine.
 
 ## Run
 
@@ -8,7 +8,7 @@ From the repository root, `docker compose up --build` serves it at http://127.0.
 
 ```sh
 pnpm install
-ENGINE_URL=http://127.0.0.1:3002 pnpm --filter @sbc/ui dev --hostname 127.0.0.1 --port 4311
+ENGINE_URL=http://127.0.0.1:3002 pnpm --filter @falkon/ui dev --hostname 127.0.0.1 --port 4311
 ```
 
 Environment (UI server):
@@ -21,9 +21,9 @@ Environment (UI server):
 | `AUTH_MODE`          | `none` (default) or `apiKey`; must match the api service. Adds the API-key form to the Connect snippets. |
 
 ```sh
-pnpm --filter @sbc/ui typecheck
-pnpm --filter @sbc/ui test
-pnpm --filter @sbc/ui build
+pnpm --filter @falkon/ui typecheck
+pnpm --filter @falkon/ui test
+pnpm --filter @falkon/ui build
 ```
 
 ## Structure

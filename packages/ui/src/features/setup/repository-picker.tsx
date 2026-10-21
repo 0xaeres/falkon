@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Check, ChevronDown, GitBranch, Search } from "lucide-react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
-import type { Repository } from "@sbc/contracts";
+import type { Repository } from "@falkon/contracts";
 import { Select } from "@/components/ui/select";
 import { relativeTime } from "@/lib/format";
 

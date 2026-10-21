@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { scopeFor } from "@sbc/shared";
+import { scopeFor } from "@falkon/shared";
 import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS } from "./brief";
 import { IMPACT_BRIEF_STEPS, IMPACT_INSTRUCTIONS, IMPACT_PROMPT, isImpactQuery } from "./impact";
 import { dynamicPrompt, RENDER_PROMPT, REPLY_PROMPT, STATIC_PROMPT } from "./prompt";

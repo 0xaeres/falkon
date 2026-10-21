@@ -1,7 +1,7 @@
 import { Octokit } from "@octokit/rest";
 import micromatch from "micromatch";
 import pLimit from "p-limit";
-import { getTokenFromConfig, type GithubConnectionConfig } from "@sbc/shared";
+import { getTokenFromConfig, type GithubConnectionConfig } from "@falkon/shared";
 import { fetchWithRetry, joinName, marshalBool, perTarget, repoNameRoot, statusIs, trimSlashes, type RepoRecord } from "./types";
 
 const GITHUB_CLOUD = "github.com";

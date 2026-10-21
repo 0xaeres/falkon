@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
-import { scopeFor } from "@sbc/shared";
+import { scopeFor } from "@falkon/shared";
 import { seedContractRepo } from "../../../tests/contract/fixture";
 
 // Same environment discipline as the web contract test: no database, no Zoekt, no model.

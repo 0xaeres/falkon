@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { asSchema, generateText } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
-import { scopeFor } from "@sbc/shared";
+import { scopeFor } from "@falkon/shared";
 import { agentTools } from "./agent";
 
 const tools = () => agentTools(scopeFor(["*"]), [], () => {});

@@ -4,3 +4,7 @@ node_modules
 data
 .env
 .git
+**/.scratch
+**/.loop
+**/.claude
+tests/eval/datasets

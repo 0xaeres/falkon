@@ -1,9 +1,9 @@
 // UI-shaped Product routes (/ui/products...) on the admin listener. The registry routes (/products...) keep the operator shape.
 import { Controller, Get, Inject, Param, Patch, Post, Req } from "@nestjs/common";
 import type { IncomingMessage } from "node:http";
-import { editRequestSchema, setupRequestSchema, syncRequestSchema, type EditRequest, type Product, type Repository, type SetupRequest, type Status } from "@sbc/contracts";
-import { RepoKind, type PrismaClient, type ScanStatus } from "@sbc/db";
-import { env, knowledgeBaseSchema, loadConfig, scopeFor, type KnowledgeBaseConfig } from "@sbc/shared";
+import { editRequestSchema, setupRequestSchema, syncRequestSchema, type EditRequest, type Product, type Repository, type SetupRequest, type Status } from "@falkon/contracts";
+import { RepoKind, type PrismaClient, type ScanStatus } from "@falkon/db";
+import { env, knowledgeBaseSchema, loadConfig, scopeFor, type KnowledgeBaseConfig } from "@falkon/shared";
 import { loadContextResolver } from "../../backend/src/productResolve";
 import { ConnectionService } from "./connections";
 import { body, error } from "./request";

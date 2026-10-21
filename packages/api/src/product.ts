@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@sbc/db";
+import type { PrismaClient } from "@falkon/db";
 import { isProductSlug, loadContextResolver, type ProductDefinition } from "../../backend/src/productResolve";
 
 export { isProductSlug as isProductName, type ProductDefinition };

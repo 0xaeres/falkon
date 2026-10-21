@@ -5,7 +5,7 @@ import path from "node:path";
 import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
-import { knowledgeBaseSchema } from "@sbc/shared";
+import { knowledgeBaseSchema } from "@falkon/shared";
 import { createAdminApp } from "./admin";
 import { ConnectionService, type CodeHost } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";

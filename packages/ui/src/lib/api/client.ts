@@ -9,7 +9,7 @@ import {
   threadSummarySchema,
   type EditRequest,
   type SetupRequest,
-} from "@sbc/contracts";
+} from "@falkon/contracts";
 
 // Set this to a compatible gateway when real endpoints replace the local mock handlers.
 const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";

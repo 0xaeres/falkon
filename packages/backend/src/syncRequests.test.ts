@@ -1,6 +1,6 @@
 import { test, mock } from "node:test";
 import assert from "node:assert/strict";
-import type { Config } from "@sbc/shared";
+import type { Config } from "@falkon/shared";
 import { claimIndexRequests, claimSyncRequests, syncConnectionRows } from "./sync";
 
 type Row = Record<string, unknown>;

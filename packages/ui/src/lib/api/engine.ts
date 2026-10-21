@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import "server-only";
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { productSchema, type Product } from "@sbc/contracts";
+import { productSchema, type Product } from "@falkon/contracts";
 
 /**
  * Await first in a route that reads ENGINE_URL: without it `next build` prerenders the mock answer into the image.

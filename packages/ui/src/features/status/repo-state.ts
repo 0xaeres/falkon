@@ -1,4 +1,4 @@
-import type { Repository, Status } from "@sbc/contracts";
+import type { Repository, Status } from "@falkon/contracts";
 
 type Shown = { label: string; tone: "green" | "red" | "blue" | "" };
 

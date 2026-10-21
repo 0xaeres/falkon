@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { productSchema, statusSchema } from "@sbc/contracts";
+import { productSchema, statusSchema } from "@falkon/contracts";
 import { deriveKnowledge, deriveStatus, toUiProduct, withPlaceholders, type ConnectionFacts, type RepoFacts } from "./uiProduct";
 
 const NOW = new Date("2026-10-20T12:00:00Z");
