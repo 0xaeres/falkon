@@ -540,7 +540,7 @@ Live smoke (disposable `falkon-c8` stack from the cycle tip, this repository ind
 
 Carry-forward to cycle 9 (S13): the three items above, the prune pass for the loop skill (SKILL.md over its word budget, on the human's yes), and the carried non-blocking items (connector-skipped repos stay "Building", concurrent turns on one thread overwrite each other, dead `Credential.lastError`). Cycle 10: `@sbc/*` to `@falkon/*` and DB names, then S15.
 
-## Cycle 9 plan: de-reference and Falkon config (S13 split into S34 to S36; grilled 2026-10-21; gate 1 pending)
+## Cycle 9 plan: de-reference and Falkon config (S13 split into S34 to S36; grilled 2026-10-21; gate 1 approved 2026-10-21)
 
 Base `main` at `626a856`. Roles: Claude only; Sonnet builds and reviews, Haiku verifies, Opus only if S36 misses its gate after one fix round. Cycle branch `loop/falkon-mvp-c9`. Input: `.scratch/falkon-mvp/cycle9-handover.md`. Inventory at the base: 118 predecessor-name hits in 36 tracked files outside `.scratch/` (env vars, header, `/api/ee/*`, verbatim Ask and KB prompts, 11 tool descriptions, the v3 config schema, README, comments). Cycle 10 = mechanical `@sbc/*` to `@falkon/*` and DB names, then S15 final gate, README, release notes.
 
@@ -571,3 +571,5 @@ Adversarial cases the reviewer checks: S34 the old header alone is 401, `/api/ee
 ### Autonomy limits (cycle 9)
 
 May decide alone: prompt and description wording, the converter's CLI shape and messages, the 15 smoke questions (not committed into the corpus), the originality tool's internals, one fix round per slice. Must stop at gate 2 for: a dependency, a Prisma change beyond one comment line, any change to `tests/golden/expected.json`, a contract snapshot change beyond `description` fields, a change to eval data, gold or the D25 rule, model spend beyond $6, any push or PR. Budget: 1.2M subagent tokens, 4 hours wall-clock (S36 is the large slice).
+
+Gate 1 approved by the human on 2026-10-21: cycle 9 plan as written. The human asked for the build to run in a fresh session on Opus (main session; builders and reviewers stay Sonnet, verifiers Haiku, passed explicitly). Loop runs autonomously to gate 2.
