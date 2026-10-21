@@ -180,3 +180,21 @@ Pooled verdict lines (80 questions, vs v6 on Haiku):
 - clone-tools: PASS. n 80; recall difference 0.0496 [-0.0140, 0.1177]; wins 12, losses 6, ties 62.
 - clone-research: FAIL. n 80; recall difference -0.0344 [-0.1115, 0.0444]; wins 11, losses 15, ties 54.
 - clone-tools-noinstr: PASS. n 80; recall difference 0.0237 [-0.0502, 0.1008]; wins 13, losses 8, ties 59.
+
+## Cycle 9: gate 3 on Haiku after the rewrite (S36), 2026-10-21
+
+Client model claude-haiku-5-5; arm `clone-tools` (plain tools, MCP instructions on) on an eval stack built from the cycle tip `cf57cc2` (rewritten tool descriptions and MCP instructions); reference: the recorded cycle 4 `v6-tools` Haiku runs (80), copied into a fresh runs dir, with the one reference run on `xrepo-framework-to-chart-25` re-flagged as not leaked under the D58 rule (it read the client's own tool-result spill file). Rule D25 unchanged. Pilot 5 runs, recall 0.883, 0 leaks (stop rules passed). Spend $0.62 (cap $6).
+
+| Split | n | Arm recall | Reference recall | Difference [95% CI] | Wins / losses |
+|---|---:|---:|---:|---|---|
+| dev | 48 | 0.943 | 0.882 | +0.061 [-0.007, 0.141] | 6 / 2 |
+| hidden | 32 | 0.953 | 0.819 | +0.134 [0.066, 0.212] | 11 / 0 |
+| pooled | 80 | 0.947 | 0.857 | +0.090 [0.040, 0.149] | 17 / 2 |
+
+Precision +0.012 [-0.033, 0.059]; cost 0.0077 vs 0.0074 per run. **D25: PASS** (0 failed, 0 malformed, 0 leaked). Cycle 4 clone-tools on the same reference was +0.050 [-0.014, 0.118], 12 / 6.
+
+One dev run (`xrepo-framework-to-chart-24`) was first flagged as a leak by the existing traversal rule: the agent called `Read` on `/private/tmp/falkon-eval/chart-only/../../../private/tmp/falkon-eval/chart-only`, which resolves to its own work directory (nothing outside it was read). The harness then refused the hidden split. The run was set aside (kept in the scratch runs dir), that one question was rerun, and the hidden split followed. Sensitivity: with the original run restored and its flag cleared, the pooled verdict is identical (PASS, +0.090 [0.040, 0.149], 17 / 2). The traversal rule itself was not changed.
+
+## Cycle 9: UI-Ask smoke (D57), not run
+
+The before smoke ran on a disposable stack (`falkon-c9base`, image built from `bca8673`, before S36; corpus = a clone of `bca8673` with `.scratch/` removed and a fixed https origin; one config Product `falkon`, Evidence Generation current) with the human's model environment. All 15 turns failed in the model call: the provider answered "You need positive balance to do inference". No after smoke was run. The question list and script are in the session scratchpad, not in the repository. The image `falkon-c9base-app` is kept so the before smoke can run on pre-S36 code once the provider has balance.
