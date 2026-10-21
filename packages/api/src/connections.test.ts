@@ -59,8 +59,8 @@ function fakeConnectionDb() {
 
 type Mode = "ok" | "invalid" | "unavailable" | "throws";
 const hostRepos = [
-  { full_name: "acme/app", default_branch: "main", pushed_at: "2026-10-19T10:00:00Z" },
-  { full_name: "acme/Lib", default_branch: "trunk", pushed_at: "2026-10-18T10:00:00Z" },
+  { full_name: "acme/app", default_branch: "main", pushed_at: "2026-10-19T10:00:00Z", private: true },
+  { full_name: "acme/Lib", default_branch: "trunk", pushed_at: "2026-10-18T10:00:00Z", private: false },
   { full_name: "other/tool", default_branch: "main", pushed_at: null },
 ];
 let mode: Mode = "ok";
@@ -187,9 +187,10 @@ test("repositories: search by full_name, mapped to the contract shape, default b
   const { json: c } = await create("ghp_search");
   const all = (await call("GET", `/connections/${c.id}/repositories`)).json;
   assert.deepEqual(all[0], {
-    id: "github.com/acme/app", name: "app", organization: "acme", language: "", revision: "", updated: "2026-10-19T10:00:00.000Z", branches: ["main"], branch: "main",
+    id: "github.com/acme/app", name: "app", organization: "acme", language: "", revision: "", updated: "2026-10-19T10:00:00.000Z", branches: ["main"], branch: "main", private: true,
   });
   assert.equal(seen.at(-1)!.token, "ghp_search");
+  assert.deepEqual(all.map((r: Row) => (r as Row & { private?: boolean }).private), [true, false, undefined]);
   const hit = (await call("GET", `/connections/${c.id}/repositories?q=LIB`)).json;
   assert.deepEqual(hit.map((r: Row) => [r.id, r.branch]), [["github.com/acme/Lib", "trunk"]]);
   assert.deepEqual((await call("GET", `/connections/${c.id}/repositories?page=2`)).json, []);

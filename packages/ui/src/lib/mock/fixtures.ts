@@ -57,6 +57,7 @@ export const repositories: Repository[] = [
   organization: "acme-payments",
   branches: ["main", "develop", "release/2026.10"],
   branch: repo.id === "checkout-web" ? "release/2026.10" : "main",
+  private: repo.id !== "payments-docs",
 }));
 
 export const seedProducts: Product[] = [

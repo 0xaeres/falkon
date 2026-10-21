@@ -22,6 +22,8 @@ export const repositorySchema = z.object({
   updated: z.iso.datetime(),
   branches: z.array(z.string()),
   branch: z.string(),
+  // Code host private flag; absent when unknown (older payloads, mock data).
+  private: z.boolean().optional(),
 });
 export const productSchema = z.object({
   id: productIdSchema,

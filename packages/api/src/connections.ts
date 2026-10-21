@@ -12,6 +12,7 @@ interface HostRepo {
   full_name: string;
   default_branch: string;
   pushed_at: string | null;
+  private?: boolean;
 }
 
 /** The two read-only calls the engine makes with a stored token. Injectable: tests never touch the network. */
@@ -182,6 +183,7 @@ export class ConnectionService {
           updated: new Date(r.pushed_at ?? 0).toISOString(),
           branches: [r.default_branch],
           branch: r.default_branch,
+          ...(typeof r.private === "boolean" && { private: r.private }),
         };
       }),
     };

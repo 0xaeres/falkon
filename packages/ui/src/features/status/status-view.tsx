@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -27,6 +27,7 @@ import { api } from "@/lib/api/client";
 import { useDismissed } from "@/lib/dismissed";
 import type { Status } from "@sbc/contracts";
 import { knowledgeLine } from "@/lib/knowledge";
+import { completedGeneration, startDismiss } from "./toasts";
 
 type Layer = "generation" | "sync" | "repositories";
 const names: Record<Layer, string> = {
@@ -82,6 +83,25 @@ export function StatusView() {
   const [actionError, setActionError] = useState("");
   const [toast, setToast] = useState(searchParams.get("queued") === "1");
   const [dismissed, setDismissed] = useDismissed(product.id);
+  const [done, setDone] = useState<string | null>(null);
+  const previous = useRef<Status | undefined>(undefined);
+  useEffect(() => {
+    if (statusError || !status) return;
+    const generation = completedGeneration(previous.current, status);
+    previous.current = status;
+    if (generation) {
+      setToast(false);
+      setDone(generation);
+    }
+  }, [status, statusError]);
+  useEffect(
+    () => (toast ? startDismiss(() => setToast(false)) : undefined),
+    [toast],
+  );
+  useEffect(
+    () => (done ? startDismiss(() => setDone(null)) : undefined),
+    [done],
+  );
   if (statusError)
     return (
       <ErrorState error={statusError} retry={() => void refreshStatus()} />
@@ -191,6 +211,19 @@ export function StatusView() {
             className="icon-btn"
             aria-label="Dismiss notification"
             onClick={() => setToast(false)}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+      {done && (
+        <div className="toast" role="status">
+          <Check size={16} className="green" />
+          Evidence Generation {done} is current.
+          <button
+            className="icon-btn"
+            aria-label="Dismiss notification"
+            onClick={() => setDone(null)}
           >
             <X size={14} />
           </button>

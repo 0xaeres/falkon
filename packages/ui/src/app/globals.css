@@ -1608,6 +1608,25 @@ code {
 .retry-build {
   margin-top: 12px;
 }
+.repo-count {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.repo-count label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.repository-name .badge {
+  height: 18px;
+  margin-left: 8px;
+  font-size: 11px;
+}
 .toast {
   position: fixed;
   bottom: 24px;

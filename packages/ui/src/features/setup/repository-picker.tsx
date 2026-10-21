@@ -6,6 +6,14 @@ import type { Repository } from "@sbc/contracts";
 import { Select } from "@/components/ui/select";
 import { relativeTime } from "@/lib/format";
 
+export const countLine = (
+  repositories: Repository[],
+  privateShown: number | null,
+) =>
+  `${repositories.length} ${repositories.length === 1 ? "repository" : "repositories"} visible to this token${privateShown === null ? "" : ` · ${privateShown} private`}`;
+export const privateOnly = (repositories: Repository[], only: boolean) =>
+  only ? repositories.filter((repo) => repo.private) : repositories;
+
 export default function RepositoryPicker({
   repositories,
   selected,
@@ -16,6 +24,7 @@ export default function RepositoryPicker({
   onChange: (value: Record<string, string>) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [only, setOnly] = useState(false);
   const [menuSide, setMenuSide] = useState<"right" | "bottom">("right");
   const [organization, setOrganization] = useState(
     repositories[0]?.organization ?? "acme-payments",
@@ -23,7 +32,7 @@ export default function RepositoryPicker({
   const organizations = [
     ...new Set(repositories.map((repo) => repo.organization)),
   ];
-  const visible = repositories.filter(
+  const visible = privateOnly(repositories, only).filter(
     (repo) =>
       repo.organization === organization &&
       repo.name.toLowerCase().includes(query.toLowerCase()),
@@ -41,6 +50,18 @@ export default function RepositoryPicker({
   }
   return (
     <>
+      <div className="repo-count">
+        <span>{countLine(repositories, only ? visible.length : null)}</span>
+        <label>
+          <input
+            type="checkbox"
+            aria-label="Private only"
+            checked={only}
+            onChange={(event) => setOnly(event.target.checked)}
+          />
+          Private only
+        </label>
+      </div>
       <div className="toolbar">
         <label className="sr-only" htmlFor="organization">
           Organization
@@ -117,6 +138,11 @@ export default function RepositoryPicker({
                 <td className="repository-name">
                   <label htmlFor={`repository-${repo.id}`}>
                     <strong>{repo.name}</strong>
+                    {repo.private !== undefined && (
+                      <span className="badge">
+                        {repo.private ? "Private" : "Public"}
+                      </span>
+                    )}
                     <small className="desktop-repo-meta">
                       Updated {relativeTime(repo.updated)}
                     </small>
