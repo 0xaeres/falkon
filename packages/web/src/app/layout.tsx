@@ -2,14 +2,14 @@ import "./globals.css";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-export const metadata = { title: "Sourcebot Clone", description: "Self-hosted code search and Ask" };
+export const metadata = { title: "Falkon", description: "Self-hosted code search and Ask" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
         <header>
-          <strong>sourcebot-clone</strong>
+          <strong>Falkon</strong>
           <nav>
             <Link href="/">Search</Link>
             <Link href="/ask">Ask</Link>

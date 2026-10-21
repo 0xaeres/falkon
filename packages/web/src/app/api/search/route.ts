@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/** Sourcebot's public request shape: `{ query, matches, contextLines?, whole?, isRegexEnabled?, isCaseSensitivityEnabled? }`. */
+/** The public request shape: `{ query, matches, contextLines?, whole?, isRegexEnabled?, isCaseSensitivityEnabled? }`. */
 export async function POST(req: NextRequest) {
   const scope = scopeOf(req);
   if (!scope) return unauthorized();

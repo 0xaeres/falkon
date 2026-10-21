@@ -5,6 +5,8 @@ export const productIdSchema = z
   .min(1)
   .regex(/^[a-z0-9][a-z0-9-]{0,62}$/); // engine slug rule: isProductSlug in packages/backend/src/productResolve.ts
 export const providerSchema = z.enum(["github", "github-enterprise"]);
+// A Product may also come from config over plain git remotes; connections are never "git".
+export const productProviderSchema = z.enum(["github", "github-enterprise", "git"]);
 export const scenarioSchema = z.enum([
   "partly-behind",
   "current",
@@ -29,7 +31,7 @@ export const productSchema = z.object({
   id: productIdSchema,
   name: z.string().min(1).max(80),
   initials: z.string(),
-  provider: providerSchema,
+  provider: productProviderSchema,
   host: z.string(),
   repositories: z.array(repositorySchema),
   activeGeneration: z.string().nullable(),

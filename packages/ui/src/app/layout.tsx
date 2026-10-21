@@ -15,7 +15,7 @@ const mono = localFont({
 export const metadata: Metadata = {
   title: { default: "Falkon", template: "%s · Falkon" },
   description:
-    "Product-scoped code context, backed by source evidence. Local mock UI.",
+    "Product-scoped code context, backed by source evidence.",
   icons: { icon: "/brand/falkon-app-icon.svg" },
 };
 export default function RootLayout({

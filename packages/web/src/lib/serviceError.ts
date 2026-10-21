@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { QuerySyntaxError, SearchContextNotFoundError } from "@sbc/shared";
 
-/** Sourcebot's error body: `{ statusCode, errorCode, message }`. */
+/** The error body: `{ statusCode, errorCode, message }`. */
 export const serviceError = (statusCode: number, errorCode: string, message: string) =>
   NextResponse.json({ statusCode, errorCode, message }, { status: statusCode });
 
-/** Maps a search failure to the status, code and message Sourcebot returns for it. */
+/** Maps a search failure to the status, code and message it maps to. */
 export function searchError(e: unknown) {
   const message = e instanceof Error ? e.message : String(e);
   if (e instanceof QuerySyntaxError) return serviceError(400, "FAILED_TO_PARSE_QUERY", message);

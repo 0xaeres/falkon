@@ -83,7 +83,7 @@ export class UiProductService {
       const connection: ConnectionFacts | null = c
         ? { credentialId: c.credential?.id ?? null, host: c.credential?.host ?? (c.config as { url?: string }).url?.replace(/^https?:\/\//, "") ?? "github.com", syncError: c.syncError, syncRequestedAt: c.syncRequestedAt }
         : mine[0]
-          ? { credentialId: null, host: hostOf(mine[0].external_codeHostUrl), syncError: null, syncRequestedAt: null }
+          ? { credentialId: null, host: hostOf(mine[0].external_codeHostUrl), genericGit: mine[0].external_codeHostType === "genericGitHost", syncError: null, syncRequestedAt: null }
           : null;
       return { row, facts, connection, knowledge: deriveKnowledge(kbCfg.enabled, modelConfigured, facts, selected) };
     });

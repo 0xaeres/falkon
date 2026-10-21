@@ -41,7 +41,7 @@ export const marshalBool = (v?: boolean | null) => (v ? "1" : "0");
 /** The hostname-rooted prefix repo names start with: `https://host:port/` -> `host:port/`. */
 export const repoNameRoot = (hostUrl: string) => new URL(hostUrl).toString().replace(/^https?:\/\//, "");
 
-/** Joins like node's path.posix.join, which Sourcebot uses for repo names (so `a//b` collapses). */
+/** Joins like node's path.posix.join, which names repos (so `a//b` collapses). */
 export { join as joinName } from "node:path/posix";
 
 export const trimSlashes = (url: string) => url.replace(/\/+$/, "");

@@ -274,7 +274,7 @@ export function makeAnswer(
     gaps: [],
     partialReasons: [],
     abstention:
-      "The mock dataset does not contain enough evidence for this question. Falkon won’t infer an answer from unrelated sources.",
+      "The indexed sources do not contain enough evidence for this question. Falkon won’t infer an answer from unrelated sources.",
     suggestions: [
       "Ask about a route or symbol in this Product.",
       "Add the repository containing the missing source.",

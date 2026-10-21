@@ -82,6 +82,15 @@ test("client research instructions, tool and prompt work with and without a serv
   }
 });
 
+test("the server identifies itself as falkon-mcp-server 0.0.1, whatever the old version variable says", async () => {
+  const oldVersion = "SOURCE" + "BOT_CLONE_VERSION";
+  process.env[oldVersion] = "9.9.9";
+  const session = await connect(false);
+  try {
+    assert.deepEqual(session.client.getServerVersion(), { name: "falkon-mcp-server", version: "0.0.1" });
+  } finally { delete process.env[oldVersion]; await session.close(); }
+});
+
 test("client research contracts cover repository selection, empty scope and MCP guidance", async (t) => {
   const other = "fixtures.test/boreal";
   const hidden = "fixtures.test/private";

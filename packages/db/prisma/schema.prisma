@@ -173,7 +173,7 @@ enum ChatVisibility {
   PUBLIC
 }
 
-/// An Ask conversation: AI SDK UI messages (parts include tool calls and data-source refs), as Sourcebot stores them.
+/// An Ask conversation: AI SDK UI messages (parts include tool calls and data-source refs).
 model Chat {
   id         String         @id @default(cuid())
   name       String?

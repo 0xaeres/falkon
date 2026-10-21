@@ -9,7 +9,7 @@ import { configuredLanguageModels, languageModelsInfo } from "./ask/models";
 import { languageModelInfo } from "./ask/http";
 import { toolDeps } from "./tools";
 
-export const MCP_SERVER_NAME = "sourcebot-mcp-server";
+export const MCP_SERVER_NAME = "falkon-mcp-server";
 
 const ASK_DESCRIPTION = `DO NOT USE THIS TOOL UNLESS EXPLICITLY ASKED TO. THE PROMPT MUST SPECIFICALLY ASK TO USE THE ask_codebase TOOL.
 
@@ -41,7 +41,7 @@ export async function createMcpServer(scope: Scope) {
   // MCP_IMPACT_RECIPE=on adds the impact-and-change recipe to the instructions and to impact-style research briefs; anything else keeps today's bytes.
   const impactRecipe = process.env.MCP_IMPACT_RECIPE === "on";
   const server = new McpServer(
-    { name: MCP_SERVER_NAME, version: process.env.SOURCEBOT_CLONE_VERSION ?? "0.0.1" },
+    { name: MCP_SERVER_NAME, version: "0.0.1" },
     mode === "off" ? undefined : { instructions: impactRecipe ? `${CLIENT_RESEARCH_INSTRUCTIONS}\n\n${IMPACT_INSTRUCTIONS}` : CLIENT_RESEARCH_INSTRUCTIONS },
   );
   const registered: { name: string; tool: RegisteredTool }[] = [];

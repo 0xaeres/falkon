@@ -1,7 +1,7 @@
 import type { LanguageModel } from "ai";
 import { env, getTokenFromConfig, loadConfig, type Token } from "@sbc/shared";
 
-/** A config `models` entry (Sourcebot's languageModel schema; the providers wired here). */
+/** A config `models` entry (the providers wired here). */
 export interface LanguageModelConfig {
   provider: string;
   model: string;
@@ -32,7 +32,7 @@ export async function configuredLanguageModels(): Promise<LanguageModelConfig[]>
 }
 
 export const toInfo = (m: LanguageModelConfig): LanguageModelInfo => ({ provider: m.provider, model: m.model, ...(m.displayName ? { displayName: m.displayName } : {}) });
-/** Sourcebot keys models by provider, model and display name. */
+/** Models are keyed by provider, model and display name. */
 export const modelKey = (m: LanguageModelInfo) => `${m.provider}-${m.model}-${m.displayName}`;
 
 async function resolveRecord(r?: Record<string, string | Token>) {
@@ -46,13 +46,13 @@ async function resolveRecord(r?: Record<string, string | Token>) {
 export async function aiModel(m: LanguageModelConfig): Promise<{ model: LanguageModel; temperature?: number }> {
   const apiKey = m.token ? await getTokenFromConfig(m.token) : undefined;
   const headers = await resolveRecord(m.headers);
-  const temperature = m.temperature ?? (process.env.SOURCEBOT_CHAT_MODEL_TEMPERATURE ? Number(process.env.SOURCEBOT_CHAT_MODEL_TEMPERATURE) : undefined);
+  const temperature = m.temperature ?? (process.env.FALKON_CHAT_MODEL_TEMPERATURE ? Number(process.env.FALKON_CHAT_MODEL_TEMPERATURE) : undefined);
   switch (m.provider) {
     case "openai-compatible": {
       if (!m.baseUrl) throw new Error(`openai-compatible model ${m.model} needs a baseUrl`);
       const [{ createOpenAICompatible }, { extractReasoningMiddleware, wrapLanguageModel }] = await Promise.all([import("@ai-sdk/openai-compatible"), import("ai")]);
       const p = createOpenAICompatible({ baseURL: m.baseUrl, name: m.displayName ?? m.model, apiKey, headers, queryParams: await resolveRecord(m.queryParams) });
-      // Reasoning models that inline <think> blocks get them split out, as in Sourcebot.
+      // Reasoning models that inline <think> blocks get them split out.
       return { model: wrapLanguageModel({ model: p.chatModel(m.model), middleware: [extractReasoningMiddleware({ tagName: m.reasoningTag ?? "think" })] }), temperature };
     }
     case "openai": {
@@ -67,7 +67,7 @@ export async function aiModel(m: LanguageModelConfig): Promise<{ model: Language
   throw new Error(`language model provider "${m.provider}" is not supported here (supported: openai-compatible, openai, anthropic)`);
 }
 
-// ---- models.dev catalog: what input a model accepts, as Sourcebot reports it ----
+// ---- models.dev catalog: what input a model accepts, as reported to callers ----
 
 type Catalog = Record<string, { models?: Record<string, { modalities?: { input?: string[] } }> }>;
 const PROVIDER_IDS: Record<string, string> = { "google-generative-ai": "google" };
@@ -123,6 +123,6 @@ export async function modelCapabilities(m: LanguageModelInfo): Promise<{ inputMo
   return { inputModalities, supportedDocumentTypes: input.filter((x) => DOCUMENT_TYPES.includes(x)) };
 }
 
-/** A model as Sourcebot reports it to callers: provider, model, display name and input capabilities. */
+/** A model as reported to callers: provider, model, display name and input capabilities. */
 export const describeModel = async (m: LanguageModelConfig) => ({ ...toInfo(m), ...(await modelCapabilities(m)) });
 export const languageModelsInfo = async () => Promise.all((await configuredLanguageModels()).map(describeModel));

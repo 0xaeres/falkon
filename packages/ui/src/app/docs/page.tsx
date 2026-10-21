@@ -37,8 +37,9 @@ export default function DocsPage() {
       <p>
         All Products, repositories, answers, and excerpts in this app are
         synthetic. No real code host, identity provider, or ingestion service is
-        connected. The demo token is <code>demo-readonly</code>; never enter
-        real credentials here. Mock source excerpts are not hosted on GitHub.
+        connected. Without <code>ENGINE_URL</code> the mock API accepts only the token{" "}
+        <code>demo-readonly</code>; never enter real credentials here. Mock
+        source excerpts are not hosted on GitHub.
       </p>
       <p>
         The saved sample threads show a grounded, a partial, and an abstained

@@ -22,6 +22,8 @@ export interface ConnectionFacts {
   /** The id the UI knows the connection by (its Credential id). */
   credentialId: string | null;
   host: string;
+  /** A config Product over plain git remotes (no GitHub connection). */
+  genericGit?: boolean;
   syncError: string | null;
   syncRequestedAt: Date | null;
 }
@@ -44,7 +46,8 @@ export function withPlaceholders(names: string[], rows: RepoFacts[], createdAt: 
   return names.map((name) => byName.get(name) ?? { name, status: "PENDING", defaultBranch: null, headCommit: null, metadata: {}, pushedAt: null, lastIndexedAt: null, indexRequestedAt: null, createdAt });
 }
 
-export const providerOf = (host: string): Product["provider"] => (host === "" || host === "github.com" ? "github" : "github-enterprise");
+export const providerOf = (host: string, genericGit = false): Product["provider"] =>
+  genericGit ? "git" : host === "" || host === "github.com" ? "github" : "github-enterprise";
 const initialsOf = (name: string) => name.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase();
 const timeOf = (r: RepoFacts) => (r.pushedAt ?? r.lastIndexedAt ?? r.createdAt).toISOString();
 
@@ -68,7 +71,7 @@ export function toUiProduct(row: ProductFacts, repos: RepoFacts[], connection: C
     id: row.slug,
     name: row.name,
     initials: initialsOf(row.name),
-    provider: providerOf(host),
+    provider: providerOf(host, connection?.genericGit),
     host,
     repositories: repos.map(repositoryOf),
     activeGeneration: status.generation,

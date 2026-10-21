@@ -1,6 +1,6 @@
 # Falkon
 
-Self-hosted code search + Ask agent + MCP server, modeled on Sourcebot v6.
+Self-hosted code search + Ask agent + MCP server, modeled on an existing source-available code context engine.
 
 ```
 config.json ──► backend (BullMQ worker) ──► bare git clones + zoekt shards (shared /data volume)
@@ -8,7 +8,7 @@ config.json ──► backend (BullMQ worker) ──► bare git clones + zoekt 
                Postgres (Prisma)                     zoekt-webserver :6070 (internal only)
                                                             │ gRPC
         MCP clients ──HTTP──► web (Next.js) ◄──────────────┘
-                              /api/search[/stream]  /api/mcp  /api/chat/blocking  /api/ee/chat  UI
+                              /api/search[/stream]  /api/mcp  /api/chat/blocking  /api/chat  UI
 ```
 
 | Package | Role |
@@ -44,7 +44,7 @@ pnpm dev:web         # terminal 3
 
 ## Engine
 
-Same architecture as Sourcebot 5.x, written independently:
+Zoekt-based architecture, written independently:
 
 - **Zoekt.** Docker builds upstream `sourcegraph/zoekt` (Apache-2.0) at the commit pinned by `ZOEKT_REF` in `docker/Dockerfile`; the license text ships in the image under `/usr/share/licenses/zoekt/`. The repository name goes to the indexer through a `-meta` file containing `{"Name":"<repository name>"}`. Go 1.26 is required. **Upgrading from the fork build:** existing shards load under upstream Zoekt unchanged, and each repository reindexes once on its next sync because the indexer options changed; `repository_id` and `tenant_id` now read as 0 in results, and nothing in the engine uses them.
 - **Query path.** Search syntax string, then `queryParser.ts` (own recursive-descent parser) into a query IR (`ir.ts`, mirrors the `Q` proto), then a gRPC `Search`/`StreamSearch` call (`zoekt.ts`, protos in `packages/shared/proto`). User text only ever lands in IR leaves, so it cannot add an `or` or widen a repo scope.
@@ -58,7 +58,7 @@ Same architecture as Sourcebot 5.x, written independently:
 
 ### Licensing note
 
-Sourcebot v5.1.16 (the last open source release) is under FSL-1.1-ALv2, not MIT: no "Competing Use" as a commercial product or service, with `ee/` under a separate license. v6 is closed source. None of its code was copied here: the parser, IR, gRPC client and indexer glue are original. The Zoekt `.proto` files come from the Apache-2.0 Zoekt lineage. I did read Sourcebot's source while building this, so this is not a formal clean-room.
+The engine this project is modeled on is source-available under a license that forbids competing commercial use, and its newest release is closed source. None of its code was copied here: the parser, IR, gRPC client and indexer glue are original. The Zoekt `.proto` files come from the Apache-2.0 Zoekt lineage. I did read its source while building this, so this is not a formal clean-room.
 
 ## Knowledge base
 
@@ -80,15 +80,15 @@ Generated, citation-backed architecture docs per repo (`knowledgeBase` in `confi
 - **Safety.** Agents read only the repo being documented unless `citeRepos` lists others: repo text could steer an agent, and a knowledge base is readable by anyone who can read its owner.
 - **Operate.** `/knowledge` page and `POST /api/knowledge {repo, action: scan|delete|include}` (unrestricted key only). Needs `LLM_*` env vars (OpenAI-compatible).
 
-Design is from Sourcebot's public docs and my reading of its `ee/` code in the v6 image, implemented independently; that code is under a commercial license (see the licensing note above).
+Design is from the modeled engine's public docs and my reading of its enterprise-licensed code, implemented independently; that code is under a commercial license (see the licensing note above).
 
 ## MCP
 
-Streamable HTTP at `/api/mcp` (and `/api/ee/mcp`, Sourcebot's path), stateful sessions owned by the caller, API key via `X-Sourcebot-Api-Key` or `Authorization: Bearer`. No OAuth. Tools match Sourcebot v6's names, input schemas, descriptions, annotations, registration order and output text: `grep`, `glob`, `get_diff`, `list_commits`, `list_branches`, `list_repos`, `read_file`, `list_tree`, `find_symbol_definitions`, `find_symbol_references`, `list_language_models`, and `ask_codebase` when a model is configured (verified against v6.0.1 with a differential harness, since retired). Not implemented: the skills tools (`create_skill`, `update_skill`, `list_skills`).
+Streamable HTTP at `/api/mcp`, stateful sessions owned by the caller, API key via `Authorization: Bearer`. No OAuth. Tools keep the reference engine's names, input schemas, descriptions, annotations, registration order and output text: `grep`, `glob`, `get_diff`, `list_commits`, `list_branches`, `list_repos`, `read_file`, `list_tree`, `find_symbol_definitions`, `find_symbol_references`, `list_language_models`, and `ask_codebase` when a model is configured (verified against v6.0.1 with a differential harness, since retired). Not implemented: the skills tools (`create_skill`, `update_skill`, `list_skills`).
 
 ```json
 { "mcpServers": { "falkon": { "type": "http", "url": "http://localhost:3000/api/mcp",
-  "headers": { "X-Sourcebot-Api-Key": "<key>" } } } }
+  "headers": { "Authorization": "Bearer <key>" } } } }
 ```
 
 A second NestJS service (`packages/api`, compose service `api`) serves the same tools per Product at `POST|DELETE /mcp/<product>`; an unknown or malformed name (`^[a-z0-9][a-z0-9-]{0,62}$`) is a 404 with no fallback. It runs beside the routes above, which are unchanged. It listens on `API_HOST` (default `127.0.0.1`) and `API_PORT` (default `3001`), and compose publishes it on host loopback only. Compose runs the esbuild bundle (`pnpm --filter @sbc/api build`, then `node packages/api/dist/main.js`); locally, `pnpm --filter @sbc/api start` runs the source under tsx.
@@ -118,17 +118,17 @@ Setting `ADMIN_TOKEN` (at least 32 characters) on `api` overrides the file; `res
 
 MCP clients can research with their own model. Server instructions explain the tools, and `research_codebase` accepts `{ query, repos? }` and returns a short research brief without calling a server model. The `ask_codebase` MCP prompt returns the same brief, taking `query` and optional comma-separated `repos`. These are available even when no model is configured. Repository selections intersect the caller's access policy; unavailable names are reported and an empty selection stays empty. Follow the brief with the search, read, symbol and history tools, then answer in Markdown with `@file:{repo::path}` or `@file:{repo::path:start-end}` citations. The existing `ask_codebase` tool still runs the server model when configured.
 
-Sourcebot v6's Ask agent on the AI SDK (`ai` 6): its static and per-chat system prompts word for word, the same ten tools in the same order as MCP (scoped to the chat's selected repos), up to `SOURCEBOT_CHAT_MAX_STEP_COUNT` steps (default 100), lowercase tool-name repair, an answer after the `<!--answer-->` tag with `@file:{repo::path:a-b}` citations, and a chat title from Sourcebot's naming prompt. Models come from config `models` (providers `openai-compatible`, `openai`, `anthropic`; `temperature` or `SOURCEBOT_CHAT_MODEL_TEMPERATURE`), else one openai-compatible model from `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. Input capabilities are looked up on models.dev, as v6 does.
+The Ask agent runs on the AI SDK (`ai` 6): static and per-chat system prompts, the same ten tools in the same order as MCP (scoped to the chat's selected repos), up to `FALKON_CHAT_MAX_STEP_COUNT` steps (default 100), lowercase tool-name repair, an answer after the `<!--answer-->` tag with `@file:{repo::path:a-b}` citations, and a chat title from a naming prompt. Models come from config `models` (providers `openai-compatible`, `openai`, `anthropic`; `temperature` or `FALKON_CHAT_MODEL_TEMPERATURE`), else one openai-compatible model from `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. Input capabilities are looked up on models.dev, as v6 does.
 
 - `POST /api/chat/blocking` `{ query, repos?, languageModel?, visibility? }` → `{ answer, chatId, chatUrl, languageModel }`, the answer as portable markdown (citations become browse links with `highlightRange`). `/api/ask` is an alias.
-- `POST /api/ee/chat` streams one turn as an AI SDK UI message stream; `GET /api/ee/chats` lists and reads stored chats.
-- MCP `ask_codebase` and `list_language_models` return v6's text.
+- `POST /api/chat` streams one turn as an AI SDK UI message stream; `GET /api/chats` lists and reads stored chats.
+- MCP `ask_codebase` and `list_language_models` return the reference engine's text.
 
-A differential run against v6.0.1 with a scripted LLM found the LLM requests (system messages, tool schemas, tool results, params) and the answers identical. Not implemented: skills tools, external MCP servers inside Ask, attachments, prompt caching options.
+A differential run against the reference engine with a scripted LLM found the LLM requests (system messages, tool schemas, tool results, params) and the answers identical. Not implemented: skills tools, external MCP servers inside Ask, attachments, prompt caching options.
 
 ## Auth
 
-Set `SOURCEBOT_API_KEY` to require `Authorization: Bearer <key>` on `/api/*`. The browser UI then also needs a cookie `sbc_key=<key>`. There is no user model, permission sync, or SSO.
+Set `FALKON_API_KEY` to require `Authorization: Bearer <key>` on `/api/*`. The browser UI then also needs a cookie `sbc_key=<key>`. There is no user model, permission sync, or SSO. Only `FALKON_*` variables and the `Authorization: Bearer` header have effect; the earlier product-prefixed variables and API-key header are ignored (clean break, no aliases).
 
 ## Config
 
@@ -136,7 +136,7 @@ Set `SOURCEBOT_API_KEY` to require `Authorization: Bearer <key>` on `/api/*`. Th
 
 Connectors: `github` (cloud and Enterprise: `orgs`, `repos`, `users`, `topics`, `exclude.*`, `revisions`) and `git` (an http(s) remote, or a `file://` glob of local repos indexed in place and named after their origin). Other Sourcebot connection types validate but fail the sync with "not supported". Repo identity, names, URLs and the `zoekt.*` git config match Sourcebot's (verified against v6.0.1 with a differential harness, since retired).
 
-## Not implemented (vs Sourcebot)
+## Not implemented (vs the reference engine)
 
 Users/orgs/SSO, permission syncing, GitHub Apps, GitLab/Gitea/Gerrit/Bitbucket/Azure DevOps connectors, Knowledge Base, skills tools, Ask attachments and external MCP servers, file viewer UI, symbol navigation UI.
 

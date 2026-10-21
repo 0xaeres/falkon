@@ -25,7 +25,7 @@ export async function ensureKnowledgeRepo(owner: Repo): Promise<Repo> {
       // Generated locally, so its identity is the owner's, not a code host's.
       external_id: `knowledge:${owner.id}`,
       external_codeHostType: "genericGitHost",
-      external_codeHostUrl: "sourcebot-clone://knowledge",
+      external_codeHostUrl: "falkon://knowledge",
     },
     update: { isPublic: owner.isPublic },
   });

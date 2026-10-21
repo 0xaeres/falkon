@@ -4,7 +4,7 @@
  * The hard part of the syntax is parentheses: `(foo bar)` groups, but `test()`, `(pr` and
  * `func(a)` are ordinary terms, and in regex mode `(a|b)` is a regex atom while `(file:a or b)`
  * still groups. These rules decide, from the raw input around the cursor, which one a `(` or `)`
- * is. They match Sourcebot's behaviour; parity/grammar/diff.mjs checks that against v6.
+ * is. parity/grammar/diff.mjs checks them against the reference engine.
  */
 import { ExternalTokenizer, type InputStream, type Stack } from "@lezer/lr";
 import { closeParen, Dialect_regex, negate, openParen, or, word } from "./parser.terms";

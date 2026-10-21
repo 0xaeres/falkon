@@ -14,7 +14,7 @@ const body = z.object({
   visibility: z.enum(["PRIVATE", "PUBLIC"]).optional(),
 });
 
-/** Sourcebot's blocking Ask: `{ answer, chatId, chatUrl, languageModel }`. */
+/** The blocking Ask: `{ answer, chatId, chatUrl, languageModel }`. */
 export async function POST(req: NextRequest) {
   const scope = scopeOf(req);
   if (!scope) return unauthorized();

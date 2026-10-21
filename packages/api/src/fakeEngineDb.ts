@@ -142,7 +142,7 @@ export function fakeEngineDb() {
   const addRepo = (name: string, over: Row = {}) => {
     const row = {
       id: nextRepo++, name, kind: "CODE", status: "PENDING", error: null, defaultBranch: "main", headCommit: null, metadata: {}, pushedAt: null, lastIndexedAt: null, indexRequestedAt: null, kbScannedCommit: null, kbExcluded: false,
-      createdAt: new Date(), external_codeHostUrl: `https://${name.split("/")[0]}`, ...over,
+      createdAt: new Date(), external_codeHostType: "github", external_codeHostUrl: `https://${name.split("/")[0]}`, ...over,
     };
     repos.push(row);
     return row;

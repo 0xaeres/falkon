@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     const input = await body(request, connectionRequestSchema);
     if (input.method === "token" && input.token !== "demo-readonly")
       throw new MockError(
-        "This demo token cannot list organization repositories. Use demo-readonly to simulate repo and read:org access.",
+        "The mock API accepts only the token demo-readonly. Set ENGINE_URL to connect a real code host.",
         422,
       );
     return {

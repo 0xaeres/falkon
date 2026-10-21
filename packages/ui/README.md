@@ -37,7 +37,7 @@ Tests run against a temporary store, never the app's demo data. `.data/mock.json
 
 ## Mock behavior
 
-Setup connects to the simulated host only. The demo personal access token is `demo-readonly`; other values show the rejected-token state. Never enter real credentials. Tokens are not persisted. Repository search, selection, select-all, and branch choice work. `productId` is immutable and duplicate IDs are rejected. Jira and Confluence stay unavailable.
+Setup connects to the simulated host only. Without `ENGINE_URL` the mock API accepts only the token `demo-readonly`; other values show the rejected-token state. Never enter real credentials. Tokens are not persisted. Repository search, selection, select-all, and branch choice work. `productId` is immutable and duplicate IDs are rejected. Jira and Confluence stay unavailable.
 
 New Product ingestion publishes `g-0001` after 15 seconds. Repository edits preserve the current generation while a replacement builds; they publish the next generation after 15 seconds. Settings provides fixed previews of all freshness, build, and overlay states. Retry resolves the mock failure; dismiss removes the failure highlight while keeping the behind verdict.
 

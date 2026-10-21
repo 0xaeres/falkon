@@ -7,7 +7,7 @@ import { scopeOf } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-/** A stored Ask chat, read-only: the target of the chatUrl the blocking Ask and MCP return. Own or public chats only, like GET /api/ee/chats?id=. */
+/** A stored Ask chat, read-only: the target of the chatUrl the blocking Ask and MCP return. Own or public chats only, like GET /api/chats?id=. */
 export default async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const h = new Headers(await headers());

@@ -179,7 +179,7 @@ export const setZoektTransport = (t: ZoektTransport | undefined) => {
 // ---- request -------------------------------------------------------------
 
 /**
- * Upper bound on `matches`. Sourcebot passes the requested count straight to zoekt; this only
+ * Upper bound on `matches`. The requested count goes straight to zoekt; this only
  * stops a typo from asking for billions. Non-positive values would mean "unbounded" to zoekt.
  */
 export const MAX_MATCHES = 1_000_000;

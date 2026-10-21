@@ -5,7 +5,7 @@ import { KB_SUFFIX, ownerOfKnowledgeRepo } from "./env";
 
 /** What one API key may see: a set of repo names, each exact or a trailing-`*` prefix. */
 export interface Scope {
-  /** Who is calling: an access key's name, "admin" for SOURCEBOT_API_KEY, "anonymous" when the API is open. */
+  /** Who is calling: an access key's name, "admin" for FALKON_API_KEY, "anonymous" when the API is open. */
   principal?: string;
   allows(repo: string): boolean;
   /** RE2 regexp over repo names restricting a search to the scope; null when unrestricted. */

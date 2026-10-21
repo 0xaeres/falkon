@@ -5,7 +5,7 @@ import type { RepoRecord } from "./types";
 
 export type { RepoMetadata, RepoRecord } from "./types";
 
-/** Connection types this build syncs. The config schema accepts all of Sourcebot's; the rest fail the sync. */
+/** Connection types this build syncs. The config schema accepts more types; the rest fail the sync. */
 export const SUPPORTED_CONNECTION_TYPES = ["github", "git"] as const;
 
 /** Lists the repos a connection selects, applying its include/exclude rules. */

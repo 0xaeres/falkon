@@ -101,7 +101,7 @@ test("GET /mcp/<product> is 405 with Allow: POST, DELETE", async () => {
 
 test("P10: every other path and method is 404, including HEAD and OPTIONS, and no admin route exists here", async () => {
   calls.length = 0;
-  const cases = [["GET", "/"], ["POST", "/"], ["POST", "/mcp"], ["POST", "/mcp/"], ["POST", "/mcp/core/extra"], ["POST", "/api/mcp"], ["POST", "/api/ee/mcp"],
+  const cases = [["GET", "/"], ["POST", "/"], ["POST", "/mcp"], ["POST", "/mcp/"], ["POST", "/mcp/core/extra"], ["POST", "/api/mcp"], ["POST", "/api/chat"],
     ["GET", "/products"], ["POST", "/products"], ["GET", "/products/core"], ["PUT", "/products/core"], ["DELETE", "/products/core"],
     ["PUT", "/mcp/core"], ["PATCH", "/mcp/core"], ["HEAD", "/mcp/core"], ["OPTIONS", "/mcp/core"], ["OPTIONS", "/"], ["HEAD", "/"]] as const;
   for (const [method, p] of cases) {

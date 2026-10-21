@@ -5,9 +5,9 @@ import { answerPart } from "./answer";
 import { aiModel, type LanguageModelConfig } from "./models";
 import { dynamicPrompt, STATIC_PROMPT } from "./prompt";
 
-const MAX_STEPS = () => Number(process.env.SOURCEBOT_CHAT_MAX_STEP_COUNT ?? 100);
+const MAX_STEPS = () => Number(process.env.FALKON_CHAT_MAX_STEP_COUNT ?? 100);
 
-/** The order Sourcebot's createTools registers the agent's tools in, which is the order the model sees. */
+/** The order the agent's tools are registered in, which is the order the model sees. */
 const AGENT_TOOL_ORDER = ["read_file", "list_branches", "list_commits", "list_repos", "get_diff", "grep", "glob", "find_symbol_references", "find_symbol_definitions", "list_tree"] as const;
 
 /** The agent's tools: the shared definitions, scoped to the caller and the chat's selected repos. */
@@ -61,14 +61,14 @@ async function mentionedFiles(messages: UIMessage[], scope: Scope) {
     try {
       out.push({ path: f.path, repo: f.repo, language: "", revision: f.revision, source: await gitRead.readFile(f.repo, f.path, f.revision) });
     } catch {
-      /* unreadable: left out, as Sourcebot does */
+      /* unreadable: left out */
     }
   }
   return out;
 }
 
 /**
- * Sourcebot's chat turn: one streamText run over the shared tools, at most SOURCEBOT_CHAT_MAX_STEP_COUNT
+ * One chat turn: one streamText run over the shared tools, at most FALKON_CHAT_MAX_STEP_COUNT
  * steps, as an AI SDK UI message stream (text, reasoning, tool calls, data-source parts, metadata).
  */
 export async function createMessageStream(o: {

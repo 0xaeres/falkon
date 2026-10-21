@@ -4,7 +4,7 @@ import { AskError } from "./errors";
 
 const PROVIDERS = ["amazon-bedrock", "anthropic", "azure", "deepseek", "google-generative-ai", "google-vertex-anthropic", "google-vertex", "mistral", "openai", "openai-compatible", "openrouter", "xai"] as const;
 
-/** Sourcebot's languageModelInfo schema, field descriptions included (MCP clients see them). */
+/** The languageModelInfo schema, field descriptions included (MCP clients see them). */
 export const languageModelInfo = z.object({
   provider: z.enum(PROVIDERS).describe("The model provider (e.g., 'anthropic', 'openai')"),
   model: z.string().describe("The model ID"),
@@ -19,7 +19,7 @@ export const languageModelInfo = z.object({
     .describe("Rich compound document formats (e.g. PDF) the model can ingest natively, distinct from single-medium attachments gated by inputModalities. Defaults to none."),
 });
 
-/** Errors as Sourcebot's `{ statusCode, errorCode, message }`. */
+/** Errors as `{ statusCode, errorCode, message }`. */
 export function askErrorResponse(e: unknown) {
   if (e instanceof AskError) return NextResponse.json({ statusCode: e.statusCode, errorCode: e.errorCode, message: e.message }, { status: e.statusCode });
   const message = e instanceof Error ? e.message : String(e);

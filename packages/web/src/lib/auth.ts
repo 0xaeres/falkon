@@ -21,13 +21,13 @@ function keys(): AccessKey[] | null {
   }
 }
 
-/** Bearer token, Sourcebot's X-Sourcebot-Api-Key header, or the `sbc_key` cookie the UI sets. Returns the caller's scope, or null (401). */
+/** Bearer token or the `sbc_key` cookie the UI sets. Returns the caller's scope, or null (401). */
 export function scopeOf(req: NextRequest | Request): Scope | null {
-  const bearer = req.headers.get("authorization")?.match(/^Bearer (.+)$/)?.[1] ?? req.headers.get("x-sourcebot-api-key") ?? undefined;
+  const bearer = req.headers.get("authorization")?.match(/^Bearer (.+)$/)?.[1];
   const cookie = "cookies" in req ? req.cookies.get("sbc_key")?.value : undefined;
   const k = keys();
   if (k === null) return null;
-  return authenticate(bearer ?? cookie, k, process.env.SOURCEBOT_API_KEY || undefined, !!process.env.ACCESS_FILE);
+  return authenticate(bearer ?? cookie, k, process.env.FALKON_API_KEY || undefined, !!process.env.ACCESS_FILE);
 }
 
 export const unauthorized = () => NextResponse.json({ error: "unauthorized" }, { status: 401 });

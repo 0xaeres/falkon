@@ -4,7 +4,7 @@ import { scopeOf, unauthorized } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-/** MCP over streamable HTTP, at the same paths as Sourcebot (/api/mcp and /api/ee/mcp). */
+/** MCP over streamable HTTP, at /api/mcp. */
 export async function POST(req: Request) {
   const scope = scopeOf(req);
   return scope ? handleMcpPost(req, scope) : unauthorized();

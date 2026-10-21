@@ -17,7 +17,7 @@ export { AskError };
 /** The configured model to use: the requested one, else the first. */
 export async function pickModel(requested?: LanguageModelInfo): Promise<LanguageModelConfig> {
   const models = await configuredLanguageModels();
-  if (models.length === 0) throw new AskError(400, "INVALID_REQUEST_BODY", "No language models are configured. Please configure at least one language model. See: https://docs.sourcebot.dev/docs/configuration/language-model-providers");
+  if (models.length === 0) throw new AskError(400, "INVALID_REQUEST_BODY", "No language models are configured. Please configure at least one language model.");
   if (!requested) return models[0]!;
   const m = models.find((x) => modelKey(toInfo(x)) === modelKey(requested));
   if (!m) throw new AskError(400, "INVALID_REQUEST_BODY", `Language model '${requested.provider}/${requested.model}' is not configured.`);
@@ -40,7 +40,7 @@ export async function chatName(question: string, m: LanguageModelConfig) {
 
 /**
  * Drains a UI message stream: the work happens in its onFinish. An error chunk (a provider or
- * agent failure) fails the ask as Sourcebot's 500 UNEXPECTED_ERROR rather than a partial answer.
+ * agent failure) fails the ask as a 500 UNEXPECTED_ERROR rather than a partial answer.
  */
 export async function drain(s: ReadableStream<{ type: string; errorText?: string }>) {
   const r = s.getReader();
@@ -50,7 +50,7 @@ export async function drain(s: ReadableStream<{ type: string; errorText?: string
 }
 
 /**
- * Sourcebot's blocking Ask (/api/chat/blocking and MCP ask_codebase): creates a chat, runs one
+ * The blocking Ask (/api/chat/blocking and MCP ask_codebase): creates a chat, runs one
  * agent turn to completion, names the chat, and returns the answer as portable markdown.
  */
 export async function askCodebase(o: { query: string; repos?: string[]; languageModel?: LanguageModelInfo; visibility?: ChatVisibility; scope: Scope }) {

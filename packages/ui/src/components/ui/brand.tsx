@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { Provider } from "@sbc/contracts";
+import type { Product } from "@sbc/contracts";
 export function Mark({ size = 24 }: { size?: number }) {
   return (
     <svg
@@ -27,7 +27,7 @@ export function ProviderLogo({
   provider,
   size = 20,
 }: {
-  provider: Provider | "jira" | "confluence";
+  provider: Product["provider"] | "jira" | "confluence";
   size?: number;
 }) {
   const asset = provider === "github-enterprise" ? "github" : provider;

@@ -49,7 +49,7 @@ const connWorker = new Worker<{ name: string }>(
   "connection-sync",
   async (job) => {
     const ids = await syncConnection(job.data.name);
-    // New repos index right away; known ones wait for the reindex schedule (as in Sourcebot).
+    // New repos index right away; known ones wait for the reindex schedule.
     const fresh = await prisma.repo.findMany({ where: { id: { in: ids }, lastIndexedAt: null }, select: { id: true } });
     for (const r of fresh) await enqueueIndex(r.id);
   },
@@ -140,7 +140,7 @@ const worker = new Worker<{ repoId: number }>(
         where: { id: repo.id },
         data: {
           status: "INDEXED",
-          // From the clone's HEAD, as Sourcebot does: null for a detached HEAD.
+          // From the clone's HEAD: null for a detached HEAD.
           defaultBranch: defaultBranch ?? null,
           headCommit: stats.headCommit,
           branches: stats.branches,

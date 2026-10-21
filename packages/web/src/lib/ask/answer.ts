@@ -12,7 +12,7 @@ export function answerPart(message: UIMessage, inProgress: boolean): TextPart | 
   return undefined;
 }
 
-/** The highlightRange query Sourcebot's browse links carry. */
+/** The highlightRange query that browse links carry. */
 const highlight = (start: string, end?: string) => `?${new URLSearchParams({ highlightRange: `${start},${end || start}` }).toString()}`;
 
 /**

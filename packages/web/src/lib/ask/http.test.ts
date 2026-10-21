@@ -1,13 +1,13 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
-import { POST as chat } from "../../app/api/ee/chat/route";
+import { POST as chat } from "../../app/api/chat/route";
 import { POST as knowledge } from "../../app/api/knowledge/route";
 
-const authEnv = { ACCESS_FILE: process.env.ACCESS_FILE, SOURCEBOT_API_KEY: process.env.SOURCEBOT_API_KEY };
+const authEnv = { ACCESS_FILE: process.env.ACCESS_FILE, FALKON_API_KEY: process.env.FALKON_API_KEY };
 before(() => {
   delete process.env.ACCESS_FILE;
-  delete process.env.SOURCEBOT_API_KEY;
+  delete process.env.FALKON_API_KEY;
 });
 after(() => {
   for (const [key, value] of Object.entries(authEnv)) {
@@ -54,4 +54,11 @@ test("knowledge administration pins its existing Zod 4 invalid-request body", as
   }
 ]`,
   });
+});
+
+test("the old enterprise-prefixed routes are gone and the moved routes exist", async () => {
+  const { existsSync } = await import("node:fs");
+  const api = new URL("../../app/api/", import.meta.url);
+  assert.equal(existsSync(new URL("ee", api)), false);
+  for (const route of ["chat/route.ts", "chats/route.ts", "chat/blocking/route.ts", "mcp/route.ts"]) assert.ok(existsSync(new URL(route, api)), route);
 });
