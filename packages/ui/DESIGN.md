@@ -114,14 +114,6 @@ components:
     backgroundColor: "{colors.s1}"
     textColor: "{colors.text}"
     rounded: "{rounded.panel}"
-  status-navigation:
-    backgroundColor: "transparent"
-    textColor: "{colors.muted}"
-    rounded: "{rounded.control}"
-    padding: "12px"
-  status-navigation-current:
-    backgroundColor: "{colors.s2}"
-    textColor: "{colors.text}"
   citation:
     backgroundColor: "{colors.s2}"
     textColor: "{colors.muted}"
@@ -173,7 +165,7 @@ Background anchors the page. Sidebar is a separate near-black navigation plane. 
 
 Geist is the UI and prose family, with a sans-serif fallback. Geist Mono is the source and identifier family, with a monospace fallback. Both load locally through `next/font/local` in `src/app/layout.tsx`.
 
-The frontmatter records the shared headline, title, body, label, and mono roles. Status headings use headline; setup card headings use title. Evidence pane headings and section labels use smaller semibold UI text. Answer prose increases line height and stays within 66 characters per line. Source excerpts use tabular numerals, persistent whitespace, line numbers, and restrained syntax color.
+The frontmatter records the shared headline, title, body, label, and mono roles. Page headings use headline; setup card headings use title. Evidence pane headings and section labels use smaller semibold UI text. Answer prose increases line height and stays within 66 characters per line. Source excerpts use tabular numerals, persistent whitespace, line numbers, and restrained syntax color.
 
 **The Source Type Rule.** Paths, product identifiers, generation identifiers, revisions, citation numbers, and source excerpts use Geist Mono. Interface sentences use Geist.
 
@@ -181,13 +173,13 @@ The frontmatter records the shared headline, title, body, label, and mono roles.
 
 The desktop workspace uses a 240px sidebar, collapsible to a 56px rail. Automatic mode selects the rail below 1280px. Below 768px, navigation becomes a 300px drawer beneath a 52px mobile header. The setup header is 56px high.
 
-Setup centers a 760px column, widened to 880px for repository selection. Cards separate heading, body, and footer. Status adds a 232px vertical section rail directly beside the global navigation and a flexible, independently scrolling detail workspace. At 768–1023px the section rail narrows to 212px and remains beside the details. Below 768px a native 44px section picker replaces the rail, with the selected details visible beneath it. The workspace leads with the verdict, freshness sentence, and chat and repository actions. Its selected detail content is capped at 1100px. Chat adds a dedicated 240px history column beside global navigation, with a flexible conversation center and a 440px evidence pane. At 768–1279px history narrows to 220px and evidence opens in a sheet. The thread is capped at 700px and the composer at 644px. Mobile history has its own drawer; evidence opens in a sheet.
+Setup centers a 760px column, widened to 880px for repository selection. Cards separate heading, body, and footer. Status, Connect and Settings share one column, capped at 850px, padded 28px 32px (20px 16px below 768px). Status leads with the verdict line and Sync now, then the repositories table; gaps appear only when present. Connect shows three client tabs with a copy button on the snippet, then the tool list and answer help. Chat adds a dedicated 240px history column beside global navigation, with a flexible conversation center and a 440px evidence pane. At 768–1279px history narrows to 220px and evidence opens in a sheet. The thread is capped at 700px and the composer at 644px. Mobile history has its own drawer; evidence opens in a sheet.
 
 Spacing follows the observed steps in the frontmatter. Use tighter gaps inside controls and wider padding between sections. Mobile setup removes the outer card boundary and uses a step count with a 3px progress track. The body scrolls within the available viewport while the footer stays pinned with safe-area padding. The repository footer shows a selected count beside the primary action. Primary buttons and regular inputs have 44px targets; branch selectors remain 38px high. Repository tables become stacked rows with inline language and revision metadata, while the separate desktop columns disappear. The verified [mobile setup screenshot](.impeccable/review/setup-mobile.jpg) records this approved responsive composition.
 
 ## Elevation & Depth
 
-Tonal layering and one-pixel borders define everyday depth. Cards and static panes have no drop shadows. Focused fields gain soft blue rings. Global navigation uses an inset boundary; the current status section uses a stronger inset boundary on a dark tonal fill. Status health color stays on the labeled state rather than changing the selection boundary. Dropdown overlays follow the supplied macOS glass reference: smoked charcoal glass with a subtle cool-to-neutral tint, 28px backdrop blur, 16px corners, a luminous boundary and inner top-edge highlight, and a deep soft offset shadow. Option highlights and separators use translucent white. Browsers without backdrop filtering retain the opaque dark surface. Shadows also belong to the mobile drawer and queued-result toasts. Their exact values are recorded in the sidecar.
+Tonal layering and one-pixel borders define everyday depth. Cards and static panes have no drop shadows. Focused fields gain soft blue rings. Global navigation uses an inset boundary. Dropdown overlays follow the supplied macOS glass reference: smoked charcoal glass with a subtle cool-to-neutral tint, 28px backdrop blur, 16px corners, a luminous boundary and inner top-edge highlight, and a deep soft offset shadow. Option highlights and separators use translucent white. Browsers without backdrop filtering retain the opaque dark surface. Shadows also belong to the mobile drawer and queued-result toasts. Their exact values are recorded in the sidecar.
 
 Background transitions run for 150ms with ease. The evidence sheet enters over 180ms. Streaming indicators pulse. Loading states show only the approved Falkon mark, centered within the loading region, with its three wing bars sweeping in sequence over 1.4 seconds. The mark retains its geometry; no placeholder cards, visible loading copy, or artificial delay appear. Accessible status labels remain available. Reduced-motion settings show a static mark. Keep motion tied to state changes.
 
@@ -195,7 +187,7 @@ Background transitions run for 150ms with ease. The evidence sheet enters over 1
 
 ## Shapes
 
-Controls share modest rounded corners. Navigation is slightly tighter, panels broader, and the composer broader still. The frontmatter records their distinct observed radii. Badges and scope indicators are pills; state dots and avatars are circles. Code chips and citation markers have compact corners. The user question has an asymmetric lower corner; answer prose has no enclosing bubble. Status section destinations share the control radius; the Semantic overlay destination is separated by spacing.
+Controls share modest rounded corners. Navigation is slightly tighter, panels broader, and the composer broader still. The frontmatter records their distinct observed radii. Badges and scope indicators are pills; state dots and avatars are circles. Code chips and citation markers have compact corners. The user question has an asymmetric lower corner; answer prose has no enclosing bubble.
 
 ## Components
 
@@ -209,7 +201,7 @@ Fields sit on the page background with a stronger border. Focus uses the muted n
 
 ### Navigation
 
-The selected destination uses a dark tonal fill, light text, and an inset boundary. Hover brightens the same plane. The Product switcher remains above primary navigation; Docs and Account remain at the foot. Chat history occupies a separate column and remains visible when global navigation collapses. On mobile, history and page navigation have independent drawers. Keyboard and drawer controls preserve the implemented collapse behavior.
+The selected destination uses a dark tonal fill, light text, and an inset boundary. Hover brightens the same plane. The Product switcher remains above primary navigation; Status, Chat, Connect, and Settings follow. Chat history occupies a separate column and remains visible when global navigation collapses. On mobile, history and page navigation have independent drawers. Keyboard and drawer controls preserve the implemented collapse behavior.
 
 ### Chips / Tags
 
@@ -217,11 +209,7 @@ Badges use a quiet outline, pill silhouette, and optional state dot. Semantic va
 
 ### Cards / Containers
 
-Setup cards use s1 with a subtle boundary. Status details sit directly in the workspace, with dividers between detail sections. Header, body, footer, and detail sections have distinct padding and dividers. No decorative shadows. Alerts use inline icon, title, and explanation; error and warning variants apply the corresponding soft fill.
-
-### Status section navigation
-
-Evidence Generation, Sync, Repositories, and Semantic overlay each show an icon, destination label, and labeled health. The Semantic overlay follows a larger spacing break. The current destination uses `aria-current="true"`, a dark tonal fill, light text, and an inset boundary; hover uses the same fill and text, and keyboard focus uses the shared blue outline. Active evidence and publication age sit at the foot. Selecting a destination updates the shared detail workspace. Mobile offers the same destinations and health labels in a native picker.
+Setup cards use s1 with a subtle boundary. Status and Connect sections sit directly in the page, with dividers between them. Header, body, footer, and detail sections have distinct padding and dividers. No decorative shadows. Alerts use inline icon, title, and explanation; error and warning variants apply the corresponding soft fill.
 
 ### Evidence
 
@@ -241,4 +229,4 @@ Source excerpts preserve repository, path, revision, and line range. Cited lines
 - Don't add decorative gradients, ornamental imagery, or invented brand accents.
 - Don't turn the status view into telemetry charts or metric tiles.
 - Don't style predicted hints as verified source evidence.
-- Don't present the synthetic local API or demo account as a real integration.
+- Don't ship synthetic data or a demo account in the app; mock data lives in tests only.

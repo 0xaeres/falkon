@@ -35,23 +35,21 @@ const providers: {
     id: "github-enterprise",
     name: "GitHub Enterprise",
     description: "Self-hosted",
-    host: "https://github.acme.internal",
+    host: "",
   },
 ];
-const steps = ["Connect", "Name", "Repositories", "Sources", "Queue"];
+const steps = ["Connect", "Name", "Repositories", "Review"];
 const titles = [
   "Connect a code host",
   "Name the Product",
   "Choose repositories",
-  "Other sources",
-  "Review and queue ingestion",
+  "Review and start indexing",
 ];
 const descriptions = [
   "Falkon reads repositories through this connection. Use a token with read-only access to the repositories you want.",
   "A Product groups the repositories Falkon answers questions about together. Name it the way your teams already refer to it.",
   "Falkon pins each repository at the head of its branch and builds evidence from what it contains.",
-  "This release builds evidence from repository contents only. These sources are planned; nothing is connected or read from them.",
-  "Falkon acquires each repository at its pinned revision, extracts evidence, and publishes the first Evidence Generation. You can follow it on the status page.",
+  "Falkon clones each repository, indexes it, and shows progress on the status page.",
 ];
 function slug(name: string) {
   return name
@@ -92,10 +90,10 @@ function Wizard({ edit }: { edit?: Product }) {
   );
   const [step, setStep] = useState(edit ? 2 : 0);
   const [provider, setProvider] = useState<Provider>(
-    (edit?.provider === "git" ? undefined : edit?.provider) ?? "github-enterprise", // config Products over plain git are never edited here
+    (edit?.provider === "git" ? undefined : edit?.provider) ?? "github", // config Products over plain git are never edited here
   );
   const [host, setHost] = useState(
-    edit ? `https://${edit.host}` : "https://github.acme.internal",
+    edit ? `https://${edit.host}` : "https://github.com",
   );
   const [token, setToken] = useState("");
   const [name, setName] = useState(edit?.name ?? "");
@@ -104,12 +102,7 @@ function Wizard({ edit }: { edit?: Product }) {
       ? Object.fromEntries(
           edit.repositories.map((repo) => [repo.id, repo.branch]),
         )
-      : {
-          "payments-api": "main",
-          "ledger-service": "main",
-          "checkout-web": "release/2026.10",
-          "payments-infra": "main",
-        },
+      : {},
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -165,7 +158,7 @@ function Wizard({ edit }: { edit?: Product }) {
       } finally {
         setBusy(false);
       }
-    } else if (step < 4) setStep(step + 1);
+    } else if (step < 3) setStep(step + 1);
     else {
       setBusy(true);
       try {
@@ -185,12 +178,12 @@ function Wizard({ edit }: { edit?: Product }) {
           });
         await mutate(keys.products);
         if (edit) await mutate(keys.product(id));
-        router.push(`/${id}/status?queued=1`);
+        router.push(`/${id}/status`);
       } catch (error) {
         setError(
           error instanceof Error
             ? error.message
-            : "Ingestion could not be queued. Your choices are kept; try again.",
+            : "Indexing could not be started. Your choices are kept; try again.",
         );
         setBusy(false);
       }
@@ -212,21 +205,20 @@ function Wizard({ edit }: { edit?: Product }) {
             <span className="crumb product-crumb">{name}</span>
           </>
         )}
-        <span className="sp" />
-        <Link href="/docs">Docs</Link>
-        <span className="avatar">SS</span>
       </header>
       <main id="main" className="setup-body">
         <div className={`setup-wrap ${step === 2 ? "wide" : ""}`}>
           <div className="mobile-stepper">
             <div>
-              <span>Step {step + 1} of 5</span>
+              <span>
+                Step {step + 1} of {steps.length}
+              </span>
               <span>{steps[step]}</span>
             </div>
             <progress
-              max={5}
+              max={steps.length}
               value={step + 1}
-              aria-label={`Step ${step + 1} of 5`}
+              aria-label={`Step ${step + 1} of ${steps.length}`}
             />
           </div>
           <ol className="stepper" aria-label="Product setup steps">
@@ -287,36 +279,30 @@ function Wizard({ edit }: { edit?: Product }) {
                       type="url"
                       required
                       value={host}
+                      placeholder="https://github.example.com"
                       onChange={(event) => setHost(event.target.value)}
                     />
                   </div>
-                  <fieldset className="connection-method">
-                    <legend>Connect with</legend>
-                    {
-                      <div className="field token-field">
-                        <label htmlFor="demo-token">
-                          Personal access token
-                        </label>
-                        <input
-                          className={`input ${error ? "err" : ""}`}
-                          id="demo-token"
-                          type="password"
-                          autoComplete="off"
-                          value={token}
-                          aria-invalid={!!error}
-                          aria-describedby="token-help"
-                          onChange={(event) => {
-                            setToken(event.target.value);
-                            setError("");
-                          }}
-                        />
-                        <p className="help" id="token-help">
-                          Read-only access is enough. Falkon stores the token
-                          encrypted.
-                        </p>
-                      </div>
-                    }
-                  </fieldset>
+                  <div className="field token-field">
+                    <label htmlFor="token">Personal access token</label>
+                    <input
+                      className={`input ${error ? "err" : ""}`}
+                      id="token"
+                      type="password"
+                      autoComplete="off"
+                      value={token}
+                      aria-invalid={!!error}
+                      aria-describedby="token-help"
+                      onChange={(event) => {
+                        setToken(event.target.value);
+                        setError("");
+                      }}
+                    />
+                    <p className="help" id="token-help">
+                      Read-only access is enough. Falkon stores the token
+                      encrypted.
+                    </p>
+                  </div>
                 </>
               )}
               {step === 1 && (
@@ -390,47 +376,6 @@ function Wizard({ edit }: { edit?: Product }) {
                   <LoadingMark label="Loading repositories" />
                 ))}
               {step === 3 && (
-                <>
-                  <div className="source-row included">
-                    <ProviderLogo provider={provider} />
-                    <div className="t">
-                      <strong>Repositories</strong>
-                      <p>
-                        {picked.length} repositories on {connection?.host}
-                      </p>
-                    </div>
-                    <Badge tone="green">
-                      <Check size={12} />
-                      Included
-                    </Badge>
-                  </div>
-                  {[
-                    {
-                      name: "Jira",
-                      id: "jira" as const,
-                      detail: "Issues and epics linked to this Product’s code",
-                    },
-                    {
-                      name: "Confluence",
-                      id: "confluence" as const,
-                      detail: "Design docs and runbooks for this Product",
-                    },
-                  ].map((source) => (
-                    <div className="source-row" key={source.id}>
-                      <ProviderLogo provider={source.id} />
-                      <div className="t">
-                        <strong>{source.name}</strong>
-                        <p>{source.detail}</p>
-                      </div>
-                      <Badge>
-                        <Clock size={12} />
-                        Not yet
-                      </Badge>
-                    </div>
-                  ))}
-                </>
-              )}
-              {step === 4 && (
                 <dl className="review-dl">
                   <dt>Product</dt>
                   <dd>
@@ -455,16 +400,14 @@ function Wizard({ edit }: { edit?: Product }) {
                       </div>
                     ))}
                   </dd>
-                  <dt>Other sources</dt>
-                  <dd className="muted">None</dd>
                 </dl>
               )}
               {error && (
                 <div className="setup-error">
                   <Alert tone="err">
                     <strong>
-                      {step === 4
-                        ? "Ingestion wasn’t queued."
+                      {step === 3
+                        ? "Indexing wasn’t started."
                         : "Connection not confirmed."}
                     </strong>
                     <p>{error}</p>
@@ -484,10 +427,10 @@ function Wizard({ edit }: { edit?: Product }) {
                     <Info size={16} className="amber" />
                     Each repository is read at the head of its chosen branch.
                   </>
-                ) : step === 4 ? (
+                ) : step === 3 ? (
                   <>
                     <Clock size={16} />
-                    Revisions are pinned when you queue.
+                    Revisions are pinned when indexing starts.
                   </>
                 ) : null}
               </span>
@@ -507,7 +450,7 @@ function Wizard({ edit }: { edit?: Product }) {
                 </Button>
               )}
               {edit && step === 2 && (
-                <Link href={`/${edit.id}/status`} className="btn ghost">
+                <Link href={`/${edit.id}/settings`} className="btn ghost">
                   Cancel
                 </Link>
               )}
@@ -519,10 +462,10 @@ function Wizard({ edit }: { edit?: Product }) {
               >
                 {step === 0
                   ? "Check connection"
-                  : step === 4
+                  : step === 3
                     ? edit
-                      ? "Queue replacement"
-                      : "Queue ingestion"
+                      ? "Save and re-index"
+                      : "Start indexing"
                     : "Continue"}
               </Button>
             </footer>

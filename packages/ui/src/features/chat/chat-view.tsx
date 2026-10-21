@@ -46,13 +46,6 @@ import { Markdown } from "./markdown";
 const EvidencePanel = dynamic(() => import("./evidence-panel"), {
   loading: () => <LoadingMark label="Loading evidence" />,
 });
-const examples = [
-  ["What calls POST /v1/refunds?", "Trace callers across repositories"],
-  ["Where are ledger entries written?", "Find every write path"],
-  ["How is the webhook signature checked?", "Read the verification code"],
-  ["What depends on CurrencyRounding?", "See potential impact of a change"],
-];
-
 function Prose({
   text,
   citations = {},
@@ -356,49 +349,24 @@ function ChatSession({
           {!status.generation ? (
             <div className="hello">
               <Mark size={40} />
-              <h1>{product.name} is still being built</h1>
-              <p>
-                The first Evidence Generation,{" "}
-                <span className="mono">g-0001</span>, is in the extract stage.
-                Chat opens when it publishes.
-              </p>
+              <h1>{product.name} is still being indexed</h1>
+              <p>Chat opens when the first index is ready.</p>
               <Link className="btn" href={`/${product.id}/status`}>
                 View status
               </Link>
             </div>
           ) : !answers.length && !pendingQuestion ? (
-            <>
-              <div className="hello">
-                <Mark size={40} />
-                <h1>Ask about {product.name}</h1>
-                <p>
-                  Answers cite the exact source in {product.repositories.length}{" "}
-                  repositories, pinned to{" "}
-                  <span className="mono">{status.generation}</span>.
-                </p>
-              </div>
-              {product.id === "payments-platform" ? (
-                <div className="examples">
-                  {examples.map(([prompt, description]) => (
-                    <button
-                      key={prompt}
-                      onClick={() => {
-                        setQuestion(prompt);
-                        composer.current?.focus();
-                      }}
-                    >
-                      <strong>{prompt}</strong>
-                      <span>{description}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <Alert>
-                  No example questions are available for this Product’s mock
-                  dataset. Ask a question to see an honest abstention.
-                </Alert>
-              )}
-            </>
+            <div className="hello">
+              <Mark size={40} />
+              <h1>Ask about {product.name}</h1>
+              <p>
+                Answers cite exact source lines in {product.repositories.length}{" "}
+                {product.repositories.length === 1
+                  ? "repository"
+                  : "repositories"}
+                .
+              </p>
+            </div>
           ) : null}
           {answers.map((answer, index) => (
             <article key={answer.id} className="answer-turn">
@@ -555,7 +523,7 @@ function ChatSession({
             placeholder={
               status.generation
                 ? `Ask about ${product.name}`
-                : "Chat opens when the first Evidence Generation is published"
+                : "Chat opens when indexing finishes"
             }
             value={question}
             maxLength={4000}

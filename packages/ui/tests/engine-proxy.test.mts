@@ -119,17 +119,6 @@ test("repositories GET maps connection, q and page to the engine route", async (
     );
 });
 
-test("with ENGINE_URL unset the mock answers", async () => {
-  delete process.env.ENGINE_URL;
-  const before = seen.length;
-  const res = await repositories.GET(
-    new Request("http://localhost/api/repositories?connection=x"),
-  );
-  assert.equal(res.status, 200);
-  assert.ok(((await res.json()) as unknown[]).length > 0);
-  assert.equal(seen.length, before);
-});
-
 const products = await import("../src/app/api/products/route");
 const product = await import("../src/app/api/products/[productId]/route");
 const status = await import("../src/app/api/products/[productId]/status/route");
@@ -233,7 +222,7 @@ test("thread routes forward to /ui/products/:slug/threads in engine mode", async
     ],
   );
   delete process.env.ENGINE_URL;
-  assert.equal((await threads.GET(get(), ctx("engine-made"))).status, 404);
+  assert.equal((await threads.GET(get(), ctx("alpha"))).status, 503);
 });
 
 test("chat messages: 503 without the engine; the engine's stream passes through unbuffered; its errors become { error }", async () => {
@@ -386,7 +375,8 @@ const productBody = {
 };
 
 test("server pages read Products from the engine: list, one, and not found as null", async () => {
-  const { engineProduct, engineProducts } = await import("../src/lib/api/engine");
+  const { engineProduct, engineProducts } =
+    await import("../src/lib/api/engine");
   process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
   reply = { status: 200, body: [productBody] };
   assert.equal((await engineProducts())[0]?.id, "fixtures");
@@ -398,7 +388,8 @@ test("server pages read Products from the engine: list, one, and not found as nu
 });
 
 test("without ENGINE_ADMIN_TOKEN the bearer is read from the admin.token file per request, so a rotation needs no restart", async () => {
-  const { mkdtempSync, mkdirSync, writeFileSync, renameSync } = await import("node:fs");
+  const { mkdtempSync, mkdirSync, writeFileSync, renameSync } =
+    await import("node:fs");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
   const dir = mkdtempSync(join(tmpdir(), "ui-admin-token-"));

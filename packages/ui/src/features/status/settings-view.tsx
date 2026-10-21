@@ -4,10 +4,10 @@ import { useWorkspace } from "@/components/layout/workspace-shell";
 export function SettingsView() {
   const { product } = useWorkspace();
   return (
-    <div className="settings-page">
+    <div className="page">
       <h1>Settings</h1>
       <p className="muted">{product.name}</p>
-      <section className="settings-section">
+      <section className="page-section">
         <h2>Product</h2>
         <dl className="review-dl">
           <dt>productId</dt>

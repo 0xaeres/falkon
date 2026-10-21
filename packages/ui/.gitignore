@@ -41,7 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 # Local synthetic state and QA captures
-.data/
 .impeccable/review/
 .scratch/**/qa-data-*.json
 *.tsbuildinfo

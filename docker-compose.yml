@@ -93,6 +93,9 @@ services:
       ENGINE_URL: http://api:3002
       DATA_DIR: /data
       ENGINE_ADMIN_TOKEN: ${ENGINE_ADMIN_TOKEN:-}
+      # The Connect page shows these; AUTH_MODE must match the api service.
+      FALKON_MCP_URL: ${FALKON_MCP_URL:-}
+      AUTH_MODE: ${AUTH_MODE:-none}
     volumes: [data:/data:ro]
     depends_on: [api]
     ports: ["127.0.0.1:3100:3000"]

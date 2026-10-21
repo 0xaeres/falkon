@@ -1,20 +1,12 @@
 import { Suspense, type ReactNode } from "react";
 import { WorkspaceShell } from "@/components/layout/workspace-shell";
 import { notFound } from "next/navigation";
-import { findProduct, MockError, transact } from "@/lib/mock/store";
-import { engineProduct, useEngine } from "@/lib/api/engine";
+import { engineProduct } from "@/lib/api/engine";
 import { LoadingMark } from "@/components/ui/primitives";
 type Props = { children: ReactNode; params: Promise<{ productId: string }> };
 async function Workspace({ children, params }: Props) {
   const { productId } = await params;
-  const initialProduct = useEngine()
-    ? ((await engineProduct(productId)) ?? notFound())
-    : await transact((db) => findProduct(db, productId)).catch(
-        (error: unknown) => {
-          if (error instanceof MockError && error.status === 404) notFound();
-          throw error;
-        },
-      );
+  const initialProduct = (await engineProduct(productId)) ?? notFound();
   return (
     <WorkspaceShell
       key={productId}

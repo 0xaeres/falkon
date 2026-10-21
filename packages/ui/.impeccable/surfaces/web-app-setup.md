@@ -12,7 +12,7 @@ Implemented in `src/features/setup/setup-wizard.tsx` and `src/features/setup/rep
 
 ## Scope and mode
 
-Operate. A product owner registers a Product and queues its first ingestion in five steps: connect code host, name the Product, choose repositories, other sources, review and queue. Setup ends when ingestion is queued; the owner lands on the status dashboard.
+Operate. A product owner registers a Product and queues its first ingestion in four steps: connect code host, name the Product, choose repositories, review and start indexing. Setup ends when indexing is queued; the owner lands on the status dashboard.
 
 ## Approved composition
 
@@ -24,9 +24,9 @@ THESIS: The developer-tool onboarding wizard played straight at Vercel, Linear, 
 
 OWN-WORLD: Near-black ground `#0A0A0A`, surfaces `#111113`/`#18181B`, hairline borders `#27272A`/`#3F3F46`, text `#FAFAFA`/`#A1A1AA`/`#8B8B93`. White primary button, blue `#3B82F6` for focus and selection only, amber for text-only evidence, red for errors, green for confirmed. Geist for UI, Geist Mono for revisions and productId. Real brand logos on white tiles. Falkon mark from `brand/`.
 
-STORY: The owner connects a host, names the Product and sees its permanent productId, picks repositories and branches knowing which get text evidence only, sees Jira and Confluence honestly marked Not yet, and queues ingestion knowing the build continues on the status page.
+STORY: The owner connects a host, names the Product and sees its permanent productId, picks repositories and branches knowing which get text evidence only, and starts indexing knowing the build continues on the status page.
 
-FIRST VIEWPORT: 56px top bar with mark, breadcrumb, Docs, avatar. Centered 760px column (880px for repositories): horizontal five-step stepper, then one card with title, one-line explanation, body, and a footer holding a hint on the left and Back plus a single white primary action on the right.
+FIRST VIEWPORT: 56px top bar with mark and breadcrumb. Centered 760px column (880px for repositories): horizontal four-step stepper, then one card with title, one-line explanation, body, and a footer holding a hint on the left and Back plus a single white primary action on the right.
 
 FORM: Category standard (canon), chosen by the user over the roll's assigned direction; seed key fc4ccf57.
 

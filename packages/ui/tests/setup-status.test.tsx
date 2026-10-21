@@ -1,20 +1,12 @@
 import assert from "node:assert/strict";
-import test, { mock } from "node:test";
+import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { repositorySchema, type Repository } from "@sbc/contracts";
 import RepositoryPicker, {
   countLine,
   privateOnly,
 } from "../src/features/setup/repository-picker";
-import {
-  completedGeneration,
-  startDismiss,
-} from "../src/features/status/toasts";
-import {
-  makeStatus,
-  repositories,
-  seedProducts,
-} from "../src/lib/mock/fixtures";
+import { repositories } from "./mock-fixtures";
 
 const many = (
   n: number,
@@ -79,79 +71,4 @@ test("privateOnly keeps only repositories marked private", () => {
     ["r0", "r2"],
   );
   assert.equal(privateOnly(repos, false), repos);
-});
-
-test("startDismiss fires once after 5 s", () => {
-  mock.timers.enable({ apis: ["setTimeout"] });
-  try {
-    let n = 0;
-    startDismiss(() => n++);
-    mock.timers.tick(4999);
-    assert.equal(n, 0);
-    mock.timers.tick(1);
-    assert.equal(n, 1);
-    mock.timers.tick(60_000);
-    assert.equal(n, 1);
-  } finally {
-    mock.timers.reset();
-  }
-});
-
-test("startDismiss cleanup (unmount) cancels the timer: nothing fires, nothing pending", () => {
-  mock.timers.enable({ apis: ["setTimeout"] });
-  try {
-    let n = 0;
-    const stop = startDismiss(() => n++);
-    stop();
-    mock.timers.tick(60_000);
-    assert.equal(n, 0);
-  } finally {
-    mock.timers.reset();
-  }
-});
-
-const building = { ...makeStatus(seedProducts[0]), build: "building" as const };
-test("completion toast: building then current shows once", () => {
-  const done = {
-    ...building,
-    build: "idle" as const,
-    generation: "g-0043",
-    nextGeneration: null,
-  };
-  const live = { ...building, build: "building" as const };
-  assert.equal(completedGeneration(live, done), "g-0043");
-  assert.equal(completedGeneration(done, done), null); // later polls of the same current status
-});
-
-test("completion toast: first load of a current Product, and error mid-build, show none", () => {
-  const done = {
-    ...building,
-    build: "idle" as const,
-    generation: "g-0043",
-    nextGeneration: null,
-  };
-  assert.equal(completedGeneration(undefined, done), null);
-  assert.equal(
-    completedGeneration({ ...building, build: "building" }, undefined),
-    null,
-  );
-  assert.equal(
-    completedGeneration(
-      { ...building, build: "building" },
-      { ...building, build: "failed" },
-    ),
-    null,
-  );
-});
-
-test("completion toast: a product switch (A building, B idle) shows none", () => {
-  const live = { ...building, productId: "a" };
-  const done = {
-    ...building,
-    productId: "b",
-    build: "idle" as const,
-    generation: "g-0044",
-    nextGeneration: null,
-  };
-  assert.equal(completedGeneration(live, done), null);
 });

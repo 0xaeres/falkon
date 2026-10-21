@@ -16,9 +16,9 @@ import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import {
   Check,
   ChevronDown,
-  FileText,
   History,
   Layers,
+  Plug,
   Menu,
   MessageCircle,
   PanelRight,
@@ -107,7 +107,9 @@ export function WorkspaceShell({
     ? "Chat"
     : pathname.endsWith("/settings")
       ? "Settings"
-      : "Status";
+      : pathname.endsWith("/connect")
+        ? "Connect"
+        : "Status";
   function toggleSidebar() {
     const collapsed =
       mode === "collapsed" || (mode === "auto" && window.innerWidth < 1280);
@@ -181,7 +183,6 @@ export function WorkspaceShell({
       : status?.build === "building"
         ? "blue"
         : "green";
-  const avatar = <span className="avatar">SS</span>;
   const navigation = (mobile = false) => (
     <nav
       className={`side ${mobile ? "mobile-side" : ""}`}
@@ -213,9 +214,7 @@ export function WorkspaceShell({
       </div>
       <Dropdown.Root>
         <Dropdown.Trigger className="pswitch" aria-label="Switch Product">
-          <span className={`pav product-${product.id}`}>
-            {product.initials}
-          </span>
+          <span className="pav">{product.initials}</span>
           <span className="pn">{product.name}</span>
           <ChevronDown size={14} className="hide-collapsed" />
         </Dropdown.Trigger>
@@ -236,9 +235,7 @@ export function WorkspaceShell({
                   router.push(`/${item.id}/${active.toLowerCase()}`);
                 }}
               >
-                <span className={`pav product-${item.id}`}>
-                  {item.initials}
-                </span>
+                <span className="pav">{item.initials}</span>
                 <span className="product-menu-name">{item.name}</span>
                 <span
                   className={`pdot ${item.scenario === "current" ? "green" : item.scenario === "updating" ? "blue" : "amber"}`}
@@ -264,6 +261,7 @@ export function WorkspaceShell({
         {[
           { name: "Status", icon: Layers },
           { name: "Chat", icon: MessageCircle },
+          { name: "Connect", icon: Plug },
           { name: "Settings", icon: Settings },
         ].map(({ name, icon: Icon }) => (
           <Link
@@ -280,34 +278,6 @@ export function WorkspaceShell({
             {name === "Status" && <span className={`pdot ${dot}`} />}
           </Link>
         ))}
-      </div>
-      <div className="sidebar-space" />
-      <div className="sfoot">
-        <Link className="nv" href="/docs" aria-label="Docs" title="Docs">
-          <FileText size={17} />
-          <span className="lb">Docs</span>
-        </Link>
-        <Dropdown.Root>
-          <Dropdown.Trigger className="nv" aria-label="Account">
-            {avatar}
-            <span className="lb">Account</span>
-          </Dropdown.Trigger>
-          <Dropdown.Portal>
-            <Dropdown.Content
-              className="product-menu account-menu"
-              side="top"
-              align="start"
-            >
-              <Dropdown.Label className="dropdown-label">
-                Local demo account
-              </Dropdown.Label>
-              <p>
-                All Products and source evidence are synthetic. No identity
-                provider is connected.
-              </p>
-            </Dropdown.Content>
-          </Dropdown.Portal>
-        </Dropdown.Root>
       </div>
     </nav>
   );
@@ -412,7 +382,8 @@ export function WorkspaceShell({
                 Product navigation
               </Dialog.Title>
               <Dialog.Description className="sr-only">
-                Switch Product or navigate to status, chat, and settings.
+                Switch Product or navigate to status, chat, connect, and
+                settings.
               </Dialog.Description>
               {navigation(true)}
             </Dialog.Content>

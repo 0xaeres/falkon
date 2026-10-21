@@ -4,9 +4,6 @@ import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { productSchema, type Product } from "@sbc/contracts";
 
-/** True when the UI talks to the engine; unset, the routes keep serving the local mock. */
-export const useEngine = () => !!process.env.ENGINE_URL;
-
 /**
  * Await first in a route that reads ENGINE_URL: without it `next build` prerenders the mock answer into the image.
  * Outside a Next request (unit tests) connection() throws; that case is ignored.
@@ -19,6 +16,9 @@ export async function atRequestTime() {
   }
 }
 
+const notSet = () =>
+  Response.json({ error: "ENGINE_URL is not set" }, { status: 503 });
+
 let cached: { key: string; token: string } | undefined;
 /**
  * ENGINE_ADMIN_TOKEN wins; else the api's `${DATA_DIR||/data}/secrets/admin.token`, read per request and re-read when its
@@ -30,7 +30,8 @@ function adminToken() {
   try {
     const st = statSync(file);
     const key = `${file}:${st.mtimeMs}:${st.ino}:${st.size}`;
-    if (cached?.key !== key) cached = { key, token: readFileSync(file, "utf8").trim() };
+    if (cached?.key !== key)
+      cached = { key, token: readFileSync(file, "utf8").trim() };
     return cached.token;
   } catch {
     return "";
@@ -45,6 +46,7 @@ export async function forward(
   path: string,
   init: { method?: string; body?: unknown; stream?: AbortSignal } = {},
 ): Promise<Response> {
+  if (!process.env.ENGINE_URL) return notSet();
   let res: Response;
   try {
     res = await fetch(`${process.env.ENGINE_URL}${path}`, {
@@ -91,15 +93,20 @@ export async function forward(
   );
 }
 
-/** Server-rendered pages read Products straight from the engine (the mock store has none of them). Null = not found. */
+/** Server-rendered pages read Products straight from the engine. Null = not found. */
+const failure = async (res: Response, fallback: string) =>
+  new Error(
+    ((await res.json().catch(() => null)) as { error?: string } | null)
+      ?.error ?? fallback,
+  );
 export async function engineProducts(): Promise<Product[]> {
   const res = await forward("/ui/products");
-  if (!res.ok) throw new Error("engine products unavailable");
+  if (!res.ok) throw await failure(res, "engine products unavailable");
   return productSchema.array().parse(await res.json());
 }
 export async function engineProduct(id: string): Promise<Product | null> {
   const res = await forward(`/ui/products/${encodeURIComponent(id)}`);
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error("engine product unavailable");
+  if (!res.ok) throw await failure(res, "engine product unavailable");
   return productSchema.parse(await res.json());
 }
