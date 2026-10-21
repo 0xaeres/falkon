@@ -627,3 +627,5 @@ Adversarial cases the reviewer checks: S38 a Product whose repositories are all 
 ### Autonomy limits (cycle 10)
 
 May decide alone: UI copy and layout within `DESIGN.md`, what the critique removes, prompt wording for D68, hint wording for D67, the converter's warning text, one fix round per slice. Must stop at gate 2 for: a new dependency, a Prisma schema change, any contract snapshot change beyond the 3 `outputs.json` hint lines, any change to `tests/golden/expected.json`, a change to eval data, gold or the D25 rule, a new feature beyond the Connect page, model spend beyond the question-2 reruns, any push or PR. Budget: 1.5M subagent tokens, 4 hours wall clock.
+
+Probe for cycle 11 (ops-smoke on `c788fbf`, 2026-10-21): every functional step passes (cold start, indexing, api, registry, oversized file, golden baseline, stability and api, resync, delete, teardown); memory FAIL at 665.67 MB against the 654 MB ceiling (545 MB +20%), 11.7 MB over. The memory decision for S15 starts from this number.
