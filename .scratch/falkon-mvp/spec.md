@@ -587,3 +587,7 @@ Cycle tip `cf57cc2`: typecheck green; 461 tests pass, 0 fail across 8 packages (
 Gate 3 on Haiku (D57, rule D25, n=80 against the recorded v6 Haiku runs): **PASS**, recall +0.090 [0.040, 0.149], wins 17, losses 2; precision +0.012; spend $0.62. One dev run was first flagged by the traversal rule (a `Read` of its own work dir through `..`) and rerun; with the original restored the verdict is identical. Details in `baseline.md`.
 
 UI-Ask smoke (D57), after the human topped up the model provider: before (image from `bca8673`) and after (cycle tip) on the same corpus, 15 questions. Grounded or partial 10/10 both; failed turns 0 both; dropped references 0 before, 1 after (question 2, a `README.md` reference the agent never read). Diagnostic reruns of that question show the same unread-README drops on the base image too, so the miss is run-to-run variation, not the rewrite; strictly the citation part of the rule is worse by one reference, for the human to accept or not. Details in `baseline.md`.
+
+## Gate 2 decision, cycle 9 (human, 2026-10-21: approve)
+
+Approved as built: S34, S35 and S36 kept; the UI-Ask smoke's one-reference miss (question 2) accepted as run-to-run variation. Open for cycle 10 (from the digest, not decided): rewording the two contract-pinned truncation hints (originality hits), trimming unused schema keys, a published schema URL, and the unread-file citation drop seen on both images. The loop edit and project lesson were not accepted (no `+loop`, no `+project`). Cycle 10: `@sbc/*` to `@falkon/*` and DB names, then S15.
