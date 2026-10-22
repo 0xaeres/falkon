@@ -1,0 +1,14 @@
+{
+ "number": 834,
+ "url": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/834",
+ "title": "(fix) O3-6045: Use WHO girls' height-for-age reference and cover month after age 5",
+ "mergedAt": "2026-10-07T20:13:58Z",
+ "mergeCommit": "129c1f7fd78a83d1b8958ae6dcaa7fe7b51eb143",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\n`hfa_girls_5_above.json` in `src/zscore/` was a byte-for-byte copy of the boys' table, causing girls aged 5 to 17 to receive height-for-age z-scores calculated against boys' heights.\r\n\r\nAdditionally, in the month after turning 5 (between day 1,826 and month 61), `getHeightForAgeRef` and `getBmiForAgeRef` switched to the 5-to-19 year tables upon age 5, but because those tables start at month 61, the lookup for month 60 returned `null`.\r\n\r\nThis PR:\r\n1. Replaces `src/zscore/hfa_girls_5_above.json` with the table generated from WHO Growth Reference 2007 girls' height-for-age data (from `openmrs-esm-patient-chart#3753`).\r\n2. Updates `getHeightForAgeRef` in `zscore-service.ts` to use the under-5 table through day 1,856 (where that table ends), and the 5 to 19 year table from month 61 onwards.\r\n3. Updates `getBmiForAgeRef` to use the 5 to 19 year table from month 61 onwards after day 1,856.\r\n4. Adds tests confirming each girls' table differs from the boys' table, spot-checks medians against published WHO values, verifies transitions around age 5, and confirms that a 15-year-old girl at 160 cm receives `-1` against the girls' reference where the boys' table gave `-2`.\r\n\r\n## Screenshots\r\n\r\nN/A (underlying z-score reference table and calculation logic fix)\r\n\r\n## Related Issue\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-6045\r\n\r\n## Other\r\n\r\nReuses the WHO girls' 5-to-19 table generated and verified in openmrs-esm-patient-chart#3753.",
+ "files": [
+  "src/utils/common-expression-helpers.test.ts",
+  "src/utils/zscore-service.test.ts",
+  "src/utils/zscore-service.ts",
+  "src/zscore/hfa_girls_5_above.json"
+ ]
+}

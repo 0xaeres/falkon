@@ -1,0 +1,22 @@
+{
+ "number": 6379,
+ "url": "https://github.com/openmrs/openmrs-core/pull/6379",
+ "title": "TRUNK-6680: Restore lazy fetch semantics after JPA migration",
+ "mergedAt": "2026-08-14T15:07:24Z",
+ "mergeCommit": "05bc4e4dc32c4654aba49cc76b9252def11b06c2",
+ "body": "## Description of what I changed\r\n\r\n- Restored lazy fetching for associations that unintentionally became eager during the hbm.xml to JPA annotation migration.\r\n- Added regression tests to verify that key associations remain lazily initialized until accessed.\r\n\r\n## Issue I worked on\r\n\r\nTRUNK-6680\r\n\r\nhttps://issues.openmrs.org/browse/TRUNK-6680",
+ "files": [
+  "api/src/main/java/org/openmrs/ConceptAnswer.java",
+  "api/src/main/java/org/openmrs/DrugIngredient.java",
+  "api/src/main/java/org/openmrs/DrugReferenceMap.java",
+  "api/src/main/java/org/openmrs/FormResource.java",
+  "api/src/main/java/org/openmrs/Location.java",
+  "api/src/main/java/org/openmrs/OrderType.java",
+  "api/src/main/java/org/openmrs/PatientState.java",
+  "api/src/main/java/org/openmrs/PersonAddress.java",
+  "api/src/main/java/org/openmrs/PersonAttributeType.java",
+  "api/src/main/java/org/openmrs/Relationship.java",
+  "api/src/test/java/org/openmrs/ConceptTest.java",
+  "api/src/test/java/org/openmrs/api/LocationServiceTest.java"
+ ]
+}

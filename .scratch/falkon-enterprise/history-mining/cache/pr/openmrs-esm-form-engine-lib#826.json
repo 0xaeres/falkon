@@ -1,0 +1,14 @@
+{
+ "number": 826,
+ "url": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/826",
+ "title": "(fix) O3-6027: Clear order and diagnosis submissions on every write",
+ "mergedAt": "2026-10-05T11:52:42Z",
+ "mergeCommit": "0e1edc234479890d45bc09e67b2ee25befc1c803",
+ "body": "## Requirements\n\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\n- [x] My work includes tests or is validated by existing tests.\n\n## Summary\n\nThe orders and diagnosis adapters now clear the field's submission at the start of `transformFieldValue`, the same way `ObsAdapter` already does.\n\nBefore this, a value from an earlier write stayed on the field after it was cleared, because `gracefullySetSubmission` only sets values and never clears them. On a new encounter, if you selected an order or diagnosis and then cleared the field, it still went out with the encounter. On an edited encounter, if you swapped a saved order or diagnosis for another value and then cleared the field, the swapped value still went out. For orders that meant a `NEW` order alongside the void. For diagnoses it meant the saved diagnosis got edited to the swapped concept instead of being voided. Now nothing is submitted for a new encounter, and only the void goes out for an edited one.\n\n`editOrder` no longer calls `clearSubmission` itself when the value matches the saved order, since the submission is already empty by then.\n\n## Screenshots\n\n## Related Issue\n\n## Other\n\nI found this while working on #822. It's the reason a swap followed by a clear still keeps the saved order or diagnosis when the field is hidden there. With both merged, that case voids it like any other cleared value.\n",
+ "files": [
+  "src/adapters/encounter-diagnosis-adapter.test.ts",
+  "src/adapters/encounter-diagnosis-adapter.ts",
+  "src/adapters/orders-adapter.ts",
+  "src/processors/encounter/encounter-payloads.golden.test.ts"
+ ]
+}

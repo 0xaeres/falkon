@@ -1,0 +1,12 @@
+{
+ "number": 514,
+ "url": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/514",
+ "title": "(fix) O3-5562: Edit Items panel fields don't update when selecting a different stock item",
+ "mergedAt": "2026-05-05T09:40:52Z",
+ "mergeCommit": "d9e7c5c49d29b5b1dc37951adb3c2887916e4f48",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [x] My work conforms to the [OpenMRS 3.0 Styleguide](https://om.rs/styleguide) and [design documentation](https://om.rs/o3ui).\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nSelecting a different stock item while the edit panel was open updated the workspace title but left the form fields showing the previously selected item's values.\r\n\r\nRoot cause: `StockItemDetails` initializes its form via `useForm({ defaultValues: stockItem ?? {} })`. React Hook Form only reads `defaultValues` on initial mount, so subsequent changes to the `stockItem` prop do not flow into the form fields.\r\n\r\nFix: add `key={stockItem?.uuid}` to `<StockItemDetails>` in `AddEditStockItem`. When the stock item changes, the key changes, React unmounts and remounts the component, and `useForm` re-initializes from the new `defaultValues`.\r\n\r\nThe other tabs in the same workspace (`PackagingUnits`, `Transactions`, etc.) do not have this pattern, since they either use SWR keyed on `stockItemUuid` or sync local state via a `useEffect`. So the fix is scoped to the one component that needs it.\r\n\r\n## Screenshots\r\n\r\n[Screencast from 2026-03-28 11-36-03.webm](https://github.com/user-attachments/assets/d5da55d8-835d-46ed-9491-dfcb6879766d)\r\n\r\n## Related Issue\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5562\r\n\r\n## Other\r\n",
+ "files": [
+  "src/stock-items/add-stock-item/add-stock-item.component.tsx",
+  "src/stock-items/add-stock-item/add-stock-item.integration.test.tsx"
+ ]
+}

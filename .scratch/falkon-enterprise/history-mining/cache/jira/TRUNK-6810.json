@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6810",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6810",
+ "summary": "Stop API cache fills from invalidating other nodes' entries in cluster mode",
+ "status": "Closed",
+ "created": "2026-09-26T00:32:33.314+1000",
+ "resolved": "2026-10-03T02:33:42.595+1000",
+ "description": "Background\nWith cache.type=cluster, the API caches are Infinispan invalidation caches. Spring's Cache.put is a plain Infinispan put, and in invalidation mode a plain put sends an invalidation of that key to every other node. As a result, @Cacheable API caches (e.g. userSearchLocales, conceptIdsByMapping, serializerWhiteListTypes) and RolePrivilegeCache knock each other's entries out whenever the same key is read on more than one node, so clustered installs see far fewer hits, and each cache fill also costs a round trip to the other nodes. This has been confirmed with a two-node loopback cluster: a Spring put on node 2 removes node 1's entry.\nRequested change\nWrite values read from the database with putForExternalRead, which does not invalidate other nodes' copies, while evictions continue to invalidate across the cluster. For @Cacheable caches this means the caches handed out by apiCacheManager should put via putForExternalRead. GlobalPropertyCache (TRUNK-6707) already does this.\nAcceptance criteria\nIn cluster mode, filling an API cache entry on one node does not remove that entry on other nodes.\n\nEvictions and clears still remove entries on every node.\n\nAutomated tests cover both, for @Cacheable caches and RolePrivilegeCache, using a two-node in-JVM cluster."
+}

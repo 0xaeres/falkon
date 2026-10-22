@@ -1,0 +1,9 @@
+{
+ "key": "O3-6028",
+ "url": "https://openmrs.atlassian.net/browse/O3-6028",
+ "summary": "Login location picker ignores the configured number of locations to load",
+ "status": "Done",
+ "created": "2026-10-01T22:47:01.696+1000",
+ "resolved": null,
+ "description": "Description\nThe login app has two settings for the location picker on the login screen: one to control how many locations are fetched at a time (chooseLocation.locationsPerRequest) and one to control how many are shown (chooseLocation.numberToShow). Neither setting actually does anything. The picker always fetches 50 locations per request regardless of what an implementation configures, so changing these values in a distro config has no effect.\nnumberToShow is left over from an older fixed-length location list and no longer has a meaningful equivalent now that the picker uses infinite scroll, so keeping it in the config only misleads implementers.\nAcceptance criteria\nWhen chooseLocation.locationsPerRequest is set in config, the login location picker uses that value for each batch of locations it fetches and for when it loads more on scroll.\n\nWhen it isn't set, the picker keeps its current default behaviour.\n\nchooseLocation.numberToShow is no longer offered as a config option. Implementations that still set it see at most a standard \"unknown config key\" warning, with no other change in behaviour.\n\nNo visible UI changes to the login screen.\n\nCovered by a test that verifies the configured value reaches the location picker."
+}

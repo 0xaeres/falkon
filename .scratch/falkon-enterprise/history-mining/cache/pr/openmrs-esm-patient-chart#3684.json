@@ -1,0 +1,15 @@
+{
+ "number": 3684,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3684",
+ "title": "(fix) O3-5990: Remove saved visit-note images safely",
+ "mergedAt": "2026-09-23T08:32:39Z",
+ "mergeCommit": "52ad5642b88661b759f5e130f12e1d73a7fac66a",
+ "body": "## Requirements\n\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\n- [x] My work includes tests or is validated by existing tests.\n\n## Summary\n\nSaved images on a visit note currently have no remove action. This diff adds removal as a draft change: Remove marks the image for removal, Undo restores it, and Discard cancels pending removals. Save and close applies the changes. Pending images are dimmed, with a removal label and a separate Undo button.\n\nIt voids only the image through `DELETE /obs/{uuid}`, preserving the note encounter and its diagnoses. The attachment endpoint can also void an encounter when its last observation is removed, so it is unsuitable here. Removing images alone does not rewrite the note or its diagnoses.\n\nIf a removal fails, the editor stays open and retries skip images already removed successfully. Attachment lists and encounter data refresh after successful removals. Since requests are separate, a failed save can leave some changes saved; the error message makes that clear.\n\n## Screenshots\n\nhttps://github.com/user-attachments/assets/7898ab51-bd4e-41b0-a22c-7a4c5baedb80\n\n## Related Issue\n\nhttps://openmrs.atlassian.net/browse/O3-5990\n\n## Other\n\nTests cover staging, Undo, Discard, saving image removals without rewriting the note, retrying without repeating successful removals, and stable visit-context header state. Deletion from the separate Attachments page is unchanged.\n",
+ "files": [
+  "packages/esm-patient-notes-app/src/notes/visit-notes-form.component.tsx",
+  "packages/esm-patient-notes-app/src/notes/visit-notes-form.scss",
+  "packages/esm-patient-notes-app/src/notes/visit-notes-form.test.tsx",
+  "packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts",
+  "packages/esm-patient-notes-app/translations/en.json"
+ ]
+}

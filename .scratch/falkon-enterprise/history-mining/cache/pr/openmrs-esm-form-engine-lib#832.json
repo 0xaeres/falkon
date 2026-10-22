@@ -1,0 +1,12 @@
+{
+ "number": 832,
+ "url": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/832",
+ "title": "(fix) O3-6048: Accept numeric string height in calcWeightForHeightZscore",
+ "mergedAt": "2026-10-07T11:56:39Z",
+ "mergeCommit": "6a5b489b47c58f526f9988624c0bf349ec5b75ad",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\n`calcWeightForHeightZscore` called `height.toFixed(1)`, which throws when the height reaches the helper as a string (a string `defaultValue`, or `rendering: \"text\"`), leaving the z-score field empty.\r\n\r\nThe helper now converts the height with `Number()` first and uses the converted value for the missing-value guard, the 45-110 cm range check and the rounding. Invalid values such as `\"abc\"`, `\"\"` and `\"0\"` return `null`.\r\n\r\nAdded tests for string heights. The cases that should return a z-score fail on current main with `height.toFixed is not a function` and pass with this change.\r\n\r\n## Screenshots\r\n\r\n## Related Issue\r\n\r\nhttps://issues.openmrs.org/browse/O3-6048\r\n\r\n## Other\r\n\r\nRelated: O3-6025, O3-6046. The tests call the helper directly rather than through a rendered form. I can add a runner-level case if reviewers want one.",
+ "files": [
+  "src/utils/common-expression-helpers.test.ts",
+  "src/utils/common-expression-helpers.ts"
+ ]
+}

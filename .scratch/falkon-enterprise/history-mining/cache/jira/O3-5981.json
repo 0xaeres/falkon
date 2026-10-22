@@ -1,0 +1,9 @@
+{
+ "key": "O3-5981",
+ "url": "https://openmrs.atlassian.net/browse/O3-5981",
+ "summary": "Unhandled rejections pass a raw Error into the toast description, which React cannot render",
+ "status": "Done",
+ "created": "2026-09-15T03:57:37.187+1000",
+ "resolved": null,
+ "description": "Background\nesm-error-handling's global handlers pass their raw argument straight into the toast:\nwindow.onunhandledrejection = function (event: PromiseRejectionEvent) {\n  dispatchToastShown({ description: event.reason ?? '\u2026', kind: 'error', title: 'Error' });\n};\nevent.reason is normally an Error, and it reaches the toast's subtitle as an object. React cannot render an object as a child, so the toast fails to render and takes its subtree down with it \u2014 meaning the user sees nothing at all for an error that was meant to be surfaced to them.\nObserved while running the Angular form engine without zone.js, where a previously swallowed rejection became a real unhandledrejection. The console showed Invalid prop 'subtitle' supplied to 'ActionableNotification', expected a ReactNode followed by Objects are not valid as a React child (found: [object Error]).\nwindow.onerror alongside it takes the same shape and should be checked for the same problem.\nRequested change\nCoerce whatever arrives to a string before it reaches the toast \u2014 the module already has ensureErrorObject(), whose .message is the natural choice \u2014 so that any rejection reason produces a readable notification instead of an unrenderable one.\nAcceptance criteria\nAn unhandled rejection whose reason is an Error produces a toast showing its message.\n\nThe same holds for a reason that is a string, a plain object, null or undefined.\n\nNo React rendering error is produced in any of those cases, and the toast subtree survives.\n\nwindow.onerror is covered by the same handling.\n\nAutomated tests cover each reason shape above."
+}

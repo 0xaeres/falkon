@@ -1,0 +1,13 @@
+{
+ "number": 428,
+ "url": "https://github.com/openmrs/openmrs-esm-dispensing-app/pull/428",
+ "title": "(fix) O3-4692: Display \"Dispensed\" status in Prescription Details section",
+ "mergedAt": "2026-05-20T15:35:41Z",
+ "mergeCommit": "42a5fbf57740d4eba10e2318f4a7c5fa1c095520",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done, including the ticket number if there is a ticket.\r\n- [x]  My work conforms to the [**OpenMRS 3.0 Styleguide**](https://om.rs/styleguide) and [**design documentation**](https://zeroheight.com/23a080e38/p/880723-introduction).\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\nThis PR implements the display of \"Dispensed\" status in the Prescription Details section to ensure consistency with other statuses like \"Cancelled\" and \"Paused\". Previously, the \"Dispensed\" status only appeared in the History and Comments section, which created an inconsistent user experience.\r\n\r\n## Screenshots\r\nhttps://github.com/user-attachments/assets/8f5bd5f3-a018-42b9-8272-1ad43f21fadf\r\n\r\n## Related Issue\r\nhttps://openmrs.atlassian.net/browse/O3-4692\r\n\r\n## Other\r\nN/A\r\n",
+ "files": [
+  "e2e/specs/dispense-medication.spec.ts",
+  "src/prescriptions/prescription-details.component.tsx",
+  "src/prescriptions/prescriptions-table.component.tsx"
+ ]
+}

@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6826",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6826",
+ "summary": "Request paths with a trailing slash find no handler on core 3.0",
+ "status": "Ready for Work",
+ "created": "2026-10-12T05:56:53.311+1100",
+ "resolved": null,
+ "description": "On core 3.0, a URL with a trailing slash no longer reaches the handler for the same URL without it.\nMeasured on the TRUNK-6824 PR head (https://github.com/openmrs/openmrs-core/pull/6673) under jetty:run, with only the REST module installed, authenticated as admin:\nRequest\nResult\n/openmrs/ws/rest/v1/session\n200\n/openmrs/ws/rest/v1/session/\n404\n/openmrs/ws/rest/v1/location/\n404\n/openmrs/ws/fhir2/R4/metadata/\n404 \"No endpoint GET /openmrs/ws/fhir2/R4/metadata/.\"\nOn Tomcat 11 with the RefApp module set, /openmrs/ws/rest/v1/session/ answered 500 instead (seen while testing TRUNK-6824, not yet traced). Something in that setup turns the missing handler into a 500.\nThe likely cause is the Spring upgrade. 2.8.x is on Spring 5.3.30, where @RequestMapping matched a trailing slash by default. Master is on Spring 7.0.9, which no longer does. I haven't run 2.x to confirm it serves these URLs.\nThis is separate from TRUNK-6824 (repeated slashes). Since that fix, a trailing // collapses to / and gets this same result, where the firewall used to answer 400.\nTo do:\nFind where the 500 on Tomcat with the RefApp modules comes from.\n\nDecide whether 3.0 should accept a trailing slash again, for example with Spring's UrlHandlerFilter on /ws/*, or keep refusing it with a clean 404."
+}

@@ -1,0 +1,8 @@
+questions: 40 (unique ids 40)
+kind a: 16 (dev 10, hidden 6)
+kind b: 12 (dev 7, hidden 5)
+kind c: 12 (dev 7, hidden 5)
+split: dev 24, hidden 16
+gold units: 62 change, 28 ticket, 22 span; subject-overlap checks: 28; tickets checked live
+repositories: openmrs-core (pin 2026-10-13, window from 2026-04-13); openmrs-module-webservices.rest (pin 2026-10-14, window from 2026-04-14); openmrs-esm-core (pin 2026-10-10, window from 2026-04-10); openmrs-esm-patient-chart (pin 2026-10-15, window from 2026-04-15); openmrs-esm-patient-management (pin 2026-10-15, window from 2026-04-15); openmrs-esm-form-engine-lib (pin 2026-10-15, window from 2026-04-15); openmrs-esm-billing-app (pin 2026-10-15, window from 2026-04-15); openmrs-esm-dispensing-app (pin 2026-10-13, window from 2026-04-13); openmrs-esm-stock-management-app (pin 2026-10-13, window from 2026-04-13); openmrs-esm-admin-tools (pin 2026-10-15, window from 2026-04-15)
+violations: 0

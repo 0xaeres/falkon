@@ -1,0 +1,12 @@
+{
+ "number": 6655,
+ "url": "https://github.com/openmrs/openmrs-core/pull/6655",
+ "title": "TRUNK-6820: Write the DWR document type when creating dwr-modules.xml",
+ "mergedAt": "2026-10-06T18:57:04Z",
+ "mergeCommit": "ab66a1e09c42bac462e49f2bbf53f586fb882697",
+ "body": "## Description of what I changed\n\n`WebModuleUtil` tags each module's entries in `dwr-modules.xml` with a `moduleId` attribute so they can be removed when the module stops, and DWR validates the file against a DTD that did not declare it, so every startup with legacyui logged:\n\n```\nERROR - CommonsLoggingOutput.error(75) | Line=4 Attribute \"moduleId\" must be declared for element type \"allow\".\nERROR - CommonsLoggingOutput.error(75) | Line=384 Attribute \"moduleId\" must be declared for element type \"signatures\".\n```\n\nThat is fixed in the DTD itself, which legacyui's DWR resolves from openmrs-contrib-dwr: https://github.com/openmrs/openmrs-contrib-dwr/pull/7 declares `moduleId` and lets the file hold the entries of any number of modules. The second part also clears `The content of element type \"dwr\" must match \"(init?,allow?,signatures?)\"`, which a second module with dwr config (htmlformentry, atlas, appointmentscheduling, reportingcompatibility) triggers and which an internal subset in this file could not fix.\n\nWhat remains in core: `createDwrModulesXml`, which `startModule` and `stopModule` use when the file is missing, wrote no document type at all, so DWR had no grammar to validate the file against, and `Listener` kept the file that way on every restart. It now writes the same document type `Listener` writes.\n\n## Verification\n\n- `WebModuleUtilTest.createDwrModulesXml_shouldDeclareTheDwrDocumentType` fails on master and passes here. `mvn test -pl api,web`: api 5515 tests, web 200 tests, 0 failures.\n- `jetty:run` with 31 modules and legacyui carrying the openmrs-contrib-dwr#7 jar: no DWR validation errors on startup (master with the current jar logs the two above), and `/openmrs/dwr/interface/DWRPatientService.js` still serves all 10 functions.\n\n## Issue I worked on\n\nsee https://openmrs.atlassian.net/browse/TRUNK-6820\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01FBB3ZQetWQqkHrZQk9US1C\n",
+ "files": [
+  "web/src/main/java/org/openmrs/module/web/WebModuleUtil.java",
+  "web/src/test/java/org/openmrs/module/web/WebModuleUtilTest.java"
+ ]
+}

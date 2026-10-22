@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6824",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6824",
+ "summary": "Request paths with a repeated slash fail with 500 on core 3.0",
+ "status": "Code Review (Post-Commit)",
+ "created": "2026-10-09T19:30:15.065+1100",
+ "resolved": null,
+ "description": "On core 3.0.0-SNAPSHOT, a request whose path has a double slash after the context path fails with 500:\njava.lang.IllegalArgumentException: Invalid contextPath '/openmrs/ws': must match the start of requestPath: '/openmrs//ws/rest/v1/session'\n    at org.springframework.http.server.DefaultRequestPath.validateContextPath(DefaultRequestPath.java:82)\n    ...\n    at org.springframework.web.util.ServletRequestPathUtils.parseAndCache(ServletRequestPathUtils.java:70)\ncurl -u admin:Admin123 http://localhost:8080/openmrs//ws/rest/v1/session returns 500 on build 434, where DispatcherServlet throws it, and on build 435, where Spring Security's ServletRequestPathFilter (TRUNK-6799) throws it first. Without the extra slash, the same request returns 200 on both. Core 2.8.8 served the double-slash request O3 sends today (below) with a 200.\nO3's patient chart builds such a URL for the visit history (O3-6090), so a 3.0 backend breaks the Visits dashboard of O3 frontends already released. Normalizing repeated slashes before the request reaches Spring, for example in a filter at the front of the chain, would keep those clients working while O3-6090 is fixed and rolled out."
+}

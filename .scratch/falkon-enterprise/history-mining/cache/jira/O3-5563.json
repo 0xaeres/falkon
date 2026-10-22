@@ -1,0 +1,9 @@
+{
+ "key": "O3-5563",
+ "url": "https://openmrs.atlassian.net/browse/O3-5563",
+ "summary": "Stock Management: Purchase price saves with success toast but doesn't persist when packaging unit    is not set",
+ "status": "Done",
+ "created": "2026-03-27T23:34:18.314+1100",
+ "resolved": "2026-05-18T16:17:50.394+1000",
+ "description": "When editing a stock item, setting the purchase price without selecting a purchase price packaging unit shows a success toast message, but the value is not actually saved. This is misleading, as the user      believes the update was successful.                                                                     \nThis may involve both frontend and backend issues. The frontend should validate that the packaging unit is required when a purchase price is set, and the backend should not return a success response if the data was not persisted.  \n\n  Steps to Reproduce:\nNavigate to Stock Management \u2192 Items (/openmrs/spa/stock-management/items)\n\nSelect a stock item from the list to open the edit side panel             \n\nSet the purchase price without setting the purchase price packaging unit\n\nSave the changes \u2014 a success toast message is displayed                 \n\n  Expected Behavior:                                                                                        Either:                                                                                                 \nThe UI should require the purchase price packaging unit before allowing save, or                      \n\nThe backend should return an error if the purchase price cannot be saved without a packaging unit     \n\n  Actual Behavior:                                                                                          A success toast message is shown, but the purchase price is not persisted. Reopening the item or  checking the database confirms the value was not saved.       \n\nCC:"
+}

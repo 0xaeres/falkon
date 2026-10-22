@@ -1,0 +1,13 @@
+{
+ "number": 6444,
+ "url": "https://github.com/openmrs/openmrs-core/pull/6444",
+ "title": "TRUNK-6684: Location.childLocations gained unintended orphanRemoval=true in the JPA migration",
+ "mergedAt": "2026-09-28T13:07:23Z",
+ "mergeCommit": "b147e0dcae701feb4670b53a454daf0cfb210ee9",
+ "body": "## Issue I worked on\r\n<!--- This project only accepts pull requests related to open issues -->\r\n<!--- Want a new feature or change? Discuss it in an issue first! -->\r\n<!--- Found a bug? Point us to the issue/or create one so we can reproduce it! -->\r\n<!--- Just add the issue number at the end: -->\r\nsee https://issues.openmrs.org/browse/TRUNK-6684\r\n\r\n## Checklist: I completed these to help reviewers :)\r\n<!--- Put an `x` in the box if you did the task -->\r\n<!--- If you forgot a task please follow the instructions below -->\r\n- [x] My IDE is configured to follow the [**code style**](https://wiki.openmrs.org/display/docs/Java+Conventions) of this project.\r\n\r\n  No? Unsure? -> [configure your IDE](https://wiki.openmrs.org/display/docs/How-To+Setup+And+Use+Your+IDE), format the code and add the changes with `git add . && git commit --amend`\r\n\r\n- [x] I have **added tests** to cover my changes. (If you refactored\r\n  existing code that was well tested you do not have to add tests)\r\n\r\n  No? -> write tests and add them to this commit `git add . && git commit --amend`\r\n\r\n- [x] I ran `./mvnw clean package` right before creating this pull request and\r\n  added all formatting changes to my commit.\r\n\r\n  No? -> execute above command\r\n\r\n- [x] All new and existing **tests passed**.\r\n\r\n  No? -> figure out why and add the fix to your commit. It is your responsibility to make sure your code works.\r\n\r\n- [x] My pull request is **based on the latest changes** of the master branch.\r\n\r\n  No? Unsure? -> execute command `git pull --rebase upstream master`\r\n\r\n",
+ "files": [
+  "api/src/main/java/org/openmrs/Location.java",
+  "api/src/main/java/org/openmrs/api/LocationService.java",
+  "api/src/test/java/org/openmrs/api/LocationServiceTest.java"
+ ]
+}

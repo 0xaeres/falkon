@@ -1,0 +1,9 @@
+{
+ "key": "O3-5991",
+ "url": "https://openmrs.atlassian.net/browse/O3-5991",
+ "summary": "Registration - allow post-registration redirects to non-SPA URLs",
+ "status": "Done",
+ "created": "2026-09-19T05:19:10.364+1000",
+ "resolved": null,
+ "description": "The registration configuration allows a user to configure where to navigate after a patient is saved. The default is the patient chart. \nAs we have started adding O3 apps and features to the PIH Malawi EMR, we want to have the ability to navigate to an old patient dashboard, which is a non SPA page. This is where I discovered this bug that when I try the following configuration the system resolved the URL to undefined.\n\"@openmrs/esm-patient-registration-app\": {\n  \"links\": {\n    \"submitButton\": \"${openmrsBase}/patientDashboard.form?patientId=${patientUuid}\"\n  },\n  }"
+}

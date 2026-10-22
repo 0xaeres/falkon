@@ -1,0 +1,11 @@
+{
+  "note": "D100 pilot: 6 dev questions, 2 per kind, as selected by pilotIds(dataset, 6) for --dataset history.",
+  "ids": [
+    "hist-c-03",
+    "hist-a-14",
+    "hist-b-08",
+    "hist-c-06",
+    "hist-a-03",
+    "hist-b-01"
+  ]
+}

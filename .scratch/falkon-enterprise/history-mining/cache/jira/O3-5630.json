@@ -1,0 +1,9 @@
+{
+ "key": "O3-5630",
+ "url": "https://openmrs.atlassian.net/browse/O3-5630",
+ "summary": "Dispensing: Bug when editing substitution reason of an old order",
+ "status": "Done",
+ "created": "2026-04-25T00:46:02.245+1000",
+ "resolved": "2026-05-04T20:26:34.725+1000",
+ "description": "There seems to be a strange bug when you attempt to edit the \u201csubstitution reason\u201d of an old order it doesn\u2019t reload properly on first load. See attached video capture."
+}

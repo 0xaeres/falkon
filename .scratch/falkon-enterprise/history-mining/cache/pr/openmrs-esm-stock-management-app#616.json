@@ -1,0 +1,19 @@
+{
+ "number": 616,
+ "url": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/616",
+ "title": "(fix) Fix stock report generation, visibility, downloads, and role-based access",
+ "mergedAt": "2026-09-02T08:42:45Z",
+ "mergeCommit": "390dc57d290de305f41f5af1755fc8c59480407c",
+ "body": "## Requirements\r\n\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\n\r\nThis resolves the long-standing stock reporting issue where submitted reports remain pending, fail to appear in the report list, or cannot be downloaded.\r\n\r\nChanges include:\r\n\r\n- Repairing and automatically configuring the background scheduler responsible for report generation.\r\n- Correctly displaying queued, running, completed, failed, cancelled, expired, and stale report statuses.\r\n- Restoring completed report downloads.\r\n- Ensuring newly created reports appear in the report table.\r\n- Restricting report viewing, generation, cancellation, and downloads to users assigned the Inventory Reporting role.\r\n- Preserving location-based access restrictions for reporting users.\r\n- Improving report submission and status messages in the frontend.\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\nhttps://github.com/openmrs/openmrs-module-stockmanagement/pull/48\r\n<!-- https://issues.openmrs.org/browse/O3- -->\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\n",
+ "files": [
+  "src/routes.json",
+  "src/stock-items/add-stock-item/stock-item-details/stock-item-details.component.tsx",
+  "src/stock-reports/generate-report/create-stock-report.workspace.tsx",
+  "src/stock-reports/report-list/stock-report-status.utils.test.ts",
+  "src/stock-reports/report-list/stock-report-status.utils.ts",
+  "src/stock-reports/report-list/stock-reports.component.tsx",
+  "src/stock-reports/report-list/stock-reports.scss",
+  "src/stock-reports/stock-reports.resource.ts",
+  "translations/en.json"
+ ]
+}

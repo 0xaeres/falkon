@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6784",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6784",
+ "summary": "LoggingAdvice should have a fast exit path",
+ "status": "Closed",
+ "created": "2026-08-24T23:24:35.652+1000",
+ "resolved": "2026-08-25T01:00:54.280+1000",
+ "description": "Background\nLoggingAdvice is an AOP handler that wraps every OpenMRS service providing DEBUG or TRACE level messages for each service function call. This is useful for understanding which calls are being made when and tracking the time each service method takes for execution. However, it currently doesn\u2019t verify that any messages it generates will be logged before generating them. This adds a not-insubstantial piece of overhead to every service method call.\nRequested change\nModify LoggingAdvice#invoke() so that it checks:\nWhether logging messages are enabled on the logger\n\nWhether the method is one for which logging messages are generated\n\nWhether the method is annotated to skip logging\n\nIf any of the above hold, LoggingAdvice#invoke()should simply make the underlying method call with no additional book-keeping.\nAcceptance Criteria\nLoggingAdvice#invoke() does minimal work when the logger isn\u2019t enabled."
+}

@@ -1,0 +1,1820 @@
+[
+ {
+  "repo": "openmrs-core",
+  "commit": "2d32d20938e007f2f9bf8e3a3c946758d52d6bfe",
+  "date": "2026-10-13T14:03:20+03:00",
+  "subject": "TRUNK-6826: Request paths with a trailing slash find no handler on core 3.0 (#6680)",
+  "pr": 6680,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6680",
+  "prMergeCommit": "2d32d20938e007f2f9bf8e3a3c946758d52d6bfe",
+  "tickets": [
+   {
+    "key": "TRUNK-6826",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6826",
+    "summary": "Request paths with a trailing slash find no handler on core 3.0",
+    "status": "Ready for Work",
+    "created": "2026-10-12T05:56:53.311+1100",
+    "resolved": null,
+    "description": "On core 3.0, a URL with a trailing slash no longer reaches the handler for the same URL without it.\nMeasured on the TRUNK-6824 PR head (https://github.com/openmrs/openmrs-core/pull/6673) under jetty:run, with only the REST module installed, authenticated as admin:\nRequest\nResult\n/openmrs/ws/rest/v1/session\n200\n/openmrs/ws/rest/v1/session/\n404\n/openmrs/ws/rest/v1/location/\n404\n/openmrs/ws/fhir2/R4/metadata/\n404 \"No endpoint GET /openmrs/ws/fhir2/R4/metadata/.\"\nOn Tomcat 11 with the RefApp module set, /openmrs/ws/rest/v1/session/ answered 500 instead (seen while testing TRUNK-6824, not yet traced). Something in that setup turns the missing handler into a 500.\nThe likely cause is the Spring upgrade. 2.8.x is on Spring 5.3.30, where @RequestMapping matched a trailing slash by default. Master is on Spring 7.0.9, which no longer does. I haven't run 2.x to confirm it serves these URLs.\nThis is separate from TRUNK-6824 (repeated slashes). Since that fix, a trailing // collapses to / and gets this same result, where the firewall used to answer 400.\nTo do:\nFind where the 500 on Tomcat with the RefApp modules comes from.\n\nDecide whether 3.0 should accept a trailing slash again, for example with Spring's UrlHandlerFilter on /ws/*, or keep refusing it with a clean 404."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6826": [
+    "2d32d20938e007f2f9bf8e3a3c946758d52d6bfe"
+   ]
+  },
+  "files": [
+   "web/src/main/java/org/openmrs/web/filter/TrailingSlashFilter.java",
+   "web/src/test/java/org/openmrs/web/filter/TrailingSlashFilterTest.java",
+   "web/src/test/java/org/openmrs/web/security/WebSecurityConfigIntegrationTest.java",
+   "webapp/src/main/webapp/WEB-INF/web.xml"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "085d24ca28913de746060914ba4c0305680c9321",
+  "date": "2026-10-12T13:43:38+03:00",
+  "subject": "TRUNK-6824: Request paths with a repeated slash fail with 500 on core 3.0 (#6673)",
+  "pr": 6673,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6673",
+  "prMergeCommit": "085d24ca28913de746060914ba4c0305680c9321",
+  "tickets": [
+   {
+    "key": "TRUNK-6824",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6824",
+    "summary": "Request paths with a repeated slash fail with 500 on core 3.0",
+    "status": "Code Review (Post-Commit)",
+    "created": "2026-10-09T19:30:15.065+1100",
+    "resolved": null,
+    "description": "On core 3.0.0-SNAPSHOT, a request whose path has a double slash after the context path fails with 500:\njava.lang.IllegalArgumentException: Invalid contextPath '/openmrs/ws': must match the start of requestPath: '/openmrs//ws/rest/v1/session'\n    at org.springframework.http.server.DefaultRequestPath.validateContextPath(DefaultRequestPath.java:82)\n    ...\n    at org.springframework.web.util.ServletRequestPathUtils.parseAndCache(ServletRequestPathUtils.java:70)\ncurl -u admin:Admin123 http://localhost:8080/openmrs//ws/rest/v1/session returns 500 on build 434, where DispatcherServlet throws it, and on build 435, where Spring Security's ServletRequestPathFilter (TRUNK-6799) throws it first. Without the extra slash, the same request returns 200 on both. Core 2.8.8 served the double-slash request O3 sends today (below) with a 200.\nO3's patient chart builds such a URL for the visit history (O3-6090), so a 3.0 backend breaks the Visits dashboard of O3 frontends already released. Normalizing repeated slashes before the request reaches Spring, for example in a filter at the front of the chain, would keep those clients working while O3-6090 is fixed and rolled out."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6824": [
+    "085d24ca28913de746060914ba4c0305680c9321"
+   ]
+  },
+  "files": [
+   "web/src/main/java/org/openmrs/web/filter/RepeatedSlashFilter.java",
+   "web/src/main/java/org/openmrs/web/security/WebSecurityConfig.java",
+   "web/src/test/java/org/openmrs/web/filter/RepeatedSlashFilterTest.java",
+   "web/src/test/java/org/openmrs/web/security/WebSecurityConfigIntegrationTest.java",
+   "webapp/pom.xml",
+   "webapp/src/main/webapp/WEB-INF/web.xml",
+   "webapp/src/test/java/org/openmrs/web/WebXmlTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "83411b2f8a52325e867fccc223a54d6a6f701400",
+  "date": "2026-10-06T22:20:08+03:00",
+  "subject": "TRUNK-6819: Start the JobRunr job server only once OpenMRS has started (#6654)",
+  "pr": 6654,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6654",
+  "prMergeCommit": "83411b2f8a52325e867fccc223a54d6a6f701400",
+  "tickets": [
+   {
+    "key": "TRUNK-6819",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6819",
+    "summary": "Scheduled jobs fail at startup because the JobRunr job server starts before OpenMRS is ready",
+    "status": "Closed",
+    "created": "2026-10-07T01:12:09.160+1100",
+    "resolved": "2026-10-07T06:21:39.026+1100",
+    "description": "The JobRunr background job server is started while its Spring application context is still being created, so jobs can run before the context, or OpenMRS, is ready. Starting the webapp with modules installed (e.g. mvn jetty:run) logs failures such as:\nIllegalStateException: EntityManagerFactory is closed: a job runs during the context refresh that follows module startup, against the closed session factory of the context being replaced.\n\nTaskException: Task class org.openmrs.module.stockmanagement.api.jobs.AsyncTasksBatchJob not found: a module's job runs right after the first, core-only context refresh, before modules are loaded.\n\nWhich one appears depends on when a recurring job falls due. Stopping the server for over a minute, so that a recurring job is overdue at startup, reproduces it reliably.\nExpected: the job server starts only once its context has finished refreshing, and at webapp startup only after modules have started (SchedulerService.onStartup()). It stops before its context closes.\nPR: https://github.com/openmrs/openmrs-core/pull/6654"
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6819": [
+    "83411b2f8a52325e867fccc223a54d6a6f701400"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/api/context/Context.java",
+   "api/src/main/java/org/openmrs/scheduler/jobrunr/JobRunrConfig.java",
+   "api/src/main/java/org/openmrs/scheduler/jobrunr/JobRunrSchedulerService.java",
+   "api/src/main/java/org/openmrs/scheduler/jobrunr/JobRunrServerLifecycle.java",
+   "api/src/test/java/org/openmrs/api/context/ContextTest.java",
+   "api/src/test/java/org/openmrs/scheduler/jobrunr/JobRunrSchedulerServiceTest.java",
+   "api/src/test/java/org/openmrs/scheduler/jobrunr/JobRunrServerLifecycleTest.java",
+   "web/src/main/java/org/openmrs/web/Listener.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "ab66a1e09c42bac462e49f2bbf53f586fb882697",
+  "date": "2026-10-06T21:57:04+03:00",
+  "subject": "TRUNK-6820: Write the DWR document type when creating dwr-modules.xml (#6655)",
+  "pr": 6655,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6655",
+  "prMergeCommit": "ab66a1e09c42bac462e49f2bbf53f586fb882697",
+  "tickets": [
+   {
+    "key": "TRUNK-6820",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6820",
+    "summary": "DWR logs \"Attribute moduleId must be declared\" errors for dwr-modules.xml on startup",
+    "status": "Closed",
+    "created": "2026-10-07T01:12:12.653+1100",
+    "resolved": "2026-10-07T05:57:25.305+1100",
+    "description": "WebModuleUtil tags each module's entries in WEB-INF/dwr-modules.xml with a moduleId attribute so they can be removed when the module stops. The DWR 2.0 DTD does not declare that attribute, and DWR validates the file, so every startup with a module that defines DWR config (e.g. legacyui) logs:\nERROR - CommonsLoggingOutput.error(75) | Line=4 Attribute \"moduleId\" must be declared for element type \"allow\".\nERROR - CommonsLoggingOutput.error(75) | Line=384 Attribute \"moduleId\" must be declared for element type \"signatures\".\nWith a second module that defines DWR config (e.g. htmlformentry), DWR also logs The content of element type \"dwr\" must match \"(init?,allow?,signatures?)\", because the DTD allows one init, allow and signatures and each module adds its own.\nExpected: no errors. The DWR 2.0 DTD bundled in openmrs-contrib-dwr declares moduleId on init, allow and signatures and lets dwr hold the entries of several modules, and every dwr-modules.xml that core writes carries the DWR 2.0 document type.\nPRs: https://github.com/openmrs/openmrs-contrib-dwr/pull/7, https://github.com/openmrs/openmrs-core/pull/6655"
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6820": [
+    "ab66a1e09c42bac462e49f2bbf53f586fb882697"
+   ]
+  },
+  "files": [
+   "web/src/main/java/org/openmrs/module/web/WebModuleUtil.java",
+   "web/src/test/java/org/openmrs/module/web/WebModuleUtilTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "b64e0729cce60c40dffb75788c4b43937a6fc77e",
+  "date": "2026-10-05T08:23:37-04:00",
+  "subject": "TRUNK-6818: Context.closeSession() closes sessions it did not open (#6651)",
+  "pr": 6651,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6651",
+  "prMergeCommit": "b64e0729cce60c40dffb75788c4b43937a6fc77e",
+  "tickets": [
+   {
+    "key": "TRUNK-6818",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6818",
+    "summary": "Context.closeSession() closes Hibernate sessions it did not open",
+    "status": "Closed",
+    "created": "2026-10-03T06:31:53.275+1000",
+    "resolved": "2026-10-10T07:09:57.588+1100",
+    "description": "Background\nContext.closeSession() decides whether to close the thread's Hibernate session using a per-thread counter, not by checking who bound the session. This causes several failures:\nWhen closeSession() doesn't think it joined an existing session, it unbinds and closes whatever session is bound. That includes sessions owned by a Spring transaction or OpenSessionInViewFilter. The transaction's JDBC connection is left bound, so the next transaction on that thread fails with \\\"Pre-bound JDBC Connection found!\\\".\n\nThe counter only records that a call joined some session. If an openSession() joins a transaction's session and is never closed, the counter stays raised on a pooled thread. A later open/close pair on that thread then never closes its own session. That session stays bound, and later transactions on the thread silently reuse it.\n\nIf an unmatched closeSession() is called inside a transaction that is running on a session openSession() bound, it closes that session mid-transaction and breaks the commit.\n\nOutboxTaskSchedulerInitializer calls Context.openSession() without closing it, which leaves a session bound to the startup thread.\n\nAffects 2.8.x, 2.9.x and master. The Outbox leak affects only 2.9.x and master.\nRequested change\ncloseSession() only closes sessions bound by openSession(). Sessions bound by anyone else are left to their owner.\n\nNested openSession() calls are counted on the session openSession() bound, not in a thread-local. The outermost matching closeSession() closes it, and no stale state outlives it.\n\nIf a closeSession() would close the session while a transaction is active on it, it is ignored with a warning. With properly nested calls, such a close can only be unmatched.\n\nOutboxTaskSchedulerInitializer closes any session it opens.\n\nNo public API changes.\n\nAcceptance criteria\ncloseSession() never closes or unbinds a session bound by a Spring transaction or OpenSessionInViewFilter.\n\nNested open/close pairs close the session only on the outermost close.\n\nAn open that joins another owner's session and is never closed does not prevent a later session from being closed.\n\nAfter an unmatched close inside a transaction, the session stays open and bound, the transaction commits, and the next transaction on the thread succeeds.\n\nNo session is left bound after OutboxTaskSchedulerInitializer.schedule() or deleteScheduledTasks().\n\nAutomated tests:\n\n  - unit tests for HibernateContextDAO covering ownership, nesting, the stale-join case and the unmatched close;\n  - an integration test that runs a real Spring transaction on a session bound by openSession()."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6818": [
+    "b64e0729cce60c40dffb75788c4b43937a6fc77e"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/api/db/ContextDAO.java",
+   "api/src/main/java/org/openmrs/api/db/hibernate/HibernateContextDAO.java",
+   "api/src/main/java/org/openmrs/event/outbox/tasks/OutboxTaskSchedulerInitializer.java",
+   "api/src/test/java/org/openmrs/api/db/hibernate/HibernateContextDAOSessionTest.java",
+   "api/src/test/java/org/openmrs/api/db/hibernate/HibernateContextDAOTransactionTest.java",
+   "api/src/test/java/org/openmrs/event/outbox/tasks/OutboxTaskSchedulerInitializerTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "b147e0dcae701feb4670b53a454daf0cfb210ee9",
+  "date": "2026-09-28T18:37:23+05:30",
+  "subject": "TRUNK-6684: Location.childLocations gained unintended orphanRemoval=true in the JPA migration (#6444)",
+  "pr": 6444,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6444",
+  "prMergeCommit": "b147e0dcae701feb4670b53a454daf0cfb210ee9",
+  "tickets": [
+   {
+    "key": "TRUNK-6684",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6684",
+    "summary": "Location.childLocations gained unintended orphanRemoval=true in the JPA migration",
+    "status": "Code Review (Post-Commit)",
+    "created": "2026-07-16T01:54:32.753+1000",
+    "resolved": null,
+    "description": "Background\nThe 2.6.x Location.hbm.xml mapped childLocations with cascade=\"all\" \u2014 removing a child from the in-memory collection did not delete the row. The migrated annotation in Location.java adds orphanRemoval = true, so any code that removes an entry from childLocations (e.g. re-parenting a location) now silently issues a DELETE of that location row on flush. This is a behavior change with both a data-loss risk and unplanned write/lock cost, and it was not part of any intentional feature.\nRequested change\nRemove orphanRemoval = true from Location.childLocations to restore the 2.6.x cascade semantics.\nAcceptance criteria\nRemoving a location from a parent's childLocations collection and saving no longer deletes the child row; re-parenting works as it did in 2.6.x.\n\nA unit test covers the re-parenting scenario to prevent the delete behavior from returning."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6684": [
+    "b147e0dcae701feb4670b53a454daf0cfb210ee9"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/Location.java",
+   "api/src/main/java/org/openmrs/api/LocationService.java",
+   "api/src/test/java/org/openmrs/api/LocationServiceTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "34bd26a8166d1277f83e4fdf1bda550ff8cc49a6",
+  "date": "2026-09-14T15:26:34-04:00",
+  "subject": "TRUNK-6686: Restore relevance weighting in patient search lost in the Hibernate Search 6 migration (#6430)",
+  "pr": 6430,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6430",
+  "prMergeCommit": "34bd26a8166d1277f83e4fdf1bda550ff8cc49a6",
+  "tickets": [
+   {
+    "key": "TRUNK-6686",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6686",
+    "summary": "Restore relevance weighting in patient search lost in the Hibernate Search 6 migration",
+    "status": "Closed",
+    "created": "2026-07-16T01:54:38.223+1000",
+    "resolved": "2026-09-15T07:21:07.006+1000",
+    "description": "Background\nIn 2.6.x, name and identifier fields carried index-time boosts (@Boost: phrase 8x, exact 4x, start 2x, anywhere 1x) so exact and prefix matches ranked above substring matches. Hibernate Search 6 removed index-time boosting, and the migrated mappings and query builders (PersonQuery) apply no per-field weighting at all on the main patient/person search path \u2014 every match type ranks equally. Boosting was only reintroduced for the soundex \"similar people\" path. Users see worse result ordering (exact matches buried under substring matches), which in practice drives re-searching and deeper paging against an already-expensive search path.\nRequested change\nApply query-time per-field boosts in the main patient/person name, identifier, and attribute search predicates, replicating the 2.6.x relative weights (phrase > exact > start > anywhere).\nAcceptance criteria\nAn exact name or identifier match ranks above start-with and substring matches for the same term.\n\nUnit tests assert relative ordering for a dataset containing exact, prefix, and substring matches of the same query."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6686": [
+    "34bd26a8166d1277f83e4fdf1bda550ff8cc49a6"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/api/db/hibernate/PersonQuery.java",
+   "api/src/test/java/org/openmrs/api/db/hibernate/HibernatePatientDAOTest.java",
+   "api/src/test/resources/org/openmrs/api/db/hibernate/include/HibernatePatientDAOTest-patientSearchRanking.xml"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "645814dc2cbf8ac809d61a92949aa308d368db7e",
+  "date": "2026-09-11T13:35:51-04:00",
+  "subject": "TRUNK-6701: Avoid redundant per-request session attribute writes in OpenmrsFilter (#6555)",
+  "pr": 6555,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6555",
+  "prMergeCommit": "645814dc2cbf8ac809d61a92949aa308d368db7e",
+  "tickets": [
+   {
+    "key": "TRUNK-6701",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6701",
+    "summary": "Avoid redundant per-request session attribute writes in OpenmrsFilter",
+    "status": "Closed",
+    "created": "2026-07-18T03:27:05.254+1000",
+    "resolved": "2026-09-12T03:43:29.228+1000",
+    "description": "Background\nOn every request, OpenmrsFilter sets the session's username attribute to an anonymous placeholder and then immediately overwrites it for authenticated users, re-sets the locale attribute even when unchanged (marking the session dirty for replicating session managers), and stores a per-request timestamp attribute that nothing in core reads.\nRequested change\nOnly write session attributes when their values actually change, and remove (or make lazy) the unused unique-id attribute. Session creation behavior is intentionally out of scope and must not change.\nAcceptance criteria\nSession attributes end up with the same values as today for anonymous and authenticated requests.\n\nNo attribute writes occur when values are unchanged.\n\nTests cover both user states."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6701": [
+    "645814dc2cbf8ac809d61a92949aa308d368db7e"
+   ]
+  },
+  "files": [
+   "web/src/main/java/org/openmrs/web/filter/OpenmrsFilter.java",
+   "web/src/test/java/org/openmrs/web/filter/OpenmrsFilterTest.java",
+   "web/src/test/resources/OpenmrsFilterTest-initial.xml"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "6e77bfd03ab134fc7d66a0e3140d6e468f569ec5",
+  "date": "2026-08-25T11:39:19-04:00",
+  "subject": "TRUNK-6697: HandlerUtil's cache should not be garbage collected (#6494)",
+  "pr": 6494,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6494",
+  "prMergeCommit": "6e77bfd03ab134fc7d66a0e3140d6e468f569ec5",
+  "tickets": [
+   {
+    "key": "TRUNK-6697",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6697",
+    "summary": "Fix HandlerUtil's handler cache being evicted by garbage collection",
+    "status": "Closed",
+    "created": "2026-07-18T03:26:43.413+1000",
+    "resolved": "2026-08-26T03:57:00.277+1000",
+    "description": "Background\nHandlerUtil caches handler lookups in a WeakHashMap whose keys are referenced by nothing but the map itself, so any GC cycle can evict the entire cache. Every miss re-scans all Spring beans across module contexts and rebuilds the map copy-on-write, so concurrent misses can also drop each other's entries. This lookup runs per object in the graph on every save/void/retire and per validation.\nRequested change\nReplace with a cache that retains entries (e.g. ConcurrentHashMap), keeping the existing invalidation on context refresh.\nAcceptance criteria\nCached handler lists survive garbage collection and concurrent access.\n\nThe cache is still cleared on context refresh so module-contributed handlers are picked up.\n\nTests cover cache hits and invalidation."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6697": [
+    "6e77bfd03ab134fc7d66a0e3140d6e468f569ec5"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java",
+   "api/src/main/java/org/openmrs/util/HandlerUtil.java",
+   "api/src/test/java/org/openmrs/api/context/ContextMockHelper.java",
+   "api/src/test/java/org/openmrs/util/HandlerUtilTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "21ea98bdb1d1ca38a2986de62de17b8e3f7bd8a3",
+  "date": "2026-10-07T10:07:37-04:00",
+  "subject": "TRUNK-6796: Fix NPE whe death date is null when merging patients (#6537)",
+  "pr": 6537,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6537",
+  "prMergeCommit": "21ea98bdb1d1ca38a2986de62de17b8e3f7bd8a3",
+  "tickets": [
+   {
+    "key": "TRUNK-6796",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6796",
+    "summary": "Fix null check in PersonMergeLogData",
+    "status": "Closed",
+    "created": "2026-09-03T12:25:06.868+1000",
+    "resolved": "2026-10-08T01:14:43.404+1100",
+    "description": "computeHashValue() has an incorrect null check for priorDateOfDeath.\nIt checks priorDateOfBirth before calling getPriorDateOfDeath().toString(), which can cause a NullPointerException when priorDateOfDeath is null.\nFix the null check and add a test for this case."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6796": [
+    "21ea98bdb1d1ca38a2986de62de17b8e3f7bd8a3"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/person/PersonMergeLogData.java",
+   "api/src/test/java/org/openmrs/person/PersonMergeLogDataTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "3f5c8a66c9f3e132036cfa362aee752a8f71b263",
+  "date": "2026-06-08T08:34:16+02:00",
+  "subject": "TRUNK-6558 Return null from getTaskByName when the task does not exist (#6163)",
+  "pr": 6163,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6163",
+  "prMergeCommit": "3f5c8a66c9f3e132036cfa362aee752a8f71b263",
+  "tickets": [
+   {
+    "key": "TRUNK-6558",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6558",
+    "summary": "Upgrade SchedulerService to use JobRunr",
+    "status": "Closed",
+    "created": "2026-02-13T21:06:58.509+1100",
+    "resolved": "2026-06-15T18:55:19.027+1000",
+    "description": ""
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6558": [
+    "3f5c8a66c9f3e132036cfa362aee752a8f71b263",
+    "3e830a2d78b297dd361c41f4857aac4a02b10226",
+    "c648b04913a53f80bf26449c3e5da985f84e76cb",
+    "d2df9cd0356b6736482e9745e3811da6bd1580ff"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/scheduler/jobrunr/JobRunrSchedulerService.java",
+   "api/src/test/java/org/openmrs/scheduler/SchedulerServiceIT.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "e7052745fb78802c8adcd7c1962f3525e7050b1e",
+  "date": "2026-06-12T14:54:53-04:00",
+  "subject": "TRUNK-6646: Env-var key normalization drops create_database_* / create_user_* credentials in scripted setup (#6145)",
+  "pr": 6145,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6145",
+  "prMergeCommit": "e7052745fb78802c8adcd7c1962f3525e7050b1e",
+  "tickets": [
+   {
+    "key": "TRUNK-6646",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6646",
+    "summary": "Env-var key normalization drops create_database_* / create_user_* credentials in scripted setup",
+    "status": "Closed",
+    "created": "2026-05-28T05:41:40.259+1000",
+    "resolved": "2026-06-15T22:23:24.112+1000",
+    "description": "Summary\nIn the scripted/AUTO setup path, environment variables are normalized into property keys by normalizeEnvVariableKey, but the normalization cannot produce several of the underscore-separated keys the wizard actually reads. Those env vars are silently dropped and the corresponding fields fall back to their defaults \u2014 most importantly createDatabasePassword (default empty) and createDatabaseUsername (default root), producing Access denied for user 'root'@... (using password: NO).\nThe two pieces\nEnv vars are run through normalizeEnvVariableKey before being stored as properties (InitializationFilter lines 339\u2013342):\ngetEnvironmentVariables().forEach((key, value) -> {\n    String normalizedKey = normalizeEnvVariableKey(key);\n    script.setProperty(normalizedKey, value);\n});\nThe normalizer (lines 1929\u20131934):\nprivate String normalizeEnvVariableKey(String envVarKey) {\n    if (NON_NORMALIZED_KEYS.contains(envVarKey)) {\n        return envVarKey.toLowerCase();          // keep underscores\n    }\n    return envVarKey.toLowerCase().replace('_', '.');  // underscores -> dots\n}\nThe allow-list (lines 198\u2013200):\nprivate static final Set<String> NON_NORMALIZED_KEYS = new HashSet<>(\n    Arrays.asList(\"INSTALL_METHOD\", \"DATABASE_NAME\", \"HAS_CURRENT_OPENMRS_DATABASE\", \"CREATE_DATABASE_USER\",\n        \"CREATE_TABLES\", \"ADD_DEMO_DATA\", \"MODULE_WEB_ADMIN\", \"AUTO_UPDATE_DATABASE\", \"ADMIN_USER_PASSWORD\"));\nThe conflict\nThe property keys the wizard reads (lines 354\u2013395) mix two naming conventions:\ndot-separated: connection.url, connection.username, connection.password\n\nunderscore-separated: database_name, create_database_username, create_database_password, create_user_username, create_user_password, create_tables, create_database_user, \u2026\n\nThe NON_NORMALIZED_KEYS allow-list is incomplete. Missing keys:\nCREATE_DATABASE_USERNAME\n\nCREATE_DATABASE_PASSWORD\n\nCREATE_USER_USERNAME\n\nCREATE_USER_PASSWORD\n\nCONNECTION_DRIVER_CLASS\n\nAll of these are incorrectly translated into . formats but only the underscore formats are read."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6646": [
+    "e7052745fb78802c8adcd7c1962f3525e7050b1e"
+   ]
+  },
+  "files": [
+   "web/src/main/java/org/openmrs/web/filter/initialization/InitializationFilter.java",
+   "web/src/test/java/org/openmrs/web/filter/initialization/InitializationFilterNormalizationTest.java",
+   "web/src/test/java/org/openmrs/web/filter/initialization/InitializationFilterTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "c21a7cbfa2c9f67c1991372a343217e949e04f44",
+  "date": "2026-07-17T18:15:32-04:00",
+  "subject": "TRUNK-6683: Skip full-text search with drugs when a concept is provided (#6346)",
+  "pr": 6346,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6346",
+  "prMergeCommit": "c21a7cbfa2c9f67c1991372a343217e949e04f44",
+  "tickets": [
+   {
+    "key": "TRUNK-6683",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6683",
+    "summary": "Drug search runs a redundant concept-name full-text query when a concept is specified",
+    "status": "Closed",
+    "created": "2026-07-16T01:54:30.868+1000",
+    "resolved": "2026-07-19T01:53:15.424+1000",
+    "description": "Background\nIn 2.6.x, HibernateConceptDAO.newDrugQuery(...) treated the concept parameter and searchDrugConceptNames as mutually exclusive branches (if / else if): the extra concept-name full-text lookup only ran when no concept was supplied. In 2.8.x the branches are independent, so calling ConceptService.getDrugs(...) with both a concept and searchDrugConceptNames=true always executes an additional Hibernate Search query over the ConceptName index \u2014 including its expensive unique-key dedup pass \u2014 whose results are redundant because the concept is already known and matched directly.\nRequested change\nRestore the 2.6.x short-circuit: skip the concept-name full-text lookup when a concept is explicitly provided.\nAcceptance criteria\ngetDrugs with a non-null concept does not execute the concept-name index query, and results are unchanged for all parameter combinations.\n\nUnit tests cover the concept + searchDrugConceptNames=true combination, asserting both result correctness and that the redundant query path is not taken."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6683": [
+    "c21a7cbfa2c9f67c1991372a343217e949e04f44"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/api/db/hibernate/HibernateConceptDAO.java",
+   "api/src/test/java/org/openmrs/api/db/hibernate/HibernateConceptDAOTest.java",
+   "api/src/test/resources/org/openmrs/api/db/hibernate/include/HibernateConceptTestDataSet.xml"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "0e0255b872f08dabafe9414d623820272cd475be",
+  "date": "2026-10-13T17:24:58+03:00",
+  "subject": "TRUNK-6827: Forward onPersist and onRemove through ChainingInterceptor (#6637)",
+  "pr": 6637,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6637",
+  "prMergeCommit": "0e0255b872f08dabafe9414d623820272cd475be",
+  "tickets": [
+   {
+    "key": "TRUNK-6827",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6827",
+    "summary": "SaveDbEvent and DeleteDbEvent are not published for created and deleted entities",
+    "status": "Closed",
+    "created": "2026-10-14T00:55:03.317+1100",
+    "resolved": "2026-10-14T01:48:33.242+1100",
+    "description": "On master (3.0.0-SNAPSHOT), core's EventInterceptor never publishes a SaveDbEvent when a new entity is created, and never publishes a DeleteDbEvent when an entity is removed. Updates do publish.\nEventInterceptor overrides Hibernate 7's onPersist and onRemove. It sits inside HibernateSessionFactoryBean's ChainingInterceptor, which overrides only the deprecated onSave / onDelete and forwards those to each interceptor. Hibernate 7 calls only onPersist and onRemove on the chain. The chain's inherited onPersist delegates to its own onSave, which calls onSave on each interceptor, and EventInterceptor.onSave is the default no-op. So EventInterceptor.onPersist and onRemove never run.\nThe chain also does not forward onInsert, onUpdate, onUpsert, the 4-argument onDelete (stateless sessions), or preMerge / postMerge.\nImpact: any module listening for create or delete events gets nothing, without any error. For example, the billing module's core-3.x branch bills new orders from SaveDbEvent<? extends Order>, so no new order is billed.\nTo reproduce: register a listener for SaveDbEvent / DeleteDbEvent in a context-sensitive test.\nSave a new Location: no event is published.\n\nPurge it: no event is published.\n\nControl: update an existing location, and the event arrives.\n\nFix: https://github.com/openmrs/openmrs-core/pull/6637\nOnce create events are published, the transactional outbox can loop on its own rows: saving an OutboxEvent publishes a SaveDbEvent about it, which a broad @OutboxEventListener enqueues as another OutboxEvent. The PR guards against that too.\nOn 2.9.x, create and delete events are already published (Hibernate 5.6 calls onSave and onDelete, which 2.9.x's EventInterceptor overrides), so the outbox loop is live there today. The 2.9.x backport carries only the OutboxEventInterceptor guard and its test."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6827": [
+    "0e0255b872f08dabafe9414d623820272cd475be"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/api/db/hibernate/ChainingInterceptor.java",
+   "api/src/main/java/org/openmrs/api/db/hibernate/EventInterceptor.java",
+   "api/src/main/java/org/openmrs/event/outbox/OutboxEvent.java",
+   "api/src/main/java/org/openmrs/event/outbox/OutboxEventInterceptor.java",
+   "api/src/test/java/org/openmrs/api/db/hibernate/ChainingInterceptorTest.java",
+   "api/src/test/java/org/openmrs/api/db/hibernate/EventInterceptorTest.java",
+   "api/src/test/java/org/openmrs/event/outbox/OutboxEventInterceptorTest.java",
+   "api/src/test/java/org/openmrs/util/databasechange/EnversAuditTableInitializerDatabaseIT.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "f10e3fb9a645378ab6682c21d6be478bfdab6199",
+  "date": "2026-09-21T16:28:21-04:00",
+  "subject": "TRUNK-6721: Replace StackWalker with a thread-local guard in UserDAO (#6588)",
+  "pr": 6588,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6588",
+  "prMergeCommit": "f10e3fb9a645378ab6682c21d6be478bfdab6199",
+  "tickets": [
+   {
+    "key": "TRUNK-6721",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6721",
+    "summary": "Replace stack-inspection guard on UserDAO password methods with a cheaper thread-scoped permit",
+    "status": "Closed",
+    "created": "2026-07-21T08:03:13.461+1000",
+    "resolved": "2026-09-23T03:02:18.883+1000",
+    "description": "Background\nHibernateUserDAO guards five methods (saveUser, both changePassword overloads, changeHashedPassword, updateLoginCredential) so that password/credential mutations can only be invoked through the service API rather than directly against the DAO (added in TRUNK-6435). The guard works by inspecting the immediate caller class.\nOn master (Java 21) this uses StackWalker, which is relatively cheap. On the 2.8.x/2.9.x maintenance branches the check captures a full stack trace via an exception/Throwable, which is expensive: it materializes the entire call stack on every guarded call just to read a single frame. Both approaches also duplicate the same stack-inspection block across five methods.\nRequested change\nReplace the caller-class stack inspection with a thread-scoped permit that does not change the public API surface (no UserDAO interface signature changes, no new public DAO methods):\nAdd a public static nested class on UserServiceImpl (e.g. UserPasswordGuard) holding a re-entrant thread-local depth counter so nested/recursive calls remain valid.\n\nenter()/exit() are private, so only UserServiceImpl (as a nestmate) can raise the permit; the permit cannot be forged by arbitrary callers. UserServiceImpl brackets its direct DAO calls with them.\n\nisPermitted() is public so the guarded DAO methods can read it and throw DAOException when the permit is absent, replacing the StackWalker/exception block.\n\nThis is effectively free at runtime and, being plain ThreadLocal with private-nestmate access (compiled via synthetic accessors), is directly backportable to the Java 8 maintenance branches. Reflection could still bypass it, which is acceptable: the guard targets accidental bypass of the service layer, not malicious same-JVM code (which could already use reflection).\nAcceptance criteria\nThe five guarded methods reject calls that do not originate through the service layer and continue to allow the legitimate service and internal-recursion paths.\n\nOnly UserServiceImpl can raise the permit; enter()/exit() are not callable from outside it.\n\nNo changes to the UserDAO interface or any other public API.\n\nThe stack-inspection guard (StackWalker on master, exception-based on maintenance branches) is removed from these methods.\n\nAutomated tests verify: a call through UserService succeeds; a direct DAO call to each guarded method fails with DAOException; and re-entrant/recursive paths (e.g. updateUserPassword -> saveUser) still succeed. Tests live under api/src/test/."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6721": [
+    "f10e3fb9a645378ab6682c21d6be478bfdab6199"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/api/db/hibernate/HibernateUserDAO.java",
+   "api/src/main/java/org/openmrs/api/impl/UserServiceImpl.java",
+   "api/src/main/java/org/openmrs/util/OpenmrsUtil.java",
+   "api/src/test/java/org/openmrs/api/UserServiceTest.java",
+   "api/src/test/java/org/openmrs/api/db/UserDAOPasswordGuardTest.java",
+   "api/src/test/java/org/openmrs/api/db/UserDAOTest.java",
+   "api/src/test/java/org/openmrs/util/OpenmrsUtilTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "949b8a177e825320b0d04108accf38fc48751ed3",
+  "date": "2026-06-02T13:17:10-04:00",
+  "subject": "TRUNK-6643: Initial setup with MariaDB Driver does not work (#6150)",
+  "pr": 6150,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6150",
+  "prMergeCommit": "949b8a177e825320b0d04108accf38fc48751ed3",
+  "tickets": [
+   {
+    "key": "TRUNK-6643",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6643",
+    "summary": "Initial setup with MariaDB Driver does not work",
+    "status": "Closed",
+    "created": "2026-05-27T22:45:26.653+1000",
+    "resolved": "2026-06-03T20:06:07.438+1000",
+    "description": "When running through the installation wizard, if the JDBC URL uses jdbc:mariadb instead of jdbc:mysql and a database user need to be created, the setup will fail. This is likely a oversight in the initial setup wizard for support for the MariaDB driver."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6643": [
+    "949b8a177e825320b0d04108accf38fc48751ed3"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/util/DatabaseUpdater.java",
+   "web/src/main/java/org/openmrs/web/filter/initialization/InitializationFilter.java",
+   "web/src/test/java/org/openmrs/web/filter/initialization/InitializationFilterE2ETest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "e2056c9af9036ddef415212ec8da7b0bc2eda96e",
+  "date": "2026-08-24T10:44:30-04:00",
+  "subject": "TRUNK-6784: LoggingAdvice should have a fast exit path (#6488)",
+  "pr": 6488,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6488",
+  "prMergeCommit": "e2056c9af9036ddef415212ec8da7b0bc2eda96e",
+  "tickets": [
+   {
+    "key": "TRUNK-6784",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6784",
+    "summary": "LoggingAdvice should have a fast exit path",
+    "status": "Closed",
+    "created": "2026-08-24T23:24:35.652+1000",
+    "resolved": "2026-08-25T01:00:54.280+1000",
+    "description": "Background\nLoggingAdvice is an AOP handler that wraps every OpenMRS service providing DEBUG or TRACE level messages for each service function call. This is useful for understanding which calls are being made when and tracking the time each service method takes for execution. However, it currently doesn\u2019t verify that any messages it generates will be logged before generating them. This adds a not-insubstantial piece of overhead to every service method call.\nRequested change\nModify LoggingAdvice#invoke() so that it checks:\nWhether logging messages are enabled on the logger\n\nWhether the method is one for which logging messages are generated\n\nWhether the method is annotated to skip logging\n\nIf any of the above hold, LoggingAdvice#invoke()should simply make the underlying method call with no additional book-keeping.\nAcceptance Criteria\nLoggingAdvice#invoke() does minimal work when the logger isn\u2019t enabled."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6784": [
+    "e2056c9af9036ddef415212ec8da7b0bc2eda96e"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/aop/LoggingAdvice.java",
+   "api/src/test/java/org/openmrs/aop/LoggingAdviceTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "eb0a1006c7e188d4408deb298685c98ea1fef321",
+  "date": "2026-07-17T07:59:02-04:00",
+  "subject": "TRUNK-6688: Fix circular initialization error in logging setup (#6341)",
+  "pr": 6341,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6341",
+  "prMergeCommit": "eb0a1006c7e188d4408deb298685c98ea1fef321",
+  "tickets": [
+   {
+    "key": "TRUNK-6688",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6688",
+    "summary": "Circular class initialization in ServiceContext logging path fails under Java 25",
+    "status": "Closed",
+    "created": "2026-07-16T07:46:59.146+1000",
+    "resolved": "2026-07-17T22:25:33.544+1000",
+    "description": "Background\nWhen a class first triggers Log4j2 initialization by calling ServiceContext.<clinit> (the static initializer, while it is still assigning the static log field), Log4j2 runs OpenMRS's custom OpenmrsConfigurationFactory. OpenmrsConfigurationFactory.doOpenmrsCustomisations() calls Context.getAdministrationService(), which re-enters ServiceContext (getInstance() -> new ServiceContext()) before the static log field has been assigned. The constructor then calls log.debug(...) on a null logger, throwing an NPE.\nThe result is ExceptionInInitializerError in ServiceContext.<clinit>, permanently poisoning the class, so every subsequent access fails with NoClassDefFoundError: Could not initialize class org.openmrs.api.context.ServiceContext.\nThis is a latent re-entrancy hazard that only manifests when ServiceContext.<clinit> is the first thing to trigger Log4j2 configuration. On Java 21 something else warms up Log4j2 first, so log is already set; on Java 25 class-init/load ordering changed enough that ServiceContext wins that race, and the cycle triggers. It surfaced when building Platform 3.0-dependent modules on Java 25 (e.g. openmrs-module-webservices.rest), where a flood of tests fail from this single root cause.\nAbbreviated stack trace:\nServiceContext.<clinit>(ServiceContext.java:81)          <- assigning static `log`\n  -> LoggerFactory.getLogger(...)                        <- first SLF4J call triggers Log4j2 config\n    -> OpenmrsConfigurationFactory.doOpenmrsCustomisations(:154)\n      -> Context.getAdministrationService(:528)\n        -> ServiceContext.getInstance(:139) -> new ServiceContext(:118)\n          -> log.debug(...)   ->  NullPointerException (log is null)\nRequested change\nBreak the circular initialization so first-touch of ServiceContext under any class-load ordering (including Java 25) does not NPE. Either ensure ServiceContext's static log is assigned before anything that can trigger Log4j2 reconfiguration, or make OpenmrsConfigurationFactory.doOpenmrsCustomisations() tolerate the case where the service context is not yet initialized (skip the Context.getAdministrationService() callback rather than forcing initialization during logging setup). Behavior on Java 21 must be unchanged.\nAcceptance criteria\nInitializing ServiceContext when it is the first class to trigger Log4j2 configuration no longer throws NullPointerException/ExceptionInInitializerError, on both Java 21 and Java 25.\n\nLog4j2's OpenMRS customizations still apply once the service context is available (no loss of logging configuration behavior).\n\nAn automated test reproduces the re-entrant initialization path (triggering Log4j2 config from within ServiceContext static init) and asserts it initializes cleanly - guarding against this regression."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6688": [
+    "eb0a1006c7e188d4408deb298685c98ea1fef321"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/api/context/ServiceContext.java",
+   "api/src/main/java/org/openmrs/logging/OpenmrsConfigurationFactory.java",
+   "api/src/test/java/org/openmrs/api/context/ServiceContextTest.java",
+   "api/src/test/java/org/openmrs/logging/OpenmrsConfigurationFactoryTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "b68355b3dd934c7d5be3708d6637dfae8f845ee5",
+  "date": "2026-07-21T11:26:59-04:00",
+  "subject": "TRUNK-6713: Switch to saner DaemonThread protection scheme (#6349)",
+  "pr": 6349,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6349",
+  "prMergeCommit": "b68355b3dd934c7d5be3708d6637dfae8f845ee5",
+  "tickets": [
+   {
+    "key": "TRUNK-6713",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6713",
+    "summary": "Avoid constructing an exception per call in Daemon.isDaemonThread",
+    "status": "Closed",
+    "created": "2026-07-18T06:28:49.302+1000",
+    "resolved": "2026-07-22T01:52:19.997+1000",
+    "description": "Background\nJFR profiling of the 2.8.x hot paths found that Daemon.isDaemonThread() constructs a new Exception() and materializes its full stack trace on every call, purely to read one frame (stack[2]) and check whether the caller is Daemon/WebDaemon. It is called from Context.hasPrivilege(String) and AuthorizationAdvice.before(...) \u2014 the two most frequently executed points in the request lifecycle.\nMeasured on the context-sensitive test harness: one thrown exception per privilege check and two per @Authorized service call, with stack-trace objects (StackTraceElement, its arrays, and the backtrace) accounting for roughly two-thirds of all allocation on the privilege-check path. Through validation re-entry, a single savePerson triggers dozens of these. This is pure overhead on the system's hottest path.\nThe existing isDaemonThread ThreadLocal fast path already covers threads spawned as daemons (the privileged work in every Daemon method runs via runInDaemonThreadInternal, which sets the flag). The expensive stack-walk fallback therefore mainly serves synchronous entry points that never set the flag \u2014 principally WebDaemon startup, a cold path \u2014 yet its cost is paid on every request thread, where the flag is null and the walk always returns false.\nRequested change\nEliminate the per-call stack walk rather than making it cheaper (a bounded StackWalker is not available on this branch, which still supports Java 8; that is the intended 3.x approach):\nHave every context that must be treated as a daemon set the existing isDaemonThread ThreadLocal around its work, so isDaemonThread() reduces to a ThreadLocal read with no exception and no stack walk. Since the ThreadLocal is private to Daemon, add a small helper (e.g. Daemon.runInDaemonContext(Runnable)) that wraps set(true)/remove() in try/finally for WebDaemon and any other synchronous daemon entry point to use.\n\nReplace the equivalent exception-based caller-validation guard in Daemon.createUser (which uses new Exception().getStackTrace() to assert only HibernateContextDAO calls it) with a non-exception mechanism, subject to the same Java 8 portability constraint.\n\nDo not use SecurityManager.getClassContext() (deprecated for removal and not future-proof across the JVMs 2.8.x runs on).\n\nAcceptance criteria\nNo exception is constructed on the privilege-check or @Authorized service-call paths.\n\nDaemon privileges still hold for all daemon entry points, including WebDaemon startup; tests assert daemon privilege through those paths. Any path that previously relied on the stack fallback and is missed must fail closed (privilege denied), not silently grant.\n\ncreateUser still rejects callers other than the context DAO, without constructing an exception per call.\n\nBehavior is otherwise unchanged on Java 8 and on later JVMs (17, 21)."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6713": [
+    "265582974b2589ffc8787b57c2e4ba0368cb6cba",
+    "b68355b3dd934c7d5be3708d6637dfae8f845ee5"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/api/context/Daemon.java",
+   "api/src/main/java/org/openmrs/api/context/ServiceContext.java",
+   "api/src/main/java/org/openmrs/api/db/hibernate/HibernateContextDAO.java",
+   "api/src/main/java/org/openmrs/module/ModuleFactory.java",
+   "api/src/main/java/org/openmrs/scheduler/jobrunr/JobRequestHandlerAdapter.java",
+   "api/src/test/java/org/openmrs/api/context/DaemonTest.java",
+   "web/src/main/java/org/openmrs/web/WebDaemon.java"
+  ]
+ },
+ {
+  "repo": "openmrs-core",
+  "commit": "2c9b2ee0dd005f64fa543ca8228c51f57cb319c7",
+  "date": "2026-10-02T10:15:07-04:00",
+  "subject": "TRUNK-6810: Extend cluster-safety to RolePrivilegeCache (#6627)",
+  "pr": 6627,
+  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6627",
+  "prMergeCommit": "2c9b2ee0dd005f64fa543ca8228c51f57cb319c7",
+  "tickets": [
+   {
+    "key": "TRUNK-6810",
+    "url": "https://openmrs.atlassian.net/browse/TRUNK-6810",
+    "summary": "Stop API cache fills from invalidating other nodes' entries in cluster mode",
+    "status": "Closed",
+    "created": "2026-09-26T00:32:33.314+1000",
+    "resolved": "2026-10-03T02:33:42.595+1000",
+    "description": "Background\nWith cache.type=cluster, the API caches are Infinispan invalidation caches. Spring's Cache.put is a plain Infinispan put, and in invalidation mode a plain put sends an invalidation of that key to every other node. As a result, @Cacheable API caches (e.g. userSearchLocales, conceptIdsByMapping, serializerWhiteListTypes) and RolePrivilegeCache knock each other's entries out whenever the same key is read on more than one node, so clustered installs see far fewer hits, and each cache fill also costs a round trip to the other nodes. This has been confirmed with a two-node loopback cluster: a Spring put on node 2 removes node 1's entry.\nRequested change\nWrite values read from the database with putForExternalRead, which does not invalidate other nodes' copies, while evictions continue to invalidate across the cluster. For @Cacheable caches this means the caches handed out by apiCacheManager should put via putForExternalRead. GlobalPropertyCache (TRUNK-6707) already does this.\nAcceptance criteria\nIn cluster mode, filling an API cache entry on one node does not remove that entry on other nodes.\n\nEvictions and clears still remove entries on every node.\n\nAutomated tests cover both, for @Cacheable caches and RolePrivilegeCache, using a two-node in-JVM cluster."
+   }
+  ],
+  "sameTicketCommits": {
+   "TRUNK-6810": [
+    "2c9b2ee0dd005f64fa543ca8228c51f57cb319c7"
+   ]
+  },
+  "files": [
+   "api/src/main/java/org/openmrs/api/cache/CacheConfig.java",
+   "api/src/main/java/org/openmrs/api/cache/CacheInvalidation.java",
+   "api/src/main/java/org/openmrs/api/cache/ExternalReadSpringCache.java",
+   "api/src/main/java/org/openmrs/api/cache/ExternalReadSpringCacheManager.java",
+   "api/src/main/java/org/openmrs/api/cache/GlobalPropertyCache.java",
+   "api/src/main/java/org/openmrs/api/cache/RolePrivilegeCache.java",
+   "api/src/main/java/org/openmrs/api/context/ServiceContext.java",
+   "api/src/main/java/org/openmrs/api/db/hibernate/RolePrivilegeCacheInterceptor.java",
+   "api/src/main/java/org/openmrs/api/impl/UserServiceImpl.java",
+   "api/src/test/java/org/openmrs/api/AdministrationServiceTest.java",
+   "api/src/test/java/org/openmrs/api/cache/ApiCacheTestUtil.java",
+   "api/src/test/java/org/openmrs/api/cache/CacheInvalidationTest.java",
+   "api/src/test/java/org/openmrs/api/cache/ExternalReadSpringCacheClusterTest.java",
+   "api/src/test/java/org/openmrs/api/cache/GlobalPropertyCacheClusterTest.java",
+   "api/src/test/java/org/openmrs/api/cache/GlobalPropertyCacheTest.java",
+   "api/src/test/java/org/openmrs/api/cache/GlobalPropertyCacheTestUtil.java",
+   "api/src/test/java/org/openmrs/api/cache/InJvmCacheCluster.java",
+   "api/src/test/java/org/openmrs/api/cache/RolePrivilegeCacheClusterTest.java",
+   "api/src/test/java/org/openmrs/api/cache/RolePrivilegeCacheIntegrationTest.java",
+   "api/src/test/java/org/openmrs/api/cache/RolePrivilegeCacheLoadTest.java",
+   "api/src/test/java/org/openmrs/api/cache/RolePrivilegeCacheTestUtil.java",
+   "api/src/test/java/org/openmrs/api/context/ContextTest.java",
+   "api/src/test/java/org/openmrs/api/db/hibernate/RolePrivilegeCacheInterceptorTest.java",
+   "api/src/test/java/org/openmrs/test/jupiter/BaseContextSensitiveNonTransactionalTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-module-webservices.rest",
+  "commit": "ce758bc0f16a4f981fd31eeff70d0662f551f1c0",
+  "date": "2026-09-29T13:11:59-04:00",
+  "subject": "RESTWS-1053: Don't return a 401 for timed-out session on the session endpoint (#768)",
+  "pr": 768,
+  "prUrl": "https://github.com/openmrs/openmrs-module-webservices.rest/pull/768",
+  "prMergeCommit": "ce758bc0f16a4f981fd31eeff70d0662f551f1c0",
+  "tickets": [
+   {
+    "key": "RESTWS-1053",
+    "url": "https://openmrs.atlassian.net/browse/RESTWS-1053",
+    "summary": "Don't return 401 \"Session timed out\" from the session endpoint for stale session cookies",
+    "status": "Closed",
+    "created": "2026-09-30T02:56:42.755+1000",
+    "resolved": "2026-09-30T03:29:01.754+1000",
+    "description": "Background\nWhen a request arrives with a session cookie for an HTTP session that has expired or been invalidated, AuthorizationFilter responds with 401 Session timed out before any other processing. This also applies to /ws/rest/v1/session, the endpoint clients use to find out their session has expired and to log in again. As a result, a client holding an old cookie gets a 401 from the session endpoint. That includes a login request with valid Basic credentials, which authenticates successfully and creates a new session but still returns 401 to the client. The same happens behind other filters, such as the authentication module's, which explicitly allow the session endpoint for unauthenticated users.\nRequested change\nRequests to /ws/rest/v1/session should not be rejected because the requested session ID is invalid. They should continue through the filter chain as normal, so GET reports authenticated: false and Basic-auth logins succeed. All other REST endpoints keep the existing 401 Session timed out behavior. The fix should be applied to master, 4.x, and 3.x.\nAcceptance criteria\nA request to /ws/rest/v1/session with an invalid requested session ID is not rejected with 401 by AuthorizationFilter, with or without a context path.\n\nA request to any other REST endpoint with an invalid requested session ID still returns 401 Session timed out.\n\nAutomated tests in omod-common/src/test/ cover a stale session on the session endpoint (with and without a context path) and a stale session on a non-session endpoint (regression)."
+   }
+  ],
+  "sameTicketCommits": {
+   "RESTWS-1053": [
+    "ce758bc0f16a4f981fd31eeff70d0662f551f1c0"
+   ]
+  },
+  "files": [
+   "omod-common/src/main/java/org/openmrs/module/webservices/rest/web/filter/AuthorizationFilter.java",
+   "omod-common/src/test/java/org/openmrs/module/webservices/rest/web/filter/AuthorizationFilterTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-module-webservices.rest",
+  "commit": "23df4af7c18589ee7e40d0c4401fdb5da33ab61d",
+  "date": "2026-09-17T14:11:18-04:00",
+  "subject": "RESTWS-1052: Apply order arbitration to class-based resource lookup (#766)",
+  "pr": 766,
+  "prUrl": "https://github.com/openmrs/openmrs-module-webservices.rest/pull/766",
+  "prMergeCommit": "ed382e24b442ff7965bc8a01f9958eb1171b0954",
+  "tickets": [
+   {
+    "key": "RESTWS-1052",
+    "url": "https://openmrs.atlassian.net/browse/RESTWS-1052",
+    "summary": "RestService.getResourceBySupportedClass() ignores order when resources with different names share a supportedClass",
+    "status": "Code Review (Post-Commit)",
+    "created": "2026-09-17T07:18:53.346+1000",
+    "resolved": null,
+    "description": "RestServiceImpl.initializeResources() builds two lookup maps while scanning @Resource-annotated classes:\nresourceDefinitionsByNames (keyed by resource name) \u2014 correctly arbitrates between colliding definitions using order via isResourceToBeAdded().\n\nresourcesBySupportedClasses (keyed by supported class) \u2014 has no such arbitration. When two resources with different names declare the same supportedClass, whichever is scanned last simply overwrites the map entry, regardless of order.\n\nBecause ConversionUtil.getConverter(Class) and RestService.getResourceBySupportedClass(Class) both read from resourcesBySupportedClasses, a resource from one module can be silently and non-deterministically replaced by an unrelated, differently-named resource from another module that happens to support the same domain class \u2014 even when the replaced resource has a lower (better) order and would win a same-name comparison.\nCore's own MainResourceController.retrieve() resolves resources by name (resourceDefinitionsByNames), so it's unaffected. Any custom code that resolves by class instead  \u2014 directly via getResourceBySupportedClass(), or indirectly via ConversionUtil.getConverter() \u2014 is exposed to this bug, and which resource \"wins\" depends on module load/scan order, making it hard to reproduce and easy to break silently when a new module is added.\nWe noticed this when writing an ExtendedObsResource (name=v1/obs, order=0) in one of our modules, which was being silently clobbered in resourcesBySupportedClasses by an unrelated coreapps resource (LatestObsResource, different name, same supportedClass=Obs.class, worse order), breaking custom Obs conversion logic in a REST controller that resolved its converter by class \u2014 with no error, just wrong output.  Adding to this problematic behavior is that it seemed to be environmental - i.e. in my local SDK the correct resource was retrieved, but when deployed to a test server, a different resource was returned.\nFix: apply the same order-based arbitration already used for resourceDefinitionsByNames to resourcesBySupportedClasses, so a resource can't be clobbered by a worse-ordered, differently-named resource for the same class."
+   }
+  ],
+  "sameTicketCommits": {
+   "RESTWS-1052": [
+    "23df4af7c18589ee7e40d0c4401fdb5da33ab61d"
+   ]
+  },
+  "files": [
+   "omod-common/src/main/java/org/openmrs/module/webservices/rest/web/api/impl/RestServiceImpl.java",
+   "omod-common/src/test/java/org/mockingbird/test/rest/resource/AnimalWithHigherOrderResource_1_9.java",
+   "omod/src/test/java/org/openmrs/module/webservices/rest/web/api/impl/RestServiceImplTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-module-webservices.rest",
+  "commit": "070fa8bca3b59292118da26461b3d2cfd9a06796",
+  "date": "2026-05-27T20:28:06+05:30",
+  "subject": "RESTWS-1037: Fix PRIVILEGE_DENIED sentinel leaks into serialized lists, causing HTTP 500 (#743)",
+  "pr": 743,
+  "prUrl": "https://github.com/openmrs/openmrs-module-webservices.rest/pull/743",
+  "prMergeCommit": "070fa8bca3b59292118da26461b3d2cfd9a06796",
+  "tickets": [
+   {
+    "key": "RESTWS-1037",
+    "url": "https://openmrs.atlassian.net/browse/RESTWS-1037",
+    "summary": "PRIVILEGE_DENIED sentinel leaks into serialized lists, causing HTTP 500",
+    "status": "Code Review (Post-Commit)",
+    "created": "2026-05-27T22:46:50.030+1000",
+    "resolved": null,
+    "description": "Affected: Any version with RESTWS-1024\n  Repro\nUser has Get Visits but not Get Encounters.\n\nVisit has \u2265 1 encounter.\n\nGET /ws/rest/v1/visit/{uuid} \u2192 HTTP 500, No serializer found for class java.lang.Object (SimpleObject[\"encounters\"]->ArrayList[0]).\n\n  Cause\n  PRIVILEGE_DENIED is a raw Object returned for denied child resources. The top-level filter drops it, but per-element loops in ConversionUtil and DelegatingResourceDescription.Property.evaluate doesn't,  the raw Object lands in the list, and Jackson fails."
+   }
+  ],
+  "sameTicketCommits": {
+   "RESTWS-1037": [
+    "070fa8bca3b59292118da26461b3d2cfd9a06796"
+   ]
+  },
+  "files": [
+   "omod-common/src/main/java/org/openmrs/module/webservices/rest/web/ConversionUtil.java",
+   "omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/BasePageableResult.java",
+   "omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingResourceDescription.java",
+   "omod-common/src/test/java/org/openmrs/module/webservices/rest/web/ConversionUtilPrivilegeTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-module-webservices.rest",
+  "commit": "66d284b5105a13d5221e103e0243711b69f2dac0",
+  "date": "2026-10-14T03:53:17+03:00",
+  "subject": "RESTWS-1056: Translate AccessDeniedException to the same 401/403 handling as APIAuthenticationException (#767)",
+  "pr": 767,
+  "prUrl": "https://github.com/openmrs/openmrs-module-webservices.rest/pull/767",
+  "prMergeCommit": "66d284b5105a13d5221e103e0243711b69f2dac0",
+  "tickets": [
+   {
+    "key": "RESTWS-1056",
+    "url": "https://openmrs.atlassian.net/browse/RESTWS-1056",
+    "summary": "Return 401/403 for Spring Security's AccessDeniedException, as for APIAuthenticationException",
+    "status": "Closed",
+    "created": "2026-10-09T19:29:47.624+1100",
+    "resolved": "2026-10-22T09:37:39.179+1100",
+    "description": "Since TRUNK-6799, core's AuthorizationAdvice rejects a call that lacks a required privilege with Spring Security's AuthorizationDeniedException, which is an AccessDeniedException. BaseRestController's @ExceptionHandler(APIAuthenticationException.class) and its RestUtil.hasCause(ex, APIAuthenticationException.class) check don't match it, so these requests now return 500 instead of 401 or 403. TRUNK-6823 has the measurements: an unauthenticated GET /ws/rest/v1/patient returns 401 on core 3.0.0-SNAPSHOT build 434 and 500 on build 435.\nHandling AccessDeniedException the same way as APIAuthenticationException (401 when the user isn't authenticated, 403 when they are) would restore the status codes however TRUNK-6823 is resolved."
+   }
+  ],
+  "sameTicketCommits": {
+   "RESTWS-1056": [
+    "66d284b5105a13d5221e103e0243711b69f2dac0"
+   ]
+  },
+  "files": [
+   "omod-common/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/BaseRestController.java",
+   "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/BaseRestControllerTest.java"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-core",
+  "commit": "cd6cf1fcbdab85d05529d015dfb911dfef885b84",
+  "date": "2026-10-10T08:51:08-04:00",
+  "subject": "(fix) O3-6093: Improve support for arrow functions in expression variable extractor (#1943)",
+  "pr": 1943,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1943",
+  "prMergeCommit": "cd6cf1fcbdab85d05529d015dfb911dfef885b84",
+  "tickets": [
+   {
+    "key": "O3-6093",
+    "url": "https://openmrs.atlassian.net/browse/O3-6093",
+    "summary": "`extractVariableNames()` drops variables and returns nested arrays for expressions inside arrow functions",
+    "status": "Done",
+    "created": "2026-10-10T06:06:18.464+1100",
+    "resolved": null,
+    "description": "Background\nextractVariableNames() in @openmrs/esm-expression-evaluator is meant to return the names of all unbound variables in an expression. Callers like the form engine use it to work out which fields an expression depends on, so the expression is re-evaluated when those fields change.\nInside an arrow-function body, the names it returns are wrong:\na.map(x => f(b)), a.map(x => !b) and a.map(x => b.c) all return [\"a\"], missing f and/or b.\n\na.then(v => !isEmpty(b) ? v + 3 : v) returns [\"a\", [\"v\"], \"isEmpty\"]. That's a nested array that contains the arrow's own parameter, and b is missing.\n\nOnly bodies that are a plain binary or conditional expression come out right (e.g. a.map(x => x + b) returns [\"a\", \"b\"]). As a result, a field that's referenced only inside an arrow function is never registered as a dependency, and the expression isn't re-evaluated when that field changes. Callers also receive non-string entries even though the function promises a list of names.\nRequested change\nextractVariableNames() should return a flat list of strings with every unbound identifier in an arrow-function body. That includes identifiers in call arguments, unary operands, and member-expression objects. It should leave out the arrow's own parameters, and it should handle nested arrow functions.\nAcceptance criteria\nextractVariableNames('a.map(x => f(b))') returns a, f, and b.\n\nextractVariableNames('a.then(v => !isEmpty(b) ? v + 3 : v)') returns a, isEmpty, and b, and never v.\n\nThe result never contains non-string entries.\n\nArrow-function parameters are excluded, including in nested arrow functions.\n\nUnit tests in esm-expression-evaluator cover arrow bodies made of call, unary, member, binary, and conditional expressions, nested arrow functions, and parameter exclusion."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6093": [
+    "cd6cf1fcbdab85d05529d015dfb911dfef885b84"
+   ]
+  },
+  "files": [
+   ".changeset/flat-mammals-fail.md",
+   "packages/framework/esm-expression-evaluator/src/evaluator.test.ts",
+   "packages/framework/esm-expression-evaluator/src/extractor.test.ts",
+   "packages/framework/esm-expression-evaluator/src/extractor.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-core",
+  "commit": "4cc27d388fb4a4fe49316791a20127dbb04e31ae",
+  "date": "2026-10-02T17:50:09+05:30",
+  "subject": "(fix) O3-6028: Pass locationsPerRequest to the login location picker and drop numberToShow (#1920)",
+  "pr": 1920,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1920",
+  "prMergeCommit": "4cc27d388fb4a4fe49316791a20127dbb04e31ae",
+  "tickets": [
+   {
+    "key": "O3-6028",
+    "url": "https://openmrs.atlassian.net/browse/O3-6028",
+    "summary": "Login location picker ignores the configured number of locations to load",
+    "status": "Done",
+    "created": "2026-10-01T22:47:01.696+1000",
+    "resolved": null,
+    "description": "Description\nThe login app has two settings for the location picker on the login screen: one to control how many locations are fetched at a time (chooseLocation.locationsPerRequest) and one to control how many are shown (chooseLocation.numberToShow). Neither setting actually does anything. The picker always fetches 50 locations per request regardless of what an implementation configures, so changing these values in a distro config has no effect.\nnumberToShow is left over from an older fixed-length location list and no longer has a meaningful equivalent now that the picker uses infinite scroll, so keeping it in the config only misleads implementers.\nAcceptance criteria\nWhen chooseLocation.locationsPerRequest is set in config, the login location picker uses that value for each batch of locations it fetches and for when it loads more on scroll.\n\nWhen it isn't set, the picker keeps its current default behaviour.\n\nchooseLocation.numberToShow is no longer offered as a config option. Implementations that still set it see at most a standard \"unknown config key\" warning, with no other change in behaviour.\n\nNo visible UI changes to the login screen.\n\nCovered by a test that verifies the configured value reaches the location picker."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6028": [
+    "4cc27d388fb4a4fe49316791a20127dbb04e31ae"
+   ]
+  },
+  "files": [
+   ".changeset/login-locations-per-request.md",
+   "packages/apps/esm-login-app/__mocks__/config.mock.ts",
+   "packages/apps/esm-login-app/src/config-schema.ts",
+   "packages/apps/esm-login-app/src/location-picker/location-picker-view.component.tsx",
+   "packages/apps/esm-login-app/src/location-picker/location-picker.test.tsx",
+   "packages/apps/esm-login-app/src/login.resource.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-core",
+  "commit": "57315b89fd6725e86df4a4569d2c4978c5572fcf",
+  "date": "2026-10-01T20:16:53Z",
+  "subject": "(fix) O3-5981: Coerce error reasons to strings before showing the error toast (#1888)",
+  "pr": 1888,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1888",
+  "prMergeCommit": "57315b89fd6725e86df4a4569d2c4978c5572fcf",
+  "tickets": [
+   {
+    "key": "O3-5981",
+    "url": "https://openmrs.atlassian.net/browse/O3-5981",
+    "summary": "Unhandled rejections pass a raw Error into the toast description, which React cannot render",
+    "status": "Done",
+    "created": "2026-09-15T03:57:37.187+1000",
+    "resolved": null,
+    "description": "Background\nesm-error-handling's global handlers pass their raw argument straight into the toast:\nwindow.onunhandledrejection = function (event: PromiseRejectionEvent) {\n  dispatchToastShown({ description: event.reason ?? '\u2026', kind: 'error', title: 'Error' });\n};\nevent.reason is normally an Error, and it reaches the toast's subtitle as an object. React cannot render an object as a child, so the toast fails to render and takes its subtree down with it \u2014 meaning the user sees nothing at all for an error that was meant to be surfaced to them.\nObserved while running the Angular form engine without zone.js, where a previously swallowed rejection became a real unhandledrejection. The console showed Invalid prop 'subtitle' supplied to 'ActionableNotification', expected a ReactNode followed by Objects are not valid as a React child (found: [object Error]).\nwindow.onerror alongside it takes the same shape and should be checked for the same problem.\nRequested change\nCoerce whatever arrives to a string before it reaches the toast \u2014 the module already has ensureErrorObject(), whose .message is the natural choice \u2014 so that any rejection reason produces a readable notification instead of an unrenderable one.\nAcceptance criteria\nAn unhandled rejection whose reason is an Error produces a toast showing its message.\n\nThe same holds for a reason that is a string, a plain object, null or undefined.\n\nNo React rendering error is produced in any of those cases, and the toast subtree survives.\n\nwindow.onerror is covered by the same handling.\n\nAutomated tests cover each reason shape above."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5981": [
+    "57315b89fd6725e86df4a4569d2c4978c5572fcf"
+   ]
+  },
+  "files": [
+   ".changeset/fix-error-toast-string-coercion.md",
+   "packages/framework/esm-error-handling/src/index.ts",
+   "packages/framework/esm-error-handling/src/openmrs-esm-error-handling.test.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-chart",
+  "commit": "0e06523b799319ec65716df66eafb32aef170b3c",
+  "date": "2026-10-13T15:07:47+05:30",
+  "subject": "(fix) O3-6100: Prevent duplicate vitals saves (#3792)",
+  "pr": 3792,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3792",
+  "prMergeCommit": "0e06523b799319ec65716df66eafb32aef170b3c",
+  "tickets": [
+   {
+    "key": "O3-6100",
+    "url": "https://openmrs.atlassian.net/browse/O3-6100",
+    "summary": "Double-clicking Save and close creates duplicate vitals encounters",
+    "status": "Done",
+    "created": "2026-10-12T22:32:33.677+1100",
+    "resolved": null,
+    "description": "Double-clicking Save and close can save the same vitals twice while the first request is still pending.\nSteps to reproduce\nOpen a test patient with an active visit and select Record vitals.\n\nEnter a temperature of 37 \u00b0C and a heart rate of 72.\n\nSimulate a slow connection, then double-click Save and close. The recording uses a 750 ms delay on each outgoing encounter POST.\n\nReload Vitals & Biometrics.\n\nActual result\nTwo entries appear with the same measurements. The backend also contains two separate, non-voided vitals encounters for the same patient and visit.\nExpected result\nSave should stay disabled until the request finishes. Clicking it more than once should create only one encounter.\nTested versions\nReproduced locally with the published vitals modules 13.0.0 and 12.3.4, using the same 3.8.0 RC backend and surrounding frontend. This confirms the behavior also exists in the older vitals module; the full previous release was not tested.\nSuggested fix\nThe save handler starts the request without returning its promise. Return or await it so isSubmitting stays true until the save finishes.\nAdd a test that double-clicks Save while the request is pending and checks that only one encounter is saved."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6100": [
+    "0e06523b799319ec65716df66eafb32aef170b3c"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-vitals-app/src/vitals-biometrics-form/exported-vitals-biometrics-form.workspace.tsx",
+   "packages/esm-patient-vitals-app/src/vitals-biometrics-form/vitals-biometrics-form.test.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-chart",
+  "commit": "1c19126f11ca5bb93891bd18d89910d20f41ee84",
+  "date": "2026-10-12T20:54:09+03:00",
+  "subject": "(fix) O3-6097: Fix inverted labels on the free text dosage toggle (#3793)",
+  "pr": 3793,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3793",
+  "prMergeCommit": "1c19126f11ca5bb93891bd18d89910d20f41ee84",
+  "tickets": [
+   {
+    "key": "O3-6097",
+    "url": "https://openmrs.atlassian.net/browse/O3-6097",
+    "summary": "\"Free text dosage\" toggle labels are inverted in the drug order form",
+    "status": "Done",
+    "created": "2026-10-12T21:43:42.382+1100",
+    "resolved": null,
+    "description": "Repo: openmrs-esm-patient-chart (esm-patient-medications-app)\nSteps to reproduce\nOpen a patient chart with an active visit, then Order basket \u2192 Drug orders \u2192 Add \u2192 search a drug (e.g. Paracetamol 500mg) \u2192 Order form.\n\nLook at the Free text dosage toggle while it is switched off (structured Dose / Route / Frequency fields showing).\n\nSwitch it on (the free-text dosage box appears).\n\nActual\nToggle switched off \u2192 label reads \"On\".\n\nToggle switched on \u2192 label reads \"Off\".\n\nThe same inversion appears in translations, e.g. French shows \"Activ\u00e9\" while the toggle is off.\n\nExpected\nThe label matches the toggle state: \"Off\" when free-text dosage is off, \"On\" when it is on.\nWhy it matters\nA clinician who believes structured dosing is selected can end up typing into the free-text box instead. Example on test3: Mill QA Test (10003YW), ORD-499 (Zyrtec 10mg) was saved as a free-text order whose only instruction is \"-5\". It has no dose, route, frequency or duration, so it never expires and stays in Active Medications. In the Edit drug order screen the toggle reads \"Off\" while the free-text box is visible.\nCause and fix\nesm-patient-medications-app/src/add-drug-order/drug-order-form.component.tsx:981-982 passes labelA={t('on', 'On')} and labelB={t('off', 'Off')}. Carbon's Toggle shows labelA when unchecked and labelB when checked (checked ? labelB : labelA), so the labels are swapped.\nFix: labelA={t('off', 'Off')} and labelB={t('on', 'On')}, plus a unit test asserting the label text in both states."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6097": [
+    "1c19126f11ca5bb93891bd18d89910d20f41ee84"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.component.tsx",
+   "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.test.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-chart",
+  "commit": "50773fe3f3d8253cf20e0f25dc0113ad8067f2b0",
+  "date": "2026-10-07T23:13:03+03:00",
+  "subject": "(fix) O3-5957: Correct MUAC color code age boundaries (#3626)",
+  "pr": 3626,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3626",
+  "prMergeCommit": "50773fe3f3d8253cf20e0f25dc0113ad8067f2b0",
+  "tickets": [
+   {
+    "key": "O3-5957",
+    "url": "https://openmrs.atlassian.net/browse/O3-5957",
+    "summary": "MUAC color code not set for patients aged exactly 5, 10, or 18",
+    "status": "Done",
+    "created": "2026-09-06T19:54:59.920+1000",
+    "resolved": null,
+    "description": "In getMuacColorCode (packages/esm-patient-vitals-app/src/vitals-biometrics-form/vitals-biometrics-form.utils.ts), the age-bracket boundary conditions are inconsistent between color cases within the same bracket.\nFor example, in the 0-5 age bracket, the \"red\" case uses age <= 5, but the \"yellow\" and \"green\" cases use age < 5. This means a patient exactly 5 years old with a healthy MUAC value (e.g. 13cm) gets no color code at all.\nMore critically, patients exactly 10 or 18 years old get NO color code set for ANY MUAC value, because:\nThe \"5-10\" bracket uses age > 5 && age < 10 (excludes 10)\n\nThe \"10-18\" bracket uses age > 10 && age < 18 (excludes both 10 and 18)\n\nThe \"18+\" bracket uses age > 18 (excludes 18)\n\nVerified via unit test: calling getMuacColorCode(10, 20, callback) or getMuacColorCode(18, 20, callback) never invokes the callback, regardless of MUAC value.\nFix: make all brackets consistently inclusive on the lower bound (age <= 5, age > 5 && age <= 10, age > 10 && age <= 18, age > 18), so there's no gap at the boundary ages. Fix + regression tests ready; full esm-patient-vitals-app test suite (72 tests) passes."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5957": [
+    "50773fe3f3d8253cf20e0f25dc0113ad8067f2b0"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-vitals-app/src/vitals-biometrics-form/vitals-biometrics-form.utils.test.ts",
+   "packages/esm-patient-vitals-app/src/vitals-biometrics-form/vitals-biometrics-form.utils.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-chart",
+  "commit": "f5539ea4c4101357388e5bd00678856073f4b4ae",
+  "date": "2026-10-05T21:21:10+03:00",
+  "subject": "(fix) O3-6019: Preserve medication dosage drafts when switching modes (#3639)",
+  "pr": 3639,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3639",
+  "prMergeCommit": "f5539ea4c4101357388e5bd00678856073f4b4ae",
+  "tickets": [
+   {
+    "key": "O3-6019",
+    "url": "https://openmrs.atlassian.net/browse/O3-6019",
+    "summary": "Prevent loss of unsaved medication dosage entries when switching dosage modes",
+    "status": "Done",
+    "created": "2026-09-29T23:58:51.094+1000",
+    "resolved": null,
+    "description": "When entering a medication order, switching from structured dosage to free-text dosage clears the entered dose, unit, route, frequency, and patient instructions. Switching back clears the free-text entry. An accidental switch therefore requires clinicians to re-enter their work.\nPreserve each mode\u2019s unsaved entries independently while the form remains open. Show only the selected mode\u2019s dosage fields and submit only that mode\u2019s dosage representation.\nCurrent behavior\nWhen a clinician enters a structured dosage (for example: dose, unit, route, frequency, instructions) and then switches to free-text dosage mode, the structured values are lost.\n\nWhen they switch back, the free-text entry is also lost.\n\nThis forces them to re-enter information repeatedly, which slows down medication ordering and increases the risk of data entry errors.\n\nIf a save fails, the entered values are not preserved consistently, making retry attempts more frustrating.\n\nExpected behavior\nStructured dosage details and free-text dosage entries should be preserved independently.\n\nSwitching between dosage modes should retain the data already entered in each mode.\n\nOnly the fields relevant to the currently selected mode should be visible/active at any given time.\n\nDraft values should be cleared only after a successful save, not when the save fails.\n\nClinicians should be able to switch modes freely without losing medication order context.\n\nAcceptance criteria\nSwitching modes and back restores the values entered in each mode.\n\nInactive dosage details are hidden from the form and medication header.\n\nFree-text submissions exclude structured dose, unit, route, frequency, and patient instructions.\n\nStructured submissions exclude free-text dosage.\n\nFailed saves preserve entered values for retry.\n\nTests cover switching in both directions, display isolation, submission filtering, and failed-save preservation.\n\nImpactThis improves medication order entry efficiency, reduces user frustration, and prevents loss of clinical information during routine prescribing workflows."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6019": [
+    "f5539ea4c4101357388e5bd00678856073f4b4ae"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-medications-app/src/add-drug-order/add-drug-order.component.tsx",
+   "packages/esm-patient-medications-app/src/add-drug-order/add-drug-order.test.tsx",
+   "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.component.tsx",
+   "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.test.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-chart",
+  "commit": "c7d6eb8dcec4dc4ce60a285798920842d88820d2",
+  "date": "2026-10-05T09:15:35-04:00",
+  "subject": "(fix) O3-5976: Fix Angular locale import requesting non-existent .mjs files (#3657)",
+  "pr": 3657,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3657",
+  "prMergeCommit": "c7d6eb8dcec4dc4ce60a285798920842d88820d2",
+  "tickets": [
+   {
+    "key": "O3-5976",
+    "url": "https://openmrs.atlassian.net/browse/O3-5976",
+    "summary": "Form engine never loads Angular locale data: the locale import requests .mjs files that do not exist",
+    "status": "Done",
+    "created": "2026-09-15T03:56:56.305+1000",
+    "resolved": null,
+    "description": "Background\nFeWrapperComponent in @openmrs/esm-form-entry-app lazily imports Angular locale data through a webpack context restricted to .mjs. @angular/common/locales/ ships only .js files, so the context is empty, dist/assets/l10n/locales/ is never emitted, and the import rejects on every form launch with Cannot find module './en.mjs'.\nregisterLocaleData() has therefore never run. The engine falls back to Angular's built-in en-US data, so dates and numbers in every form are formatted as US English regardless of the user's locale.\nRequested change\nPoint both the webpackInclude and the request at .js, and narrow the include so it matches only what can actually be requested \u2014 the code always uses the two-letter base language (language.substring(0, 2)).\nA bare /\\\\.js$/ matches all 1,731 files in that directory and emits roughly 2.6 MB of lazy chunks to serve at most thirty locales; anchoring on the path separator is both smaller and closer to the intent. Note that webpackInclude is tested against the resolved path rather than the request, so a ^\\\\./ anchor will silently match nothing.\nAcceptance criteria\nLaunching a form under a non-English supported locale registers that locale's data, and dates and numbers render using it.\n\nNo Cannot find module rejection is logged on form launch in any supported locale.\n\nThe build emits only locale chunks that can be requested, not the full CLDR set.\n\nAutomated tests cover that the locale import resolves for a supported non-English locale, that the rejection path is not hit, and that an unsupported locale degrades without throwing."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5976": [
+    "c7d6eb8dcec4dc4ce60a285798920842d88820d2"
+   ]
+  },
+  "files": [
+   "packages/esm-form-entry-app/src/app/fe-wrapper/fe-wrapper.component.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-chart",
+  "commit": "715ec982cb5008f64cf590e3335001b4de19843e",
+  "date": "2026-09-29T22:25:43+03:00",
+  "subject": "(fix) O3-6004: Make lab result entry safe to retry (#3692)",
+  "pr": 3692,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3692",
+  "prMergeCommit": "715ec982cb5008f64cf590e3335001b4de19843e",
+  "tickets": [
+   {
+    "key": "O3-6004",
+    "url": "https://openmrs.atlassian.net/browse/O3-6004",
+    "summary": "Retrying a failed lab result save creates duplicate results on the order",
+    "status": "Done",
+    "created": "2026-09-24T18:35:02.349+1000",
+    "resolved": null,
+    "description": "Saving lab results from the Enter test results workspace makes three separate requests: it posts the result obs to the order's encounter, discontinues the test order, then sets the order's fulfiller status to COMPLETED. Each request commits on its own. If the second or third one fails, the results are already saved, but the order isn't COMPLETED, so the form stays in create mode with the value still filled in. Clicking Save again posts the obs a second time.\nReproduction\nReproduced on a local stack (core 2.8.10-SNAPSHOT, webservices.rest 3.5.0) with patient-chart main:\nOpen a test order with no results and choose Add results.\n\nEnter a value and save, with POST /order (the discontinue) failing. An \"Error saving lab results\" toast shows and the workspace stays open.\n\nSave again.\n\nThe order ends up COMPLETED with two identical, non-voided result obs.\nWhy\nPOST /encounter/{uuid} with obs adds rows and never replaces them. EncounterResource1_8.setObs clears the encounter's obs set in memory, but Encounter.obs is mappedBy = \"encounter\" with no orphan removal, so the existing rows stay. saveEncounter inserts every obs that has no id, and nothing checks for an existing result on the same order.\n\nRepeating the discontinue returns a 500 (CannotStopInactiveOrderException) once the order is stopped, with the default order.allowSettingStopDateOnInactiveOrders=false.\n\nThe fulfiller update is safe to repeat.\n\nSo if the fulfiller update is the request that fails, or the discontinue commits but its response is lost, every retry adds another copy of the results and then fails on the discontinue. The order can never be completed from the form.\nExpected behaviour\nSaving the results and discontinuing the order should succeed or fail together. The encounter endpoint accepts inline orders and saves them in the same transaction as the obs, the same way the order basket sends discontinue orders.\n\nIf an order already has saved results but isn't COMPLETED, the form should show the saved values, update those obs on save, discontinue the order only if it's still active, then mark it as fulfilled.\n\nA failed save should refetch the saved results so the next attempt sees them.\n\nTests\nResults and the discontinue go in one encounter request, followed by the fulfiller update.\n\nThe fulfiller update isn't sent when saving the results fails.\n\nThe discontinue is skipped when the order is already stopped.\n\nA failed save refetches the saved results.\n\nAn order with saved results gets those obs updated, not new ones posted.\n\nImplementation: PR #3692."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6004": [
+    "715ec982cb5008f64cf590e3335001b4de19843e"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-orders-app/src/lab-results/exported-lab-results-form.workspace.tsx",
+   "packages/esm-patient-orders-app/src/lab-results/lab-results-form.test.tsx",
+   "packages/esm-patient-orders-app/src/lab-results/lab-results.resource.test.ts",
+   "packages/esm-patient-orders-app/src/lab-results/lab-results.resource.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-chart",
+  "commit": "56018720c24c7ac7c565c9f51c8a97c6c7f3cece",
+  "date": "2026-09-25T23:10:57+03:00",
+  "subject": "(fix) O3-5953: Use the active or selected visit when renewing medication orders (#3619)",
+  "pr": 3619,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3619",
+  "prMergeCommit": "56018720c24c7ac7c565c9f51c8a97c6c7f3cece",
+  "tickets": [
+   {
+    "key": "O3-5953",
+    "url": "https://openmrs.atlassian.net/browse/O3-5953",
+    "summary": "Renewing a medication files the renewal encounter in the original order's closed visit",
+    "status": "Done",
+    "created": "2026-09-04T01:40:45.113+1000",
+    "resolved": null,
+    "description": "Renewing a medication from the chart opens the order basket with the original order's visit as the workspace's visit context. If that visit is closed, the renewal encounter is created inside it and its datetime is clamped into the old visit's window. A renewal made today ends up filed under a visit from months ago, while the renewal order itself is activated today.\nThis is a regression from the Workspace v2 migration (O3-4961, openmrs-esm-patient-chart#2800). Before that, Renew launched the basket through the same visit check as Add. Affects patient-chart 12.0.0 onwards.\nSteps to reproduce (visits enabled, RDE not needed)\nPick a patient with a medication ordered in a visit that is now closed and older than dispensing's expiry window (medicationRequestExpirationPeriodInDays, 90 by default).\n\nStart a new visit for the patient today.\n\nActive medications > Actions menu > Renew. Save the basket.\n\nCheck the visit history and Dispensing > Active prescriptions.\n\nExpected\nThe renewal encounter lands in today's visit and the renewal shows up in Active prescriptions.\nActual\nThe encounter sits in the closed visit, dated to it. Dispensing filters Active prescriptions by encounter date, so the renewal is missing there and only appears under All prescriptions. Today's visit shows no prescribing activity. Recording: https://github.com/user-attachments/assets/a6ff1ab4-230d-485f-9c8b-50979c048f73 \nCore accepts this. OrderValidator only rejects an encounter dated after the order's activation, so nothing on the backend flags a September order in an April encounter.\nCause\nhandleRenewClick in esm-patient-medications-app's medications details table builds the workspace group props from the medication's own encounter.visit and passes them when launching the order basket. The basket signs through postOrdersOnNewEncounter in esm-patient-common-lib, which creates the encounter in whatever visit it's handed and clamps the datetime into a closed visit's window.\nFix\nRoute Renew through useStartVisitIfNeeded and open the basket without the medication's group props, so it uses the chart's current or selected visit. PR: https://github.com/openmrs/openmrs-esm-patient-chart/pull/3619 \nTwo things this depends on or leaves open:\nThe start-visit prompt path never resolves after a visit is created, because the visit-form workspace drops the onVisitStarted callback the dialog passes it. That predates this ticket and already affects Add. Tracked separately (ticket to follow).\n\nDiscontinue and Modify launch the basket the same way and probably need the same treatment. Needs verifying first.\n\nNot the fix\nChanging which activation date postOrdersOnNewEncounter pins the encounter to (the earliest/latest swap this ticket was originally titled for) only moves the timestamp inside the wrong visit, and in a mixed basket rewrites other orders' dates. The order dates are already right; the visit is wrong.\nEncounters already filed this way are not repaired by the fix."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5953": [
+    "56018720c24c7ac7c565c9f51c8a97c6c7f3cece"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-chart-app/src/visit/visit-prompt/start-visit-dialog.modal.tsx",
+   "packages/esm-patient-chart-app/src/visit/visit-prompt/start-visit-dialog.test.tsx",
+   "packages/esm-patient-common-lib/src/workspaces.test.ts",
+   "packages/esm-patient-common-lib/src/workspaces.ts",
+   "packages/esm-patient-medications-app/src/components/medications-details-table.component.tsx",
+   "packages/esm-patient-medications-app/src/components/medications-details-table.test.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-chart",
+  "commit": "4d9f19a2d629347559fe32b89899af6245c16e23",
+  "date": "2026-09-24T15:31:10Z",
+  "subject": "(fix) O3-5989: Keep a visit note saved when one of its images is rejected (#3670)",
+  "pr": 3670,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3670",
+  "prMergeCommit": "4d9f19a2d629347559fe32b89899af6245c16e23",
+  "tickets": [
+   {
+    "key": "O3-5989",
+    "url": "https://openmrs.atlassian.net/browse/O3-5989",
+    "summary": "Visit note form leaves a saved note behind when an image upload is rejected, and saving again creates a duplicate",
+    "status": "Done",
+    "created": "2026-09-18T22:39:10.552+1000",
+    "resolved": null,
+    "description": "If the server rejects one of the images in a visit note, the note and its diagnoses are already saved, but the form stays open as if nothing was saved. Pressing Save and close again creates a second visit note.\nSteps to reproduce\nOpen a patient with an active visit and start a visit note. Add a diagnosis and some note text.\n\nClick Add image and pick a file the server will reject. A text file renamed to .png works: it passes the dialog and the server refuses it for its content type.\n\nClick Save and close.\n\nActual behaviour\nA red toast says \"Error saving visit note: The file content type text/plain is not allowed\". The form stays open with the title \"Add visit note\" and everything the user typed. A visit note encounter with the text and diagnosis already exists on the server. Clicking Save and close again creates a second encounter with the same text and diagnosis. Reproduced on a local stack: one rejected upload, two notes, zero images.\nExpected behaviour\nEither the note is treated as saved and the user is told which images did not upload, or a retry updates the note that already exists. In no case should a second note be created.\nInvestigation\nonSubmit in visit-notes-form.component.tsx is a promise chain: create or update the encounter, then delete and recreate diagnoses, then upload each image with createAttachment. The catch handler only shows the toast. Nothing rolls back, and the form still believes it is creating because isEditing is derived from the launch props and never changes after the encounter is created. The second submit posts a new encounter.\nAny server-side rejection the dialog doesn't catch first leads here: a content type mismatch, a size limit lower than the dialog's (O3-5988), a denied file name, or an image that fails to decode.\nProposed fix\nTwo reasonable shapes:\nAfter the encounter is created, switch the form to editing that encounter, so a retry updates it and only re-sends the failed images.\n\nOn a partial failure, close the workspace as saved and show a warning naming the images that didn't upload, so the user adds them again from the note.\n\nThe first keeps the user's context, the second is simpler. Either way the reproduction above becomes the regression test.\nFound while working on O3-5986, which links uploaded images to the note's encounter and makes the half-saved state easier to notice. Related: O3-5987, O3-5988."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5989": [
+    "4d9f19a2d629347559fe32b89899af6245c16e23",
+    "96b812bb0206c034792895cacfad69dd3f37b44a"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-notes-app/src/notes/visit-notes-form.component.tsx",
+   "packages/esm-patient-notes-app/src/notes/visit-notes-form.test.tsx",
+   "packages/esm-patient-notes-app/translations/en.json"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-chart",
+  "commit": "281126263e3ede446bd40b816983f258a39f39d1",
+  "date": "2026-09-22T21:32:07+03:00",
+  "subject": "(fix) O3-5988: Use the backend attachment upload limit (#3683)",
+  "pr": 3683,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3683",
+  "prMergeCommit": "281126263e3ede446bd40b816983f258a39f39d1",
+  "tickets": [
+   {
+    "key": "O3-5988",
+    "url": "https://openmrs.atlassian.net/browse/O3-5988",
+    "summary": "Attachment upload dialog shows a file size limit that is unrelated to the backend's attachments.maxUploadFileSize",
+    "status": "Done",
+    "created": "2026-09-18T22:39:00.501+1000",
+    "resolved": null,
+    "description": "The Add attachment dialog tells the user \"File limit is 1MB\" and refuses larger files client side, but that number is the attachments app's frontend config default. The backend enforces its own limit from the attachments.maxUploadFileSize global property, and the two never see each other.\nSteps to reproduce\nOn a local stack with attachments.maxUploadFileSize at its default of 5.0:\nOpen the visit note form, click Add image, switch to Upload files. The dialog says \"File limit is 1MB\".\n\nDrop a 2.9 MB PNG. The dialog refuses it: \"The file \"big.png\" exceeds the size limit of 1 MB.\"\n\nThen set attachments.maxUploadFileSize to 0.5 and repeat with a 0.8 MB PNG:\nThe dialog accepts it and moves to the review step.\n\nPOST /ws/rest/v1/attachment with the same file returns 400 \"The file exceeds the maximum size\".\n\nIn the visit note form the second case surfaces after the note itself has been saved, which is O3-5989.\nExpected behaviour\nThe limit the dialog shows and checks is the limit the server enforces. An implementer changes one property and both sides follow.\nInvestigation\nmedia-uploader.component.tsx reads maxFileSize from attachments-config-schema.ts (default 1) for both the helper text and the client-side check. The server checks ctx.getMaxUploadFileSize() in AttachmentResource.upload. The dialog already reads the allowed extensions from the backend property through useAllowedFileExtensions, so the size limit is the odd one out.\nOne caveat for the reference distro: the nginx gateway has no client_max_body_size set, so nginx's 1 MB default rejects larger uploads with a 413 before they reach the module. That matches the frontend default by coincidence. Raising the backend property alone won't help on the reference distro until the gateway limit is raised too, which is worth a note in the distro docs or a matching gateway setting.\nProposed fix\nRead attachments.maxUploadFileSize the same way the extensions are read (a small hook in esm-patient-common-lib next to useAllowedFileExtensions), use it for the helper text and the check, and deprecate the maxFileSize frontend config key so there is one source of truth.\nFound while working on O3-5986. Related: O3-5987 (allowed extensions and early toast), O3-5989 (partial save in the visit note form)."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5988": [
+    "281126263e3ede446bd40b816983f258a39f39d1",
+    "96b812bb0206c034792895cacfad69dd3f37b44a"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-attachments-app/src/attachments-config-schema.ts",
+   "packages/esm-patient-attachments-app/src/camera-media-uploader/media-uploader.component.tsx",
+   "packages/esm-patient-attachments-app/src/camera-media-uploader/media-uploader.test.tsx",
+   "packages/esm-patient-attachments-app/translations/en.json",
+   "packages/esm-patient-common-lib/src/index.ts",
+   "packages/esm-patient-common-lib/src/useMaxAttachmentFileSize.test.ts",
+   "packages/esm-patient-common-lib/src/useMaxAttachmentFileSize.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-chart",
+  "commit": "108c48985b5e33905d025cb936a5657f45bb7a7a",
+  "date": "2026-09-24T20:50:01Z",
+  "subject": "(fix) O3-5998: Continue to the requested workspace after starting or selecting a visit (#3688)",
+  "pr": 3688,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3688",
+  "prMergeCommit": "108c48985b5e33905d025cb936a5657f45bb7a7a",
+  "tickets": [
+   {
+    "key": "O3-5998",
+    "url": "https://openmrs.atlassian.net/browse/O3-5998",
+    "summary": "Starting or selecting a visit from the visit prompt doesn't continue to the workspace that asked for it",
+    "status": "Done",
+    "created": "2026-09-23T19:04:57.318+1000",
+    "resolved": null,
+    "description": "When a chart action needs a visit and the patient has none, useStartVisitIfNeeded shows a visit prompt and waits for the user to start or pick a visit before continuing. Neither path continues today. After the visit is started or selected, the workspace the user asked for doesn't open, and they have to click the action again.\nThis affects 17 hook calls across 11 files in the medications, orders, vitals, notes, forms, and chart apps, via useLaunchWorkspaceRequiringVisit and useStartVisitIfNeeded.\nCause\nThere are two problems:\nWith RDE off, the \"No active visit\" dialog passes onVisitStarted into the start-visit-workspace-form workspace, but the chart's wrapper for that workspace (visit-form.workspace.tsx) never reads it. The promise never resolves. Before the Workspace v2 migration (O3-4961, openmrs-esm-patient-chart#2800), this path didn't pass a callback at all, so this has never worked.\n\nWith RDE on, selecting a visit resolves the promise straight away. But setting a new visit context makes the chart relaunch its workspace group once the visit is refetched, and launchWorkspaceGroup2 closes every open window when the group props change. The resumed workspace gets closed before it renders. The RDE-off path hits the same thing once the callback is wired up.\n\nSteps to reproduce\nOpen a patient with no active visit.\n\nMedications > Record active medications.\n\nRDE off: click Start new visit, then fill in and save the visit form. RDE on: select a visit and click Continue.\n\nExpected: the medication ordering workspace opens.\nActual: nothing opens. The banner shows the visit, and clicking Record active medications again opens Add drug order.\nReproduced on dev3 (patient-chart main) on 2026-09-23 for both paths. For RDE, holding back the chart's refetch of the selected visit makes the workspace appear at about 440 ms and disappear right after the refetch lands, which confirms the relaunch closes it.\nThe RDE-off behaviour is present in every release, including RefApp 3.5.0 (patient-chart 11.3.0), 3.6.0 (12.1.0) and 3.7.0 (12.3.4). The RDE-on behaviour is present from patient-chart 12.0.0 (RefApp 3.6.0 and 3.7.0).\nFix\nThe chart's visit form wrapper accepts onVisitStarted and calls it after updating the visit context.\n\nThe patient chart store records which visit the chart's workspace group was last launched with. The chart sets it after each successful relaunch.\n\nuseStartVisitIfNeeded resolves true only once that matches the new visit context, for both the RDE and RDE-off paths. Under RDE, closing the switcher after a selection no longer resolves false.\n\nTests cover the wrapper forwarding the callback, the chart recording the relaunched visit, the visit check waiting on each path, and the switcher resolving false when closed without a selection.\nOut of scope\nCancelling. Closing the dialog or discarding the visit form leaves the promise pending. No caller treats false differently from pending, and the form can't see the workspace header's Close button, so there's no reliable way to report every cancel. openmrs-esm-patient-chart#3619 adds dialog cancel handling.\n\n\"Create new visit\u2026\" in the RDE switcher. It closes the switcher, which resolves false, then opens the visit form with no callback, so it also doesn't continue. We should track that separately.\n\nRelated\nopenmrs-esm-patient-chart#3619 (O3-5953) edits the same block in useStartVisitIfNeeded, so whichever lands second needs a small rebase. Renew picks up this fix once both are in."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5998": [
+    "56018720c24c7ac7c565c9f51c8a97c6c7f3cece",
+    "108c48985b5e33905d025cb936a5657f45bb7a7a"
+   ]
+  },
+  "files": [
+   "e2e/specs/start-and-end-visit.spec.ts",
+   "packages/esm-patient-chart-app/src/patient-chart/patient-chart.resources.test.ts",
+   "packages/esm-patient-chart-app/src/patient-chart/patient-chart.resources.ts",
+   "packages/esm-patient-chart-app/src/visit/visit-form/visit-form.test.tsx",
+   "packages/esm-patient-chart-app/src/visit/visit-form/visit-form.workspace.tsx",
+   "packages/esm-patient-common-lib/src/store/patient-chart-store.ts",
+   "packages/esm-patient-common-lib/src/workspaces.test.ts",
+   "packages/esm-patient-common-lib/src/workspaces.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-management",
+  "commit": "cd131dd39fbf3d299295ae62d157c450d884ed58",
+  "date": "2026-10-15T11:35:51Z",
+  "subject": "(fix) O3-6096: Return to Add patient to list modal after creating a new list (#2821)",
+  "pr": 2821,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2821",
+  "prMergeCommit": "cd131dd39fbf3d299295ae62d157c450d884ed58",
+  "tickets": [
+   {
+    "key": "O3-6096",
+    "url": "https://openmrs.atlassian.net/browse/O3-6096",
+    "summary": "Creating a new list from a patient's chart (\"Add to list\") doesn't take the user back to add the patient",
+    "status": "Done",
+    "created": "2026-10-12T18:34:11.424+1100",
+    "resolved": null,
+    "description": "Repo: openmrs-esm-patient-management (patient-list-management-app)\nBackground\nA user who opens Add to list from a patient's chart wants to put that patient on a list.\n\n\"Create new patient list\" is only a step towards that when the list they need doesn't exist yet.\n\nCreating the list isn't the goal. Adding the patient is.\n\nSteps to reproduce\nOpen a patient's chart (e.g. Molly QA380 Test, 10004GT on test3).\n\nGo to Actions \u2192 Add to list \u2192 Create new patient list.\n\nFill in the form and press Create list.\n\nActual\nThe user is taken out of the patient chart to Home \u2192 Patient lists.\n\nThe new list exists, but the patient isn't on it.\n\nThe flow ends there, and nothing prompts the user to finish the task.\n\nTo finish, the user has to go back to the chart, reopen Add to list, find the new list and tick it.\n\nCancel also leaves the user on the Patient lists page, away from the patient.\n\nExpected\nAfter Create list, the user is taken back to the Add patient to list modal. The list of patient lists is refreshed to include the new list, and the new list is checked.\n\nThe user can then click Save to add the patient, or uncheck the new list first if they need to.\n\nSave adds the patient and confirms it, e.g. \"Molly QA380 Test added to 'test'\".\n\nWhy it matters\nLeaving the user with an empty new list invites them to think the patient was added.\n\nLists created this way can stay empty.\n\nTechnical note\nadd-patient.modal.tsx:34-40 navigates to home/patient-lists?create=true and closes the modal, without passing the patient or a way back."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6096": [
+    "cd131dd39fbf3d299295ae62d157c450d884ed58"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-list-management-app/src/add-patient/add-patient.modal.tsx",
+   "packages/esm-patient-list-management-app/src/add-patient/add-patient.test.tsx",
+   "packages/esm-patient-list-management-app/src/patient-list-form/patient-list-form.workspace.test.tsx",
+   "packages/esm-patient-list-management-app/src/patient-list-form/patient-list-form.workspace.tsx",
+   "packages/esm-patient-list-management-app/src/routes.json",
+   "packages/esm-patient-list-management-app/translations/en.json"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-management",
+  "commit": "b4b76423feb220db7e78f27e769f3d32ffaf89b7",
+  "date": "2026-09-28T18:36:21+05:30",
+  "subject": "(fix) O3-5916: Reuse generated identifiers when retrying a patient save (#2780)",
+  "pr": 2780,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2780",
+  "prMergeCommit": "b4b76423feb220db7e78f27e769f3d32ffaf89b7",
+  "tickets": [
+   {
+    "key": "O3-5916",
+    "url": "https://openmrs.atlassian.net/browse/O3-5916",
+    "summary": "Make automatically generated patient identifiers retry-safe",
+    "status": "Done",
+    "created": "2026-08-22T07:41:42.667+1000",
+    "resolved": null,
+    "description": "Impact\nRetrying a partially completed save can consume multiple generated identifier values. When editing an existing patient, it can also attach duplicate identifiers.\nFor a new patient, retries waste generated values but do not attach duplicates. Once the patient exists, the retry goes through PatientResource1_8.update, which only applies the person block and ignores the identifiers array.\nAffected code\npackages/esm-patient-registration-app/src/patient-registration/form-manager.ts\n\npackages/esm-patient-registration-app/src/patient-registration/form-manager.test.ts\n\nRoot cause\nEach save attempt generates identifiers again. The save transaction remembers whether the main patient request succeeded, but it does not remember generated values or successful identifier additions.\nNewly added identifier fields have no identifierUuid (initializeIdentifier never sets one), so every retry POSTs to /patient/{uuid}/identifier without a uuid and the REST resource creates a new row each time.\nEach call to /idgen/identifiersource/{uuid}/identifier writes a log entry and advances the sequence, so every retry consumes a value.\nIf a later operation fails, retrying repeats identifier work that already completed.\nReproduction\nEdit an existing patient.\n\nAdd an identifier configured for automatic generation.\n\nSubmit the form.\n\nAllow the identifier request to succeed, then make a later operation fail.\n\nRetry the submission.\n\nAnother identifier is generated and attached to the patient.\nExpected behavior\nRetrying the same submission should reuse the generated value and should not repeat an identifier addition that already succeeded.\nImplementation direction\nExtend the save transaction state to retain generated identifier values and completed identifier additions, keyed by a stable identifier field key.\nUse serializable records rather than Set or Map. The transaction manager is stored inside _patientRegistrationData for offline synchronization.\nRetry only operations that did not complete successfully.\nNote on offline: esm-core's sync (processHandler in esm-offline/src/sync.ts) only writes lastError back to IndexedDB on failure. It never persists the mutated item content, so no transaction state (including today's patientSaved) survives between sync runs. Fixing that belongs in esm-core and is out of scope here. Offline mode is also disabled in the reference application (supportOffline: false), so the online retry path is what matters.\nAcceptance criteria\nA generated identifier is generated once across retries of the same submission.\n\nA successful identifier addition is not repeated.\n\nA failed identifier addition is retried.\n\nNew-patient retries do not consume another generated value.\n\nExisting-patient retries do not attach duplicate identifiers.\n\nThe transaction state is made up of plain serializable objects (no Set or Map).\n\nAdd tests that fail a later operation and then retry with the same transaction state.\n\nVerified against openmrs-esm-patient-management commit c64fb336. Still applies at e23ce30c; the only change to form-manager.ts since is O3-5913 (awaiting identifier deletions), which does not touch identifier generation."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5916": [
+    "b4b76423feb220db7e78f27e769f3d32ffaf89b7"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-registration-app/src/patient-registration/form-manager.test.ts",
+   "packages/esm-patient-registration-app/src/patient-registration/form-manager.ts",
+   "packages/esm-patient-registration-app/src/patient-registration/patient-registration.component.tsx",
+   "packages/esm-patient-registration-app/src/patient-registration/patient-registration.test.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-management",
+  "commit": "b322ea70dcbc8614774d7b363ca1abca07fe07f0",
+  "date": "2026-09-28T19:04:17+03:00",
+  "subject": "(fix) O3-5914: Preserve saved location attributes while searching (#2778)",
+  "pr": 2778,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2778",
+  "prMergeCommit": "b322ea70dcbc8614774d7b363ca1abca07fe07f0",
+  "tickets": [
+   {
+    "key": "O3-5914",
+    "url": "https://openmrs.atlassian.net/browse/O3-5914",
+    "summary": "Preserve existing location attributes while searching",
+    "status": "Done",
+    "created": "2026-08-22T07:41:02.471+1000",
+    "resolved": null,
+    "description": "Impact\nSearching for a location while editing a patient can accidentally delete the patient\u2019s existing location person attribute.\nAffected code\npackages/esm-patient-registration-app/src/patient-registration/field/person-attributes/location-person-attribute-field.component.tsx\n\npackages/esm-patient-registration-app/src/patient-registration/field/person-attributes/location-person-attribute-field.resource.tsx\n\npackages/esm-patient-registration-app/src/patient-registration/form-manager.ts\n\nRoot cause\nThe location picker loads only ten locations when there is no search query. If the patient\u2019s saved location is not in those results, the field appears blank.\nTyping text that does not match a loaded option immediately sets the Formik value to null. The save path treats that value as an instruction to delete the existing attribute.\nExplicitly clearing the ComboBox does not currently clear the Formik value, so supporting deliberate removal will be new behavior.\nReproduction\nEdit a patient whose location attribute is not among the first ten locations returned.\n\nConfirm that the location field appears blank.\n\nType in the location search field without selecting another location.\n\nSave and reload the patient.\n\nThe original location attribute is missing.\n\nExpected behavior\nThe saved location should be displayed. Searching should not change the stored value until the user selects another location or explicitly clears the field.\nImplementation direction\nInclude the patient\u2019s saved location in the available options even when it is outside the initial result page.\nKeep search text separate from the Formik value. Update the value only when the user selects another location or explicitly clears the ComboBox.\nAcceptance criteria\nA saved location outside the first result page is displayed.\n\nTyping without selecting another location preserves the saved value.\n\nSelecting another location updates the value.\n\nExplicitly clearing the ComboBox removes the attribute.\n\nAdd interaction tests for display, search, selection, and explicit clearing.\n\nVerified against openmrs-esm-patient-management commit c64fb336."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5914": [
+    "b322ea70dcbc8614774d7b363ca1abca07fe07f0"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-registration-app/src/patient-registration/field/person-attributes/location-person-attribute-field.component.tsx",
+   "packages/esm-patient-registration-app/src/patient-registration/field/person-attributes/location-person-attribute-field.test.tsx",
+   "packages/esm-patient-registration-app/src/patient-registration/form-manager.test.ts",
+   "packages/esm-patient-registration-app/src/patient-registration/form-manager.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-management",
+  "commit": "e7b14cfb17e0871420c4023bb81b19cedcab30b4",
+  "date": "2026-09-25T21:37:07Z",
+  "subject": "(fix) O3-5912: Clear dependent address fields when a parent level changes (#2761)",
+  "pr": 2761,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2761",
+  "prMergeCommit": "e7b14cfb17e0871420c4023bb81b19cedcab30b4",
+  "tickets": [
+   {
+    "key": "O3-5912",
+    "url": "https://openmrs.atlassian.net/browse/O3-5912",
+    "summary": "Regression: Address hierarchy does not clear dependent fields",
+    "status": "Done",
+    "created": "2026-08-21T20:27:30.273+1000",
+    "resolved": null,
+    "description": "Problem\nWhen searchAddressByLevel is enabled, changing a parent address field can leave child values from the previous selection. This can produce inconsistent addresses, such as Uganda with Nairobi as the province.\nThis is a regression of O3-1754, which is marked Done.\nAffected code\nAddress component container\n\nAddress hierarchy field reset\n\nRoot cause\nThe address container creates a nested patient-registration context with a setFieldValue function that does nothing. The address hierarchy uses this function when attempting to clear dependent fields.\nHow to reproduce\nEnable searchAddressByLevel.\n\nSelect Kenya as the country.\n\nSelect Nairobi as the state or province.\n\nChange the country to Uganda.\n\nNairobi remains selected.\n\nExpected behaviour\nChanging a parent address field should clear every dependent child field.\nImplementation notes\nAllow the address hierarchy to use the real form setFieldValue function instead of the no-op function from the nested context.\nAcceptance criteria\nChanging the country clears all dependent address fields.\n\nChanging another parent level clears the levels below it.\n\nThe selected parent value is preserved.\n\nTests use the real hierarchy interaction and verify the resulting form values.\n\nBehaviour without searchAddressByLevel remains unchanged.\n\nVerified against openmrs-esm-patient-management commit c64fb3366119833e9e09a0eb31d580c9e1558d8b."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5912": [
+    "e7b14cfb17e0871420c4023bb81b19cedcab30b4"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-registration-app/src/patient-registration/field/address/address-field.component.tsx",
+   "packages/esm-patient-registration-app/src/patient-registration/field/address/address-hierarchy-levels.test.tsx",
+   "packages/esm-patient-registration-app/src/patient-registration/field/address/address-hierarchy.resource.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-management",
+  "commit": "c14590b98846c7153360116d9823317bdaa22277",
+  "date": "2026-09-21T14:53:22-04:00",
+  "subject": "(fix) O3-5991: Allow post-registration redirects to non-SPA URLs (#2758)",
+  "pr": 2758,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2758",
+  "prMergeCommit": "c14590b98846c7153360116d9823317bdaa22277",
+  "tickets": [
+   {
+    "key": "O3-5991",
+    "url": "https://openmrs.atlassian.net/browse/O3-5991",
+    "summary": "Registration - allow post-registration redirects to non-SPA URLs",
+    "status": "Done",
+    "created": "2026-09-19T05:19:10.364+1000",
+    "resolved": null,
+    "description": "The registration configuration allows a user to configure where to navigate after a patient is saved. The default is the patient chart. \nAs we have started adding O3 apps and features to the PIH Malawi EMR, we want to have the ability to navigate to an old patient dashboard, which is a non SPA page. This is where I discovered this bug that when I try the following configuration the system resolved the URL to undefined.\n\"@openmrs/esm-patient-registration-app\": {\n  \"links\": {\n    \"submitButton\": \"${openmrsBase}/patientDashboard.form?patientId=${patientUuid}\"\n  },\n  }"
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5991": [
+    "c14590b98846c7153360116d9823317bdaa22277"
+   ]
+  },
+  "files": [
+   "packages/esm-patient-registration-app/src/patient-registration/before-save-prompt.component.tsx",
+   "packages/esm-patient-registration-app/src/patient-registration/before-save-prompt.test.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-management",
+  "commit": "b8335ad593a4946dd297a88e00c1fd6e6d1fc4f0",
+  "date": "2026-09-08T12:40:11Z",
+  "subject": "(fix) O3-5940: Don't offer queues a patient is already in (#2710)",
+  "pr": 2710,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2710",
+  "prMergeCommit": "b8335ad593a4946dd297a88e00c1fd6e6d1fc4f0",
+  "tickets": [
+   {
+    "key": "O3-5940",
+    "url": "https://openmrs.atlassian.net/browse/O3-5940",
+    "summary": "Don't offer queues a patient is already in",
+    "status": "Done",
+    "created": "2026-09-01T16:42:19.176+1000",
+    "resolved": null,
+    "description": "The queue entry form offers queues the patient already has an active entry in. Those entries cannot be duplicated, so the only outcome of picking one is a failed submit and the user only finds out after filling in the queue location, service and priority.\nSteps to reproduce\nGo to Home > Service queues and select the \"Outpatient Clinic\" queue location.\n\nNote a patient listed under \"Attending\" \u2014 e.g. Susan Lopez (CR Number 100001W), inOutpatient Consultation.\n\nIn the Waiting List, click \"Add a patient to this list\" and search for the patient.\n\nSelect them, keep the prefilled Queue Location and pick Outpatient Consultation as theService, then click \"Add patient to queue\".\n\nExpected\nThe form does not offer queues the patient is already in:\nService lists only queues at the selected location that the patient is not already in.\n\nQueue Location omits a location once the patient is in every queue there.\n\nA location with no queues configured is still listed, so that misconfiguration keeps surfacing as \"No services configured\".\n\nQueues at other locations are unaffected \u2014 the patient can still be queued elsewhere.\n\nActual\nOutpatient Consultation is offered, and submitting produces:\nError updating queue entry\nServer responded with 400 (Bad Request) for url /openmrs/ws/rest/v1/visit-queue-entry"
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5940": [
+    "b8335ad593a4946dd297a88e00c1fd6e6d1fc4f0"
+   ]
+  },
+  "files": [
+   "packages/esm-service-queues-app/src/constants.ts",
+   "packages/esm-service-queues-app/src/create-queue-entry/existing-visit-form/existing-visit-form.component.tsx",
+   "packages/esm-service-queues-app/src/create-queue-entry/queue-fields/queue-fields.component.tsx",
+   "packages/esm-service-queues-app/src/create-queue-entry/queue-fields/queue-fields.test.tsx",
+   "packages/esm-service-queues-app/src/create-queue-entry/queue-fields/visit-form-queue-fields.extension.tsx",
+   "packages/esm-service-queues-app/src/hooks/useQueueEntries.ts",
+   "packages/esm-service-queues-app/src/modals/add-or-move-modal/add-patient-to-queue.component.tsx",
+   "packages/esm-service-queues-app/src/modals/queue-entry-actions.test.tsx",
+   "packages/esm-service-queues-app/src/modals/queue-entry-confirm-action.test.tsx",
+   "packages/esm-service-queues-app/src/modals/queue-entry-error.utils.ts",
+   "packages/esm-service-queues-app/translations/en.json"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-management",
+  "commit": "1f4098170806704451ed195a9922dc1a30ebcedc",
+  "date": "2026-09-14T22:31:27+05:30",
+  "subject": "(fix) O3-5958: Default the queue location to the one selected in Service Queues (#2731)",
+  "pr": 2731,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2731",
+  "prMergeCommit": "1f4098170806704451ed195a9922dc1a30ebcedc",
+  "tickets": [
+   {
+    "key": "O3-5958",
+    "url": "https://openmrs.atlassian.net/browse/O3-5958",
+    "summary": "Queue location is blank when the login location is not queue-tagged",
+    "status": "Done",
+    "created": "2026-09-09T02:39:44.897+1000",
+    "resolved": null,
+    "description": "When creating a queue entry in the Service Queues app, the Queue Location field remains blank if the login location is not queue-tagged, even when it has a queue-tagged ancestor.\nThe Service Queues dashboard correctly resolves and selects the nearest queue-tagged ancestor. The form still defaults to the login location, which isn't among its dropdown options, leaving the field blank.\nSteps to reproduce:\nLog into the application at a location that is not queue-tagged but has a queue-tagged parent or ancestor.\n\nNavigate to Service Queues and confirm that the dashboard shows the queue-tagged ancestor.\n\nOpen the Add patient to queue form for a patient with an active visit.\n\nObserve the Queue Location field.\n\nExpected behavior: The Queue Location field defaults to the location selected in Service Queues, with the session location as fallback when no queue location is selected.\nActual behavior: The field is blank, requiring manual selection.\nThe cause is a mismatch between the form's default location and its available options, rather than an asynchronous delay in loading the session location.\nFix: PR #2731 uses the selected Service Queues location as the form default. Verified in the local app: the original code leaves the field blank, the patched code selects the queue-tagged ancestor, and manually clearing the field keeps it cleared."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5958": [
+    "1f4098170806704451ed195a9922dc1a30ebcedc"
+   ]
+  },
+  "files": [
+   "packages/esm-service-queues-app/src/create-queue-entry/queue-fields/queue-fields.component.tsx",
+   "packages/esm-service-queues-app/src/create-queue-entry/queue-fields/queue-fields.test.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-patient-management",
+  "commit": "d9cbd2742a8d8842f6c7ae4d243254f195c06bd7",
+  "date": "2026-09-17T16:42:04Z",
+  "subject": "(fix) O3-5984: Label in-service patients with the configured status name (#2750)",
+  "pr": 2750,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2750",
+  "prMergeCommit": "d9cbd2742a8d8842f6c7ae4d243254f195c06bd7",
+  "tickets": [
+   {
+    "key": "O3-5984",
+    "url": "https://openmrs.atlassian.net/browse/O3-5984",
+    "summary": "Queues: In Service vs Attending language",
+    "status": "Done",
+    "created": "2026-09-17T00:19:25.374+1000",
+    "resolved": null,
+    "description": "The naming is inconsistent for the In Service/Attending queue status. The metrics show In service but the card list shows Attending. I think we should change the Attending label to In Service to align with the status and the metrics. It previously showed In Service which seemed to be well received by the users."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5984": [
+    "d9cbd2742a8d8842f6c7ae4d243254f195c06bd7"
+   ]
+  },
+  "files": [
+   "packages/esm-service-queues-app/src/attending-patients/attending-patients.component.tsx",
+   "packages/esm-service-queues-app/src/attending-patients/attending-patients.test.tsx",
+   "packages/esm-service-queues-app/src/clinic-administrator/clinic-overview.component.tsx",
+   "packages/esm-service-queues-app/translations/en.json"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-form-engine-lib",
+  "commit": "6a5b489b47c58f526f9988624c0bf349ec5b75ad",
+  "date": "2026-10-07T14:56:38+03:00",
+  "subject": "(fix) O3-6048: Accept numeric string height in calcWeightForHeightZscore (#832)",
+  "pr": 832,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/832",
+  "prMergeCommit": "6a5b489b47c58f526f9988624c0bf349ec5b75ad",
+  "tickets": [
+   {
+    "key": "O3-6048",
+    "url": "https://openmrs.atlassian.net/browse/O3-6048",
+    "summary": "calcWeightForHeightZscore throws when the height is a string",
+    "status": "Done",
+    "created": "2026-10-06T21:10:39.317+1100",
+    "resolved": null,
+    "description": "In the React form engine, calcWeightForHeightZscore calls height.toFixed(1), so it throws height.toFixed is not a function when the height is a string. The expression fails and the z-score field stays empty, with the error only in the console. calcBMIForAgeZscore and calcHeightForAgeZscore don't call toFixed on the height, so they work with the same value.\nThe height reaches the helper as a string when:\nthe height question's defaultValue is a string in the schema, e.g. \"defaultValue\": \"95\"\n\nthe height question uses rendering: \"text\"\n\nA value the user types into a number field is converted to a number first, so typing doesn't trigger it. I reproduced both cases with a form test on main.\nExpected behaviour\ncalcWeightForHeightZscore accepts a numeric string, like the other z-score helpers, e.g. by converting the height with Number() before rounding it. The Angular form engine's version already parses the height first.\n\nA test covers a string height.\n\nRelated: O3-6025, O3-6046"
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6048": [
+    "6a5b489b47c58f526f9988624c0bf349ec5b75ad"
+   ]
+  },
+  "files": [
+   "src/utils/common-expression-helpers.test.ts",
+   "src/utils/common-expression-helpers.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-form-engine-lib",
+  "commit": "79f2c23a1a4b3f45103fcd6f63746c87afa6e9fb",
+  "date": "2026-10-06T20:39:38+03:00",
+  "subject": "(fix) O3-6046: Return null when height is outside reference table or no reference applies (#830)",
+  "pr": 830,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/830",
+  "prMergeCommit": "79f2c23a1a4b3f45103fcd6f63746c87afa6e9fb",
+  "tickets": [
+   {
+    "key": "O3-6046",
+    "url": "https://openmrs.atlassian.net/browse/O3-6046",
+    "summary": "Weight-for-height z-score is -4 when the height is outside the reference table",
+    "status": "Done",
+    "created": "2026-10-06T19:54:59.073+1100",
+    "resolved": null,
+    "description": "calcWeightForHeightZscore returns -4 whenever the height is below 45 cm or above 110 cm, in both form engines (common-expression-helpers.ts in esm-form-engine-lib and js-expression-helper.ts in ngx-formentry). -4 means severe wasting, but here it only means the table has no row for that height. The weight-for-length tables cover 45 to 110 cm, so this affects:\nchildren under 5 who are taller than 110 cm\n\nchildren aged 5 and over, who have no weight-for-height reference, once they're taller than 110 cm\n\nAMPATH's POC triage form hides the weight-for-height field when age>5, so a child aged exactly 5 who is taller than 110 cm still gets -4 saved to their encounter. I reproduced this in the Angular form engine with a 5-year-old girl at 112 cm.\nExpected behaviour\nThe helper returns null (no z-score) when the height is outside the reference table or no weight-for-height reference applies to the child, rather than -4.\n\nBoth form engines behave the same.\n\nRelated: O3-6044"
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6046": [
+    "79f2c23a1a4b3f45103fcd6f63746c87afa6e9fb"
+   ]
+  },
+  "files": [
+   "src/utils/common-expression-helpers.test.ts",
+   "src/utils/common-expression-helpers.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-form-engine-lib",
+  "commit": "0e1edc234479890d45bc09e67b2ee25befc1c803",
+  "date": "2026-10-05T14:52:41+03:00",
+  "subject": "(fix) O3-6027: Clear order and diagnosis submissions on every write (#826)",
+  "pr": 826,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/826",
+  "prMergeCommit": "0e1edc234479890d45bc09e67b2ee25befc1c803",
+  "tickets": [
+   {
+    "key": "O3-6027",
+    "url": "https://openmrs.atlassian.net/browse/O3-6027",
+    "summary": "Cleared order or diagnosis fields are still submitted with the encounter",
+    "status": "Done",
+    "created": "2026-10-01T22:43:01.378+1000",
+    "resolved": null,
+    "description": "Description\nIf a user selects an order or a diagnosis in a form and then clears that field before saving, the cleared value is still sent to the server when the encounter is submitted. The field looks empty on screen but the data goes out anyway.\nThe same problem shows up when editing an existing encounter: if the user changes a saved order or diagnosis to a different one and then clears the field, the \"swapped\" value is still submitted. For orders this creates a new order alongside the void of the original. For diagnoses, the saved diagnosis gets updated to the swapped concept instead of being removed.\nThis means patients can end up with orders or diagnoses on their record that the clinician explicitly removed before saving. Observation fields already behave correctly in these scenarios; orders and diagnoses do not.\nAcceptance criteria\nNew encounter: selecting an order and then clearing the field results in no order being submitted.\n\nNew encounter: selecting a diagnosis and then clearing the field results in no diagnosis being submitted.\n\nEdit encounter: changing a saved order to a different one and then clearing the field voids the original order and creates no new order.\n\nEdit encounter: changing a saved diagnosis to a different one and then clearing the field voids the original diagnosis and does not update it to the swapped value.\n\nEdit encounter: re-selecting the same saved order or diagnosis without changes produces no spurious edit or void.\n\nBehaviour matches how observation fields already handle select-then-clear.\n\nCovered by unit tests for both the orders and diagnosis adapters.\n\nRelated PR\nhttps://github.com/openmrs/openmrs-esm-form-engine-lib/pull/826"
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6027": [
+    "0e1edc234479890d45bc09e67b2ee25befc1c803"
+   ]
+  },
+  "files": [
+   "src/adapters/encounter-diagnosis-adapter.test.ts",
+   "src/adapters/encounter-diagnosis-adapter.ts",
+   "src/adapters/orders-adapter.ts",
+   "src/processors/encounter/encounter-payloads.golden.test.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-form-engine-lib",
+  "commit": "ebb02b719931d121419669b531b6e05c77f515e9",
+  "date": "2026-10-02T18:57:25Z",
+  "subject": "(fix) O3-6030: Keep hidden obs group members, orders and diagnoses out of submissions (#822)",
+  "pr": 822,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/822",
+  "prMergeCommit": "ebb02b719931d121419669b531b6e05c77f515e9",
+  "tickets": [
+   {
+    "key": "O3-6030",
+    "url": "https://openmrs.atlassian.net/browse/O3-6030",
+    "summary": "Hidden obs group fields, test orders and diagnoses are still submitted with the encounter",
+    "status": "Done",
+    "created": "2026-10-01T22:47:25.521+1000",
+    "resolved": null,
+    "description": "Description\nForms can hide fields based on answers to other questions (for example, a Yes/No question that shows or hides follow-up fields). When a user fills in a field and a later answer hides it, the hidden value should not be saved. Today this only works for simple standalone questions.\nIf the hidden field is inside a grouped section (obs group), or is a test order or diagnosis field, the value the user entered before it was hidden is still sent to the server when the encounter is saved. For example, answering \"Yes\", entering a weight, a test order and a diagnosis, then switching the answer to \"No\" still saves the weight, creates the test order, and records the diagnosis, even though none of them are visible on the form anymore.\nRepeating fields (where the user can add extra rows) have an additional problem: changing the controlling answer shows an error message, and the extra rows are never re-hidden. Their values stay on screen and are submitted.\nThis means patients can end up with observations, orders or diagnoses on their record that the form deliberately hid.\nAcceptance criteria\nA hidden field inside an obs group is not submitted with a new encounter.\n\nWhen editing an encounter, a previously saved field inside an obs group that becomes hidden is removed (voided), the same way hidden standalone fields already are.\n\nA hidden test order field is not submitted, and no new order is created.\n\nA hidden diagnosis field is not submitted.\n\nThe above applies to every row of a repeating field, not just the first.\n\nChanging an answer that hides repeating fields does not show an error, and the extra rows are hidden on screen.\n\nVisible fields continue to be submitted as before.\n\nCovered by tests for obs groups, orders, diagnoses and repeated rows."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6030": [
+    "ebb02b719931d121419669b531b6e05c77f515e9"
+   ]
+  },
+  "files": [
+   "src/components/renderer/field/fieldLogic.test.ts",
+   "src/components/renderer/field/fieldLogic.ts",
+   "src/processors/encounter/__snapshots__/encounter-payloads/edit-encounter-hidden-group-member-voiding.json",
+   "src/processors/encounter/__snapshots__/encounter-payloads/new-encounter-hidden-group-members-orders-diagnoses.json",
+   "src/processors/encounter/encounter-payloads.golden.test.ts",
+   "src/processors/encounter/encounter-processor-helper.ts",
+   "src/utils/form-helper.ts"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-form-engine-lib",
+  "commit": "129c1f7fd78a83d1b8958ae6dcaa7fe7b51eb143",
+  "date": "2026-10-07T20:13:57Z",
+  "subject": "(fix) O3-6045: Use WHO girls' height-for-age reference and cover month after age 5 (#834)",
+  "pr": 834,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/834",
+  "prMergeCommit": "129c1f7fd78a83d1b8958ae6dcaa7fe7b51eb143",
+  "tickets": [
+   {
+    "key": "O3-6045",
+    "url": "https://openmrs.atlassian.net/browse/O3-6045",
+    "summary": "Growth z-scores for girls aged 5 to 17 use the boys' height-for-age reference",
+    "status": "Done",
+    "created": "2026-10-06T19:54:57.843+1100",
+    "resolved": null,
+    "description": "The WHO height-for-age reference for girls aged 5 to 19 (hfa_girls_5_above.json) is a copy of the boys' table. The two files are byte-identical, and every row's median matches WHO's published boys' values rather than the girls'. So calcHeightForAgeZscore compares girls aged 5 to 17 with boys' heights. The gap grows with age: the median the table uses for girls is 0.7 cm too tall at 5 years and 7.3 cm too tall at 15 years. Older girls get z-scores that are too low and can be flagged as stunted when they aren't.\nThe same file is in:\nesm-form-engine-lib (src/zscore/), used by the React form engine\n\nesm-form-entry-app (src/app/zscore/tables/), added for the Angular form engine in O3-6044. openmrs-esm-patient-chart#3753 replaces it with a table generated from WHO's girls' data.\n\nAMPATH's ng2-amrs (src/assets/zscore/), which both O3 copies came from\n\nThe girls' BMI-for-age table matches WHO's girls' values, so it looks like only this one file was copied wrong.\nThe React form engine also has no height-for-age or BMI-for-age reference in the month after a child's fifth birthday. It switches to the 5 to 19 year tables at age 5, but those start at 61 months, so the lookup for month 60 finds no row and the helpers return null.\nExpected behaviour\nThe React form engine uses WHO's girls' 5 to 19 height-for-age reference (PDF), in the same format as the other tables. The table generated in openmrs-esm-patient-chart#3753 can be reused.\n\nHeight-for-age uses the under-5 table through day 1,856, where it ends, and the 5 to 19 year table from month 61, as in openmrs-esm-patient-chart#3753.\n\nA test checks that each girls' table differs from the boys' one, and spot-checks a few medians against WHO's values.\n\nAMPATH may want to fix ng2-amrs too.\n\nRelated: O3-6044, O3-6025"
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-6045": [
+    "129c1f7fd78a83d1b8958ae6dcaa7fe7b51eb143"
+   ]
+  },
+  "files": [
+   "src/utils/common-expression-helpers.test.ts",
+   "src/utils/zscore-service.test.ts",
+   "src/utils/zscore-service.ts",
+   "src/zscore/hfa_girls_5_above.json"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-admin-tools",
+  "commit": "f462a28bf6f97d3a1c963e362b79c31b56f69bd4",
+  "date": "2026-10-02T22:25:19+03:00",
+  "subject": "(fix) O3-5993: Reports app shows literal {parameters} instead of the missing parameter names (#376)",
+  "pr": 376,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-admin-tools/pull/376",
+  "prMergeCommit": "f462a28bf6f97d3a1c963e362b79c31b56f69bd4",
+  "tickets": [
+   {
+    "key": "O3-5993",
+    "url": "https://openmrs.atlassian.net/browse/O3-5993",
+    "summary": "Reports app shows literal {parameters} instead of the missing parameter names",
+    "status": "Done",
+    "created": "2026-09-21T20:37:14.153+1000",
+    "resolved": null,
+    "description": "Running a report without filling a required parameter shows:Please provide the following parameters: {parameters}. The placeholder is printed literally, so the user is never told which parameter is missing."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5993": [
+    "f462a28bf6f97d3a1c963e362b79c31b56f69bd4"
+   ]
+  },
+  "files": [
+   "packages/esm-reports-app/src/components/reports-data-overview.component.test.tsx",
+   "packages/esm-reports-app/src/components/reports-data-overview.component.tsx",
+   "packages/esm-reports-app/translations/en.json"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-admin-tools",
+  "commit": "486403d71cc1e01295b4757e5e6760d589e84d4f",
+  "date": "2026-09-22T15:33:43+05:30",
+  "subject": "(fix) O3-5996: Delete package modal fails to launch (#375)",
+  "pr": 375,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-admin-tools/pull/375",
+  "prMergeCommit": "486403d71cc1e01295b4757e5e6760d589e84d4f",
+  "tickets": [
+   {
+    "key": "O3-5996",
+    "url": "https://openmrs.atlassian.net/browse/O3-5996",
+    "summary": "Delete package modal fails to launch \"Failed to launch modal\" error",
+    "status": "Done",
+    "created": "2026-09-22T15:53:42.383+1000",
+    "resolved": null,
+    "description": ""
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5996": [
+    "486403d71cc1e01295b4757e5e6760d589e84d4f"
+   ]
+  },
+  "files": [
+   "packages/esm-metadataexport-app/src/components/view-metadata-package/view-metadata-package.workspace.test.tsx",
+   "packages/esm-metadataexport-app/src/components/view-metadata-package/view-metadata-package.workspace.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-billing-app",
+  "commit": "3ecce2a55223b21d3c53d4905b346455f94f4fd2",
+  "date": "2026-05-26T18:48:29Z",
+  "subject": "(fix) O3-5705: Use netAmount instead of totalAmount for balance due on printable invoice (#743)",
+  "pr": 743,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-billing-app/pull/743",
+  "prMergeCommit": "3ecce2a55223b21d3c53d4905b346455f94f4fd2",
+  "tickets": [
+   {
+    "key": "O3-5705",
+    "url": "https://openmrs.atlassian.net/browse/O3-5705",
+    "summary": "Receipt shows discount as outstanding balance on fully paid bills",
+    "status": "Done",
+    "created": "2026-05-25T16:00:59.452+1000",
+    "resolved": "2026-06-02T22:13:28.507+1000",
+    "description": "On a fully paid bill with a discount applied, the Amount balance in the header and the Balance below Total tendered should both read zero, not the discount amount."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5705": [
+    "3ecce2a55223b21d3c53d4905b346455f94f4fd2"
+   ]
+  },
+  "files": [
+   "src/invoice/printable-invoice/printable-invoice-header.component.tsx",
+   "src/invoice/printable-invoice/printable-invoice-header.test.tsx",
+   "src/invoice/printable-invoice/printable-invoice.component.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-billing-app",
+  "commit": "e5b80768f3166c82b2db7c710e166adf01ce3f70",
+  "date": "2026-05-25T22:36:06+03:00",
+  "subject": "(fix) O3-5708: Keep discount review modal open after approve/reject/delete actions (#744)",
+  "pr": 744,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-billing-app/pull/744",
+  "prMergeCommit": "e5b80768f3166c82b2db7c710e166adf01ce3f70",
+  "tickets": [
+   {
+    "key": "O3-5708",
+    "url": "https://openmrs.atlassian.net/browse/O3-5708",
+    "summary": "Review discounts modal closes after first action even when multiple discounts are pending",
+    "status": "Done",
+    "created": "2026-05-25T17:12:05.029+1000",
+    "resolved": "2026-05-26T21:57:54.218+1000",
+    "description": "When reviewing multiple pending discount requests for the same bill, clicking Approve (or Reject) on the first request closes the modal immediately \u2014 forcing the reviewer to reopen it to action the remaining requests.\nThe modal should remain open until the reviewer has actioned all pending discounts or explicitly chooses to close it. Each Approve/Reject should update its own request inline and leave the rest of the list intact."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5708": [
+    "e5b80768f3166c82b2db7c710e166adf01ce3f70"
+   ]
+  },
+  "files": [
+   "src/billing.resource.ts",
+   "src/discounts/admin/review-bill-discounts/discount-card/discount-card.component.tsx",
+   "src/discounts/admin/review-bill-discounts/review-bill-discounts.modal.test.tsx",
+   "src/discounts/admin/review-bill-discounts/review-bill-discounts.modal.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-dispensing-app",
+  "commit": "1e7c82b5db6673d887e2455f5cab400244d70dc4",
+  "date": "2026-05-01T15:14:09-04:00",
+  "subject": "(fix) O3-5630: Fix substitution type and reason not populated when editing a dispense record (#825)",
+  "pr": 825,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-dispensing-app/pull/825",
+  "prMergeCommit": "1e7c82b5db6673d887e2455f5cab400244d70dc4",
+  "tickets": [
+   {
+    "key": "O3-5630",
+    "url": "https://openmrs.atlassian.net/browse/O3-5630",
+    "summary": "Dispensing: Bug when editing substitution reason of an old order",
+    "status": "Done",
+    "created": "2026-04-25T00:46:02.245+1000",
+    "resolved": "2026-05-04T20:26:34.725+1000",
+    "description": "There seems to be a strange bug when you attempt to edit the \u201csubstitution reason\u201d of an old order it doesn\u2019t reload properly on first load. See attached video capture."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5630": [
+    "1e7c82b5db6673d887e2455f5cab400244d70dc4"
+   ]
+  },
+  "files": [
+   "src/forms/dispense-form.workspace.tsx",
+   "src/forms/medication-dispense-review.component.tsx",
+   "src/medication-request/medication-request.resource.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-dispensing-app",
+  "commit": "42a5fbf57740d4eba10e2318f4a7c5fa1c095520",
+  "date": "2026-05-20T11:35:40-04:00",
+  "subject": "(fix) O3-4692: Display \"Dispensed\" status in Prescription Details section (#428)",
+  "pr": 428,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-dispensing-app/pull/428",
+  "prMergeCommit": "42a5fbf57740d4eba10e2318f4a7c5fa1c095520",
+  "tickets": [
+   {
+    "key": "O3-4692",
+    "url": "https://openmrs.atlassian.net/browse/O3-4692",
+    "summary": "Display \"Dispensed\" Status in Prescription Details Section (Consistent with \"Cancelled\" and \"Paused\")",
+    "status": "Done",
+    "created": "2025-05-09T15:33:48.517+1000",
+    "resolved": "2026-05-21T14:30:56.877+1000",
+    "description": "The \"Dispensed\" status currently appears only in the History and Comments section of the Medication Dispensing module, whereas other statuses such as \"Cancelled\" and \"Paused\" are displayed in the Prescription Details section.\nExpected:\nOnce a medication is dispensed, the \"Dispensed\" status should be displayed in the Prescription Details section\u2014just like \"Cancelled\" and \"Paused\" statuses following cancel or pause actions. This will ensure a consistent and streamlined user experience and reduce the risk of errors."
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-4692": [
+    "42a5fbf57740d4eba10e2318f4a7c5fa1c095520"
+   ]
+  },
+  "files": [
+   "e2e/specs/dispense-medication.spec.ts",
+   "src/prescriptions/prescription-details.component.tsx",
+   "src/prescriptions/prescriptions-table.component.tsx"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-stock-management-app",
+  "commit": "6ea904ad3ba59b17d8366d5cc3283f8968d416be",
+  "date": "2026-05-07T19:30:44+03:00",
+  "subject": "fix(O3-5563): require purchase price packaging unit when purchase price is set (#528)",
+  "pr": 528,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/528",
+  "prMergeCommit": "6ea904ad3ba59b17d8366d5cc3283f8968d416be",
+  "tickets": [
+   {
+    "key": "O3-5563",
+    "url": "https://openmrs.atlassian.net/browse/O3-5563",
+    "summary": "Stock Management: Purchase price saves with success toast but doesn't persist when packaging unit    is not set",
+    "status": "Done",
+    "created": "2026-03-27T23:34:18.314+1100",
+    "resolved": "2026-05-18T16:17:50.394+1000",
+    "description": "When editing a stock item, setting the purchase price without selecting a purchase price packaging unit shows a success toast message, but the value is not actually saved. This is misleading, as the user      believes the update was successful.                                                                     \nThis may involve both frontend and backend issues. The frontend should validate that the packaging unit is required when a purchase price is set, and the backend should not return a success response if the data was not persisted.  \n\n  Steps to Reproduce:\nNavigate to Stock Management \u2192 Items (/openmrs/spa/stock-management/items)\n\nSelect a stock item from the list to open the edit side panel             \n\nSet the purchase price without setting the purchase price packaging unit\n\nSave the changes \u2014 a success toast message is displayed                 \n\n  Expected Behavior:                                                                                        Either:                                                                                                 \nThe UI should require the purchase price packaging unit before allowing save, or                      \n\nThe backend should return an error if the purchase price cannot be saved without a packaging unit     \n\n  Actual Behavior:                                                                                          A success toast message is shown, but the purchase price is not persisted. Reopening the item or  checking the database confirms the value was not saved.       \n\nCC:"
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5563": [
+    "6ea904ad3ba59b17d8366d5cc3283f8968d416be"
+   ]
+  },
+  "files": [
+   "src/stock-items/validationSchema.ts",
+   "translations/en.json"
+  ]
+ },
+ {
+  "repo": "openmrs-esm-stock-management-app",
+  "commit": "d9e7c5c49d29b5b1dc37951adb3c2887916e4f48",
+  "date": "2026-05-05T12:40:51+03:00",
+  "subject": "(fix) O3-5562: Edit Items panel fields don't update when selecting a different stock item (#514)",
+  "pr": 514,
+  "prUrl": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/514",
+  "prMergeCommit": "d9e7c5c49d29b5b1dc37951adb3c2887916e4f48",
+  "tickets": [
+   {
+    "key": "O3-5562",
+    "url": "https://openmrs.atlassian.net/browse/O3-5562",
+    "summary": "Stock Management: Edit Items panel fields don't update when selecting a different stock item ",
+    "status": "Done",
+    "created": "2026-03-27T22:52:44.016+1100",
+    "resolved": "2026-05-18T16:17:01.013+1000",
+    "description": "When a stock item is selected from the list and the edit side panel is open, selecting a different stock item only updates the item name at the top of the panel. All other fields retain the values from the previously selected item.\n  Steps to Reproduce:\nNavigate to Stock Management \u2192 Items (/openmrs/spa/stock-management/items)\n\nSelect a stock item from the list to open the edit side panel\n\nWhile the panel is still open, select a different stock item from the list\n\n  Expected Behavior:  All fields in the edit side panel should update to reflect the newly selected stock item.\n  Actual Behavior:  Only the item name at the top of the panel updates. All other fields (e.g., category, dispensing unit,  etc.) remain populated with the previously selected item's data.\n\n\ncc:"
+   }
+  ],
+  "sameTicketCommits": {
+   "O3-5562": [
+    "d9e7c5c49d29b5b1dc37951adb3c2887916e4f48"
+   ]
+  },
+  "files": [
+   "src/stock-items/add-stock-item/add-stock-item.component.tsx",
+   "src/stock-items/add-stock-item/add-stock-item.integration.test.tsx"
+  ]
+ }
+]

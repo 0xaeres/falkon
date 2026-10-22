@@ -1,0 +1,9 @@
+{
+ "key": "O3-5940",
+ "url": "https://openmrs.atlassian.net/browse/O3-5940",
+ "summary": "Don't offer queues a patient is already in",
+ "status": "Done",
+ "created": "2026-09-01T16:42:19.176+1000",
+ "resolved": null,
+ "description": "The queue entry form offers queues the patient already has an active entry in. Those entries cannot be duplicated, so the only outcome of picking one is a failed submit and the user only finds out after filling in the queue location, service and priority.\nSteps to reproduce\nGo to Home > Service queues and select the \"Outpatient Clinic\" queue location.\n\nNote a patient listed under \"Attending\" \u2014 e.g. Susan Lopez (CR Number 100001W), inOutpatient Consultation.\n\nIn the Waiting List, click \"Add a patient to this list\" and search for the patient.\n\nSelect them, keep the prefilled Queue Location and pick Outpatient Consultation as theService, then click \"Add patient to queue\".\n\nExpected\nThe form does not offer queues the patient is already in:\nService lists only queues at the selected location that the patient is not already in.\n\nQueue Location omits a location once the patient is in every queue there.\n\nA location with no queues configured is still listed, so that misconfiguration keeps surfacing as \"No services configured\".\n\nQueues at other locations are unaffected \u2014 the patient can still be queued elsewhere.\n\nActual\nOutpatient Consultation is offered, and submitting produces:\nError updating queue entry\nServer responded with 400 (Bad Request) for url /openmrs/ws/rest/v1/visit-queue-entry"
+}

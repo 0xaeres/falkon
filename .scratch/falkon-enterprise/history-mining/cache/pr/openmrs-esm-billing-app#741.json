@@ -1,0 +1,30 @@
+{
+ "number": 741,
+ "url": "https://github.com/openmrs/openmrs-esm-billing-app/pull/741",
+ "title": "(feat) O3-5421: Add visit-bills panel showing visit-scoped bills in visit summary",
+ "mergedAt": "2026-06-02T12:06:07Z",
+ "mergeCommit": "4aa8e4c993d5fe06147c9561c949a6da36aea47e",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\n- Adds a new `VisitBillsPanel` component that renders in the visit summary sidebar, showing only bills scoped to the current visit\r\n- Extends `useBills` to accept an optional `visitUuid` parameter for visit-level filtering\r\n- Registers the panel as an `visitSummarySubslot` extension in `routes.json`\r\n- Updates `InvoiceTable` to support a `viewOnly` prop that hides payment and action controls when rendering in read-only contexts\r\n- Removes the `viewOnly` mode from `BillingForm` workspace and the overflow \"View\" action from the visit bills panel (bills are expanded inline via the collapsible row)\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n<img width=\"1603\" height=\"650\" alt=\"Screenshot 2026-05-25 at 8 01 14\u202fPM\" src=\"https://github.com/user-attachments/assets/8e1d5625-dd85-477a-9b39-88f71e9985f8\" />\r\n\r\n\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\nhttps://issues.openmrs.org/browse/O3-5421\r\n\r\n## Other\r\n<!-- Anything not covered above -->",
+ "files": [
+  "e2e/pages/invoice-page.ts",
+  "src/billing-form/billing-form.test.tsx",
+  "src/billing-form/billing-form.workspace.tsx",
+  "src/billing.resource.ts",
+  "src/bills-table/bills-table.component.tsx",
+  "src/bills-table/bills-table.test.tsx",
+  "src/discounts/admin/discount-requests.component.tsx",
+  "src/index.ts",
+  "src/invoice/invoice-table.component.tsx",
+  "src/invoice/invoice-table.test.tsx",
+  "src/invoice/invoice.component.tsx",
+  "src/invoice/printable-invoice/printable-invoice-header.component.tsx",
+  "src/invoice/printable-invoice/printable-invoice.component.tsx",
+  "src/modal/delete-bill-confirmation.modal.tsx",
+  "src/routes.json",
+  "src/types/index.ts",
+  "src/visit-bills/visit-bills-panel.component.tsx",
+  "src/visit-bills/visit-bills-panel.scss",
+  "src/visit-bills/visit-bills-panel.test.tsx",
+  "translations/en.json"
+ ]
+}

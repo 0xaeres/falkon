@@ -1,0 +1,16 @@
+{
+ "number": 859,
+ "url": "https://github.com/openmrs/openmrs-esm-dispensing-app/pull/859",
+ "title": "(fix) Refresh prescriptions table in place after dispensing",
+ "mergedAt": "2026-06-22T17:44:53Z",
+ "mergeCommit": "f95cf7935383e67e6e7b513a4ea91ff609b7f064",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [x] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nWhen dispensing (or pausing/closing/deleting) a prescription, the prescriptions table did not update in place \u2014 the status and last-dispenser only changed after switching tabs or manually refreshing.\r\n\r\nThe root cause is a SWR cache mismatch. `revalidate()` in `src/utils.ts` used the **global `mutate` imported from `swr`**, which is permanently bound to SWR's *default* cache. OpenMRS wraps every microfrontend in an `<SWRConfig>` with a **custom cache provider** (`@openmrs/esm-react-utils` \u2192 `provider: () => swrCache`), so all `useSWR` data \u2014 including the prescriptions table \u2014 lives in that provider's cache. The global `mutate`'s key filter therefore matched nothing and the table entry was never revalidated.\r\n\r\nSwitching tabs appeared to \"fix\" it only because `loadData={isTabActive}` flips the SWR key (`null` \u2194 URL), which forces a fresh fetch independently of `mutate`.\r\n\r\n### Fix\r\n\r\nPass the cache-bound `mutate` from `useSWRConfig()` into `revalidate()` so it targets the active provider's cache:\r\n\r\n- `revalidate(encounterUuid)` \u2192 `revalidate(mutate, encounterUuid)`\r\n- Updated all callers: dispense / close / pause forms, the on-prescription-filled modal, and the delete handler in `history-and-comments`.\r\n\r\n## Screenshots\r\n\r\nBefore - \r\n\r\nhttps://github.com/user-attachments/assets/9b5c9a2a-9948-49ca-9f21-e03d5dffb85f\r\n\r\n\r\nAfter - \r\n\r\nhttps://github.com/user-attachments/assets/51990da6-9a9b-4968-a27b-6a9e8684b6a1\r\n\r\n\r\n\r\n## Related Issue\r\n\r\n<!-- No Jira ticket. -->\r\n\r\n## Other\r\n",
+ "files": [
+  "src/fill-prescription/on-prescription-filled.modal.tsx",
+  "src/forms/close-dispense-form.workspace.tsx",
+  "src/forms/dispense-form.workspace.tsx",
+  "src/forms/pause-dispense-form.workspace.tsx",
+  "src/history/history-and-comments.component.tsx",
+  "src/utils.ts"
+ ]
+}

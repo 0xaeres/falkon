@@ -1,0 +1,21 @@
+{
+ "number": 2710,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2710",
+ "title": "(fix) O3-5940: Don't offer queues a patient is already in",
+ "mergedAt": "2026-09-08T12:40:11Z",
+ "mergeCommit": "b8335ad593a4946dd297a88e00c1fd6e6d1fc4f0",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\nAdding a patient to a queue they were already in was possible all the way to submit, where the backend rejected it with a `400`. The queue entry form now leaves those queues out of the Service options, and leaves a location out of Queue Location once the patient is in every queue there.\r\n\r\n## Screenshots\r\n\r\n### Before\r\n<img width=\"1512\" height=\"982\" alt=\"image\" src=\"https://github.com/user-attachments/assets/1b0e17d4-f594-43cc-9b66-14da1f0ad7ee\" />\r\n<img width=\"1512\" height=\"982\" alt=\"2026-09-02_01-35-35\" src=\"https://github.com/user-attachments/assets/85b8a4de-e73f-48ec-a21f-14ef941bfa09\" />\r\n\r\n### After \r\n<img width=\"1512\" height=\"982\" alt=\"image\" src=\"https://github.com/user-attachments/assets/e3011d24-894a-48e2-bacd-4d3af8c62165\" />\r\n\r\n## Related Issue\r\nhttps://openmrs.atlassian.net/browse/O3-5940\r\n\r\n## Other\r\n",
+ "files": [
+  "packages/esm-service-queues-app/src/constants.ts",
+  "packages/esm-service-queues-app/src/create-queue-entry/existing-visit-form/existing-visit-form.component.tsx",
+  "packages/esm-service-queues-app/src/create-queue-entry/queue-fields/queue-fields.component.tsx",
+  "packages/esm-service-queues-app/src/create-queue-entry/queue-fields/queue-fields.test.tsx",
+  "packages/esm-service-queues-app/src/create-queue-entry/queue-fields/visit-form-queue-fields.extension.tsx",
+  "packages/esm-service-queues-app/src/hooks/useQueueEntries.ts",
+  "packages/esm-service-queues-app/src/modals/add-or-move-modal/add-patient-to-queue.component.tsx",
+  "packages/esm-service-queues-app/src/modals/queue-entry-actions.test.tsx",
+  "packages/esm-service-queues-app/src/modals/queue-entry-confirm-action.test.tsx",
+  "packages/esm-service-queues-app/src/modals/queue-entry-error.utils.ts",
+  "packages/esm-service-queues-app/translations/en.json"
+ ]
+}

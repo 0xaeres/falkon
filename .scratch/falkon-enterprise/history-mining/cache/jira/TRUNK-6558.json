@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6558",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6558",
+ "summary": "Upgrade SchedulerService to use JobRunr",
+ "status": "Closed",
+ "created": "2026-02-13T21:06:58.509+1100",
+ "resolved": "2026-06-15T18:55:19.027+1000",
+ "description": ""
+}

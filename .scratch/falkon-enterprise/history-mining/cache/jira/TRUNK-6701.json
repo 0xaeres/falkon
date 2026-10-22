@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6701",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6701",
+ "summary": "Avoid redundant per-request session attribute writes in OpenmrsFilter",
+ "status": "Closed",
+ "created": "2026-07-18T03:27:05.254+1000",
+ "resolved": "2026-09-12T03:43:29.228+1000",
+ "description": "Background\nOn every request, OpenmrsFilter sets the session's username attribute to an anonymous placeholder and then immediately overwrites it for authenticated users, re-sets the locale attribute even when unchanged (marking the session dirty for replicating session managers), and stores a per-request timestamp attribute that nothing in core reads.\nRequested change\nOnly write session attributes when their values actually change, and remove (or make lazy) the unused unique-id attribute. Session creation behavior is intentionally out of scope and must not change.\nAcceptance criteria\nSession attributes end up with the same values as today for anonymous and authenticated requests.\n\nNo attribute writes occur when values are unchanged.\n\nTests cover both user states."
+}

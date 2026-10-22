@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6697",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6697",
+ "summary": "Fix HandlerUtil's handler cache being evicted by garbage collection",
+ "status": "Closed",
+ "created": "2026-07-18T03:26:43.413+1000",
+ "resolved": "2026-08-26T03:57:00.277+1000",
+ "description": "Background\nHandlerUtil caches handler lookups in a WeakHashMap whose keys are referenced by nothing but the map itself, so any GC cycle can evict the entire cache. Every miss re-scans all Spring beans across module contexts and rebuilds the map copy-on-write, so concurrent misses can also drop each other's entries. This lookup runs per object in the graph on every save/void/retire and per validation.\nRequested change\nReplace with a cache that retains entries (e.g. ConcurrentHashMap), keeping the existing invalidation on context refresh.\nAcceptance criteria\nCached handler lists survive garbage collection and concurrent access.\n\nThe cache is still cleared on context refresh so module-contributed handlers are picked up.\n\nTests cover cache hits and invalidation."
+}

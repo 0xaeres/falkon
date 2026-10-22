@@ -1,0 +1,16 @@
+{
+ "number": 2821,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2821",
+ "title": "(fix) O3-6096: Return to Add patient to list modal after creating a new list",
+ "mergedAt": "2026-10-15T11:35:52Z",
+ "mergeCommit": "cd131dd39fbf3d299295ae62d157c450d884ed58",
+ "body": "## Requirements\n\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/contributing/commit-message) label. See existing PR titles for inspiration.\n- [x] My work conforms to the [OpenMRS 3.0 Styleguide](https://om.rs/o3ui) and [other design documentation](https://om.rs/o3ui).\n- [x] My work includes tests or is validated by existing tests.\n\n## Summary\n\nCreating a list from \"Add to list\" on a patient's chart used to navigate to Home \u2192 Patient lists and close the modal, leaving the patient off the new list.\n\nNow \"Create new patient list\" opens the create form as a workspace over the chart. On success, the Add patient to list modal reopens with the lists refreshed and the new list checked, so the user can Save to add the patient. Cancel leaves the user on the chart.\n\n- `patient-list-form.workspace.tsx`: `onSuccess` now receives the created list's UUID (create only; edit is unchanged).\n- `add-patient.modal.tsx`: launches the form workspace instead of navigating, revalidates the addable lists, and reopens the modal with a new `preselectedListId` prop.\n- Tests updated and added for both.\n\n## Screenshots\n\n\nhttps://github.com/user-attachments/assets/357e223c-fff5-4ed6-b4c2-87a8b933d271\n\n\n\n## Related Issue\n\nhttps://openmrs.atlassian.net/browse/O3-6096\n\n## Other\n\nThe `?create=true` handling on the Patient lists page is untouched.",
+ "files": [
+  "packages/esm-patient-list-management-app/src/add-patient/add-patient.modal.tsx",
+  "packages/esm-patient-list-management-app/src/add-patient/add-patient.test.tsx",
+  "packages/esm-patient-list-management-app/src/patient-list-form/patient-list-form.workspace.test.tsx",
+  "packages/esm-patient-list-management-app/src/patient-list-form/patient-list-form.workspace.tsx",
+  "packages/esm-patient-list-management-app/src/routes.json",
+  "packages/esm-patient-list-management-app/translations/en.json"
+ ]
+}

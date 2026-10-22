@@ -1,0 +1,13 @@
+{
+ "number": 3670,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3670",
+ "title": "(fix) O3-5989: Keep a visit note saved when one of its images is rejected",
+ "mergedAt": "2026-09-24T15:31:11Z",
+ "mergeCommit": "4d9f19a2d629347559fe32b89899af6245c16e23",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nIf the server rejects one of the images on a visit note, the note and its diagnoses are already saved by the time the upload runs. The rejection used to fall into the catch handler, which showed \"Error saving visit note\" and left the form open in create mode, so the next Save and close posted a second note.\r\n\r\nUploads now run with `Promise.allSettled`. Every image the server accepts is saved, the workspace closes as usual, and a warning snackbar names the images that were rejected with the server's reason and points the user at the note to add them again. A failure to save the note itself still shows the error and keeps the form open.\r\n\r\nVerified against a local backend: a note with one good image and one the server rejects saves once, keeps the good image, shows the warning, and reopening the note shows the saved image.\r\n\r\n## Screenshots\r\n\r\n### The warning after a rejected image, with the note saved once:\r\n\r\n<img width=\"1440\" height=\"1000\" alt=\"o3-5989-after-fix-toast\" src=\"https://github.com/user-attachments/assets/7cf01e51-90bd-4678-9835-3e59b5ff31ad\" />\r\n\r\n\r\n## Related Issue\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5989\r\n\r\n## Other\r\n\r\nRelated follow-ups from the same investigation: O3-5987 (the upload dialog accepts files the caller excluded and reports \"Upload complete\" before anything uploads) and O3-5988 (the dialog's size limit isn't the backend's).\r\n\r\n",
+ "files": [
+  "packages/esm-patient-notes-app/src/notes/visit-notes-form.component.tsx",
+  "packages/esm-patient-notes-app/src/notes/visit-notes-form.test.tsx",
+  "packages/esm-patient-notes-app/translations/en.json"
+ ]
+}

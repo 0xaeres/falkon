@@ -1,0 +1,9 @@
+{
+ "key": "O3-5708",
+ "url": "https://openmrs.atlassian.net/browse/O3-5708",
+ "summary": "Review discounts modal closes after first action even when multiple discounts are pending",
+ "status": "Done",
+ "created": "2026-05-25T17:12:05.029+1000",
+ "resolved": "2026-05-26T21:57:54.218+1000",
+ "description": "When reviewing multiple pending discount requests for the same bill, clicking Approve (or Reject) on the first request closes the modal immediately \u2014 forcing the reviewer to reopen it to action the remaining requests.\nThe modal should remain open until the reviewer has actioned all pending discounts or explicitly chooses to close it. Each Approve/Reject should update its own request inline and leave the rest of the list intact."
+}

@@ -181,7 +181,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
   if (command === "preflight") return await preflightArms(arms, cfg, env, ids) + "\n";
 
   // The impact set is small (11 questions), so its pilot is the whole dev split.
-  const pilot = pilotIds(named, datasetFlag === "impact" ? 6 : 5);
+  const pilot = pilotIds(named, datasetFlag ? 6 : 5);
   if (command === "report") {
     if (args.includes("--pilot")) {
       const { lines } = pilotReport(named, readRaw(dirOf(named.id)), arms, model.alias, pilot);

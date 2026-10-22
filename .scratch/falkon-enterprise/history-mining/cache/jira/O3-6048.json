@@ -1,0 +1,9 @@
+{
+ "key": "O3-6048",
+ "url": "https://openmrs.atlassian.net/browse/O3-6048",
+ "summary": "calcWeightForHeightZscore throws when the height is a string",
+ "status": "Done",
+ "created": "2026-10-06T21:10:39.317+1100",
+ "resolved": null,
+ "description": "In the React form engine, calcWeightForHeightZscore calls height.toFixed(1), so it throws height.toFixed is not a function when the height is a string. The expression fails and the z-score field stays empty, with the error only in the console. calcBMIForAgeZscore and calcHeightForAgeZscore don't call toFixed on the height, so they work with the same value.\nThe height reaches the helper as a string when:\nthe height question's defaultValue is a string in the schema, e.g. \"defaultValue\": \"95\"\n\nthe height question uses rendering: \"text\"\n\nA value the user types into a number field is converted to a number first, so typing doesn't trigger it. I reproduced both cases with a form test on main.\nExpected behaviour\ncalcWeightForHeightZscore accepts a numeric string, like the other z-score helpers, e.g. by converting the height with Number() before rounding it. The Angular form engine's version already parses the height first.\n\nA test covers a string height.\n\nRelated: O3-6025, O3-6046"
+}

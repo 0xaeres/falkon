@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6819",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6819",
+ "summary": "Scheduled jobs fail at startup because the JobRunr job server starts before OpenMRS is ready",
+ "status": "Closed",
+ "created": "2026-10-07T01:12:09.160+1100",
+ "resolved": "2026-10-07T06:21:39.026+1100",
+ "description": "The JobRunr background job server is started while its Spring application context is still being created, so jobs can run before the context, or OpenMRS, is ready. Starting the webapp with modules installed (e.g. mvn jetty:run) logs failures such as:\nIllegalStateException: EntityManagerFactory is closed: a job runs during the context refresh that follows module startup, against the closed session factory of the context being replaced.\n\nTaskException: Task class org.openmrs.module.stockmanagement.api.jobs.AsyncTasksBatchJob not found: a module's job runs right after the first, core-only context refresh, before modules are loaded.\n\nWhich one appears depends on when a recurring job falls due. Stopping the server for over a minute, so that a recurring job is overdue at startup, reproduces it reliably.\nExpected: the job server starts only once its context has finished refreshing, and at webapp startup only after modules have started (SchedulerService.onStartup()). It stops before its context closes.\nPR: https://github.com/openmrs/openmrs-core/pull/6654"
+}

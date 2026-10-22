@@ -1,0 +1,936 @@
+{
+  "id": "o3-history",
+  "repo": {
+    "url": "https://github.com/openmrs/openmrs-core",
+    "ref": "openmrs-product",
+    "commit": "5eb8cba2e30befeaec8ab7892dff14ac7dcc9d87"
+  },
+  "corpus": {
+    "include": [
+      "**/*"
+    ],
+    "exclude": [],
+    "product": {
+      "id": "openmrs",
+      "reference": "products/openmrs.json",
+      "commits": {
+        "openmrs-core": "5eb8cba2e30befeaec8ab7892dff14ac7dcc9d87",
+        "openmrs-module-webservices.rest": "66d284b5105a13d5221e103e0243711b69f2dac0",
+        "openmrs-esm-core": "7a172083f27035a8f20aa71fbc5e208ab07fa97a",
+        "openmrs-esm-patient-chart": "45cb44919ca658d571a30355536c03e775552678",
+        "openmrs-esm-admin-tools": "3d76809c1766a7d933a08f718b203fa0d37e0511",
+        "openmrs-esm-billing-app": "c770afca8921295dd87d8e7c185a8a4fef231376",
+        "openmrs-esm-dispensing-app": "4e8cbeeb72bef9bd22bb77ead5300d422fbef57d",
+        "openmrs-esm-form-engine-lib": "8f4fd2677aae1d8a8c522f710059b0f26b22d4bb",
+        "openmrs-esm-patient-management": "96a7237f4ef0dea296a9e6b3a8c67b3837a8ad82",
+        "openmrs-esm-stock-management-app": "9777f6d4a456e0ea336dfce4b002830475dfa965"
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "hist-a-01",
+      "question": "openmrs-core's web.xml now maps a servlet filter that strips a final `/` from request paths before they reach Spring. Why was that needed (what did REST and FHIR clients get back for such URLs in the 3.0 line), and which change and ticket introduced it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "2d32d20938e007f2f9bf8e3a3c946758d52d6bfe",
+          "pr": 6680
+        },
+        {
+          "ticket": "TRUNK-6826"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-02",
+      "question": "openmrs-core now registers a filter that collapses runs of `/` in the request URI, so that `/openmrs//ws/rest/v1/session` is handled like `/openmrs/ws/rest/v1/session`. What error did such requests hit before, and which change and ticket added the filter?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "085d24ca28913de746060914ba4c0305680c9321",
+          "pr": 6673
+        },
+        {
+          "ticket": "TRUNK-6824"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-03",
+      "question": "Why does openmrs-core create its JobRunr background job server with `startBackgroundJobServer = false` and start it later from a separate lifecycle class? Which change made that so, and which ticket describes the startup failures it fixes?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "83411b2f8a52325e867fccc223a54d6a6f701400",
+          "pr": 6654
+        },
+        {
+          "ticket": "TRUNK-6819"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-04",
+      "question": "Why did openmrs-core stop relying on a per-thread counter to decide whether `Context.closeSession()` should unbind and close the current Hibernate session? Errors such as \"Pre-bound JDBC Connection found!\" were one symptom. Which change made the switch, and which ticket explains it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "b64e0729cce60c40dffb75788c4b43937a6fc77e",
+          "pr": 6651
+        },
+        {
+          "ticket": "TRUNK-6818"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-05",
+      "question": "Why is the `childLocations` association of openmrs-core's `Location` mapped without orphan removal, so that moving a child location under another parent no longer deletes it? Which change set it that way, and which ticket asked for it?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "b147e0dcae701feb4670b53a454daf0cfb210ee9",
+          "pr": 6444
+        },
+        {
+          "ticket": "TRUNK-6684"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-06",
+      "question": "openmrs-core's `HandlerUtil` keeps its handler lookups in a `ConcurrentHashMap` instead of a weak-keyed map. What was going wrong with the old lookup store on save, void, retire and validation calls, and which change and ticket made the switch?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "6e77bfd03ab134fc7d66a0e3140d6e468f569ec5",
+          "pr": 6494
+        },
+        {
+          "ticket": "TRUNK-6697"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-07",
+      "question": "Why does openmrs-core's `LoggingAdvice.invoke()` now return straight to the wrapped service method when neither DEBUG nor TRACE output would be logged for it? Which change added that, and which ticket motivated it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "e2056c9af9036ddef415212ec8da7b0bc2eda96e",
+          "pr": 6488
+        },
+        {
+          "ticket": "TRUNK-6784"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-08",
+      "question": "Why does openmrs-core's `ChainingInterceptor` now override the Hibernate 7 persist and remove callbacks itself instead of only the deprecated save and delete ones? What did database event consumers miss before, and which change and ticket made it?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "0e0255b872f08dabafe9414d623820272cd475be",
+          "pr": 6637
+        },
+        {
+          "ticket": "TRUNK-6827"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-09",
+      "question": "Why does the REST module's `AuthorizationFilter` no longer answer 401 \"Session timed out\" on `/ws/rest/v1/session` when the request carries a cookie for an expired HTTP session? Which change and ticket made that exception?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-module-webservices.rest",
+          "commit": "ce758bc0f16a4f981fd31eeff70d0662f551f1c0",
+          "pr": 768
+        },
+        {
+          "ticket": "RESTWS-1053"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-10",
+      "question": "Why does the REST module's `BaseRestController` now map Spring Security's access-denied exception to 401/403 in the way it already treated the older OpenMRS authentication exception? What were clients getting instead, and which change and ticket fixed it?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-module-webservices.rest",
+          "commit": "66d284b5105a13d5221e103e0243711b69f2dac0",
+          "pr": 767
+        },
+        {
+          "ticket": "RESTWS-1056"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-11",
+      "question": "Why does the global unhandled-rejection handler in esm-error-handling turn the rejection reason into text before it dispatches a toast? What happened when the reason was an `Error` object, and which change and ticket fixed it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "57315b89fd6725e86df4a4569d2c4978c5572fcf",
+          "pr": 1888
+        },
+        {
+          "ticket": "O3-5981"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-12",
+      "question": "Why were the age comparisons in the vitals app's `getMuacColorCode` changed so that all colour cases in an age bracket share one bound? Which patients ended up with no colour at all before, and which change and ticket fixed it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "50773fe3f3d8253cf20e0f25dc0113ad8067f2b0",
+          "pr": 3626
+        },
+        {
+          "ticket": "O3-5957"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-13",
+      "question": "Why did the form-entry app's `FeWrapperComponent` change the way it lazily imports Angular's locale data? What had the Angular form engine been falling back to for dates and numbers, and which change and ticket fixed it?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "c7d6eb8dcec4dc4ce60a285798920842d88820d2",
+          "pr": 3657
+        },
+        {
+          "ticket": "O3-5976"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-14",
+      "question": "Why does the patient registration app's form manager now keep identifier values it has already generated across save attempts? What went wrong when a partly completed save was tried again, and which change and ticket addressed it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-management",
+          "commit": "b4b76423feb220db7e78f27e769f3d32ffaf89b7",
+          "pr": 2780
+        },
+        {
+          "ticket": "O3-5916"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-15",
+      "question": "Why were the contents of the React form engine's `hfa_girls_5_above.json` z-score table replaced? What was wrong with the old table for girls aged 5 and over, and which change and ticket fixed it?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-form-engine-lib",
+          "commit": "129c1f7fd78a83d1b8958ae6dcaa7fe7b51eb143",
+          "pr": 834
+        },
+        {
+          "ticket": "O3-6045"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-16",
+      "question": "Why does the billing app's printable invoice now base the outstanding amount it shows on the bill's net amount? What did a fully paid bill with a discount show before, and which change and ticket fixed it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-billing-app",
+          "commit": "3ecce2a55223b21d3c53d4905b346455f94f4fd2",
+          "pr": 743
+        },
+        {
+          "ticket": "O3-5705"
+        }
+      ]
+    },
+    {
+      "id": "hist-b-01",
+      "question": "Which merged pull requests changed `api/src/main/java/org/openmrs/api/db/hibernate/HibernateConceptDAO.java` in openmrs-core between 2026-04-13 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "4d222c6085bbe13f62be68908ad9c3abbaa75db1",
+          "pr": 6420
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "1f6cc621cb7bf97dc4283b0c808f96373d90054f",
+          "pr": 6363
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "c21a7cbfa2c9f67c1991372a343217e949e04f44",
+          "pr": 6346
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "b3a2fa0b2d45c31065f89651f4f9801aa45354b4",
+          "pr": 6079
+        }
+      ]
+    },
+    {
+      "id": "hist-b-02",
+      "question": "Which merged pull requests changed `api/src/main/java/org/openmrs/Location.java` in openmrs-core between 2026-04-13 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "b147e0dcae701feb4670b53a454daf0cfb210ee9",
+          "pr": 6444
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "05bc4e4dc32c4654aba49cc76b9252def11b06c2",
+          "pr": 6379
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "11607283d6100942c99bcdbb6713352f62c0b53a",
+          "pr": 6088
+        }
+      ]
+    },
+    {
+      "id": "hist-b-03",
+      "question": "Which merged pull requests changed `api/src/main/java/org/openmrs/api/context/ServiceContext.java` in openmrs-core between 2026-04-13 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "2c9b2ee0dd005f64fa543ca8228c51f57cb319c7",
+          "pr": 6627
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "b68355b3dd934c7d5be3708d6637dfae8f845ee5",
+          "pr": 6349
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "41ec2955656c6d7131c628d122d8c503b09c4cb1",
+          "pr": 6348
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "eb0a1006c7e188d4408deb298685c98ea1fef321",
+          "pr": 6341
+        }
+      ]
+    },
+    {
+      "id": "hist-b-04",
+      "question": "Which merged pull requests changed `api/src/main/java/org/openmrs/api/cache/RolePrivilegeCache.java` in openmrs-core between 2026-04-13 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "a69b14a84bf925ff7cdf34e93ca1ffb4f257265f",
+          "pr": 6544
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "2c9b2ee0dd005f64fa543ca8228c51f57cb319c7",
+          "pr": 6627
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "1b5421a9a8d69030adb91124c3f9cb758dbc58a8",
+          "pr": 6383
+        }
+      ]
+    },
+    {
+      "id": "hist-b-05",
+      "question": "Which merged pull requests changed `packages/framework/esm-expression-evaluator/src/extractor.ts` in openmrs-esm-core between 2026-04-10 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "cd6cf1fcbdab85d05529d015dfb911dfef885b84",
+          "pr": 1943
+        },
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "9ea60732d5e57aa3f13d8f2f29654a2faf3b8996",
+          "pr": 1884
+        }
+      ]
+    },
+    {
+      "id": "hist-b-06",
+      "question": "Which merged pull requests changed `packages/apps/esm-login-app/src/login.resource.ts` in openmrs-esm-core between 2026-04-10 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "4cc27d388fb4a4fe49316791a20127dbb04e31ae",
+          "pr": 1920
+        },
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "a624af22d5816773b91f0c7768daa69617c73c24",
+          "pr": 1918
+        }
+      ]
+    },
+    {
+      "id": "hist-b-07",
+      "question": "Which merged pull requests changed `packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts` in openmrs-esm-patient-chart between 2026-04-15 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "d0f4b1bf5be04ad6f9c567635864b36de6ac36c3",
+          "pr": 3621
+        },
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "52ad5642b88661b759f5e130f12e1d73a7fac66a",
+          "pr": 3684
+        },
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "96b812bb0206c034792895cacfad69dd3f37b44a",
+          "pr": 3668
+        }
+      ]
+    },
+    {
+      "id": "hist-b-08",
+      "question": "Which merged pull requests changed `src/utils/common-expression-helpers.ts` in openmrs-esm-form-engine-lib between 2026-04-15 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-esm-form-engine-lib",
+          "commit": "6a5b489b47c58f526f9988624c0bf349ec5b75ad",
+          "pr": 832
+        },
+        {
+          "repo": "openmrs-esm-form-engine-lib",
+          "commit": "79f2c23a1a4b3f45103fcd6f63746c87afa6e9fb",
+          "pr": 830
+        },
+        {
+          "repo": "openmrs-esm-form-engine-lib",
+          "commit": "fcf1b2562d60389dbf88c5383c2d4237d9d1ff8a",
+          "pr": 824
+        }
+      ]
+    },
+    {
+      "id": "hist-b-09",
+      "question": "Which merged pull requests changed `src/invoice/printable-invoice/printable-invoice.component.tsx` in openmrs-esm-billing-app between 2026-04-15 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-esm-billing-app",
+          "commit": "4aa8e4c993d5fe06147c9561c949a6da36aea47e",
+          "pr": 741
+        },
+        {
+          "repo": "openmrs-esm-billing-app",
+          "commit": "3ecce2a55223b21d3c53d4905b346455f94f4fd2",
+          "pr": 743
+        },
+        {
+          "repo": "openmrs-esm-billing-app",
+          "commit": "5127b0c031addf584cc49f6252272121d50c5cad",
+          "pr": 732
+        }
+      ]
+    },
+    {
+      "id": "hist-b-10",
+      "question": "Which merged pull requests changed `packages/esm-patient-registration-app/src/patient-registration/field/address/address-field.component.tsx` in openmrs-esm-patient-management between 2026-04-15 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-management",
+          "commit": "e7b14cfb17e0871420c4023bb81b19cedcab30b4",
+          "pr": 2761
+        },
+        {
+          "repo": "openmrs-esm-patient-management",
+          "commit": "81c24905675b9e4228681e1d1465497226f8d2d7",
+          "pr": 2776
+        },
+        {
+          "repo": "openmrs-esm-patient-management",
+          "commit": "0c8915e87db861cc30fa3a40b494ccc8505d2863",
+          "pr": 2757
+        }
+      ]
+    },
+    {
+      "id": "hist-b-11",
+      "question": "Which merged pull requests changed `src/forms/dispense-form.workspace.tsx` in openmrs-esm-dispensing-app between 2026-04-13 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-esm-dispensing-app",
+          "commit": "f95cf7935383e67e6e7b513a4ea91ff609b7f064",
+          "pr": 859
+        },
+        {
+          "repo": "openmrs-esm-dispensing-app",
+          "commit": "1e7c82b5db6673d887e2455f5cab400244d70dc4",
+          "pr": 825
+        }
+      ]
+    },
+    {
+      "id": "hist-b-12",
+      "question": "Which merged pull requests changed `src/stock-reports/stock-reports.resource.ts` in openmrs-esm-stock-management-app between 2026-04-13 and the pinned head, and when was each merged?",
+      "vocab": "code",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-esm-stock-management-app",
+          "commit": "390dc57d290de305f41f5af1755fc8c59480407c",
+          "pr": 616
+        },
+        {
+          "repo": "openmrs-esm-stock-management-app",
+          "commit": "c9d7c101c64554474c6b32c734789362166eaf37",
+          "pr": 542
+        }
+      ]
+    },
+    {
+      "id": "hist-c-01",
+      "question": "TRUNK-6796: merging patients can fail with a NullPointerException in `PersonMergeLogData.computeHashValue()` when the prior date of death is null, because the wrong field is null-checked. Which change fixed it, and which lines of openmrs-core carry the fix?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "21ea98bdb1d1ca38a2986de62de17b8e3f7bd8a3",
+          "pr": 6537
+        },
+        {
+          "ticket": "TRUNK-6796"
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/person/PersonMergeLogData.java",
+          "startLine": 445,
+          "endLine": 445
+        }
+      ]
+    },
+    {
+      "id": "hist-c-02",
+      "question": "TRUNK-6683 reports that `ConceptService.getDrugs(...)`, when given both a concept and the option to search drug concept names, still runs an extra full-text query over the ConceptName index whose results are redundant. Which change stopped that, and where in openmrs-core is the fix?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "c21a7cbfa2c9f67c1991372a343217e949e04f44",
+          "pr": 6346
+        },
+        {
+          "ticket": "TRUNK-6683"
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/api/db/hibernate/HibernateConceptDAO.java",
+          "startLine": 1582,
+          "endLine": 1583
+        }
+      ]
+    },
+    {
+      "id": "hist-c-03",
+      "question": "TRUNK-6646: in the scripted (auto) installation, environment variables such as the create-database username and password are silently dropped, so setup falls back to root with no password and fails with \"Access denied\". Which change fixed this, and which lines of openmrs-core implement it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "e7052745fb78802c8adcd7c1962f3525e7050b1e",
+          "pr": 6145
+        },
+        {
+          "ticket": "TRUNK-6646"
+        },
+        {
+          "path": "openmrs-core/web/src/main/java/org/openmrs/web/filter/initialization/InitializationFilter.java",
+          "startLine": 197,
+          "endLine": 201
+        },
+        {
+          "path": "openmrs-core/web/src/main/java/org/openmrs/web/filter/initialization/InitializationFilter.java",
+          "startLine": 358,
+          "endLine": 359
+        }
+      ]
+    },
+    {
+      "id": "hist-c-04",
+      "question": "TRUNK-6643: when the installation wizard is given a `jdbc:mariadb` URL and has to create the database user, the installation fails because only the MySQL case was handled. Which change fixed it, and which lines of openmrs-core implement the fix?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "949b8a177e825320b0d04108accf38fc48751ed3",
+          "pr": 6150
+        },
+        {
+          "ticket": "TRUNK-6643"
+        },
+        {
+          "path": "openmrs-core/api/src/main/java/org/openmrs/util/DatabaseUpdater.java",
+          "startLine": 486,
+          "endLine": 486
+        },
+        {
+          "path": "openmrs-core/web/src/main/java/org/openmrs/web/filter/initialization/InitializationFilter.java",
+          "startLine": 1437,
+          "endLine": 1437
+        },
+        {
+          "path": "openmrs-core/web/src/main/java/org/openmrs/web/filter/initialization/InitializationFilter.java",
+          "startLine": 1492,
+          "endLine": 1501
+        },
+        {
+          "path": "openmrs-core/web/src/main/java/org/openmrs/web/filter/initialization/InitializationFilter.java",
+          "startLine": 1518,
+          "endLine": 1518
+        }
+      ]
+    },
+    {
+      "id": "hist-c-05",
+      "question": "RESTWS-1037: a user who may get visits but not encounters receives HTTP 500 (\"No serializer found for class java.lang.Object\") from `GET /ws/rest/v1/visit/{uuid}` when the visit has encounters. Which change fixed this, and which lines of the REST module implement the fix?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-module-webservices.rest",
+          "commit": "070fa8bca3b59292118da26461b3d2cfd9a06796",
+          "pr": 743
+        },
+        {
+          "ticket": "RESTWS-1037"
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod-common/src/main/java/org/openmrs/module/webservices/rest/web/ConversionUtil.java",
+          "startLine": 366,
+          "endLine": 372
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod-common/src/main/java/org/openmrs/module/webservices/rest/web/ConversionUtil.java",
+          "startLine": 400,
+          "endLine": 417
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingResourceDescription.java",
+          "startLine": 248,
+          "endLine": 254
+        },
+        {
+          "path": "openmrs-module-webservices.rest/omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/BasePageableResult.java",
+          "startLine": 55,
+          "endLine": 59
+        }
+      ]
+    },
+    {
+      "id": "hist-c-06",
+      "question": "O3-6028: the login screen's location picker always loads 50 locations per request, whatever an implementation configures. Which change made the configured value take effect, and which line of esm-core passes it to the picker?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "4cc27d388fb4a4fe49316791a20127dbb04e31ae",
+          "pr": 1920
+        },
+        {
+          "ticket": "O3-6028"
+        },
+        {
+          "path": "openmrs-esm-core/packages/apps/esm-login-app/src/location-picker/location-picker-view.component.tsx",
+          "startLine": 181,
+          "endLine": 181
+        }
+      ]
+    },
+    {
+      "id": "hist-c-07",
+      "question": "O3-6093: `extractVariableNames()` in the expression evaluator misses unbound variables used inside arrow-function bodies (for example `a.map(x => f(b))` yields only `a`). Which change fixed it, and which code in esm-core implements the fix?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "cd6cf1fcbdab85d05529d015dfb911dfef885b84",
+          "pr": 1943
+        },
+        {
+          "ticket": "O3-6093"
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-expression-evaluator/src/extractor.ts",
+          "startLine": 92,
+          "endLine": 119
+        },
+        {
+          "path": "openmrs-esm-core/packages/framework/esm-expression-evaluator/src/extractor.ts",
+          "startLine": 151,
+          "endLine": 173
+        }
+      ]
+    },
+    {
+      "id": "hist-c-08",
+      "question": "O3-6100: double-clicking \"Save and close\" on the vitals and biometrics form while the first request is still pending records the same measurements twice. Which change fixed it, and which line of the patient chart does the fix change?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "0e06523b799319ec65716df66eafb32aef170b3c",
+          "pr": 3792
+        },
+        {
+          "ticket": "O3-6100"
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-vitals-app/src/vitals-biometrics-form/exported-vitals-biometrics-form.workspace.tsx",
+          "startLine": 225,
+          "endLine": 225
+        }
+      ]
+    },
+    {
+      "id": "hist-c-09",
+      "question": "O3-6097: in the drug order form, the switch between structured and free-text dosing reads \"On\" when it is off and \"Off\" when it is on. Which change fixed it, and which lines implement the fix?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "1c19126f11ca5bb93891bd18d89910d20f41ee84",
+          "pr": 3793
+        },
+        {
+          "ticket": "O3-6097"
+        },
+        {
+          "path": "openmrs-esm-patient-chart/packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.component.tsx",
+          "startLine": 981,
+          "endLine": 982
+        }
+      ]
+    },
+    {
+      "id": "hist-c-10",
+      "question": "O3-5958: when the login location is not queue-tagged but has a queue-tagged ancestor, the queue location field of the new queue entry form stays blank, even though the Service Queues dashboard picked that ancestor. Which change fixed it, and which lines in patient management implement the fix?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-management",
+          "commit": "1f4098170806704451ed195a9922dc1a30ebcedc",
+          "pr": 2731
+        },
+        {
+          "ticket": "O3-5958"
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/create-queue-entry/queue-fields/queue-fields.component.tsx",
+          "startLine": 68,
+          "endLine": 68
+        },
+        {
+          "path": "openmrs-esm-patient-management/packages/esm-service-queues-app/src/create-queue-entry/queue-fields/queue-fields.component.tsx",
+          "startLine": 81,
+          "endLine": 81
+        }
+      ]
+    },
+    {
+      "id": "hist-c-11",
+      "question": "O3-6048: in the React form engine, the weight-for-height z-score expression throws \"height.toFixed is not a function\" when the height value arrives as a string, so the z-score field stays empty. Which change fixed it, and which lines of the form engine implement the fix?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-esm-form-engine-lib",
+          "commit": "6a5b489b47c58f526f9988624c0bf349ec5b75ad",
+          "pr": 832
+        },
+        {
+          "ticket": "O3-6048"
+        },
+        {
+          "path": "openmrs-esm-form-engine-lib/src/utils/common-expression-helpers.ts",
+          "startLine": 489,
+          "endLine": 495
+        },
+        {
+          "path": "openmrs-esm-form-engine-lib/src/utils/common-expression-helpers.ts",
+          "startLine": 509,
+          "endLine": 513
+        }
+      ]
+    },
+    {
+      "id": "hist-c-12",
+      "question": "O3-5993: running a report with a required parameter left blank shows the placeholder text instead of naming the parameter that is missing. Which change fixed the message, and which line of the admin tools implements it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-ticket-to-code",
+      "required": [
+        {
+          "repo": "openmrs-esm-admin-tools",
+          "commit": "f462a28bf6f97d3a1c963e362b79c31b56f69bd4",
+          "pr": 376
+        },
+        {
+          "ticket": "O3-5993"
+        },
+        {
+          "path": "openmrs-esm-admin-tools/packages/esm-reports-app/src/components/reports-data-overview.component.tsx",
+          "startLine": 84,
+          "endLine": 84
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+ "number": 3683,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3683",
+ "title": "(fix) O3-5988: Use the backend attachment upload limit",
+ "mergedAt": "2026-09-22T18:32:08Z",
+ "mergeCommit": "281126263e3ede446bd40b816983f258a39f39d1",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nThe attachment uploader uses a frontend size limit that can differ from what the backend accepts. For example, the default 1 MB frontend limit rejects a 3 MB image even when the backend permits 5 MB.\r\n\r\nRead `attachments.maxUploadFileSize` for both the displayed limit and file validation. If the setting cannot be loaded or is invalid, keep file selection disabled and offer Retry. The old frontend `maxFileSize` setting is marked deprecated and no longer used.\r\n\r\n## Screenshots\r\n\r\n### Before\r\nhttps://github.com/user-attachments/assets/ed2c5a11-e03c-4e4a-8a70-06f713f1cefe\r\n\r\n### After\r\nhttps://github.com/user-attachments/assets/400a315f-32d8-47af-9bdf-befd4cf4ecbd\r\n\r\n## Related Issue\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5988\r\n\r\n## Other\r\n\r\nThe backend remains responsible for upload validation. A reverse proxy may impose a lower request-size limit; this change does not alter that configuration.\r\n",
+ "files": [
+  "packages/esm-patient-attachments-app/src/attachments-config-schema.ts",
+  "packages/esm-patient-attachments-app/src/camera-media-uploader/media-uploader.component.tsx",
+  "packages/esm-patient-attachments-app/src/camera-media-uploader/media-uploader.test.tsx",
+  "packages/esm-patient-attachments-app/translations/en.json",
+  "packages/esm-patient-common-lib/src/index.ts",
+  "packages/esm-patient-common-lib/src/useMaxAttachmentFileSize.test.ts",
+  "packages/esm-patient-common-lib/src/useMaxAttachmentFileSize.ts"
+ ]
+}

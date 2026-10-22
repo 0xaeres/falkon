@@ -1,0 +1,9 @@
+{
+ "key": "O3-6100",
+ "url": "https://openmrs.atlassian.net/browse/O3-6100",
+ "summary": "Double-clicking Save and close creates duplicate vitals encounters",
+ "status": "Done",
+ "created": "2026-10-12T22:32:33.677+1100",
+ "resolved": null,
+ "description": "Double-clicking Save and close can save the same vitals twice while the first request is still pending.\nSteps to reproduce\nOpen a test patient with an active visit and select Record vitals.\n\nEnter a temperature of 37 \u00b0C and a heart rate of 72.\n\nSimulate a slow connection, then double-click Save and close. The recording uses a 750 ms delay on each outgoing encounter POST.\n\nReload Vitals & Biometrics.\n\nActual result\nTwo entries appear with the same measurements. The backend also contains two separate, non-voided vitals encounters for the same patient and visit.\nExpected result\nSave should stay disabled until the request finishes. Clicking it more than once should create only one encounter.\nTested versions\nReproduced locally with the published vitals modules 13.0.0 and 12.3.4, using the same 3.8.0 RC backend and surrounding frontend. This confirms the behavior also exists in the older vitals module; the full previous release was not tested.\nSuggested fix\nThe save handler starts the request without returning its promise. Return or await it so isSubmitting stays true until the save finishes.\nAdd a test that double-clicks Save while the request is pending and checks that only one encounter is saved."
+}

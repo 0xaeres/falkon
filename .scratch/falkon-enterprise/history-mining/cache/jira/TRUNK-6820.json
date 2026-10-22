@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6820",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6820",
+ "summary": "DWR logs \"Attribute moduleId must be declared\" errors for dwr-modules.xml on startup",
+ "status": "Closed",
+ "created": "2026-10-07T01:12:12.653+1100",
+ "resolved": "2026-10-07T05:57:25.305+1100",
+ "description": "WebModuleUtil tags each module's entries in WEB-INF/dwr-modules.xml with a moduleId attribute so they can be removed when the module stops. The DWR 2.0 DTD does not declare that attribute, and DWR validates the file, so every startup with a module that defines DWR config (e.g. legacyui) logs:\nERROR - CommonsLoggingOutput.error(75) | Line=4 Attribute \"moduleId\" must be declared for element type \"allow\".\nERROR - CommonsLoggingOutput.error(75) | Line=384 Attribute \"moduleId\" must be declared for element type \"signatures\".\nWith a second module that defines DWR config (e.g. htmlformentry), DWR also logs The content of element type \"dwr\" must match \"(init?,allow?,signatures?)\", because the DTD allows one init, allow and signatures and each module adds its own.\nExpected: no errors. The DWR 2.0 DTD bundled in openmrs-contrib-dwr declares moduleId on init, allow and signatures and lets dwr hold the entries of several modules, and every dwr-modules.xml that core writes carries the DWR 2.0 document type.\nPRs: https://github.com/openmrs/openmrs-contrib-dwr/pull/7, https://github.com/openmrs/openmrs-core/pull/6655"
+}

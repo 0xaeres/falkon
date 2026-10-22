@@ -1,0 +1,9 @@
+{
+ "key": "O3-6097",
+ "url": "https://openmrs.atlassian.net/browse/O3-6097",
+ "summary": "\"Free text dosage\" toggle labels are inverted in the drug order form",
+ "status": "Done",
+ "created": "2026-10-12T21:43:42.382+1100",
+ "resolved": null,
+ "description": "Repo: openmrs-esm-patient-chart (esm-patient-medications-app)\nSteps to reproduce\nOpen a patient chart with an active visit, then Order basket \u2192 Drug orders \u2192 Add \u2192 search a drug (e.g. Paracetamol 500mg) \u2192 Order form.\n\nLook at the Free text dosage toggle while it is switched off (structured Dose / Route / Frequency fields showing).\n\nSwitch it on (the free-text dosage box appears).\n\nActual\nToggle switched off \u2192 label reads \"On\".\n\nToggle switched on \u2192 label reads \"Off\".\n\nThe same inversion appears in translations, e.g. French shows \"Activ\u00e9\" while the toggle is off.\n\nExpected\nThe label matches the toggle state: \"Off\" when free-text dosage is off, \"On\" when it is on.\nWhy it matters\nA clinician who believes structured dosing is selected can end up typing into the free-text box instead. Example on test3: Mill QA Test (10003YW), ORD-499 (Zyrtec 10mg) was saved as a free-text order whose only instruction is \"-5\". It has no dose, route, frequency or duration, so it never expires and stays in Active Medications. In the Edit drug order screen the toggle reads \"Off\" while the free-text box is visible.\nCause and fix\nesm-patient-medications-app/src/add-drug-order/drug-order-form.component.tsx:981-982 passes labelA={t('on', 'On')} and labelB={t('off', 'Off')}. Carbon's Toggle shows labelA when unchecked and labelB when checked (checked ? labelB : labelA), so the labels are swapped.\nFix: labelA={t('off', 'Off')} and labelB={t('on', 'On')}, plus a unit test asserting the label text in both states."
+}
