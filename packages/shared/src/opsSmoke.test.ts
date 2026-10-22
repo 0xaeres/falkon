@@ -34,13 +34,14 @@ if (command === 'date') {
   console.log(next);
 } else if (command === 'docker') {
   if (args[0] === 'stats') {
-    for (const [i, name] of ['backend', 'web', 'zoekt', 'postgres', 'redis', 'api'].entries()) {
-      const usage = scenario === 'memory-fail' ? (i ? '100MB' : '154.01MB') :
+    const names = ['backend', 'web', 'zoekt', 'postgres', 'redis', 'api'].slice(0, scenario === 'memory-five' ? 5 : 6);
+    for (const [i, name] of names.entries()) {
+      const usage = scenario === 'memory-bad' && !i ? 'n/a' : scenario === 'memory-fail' ? (i ? '100MB' : '154.01MB') :
         scenario === 'memory-edge' ? (i ? '100MB' : '154MB') :
         ['100MiB', '0.1GB', '100MB', '50000kB', '50000KiB', '100MB'][i];
       console.log(JSON.stringify({ Name: name, MemUsage: usage + ' / 2GiB' }));
     }
-  } else if (args.includes('ps')) console.log('backend\\nweb\\nzoekt\\npostgres\\nredis\\napi');
+  } else if (args.includes('ps')) console.log(scenario === 'memory-five' ? 'backend\\nweb\\nzoekt\\npostgres\\nredis' : 'backend\\nweb\\nzoekt\\npostgres\\nredis\\napi');
   else if (args.includes('logs')) console.log('fixture compose failure logs');
 } else if (command === 'pnpm') {
   if (args.includes('exec')) process.exit(scenario === 'deps' ? 1 : 0);
@@ -97,7 +98,7 @@ test("smoke compares two captures, warns without a baseline and records only whe
   assert.equal(missing.status, 0, missing.output);
   assert.match(missing.output, /WARN no baseline exists/);
   assert.match(missing.output, /PASS golden-stability/);
-  assert.match(missing.output, /PASS memory: whole clone stack 506\.06 MB/);
+  assert.match(missing.output, /INFO memory: whole clone stack 506\.06 MB/);
   assert.equal(missing.baseline, undefined);
   assert.equal(missing.events.filter(event => event.args.includes("golden:record")).length, 3);
   const recorded = smoke({ record: true });
@@ -123,15 +124,25 @@ test("smoke fails baseline drift or unstable captures and dumps compose logs bef
   }
 });
 
-test("smoke enforces the 654 MB whole-stack ceiling, including postgres and redis", () => {
+test("smoke reports whole-stack memory as information at any size, including postgres and redis", () => {
   const edge = smoke({ scenario: "memory-edge" });
   assert.equal(edge.status, 0, edge.output);
-  assert.match(edge.output, /PASS memory: whole clone stack 654\.00 MB/);
+  assert.match(edge.output, /INFO memory: whole clone stack 654\.00 MB \(reference ceiling 654 MB\)/);
   const over = smoke({ scenario: "memory-fail", record: true });
-  assert.equal(over.status, 1, over.output);
-  assert.match(over.output, /FAIL memory: whole clone stack 654\.01 MB/);
-  assert.match(over.output, /fixture compose failure logs/);
-  assert.equal(over.baseline, undefined);
+  assert.equal(over.status, 0, over.output);
+  assert.match(over.output, /INFO memory: whole clone stack 654\.01 MB \(reference ceiling 654 MB\)/);
+  assert.doesNotMatch(over.output, /FAIL/);
+});
+
+test("smoke still fails memory when the measurement itself is unreliable", () => {
+  const bad = smoke({ scenario: "memory-bad" });
+  assert.equal(bad.status, 1, bad.output);
+  assert.match(bad.output, /unrecognized usage n\/a/);
+  assert.doesNotMatch(bad.output, /INFO memory/);
+  const five = smoke({ scenario: "memory-five" });
+  assert.equal(five.status, 1, five.output);
+  assert.match(five.output, /expected measurements for all six clone services/);
+  assert.doesNotMatch(five.output, /INFO memory/);
 });
 
 test("smoke explains missing runner dependencies and bounds the config-reload deletion wait", () => {

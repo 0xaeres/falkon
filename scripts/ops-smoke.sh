@@ -203,9 +203,9 @@ for (const row of rows) {
     console.log(`${row.Name} ${row.MemUsage}`);
 }
 const megabytes = total / 1e6;
-const passed = Number.isFinite(megabytes) && megabytes <= 654;
-console.log(`${passed ? 'PASS' : 'FAIL'} memory: whole clone stack ${megabytes.toFixed(2)} MB; ceiling 654 MB (545 MB +20%)`);
-if (!passed) process.exit(1);
+if (!Number.isFinite(megabytes)) throw new Error('FAIL memory: non-finite total');
+// Reported, not enforced (D76): a figure over the reference ceiling does not fail the step.
+console.log(`INFO memory: whole clone stack ${megabytes.toFixed(2)} MB (reference ceiling 654 MB)`);
 JS
 if [ "${GOLDEN_RECORD:-0}" = 1 ]; then
     cp "$temp/golden-before.json" "$baseline"

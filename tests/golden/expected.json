@@ -2808,7 +2808,7 @@
     "grep": {
       "content": [
         {
-          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/greet.ts:\n  2:   return `hello world ${name}`; // fixture_marker atlas_marker\n\n(Results truncated. Consider using a more specific path or pattern, specifying a repo, or increasing the limit.)",
+          "text": "Found 1 match in 1 file\n\n[fixtures.test/atlas] src/greet.ts:\n  2:   return `hello world ${name}`; // fixture_marker atlas_marker\n\n(Output was cut short: narrow the path or pattern, name a repo, or raise the limit.)",
           "type": "text"
         }
       ]
