@@ -681,3 +681,48 @@ Adversarial cases the reviewer checks: S40 memory over 654 MB exits 0 and still 
 May decide alone: release notes and README wording, the INFO line wording, small UI fixes found by the browser check and the D77 fix when local and small (about 30 lines, no refactor), one fix round per slice, the order of live steps. Must stop at gate 2 (early) for: a golden diff beyond line 2811; any `tests/contract` change; gate 3 not PASS (report with the sensitivity row, never relax D25); a functional ops-smoke step failing after one fix; the image content check printing anything after one fix; a defect that needs more than a small fix; a provider 402 or other outside failure; a new dependency; a Prisma schema change; spend beyond the caps (Haiku gate 3 $6 total, the human's model UI check about $2); any push, PR, merge to `main` or tag before the human replies at gate 2; touching the human's compose project `falkon` or the `falcon-sourcebot-*` containers. Budget: 800k subagent tokens (recent cycles used 630k to 825k with three builder slices; this cycle has two small builder slices, one possible fix round and mostly main-session live work), 5 hours wall clock (the cold image build and ops-smoke take 10 to 25 and about 15 minutes; gate 3 about 40 minutes).
 
 Gate 1 approved by the human on 2026-10-22: cycle 11 plan as written (S40, S42, S41; D75 to D81). Main session stays on its current model for the cycle (Sonnet); builders and reviewers Sonnet, verifiers Haiku.
+
+## Cycle 11 results (2026-10-22, waiting at gate 2)
+
+Cycle tip: see the digest. Typecheck green; 473 tests pass, 0 fail across 8 packages.
+
+| Slice | Outcome | Evidence |
+|---|---|---|
+| S40 ops info and golden line | kept (`8257db1`, merged `9bcd9dc`) | ops-smoke memory step prints `INFO memory` and exits 0 for any figure; integrity failures (unreadable usage, five services) still fail and are tested; `tests/golden/expected.json` differs from `main` by line 2811 only (one hunk), the old grep hint replaced by the exact text in `tools.ts`; spec Regression gate item 4, ADR section 9 item 4 and `baseline.md` amended (D76, D78, D79). Review: no blocking findings. |
+| S42 release 0.1.0 | kept (`ebd744b`, merged `afd6275`) | All workspace versions 0.1.0, MCP server version 0.1.0 with an equality test, `RELEASE_NOTES.md`, README pass, ADR version sentence, `.gitignore` for `packages/ui/.data/`. Review found one blocking defect: the notes (and my brief) listed the code graph and the overview Map as shipped, but D28 deferred both. Fixed by the main session: the notes now describe the opt-in impact recipe and list the graph and Map under known limits; "529" became "more than 500" (535 tracked files now). |
+| S41 final live gate | done, one item needs the human | Table below. |
+
+### S41 evidence (release tip, `afd6275`)
+
+| Check | Result |
+|---|---|
+| (a) Tool contract | `pnpm test` green; `git diff main -- tests/contract` empty. |
+| (b) ops-smoke, cold | Exit 0. PASS cold-start, searchable x4, indexing, api, registry, oversized-file, golden-baseline (empty diff after the line 2811 edit), golden-stability, golden-api, resync, delete-repo, teardown. `INFO memory: whole clone stack 665.17 MB (reference ceiling 654 MB)` (api 72.6, backend 266.6, postgres 80.0, redis 16.4, web 135.5, zoekt 63.4 MiB). Information only (D76). |
+| (c) Image content | Built image: no `.scratch` and no match for the predecessor name or the c-misspelling outside `node_modules` and `.next`. The image's busybox `grep` lacks `-I` and `--exclude-dir`, so the equivalent `find ... -prune ... | xargs grep -l` ran instead. |
+| (d) Browser check | Human's model (DeepInfra), disposable stack on the release image, built-in browser; screenshots in `.scratch/falkon-mvp/screens-c11/` (1280 px: status, connect, engine-down, failed first send, chat answer, mermaid; 375 px: status, connect, chat). Status and Sync now (busy state, then refreshed) pass; Connect snippets correct, copy shows "Copied", no page overflow at 375 px; a chat turn with citations, an evidence panel, Markdown lists, inline code, a table and a mermaid diagram (drawn, one SVG) passes; failed first send (engine stopped while streaming) shows "The answer didn't arrive" with Retry, and Retry produced the answer. Toasts no longer exist (removed by the D70 distill); the Sync now busy state and the Copy confirmation are the feedback that remains. |
+| (e) D77 spinner | Not an app defect. Server render 0.14 s, status route 0.04 s; with the browser pane hidden the page's fetches started 5 to 8 s after the scripts loaded (the same on the Connect page, so not status specific), with the pane shown they start at 0.4 s. Recorded as a hidden-pane artifact; no fix. |
+| (f) Gate 3 on Haiku | See below. |
+| (g) Teardown | Disposable stacks (`falkon-c11`, smoke project, `falkon-eval`) and the images `falkon-c11-app`, `falkon-smoke-app` removed; the human's project `falkon` and the `falcon-sourcebot-*` containers untouched. |
+
+Non-blocking findings from (d), not fixed (listed for later): after the engine goes down with a page open, recovery from the error view takes two "Try again" clicks; the model's answer began with a stray backtick (model output, stored that way); with the evidence panel open the mermaid diagram renders narrow and tall.
+
+### Gate 3 on Haiku (D66, rule D25)
+
+Client model claude-haiku-5-5, arm `clone-tools` on an eval stack built from the release tip; reference: the recorded v6 Haiku runs (80), the one `xrepo-framework-to-chart-25` reference run re-flagged as not leaked (D58). Pilot: 5 runs, recall 0.950, 0 leaks. Spend $0.59 (cap $6). Reports: `.scratch/falkon-mvp/gate3-c11-report-rerun.md` and `...-as-recorded.md`; the two set-aside runs are in `.scratch/falkon-mvp/eval-runs-c11-malformed/`.
+
+Two runs ended with prose instead of the required JSON answer (counted as malformed): `xrepo-framework-to-chart-24` (dev) and `xrepo-framework-to-chart-6` (hidden), both Haiku formatting failures on first try. As in cycle 9, each was set aside and its one question rerun; both reruns were well formed.
+
+| View | n | Recall diff vs reference [95% CI] | Wins / losses | Failed / malformed / leaked | D25 |
+|---|---:|---|---|---|---|
+| Reruns in place (dev) | 48 | +0.0885 [0.0156, 0.1771] | 7 / 1 | 0 / 0 / 0 | |
+| Reruns in place (hidden) | 32 | +0.1234 [0.0547, 0.2016] | 9 / 0 | 0 / 0 / 0 | |
+| Reruns in place, pooled | 80 | +0.1025 [0.0479, 0.1640] | 16 / 1 | 0 / 0 / 0 | PASS |
+| As recorded, pooled | 80 | +0.0837 [0.0208, 0.1515] | 16 / 3 | 0 / 2 / 0 | withheld (2 malformed runs) |
+
+Cycle 9 for comparison: +0.090 [0.040, 0.149], 17 / 2, no malformed. Both views clear the numeric thresholds (lower bound above -0.10, losses at most twice wins); only the "no malformed run" clause holds in the rerun view alone. Recall 0.960 against 0.857 for v6.
+
+### Open for the human at gate 2
+
+1. Gate 3 read: PASS with the two malformed reruns, "withheld" as recorded (numbers pass; two Haiku formatting failures out of 80). Accept the rerun view, as cycle 9 did for a harness-rule artifact, or not. A malformed run is a model failure, not a harness artifact, so this is a stricter reading of the precedent.
+2. `CONTEXT.md` still defines Map and Potential impact as domain terms although D28 deferred both; leave as the target language or trim.
+3. The README tagline calls Falkon "modeled on an existing source-available code context engine" (untouched, pre-existing text).
