@@ -643,3 +643,7 @@ Gate 1 approved by the human on 2026-10-21: cycle 10 plan as written. Main sessi
 Cycle tip `f2aa55b`: typecheck green; 471 tests pass, 0 fail across 8 packages; UI build green; originality 0; contract diff since `c788fbf` only the 3 `outputs.json` hint lines; `tests/golden/expected.json` unchanged; no Prisma change, no dependency change; name greps clean (`sbc` only in the README upgrade note).
 
 Open for S15 (cycle 11): `tests/golden/expected.json` line 2811 still holds the old grep truncation hint, so the live golden diff in ops-smoke will differ on that one line until the baseline is re-recorded (needs the human's OK); memory 665.67 MB against the 654 MB ceiling (probe of `c788fbf`); the status page showed a loading spinner for 3 to 5 seconds at first load on the disposable stack (not investigated).
+
+## Gate 2 decision, cycle 10 (human, 2026-10-22: approve)
+
+Approved as built: S38, S39 and S37 kept, including the D70 and D71 amendments made at review. Open for cycle 11 (S15), decided at its grill: re-recording the golden baseline line that holds the old grep hint, the memory ceiling (665.67 MB against 654 MB), the 3 to 5 s status first-load spinner. The loop edit and project lesson were not accepted (no `+loop`, no `+project`).
