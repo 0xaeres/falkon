@@ -1,8 +1,8 @@
-import { SEED, type Arm, type Dataset, type Raw } from "./data.js";
-import { bootstrapCI, scoreAnswer, type Span } from "./score.js";
+import { SEED, goldOf, type Arm, type Dataset, type Raw } from "./data.js";
+import { bootstrapCI, scoreAnswer, type Gold } from "./score.js";
 
 /** `floor` holds the reference runs: the recorded Sonnet floor, or the v6-tools runs of the model's own directory. */
-export type ReportInput = { datasets: { dataset: Dataset; floor: Raw[]; runs: Raw[] }[]; accepted: Record<string, Span[]>; split?: "dev" | "hidden"; arms: Arm[]; model?: string; referenceArm?: Arm };
+export type ReportInput = { datasets: { dataset: Dataset; floor: Raw[]; runs: Raw[] }[]; accepted: Record<string, Gold[]>; split?: "dev" | "hidden"; arms: Arm[]; model?: string; referenceArm?: Arm };
 type Row = { floor?: Raw; run?: Raw; floorScore?: { recall: number; precision: number }; score?: { recall: number; precision: number } };
 type Paired = Row & { floor: Raw; run: Raw; floorScore: NonNullable<Row["floorScore"]>; score: NonNullable<Row["score"]> };
 
@@ -23,7 +23,7 @@ export function d25(diffs: number[]) {
 export function report({ datasets, accepted, split, arms, model = "sonnet", referenceArm }: ReportInput): string {
   const questions = (s?: string) => datasets.flatMap((d) => d.dataset.questions.filter((q) => !s || q.split === s).map((q) => ({ d, q })));
   const rowsFor = (arm: Arm, s?: string): Row[] => questions(s).map(({ d, q }) => {
-    const score = (r: Raw) => scoreAnswer(q.declarations ?? [], r.is_error ? [] : r.answer, r.malformed, accepted[q.id]);
+    const score = (r: Raw) => scoreAnswer(goldOf(q), r.is_error ? [] : r.answer, r.malformed, accepted[q.id]);
     const floor = d.floor.find((r) => r.taskId === q.id), run = d.runs.find((r) => r.arm === arm && r.taskId === q.id);
     return { floor, run, floorScore: floor && score(floor), score: run && score(run) };
   });
