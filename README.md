@@ -1,6 +1,6 @@
 # Falkon
 
-Self-hosted code search + Ask agent + MCP server, modeled on an existing source-available code context engine.
+Self-hosted code search + Ask agent + MCP server, modeled on an existing source-available code context engine. Version 0.1.0 (see [`RELEASE_NOTES.md`](RELEASE_NOTES.md)).
 
 ```
 config.json ──► backend (BullMQ worker) ──► bare git clones + zoekt shards (shared /data volume)
@@ -18,7 +18,7 @@ config.json ──► backend (BullMQ worker) ──► bare git clones + zoekt 
 | `packages/backend` | syncs config `connections` (GitHub, generic git URL, `file://` in place), clone/fetch (bare), `zoekt-git-index`, reindex/resync on `settings` schedules and on config change, orphan cleanup, search contexts |
 | `packages/web` | search UI, repos page, Ask page, REST API |
 | `packages/contracts` | Zod 4 schemas shared by the engine and the Falkon UI |
-| `packages/ui` | Falkon UI (Next 16); runs on mock data until the engine endpoints land |
+| `packages/ui` | Falkon UI (Next 16): Products, status, Connect and Ask chat, served by the engine's admin API |
 
 ## Run (Docker)
 
@@ -155,14 +155,17 @@ To convert an older config file once (unsupported connection types and keys are 
 
 ## Not implemented (vs the reference engine)
 
-Users/orgs/SSO, permission syncing, GitHub Apps, GitLab/Gitea/Gerrit/Bitbucket/Azure DevOps connectors, Knowledge Base, skills tools, Ask attachments and external MCP servers, file viewer UI, symbol navigation UI.
+Users/orgs/SSO, permission syncing, GitHub Apps, GitLab/Gitea/Gerrit/Bitbucket/Azure DevOps connectors, skills tools, Ask attachments and external MCP servers, file viewer UI, symbol navigation UI.
 
 ## Known limits
 
 - Two turns running at once on the same Ask thread overwrite each other's messages; the last write wins.
 - `Credential.lastError` is never written or read.
+- A sync running while a Product is edited can briefly show a new member as Skipped.
+- No automated browser test covers mermaid drawing, streaming or the failed-first-send flow.
+- Memory is information only: the whole stack was about 665 MB at the last probe against a 654 MB reference, and 0.1.0 does not enforce it.
 
 ## Verified vs not
 
-Verified: 63 unit tests (`pnpm test`: parser, IR mapping, config, auth scope, tools, Ask answer formatting and errors); typecheck; `docker compose up --build` with upstream Zoekt; gRPC search, streaming (SSE), every tool and Ask against a real LLM; repo removal; zoekt port not published.
+Verified: the unit and contract tests (`pnpm test`: parser, IR mapping, config, auth scope, tools, Ask answer formatting and errors); typecheck; `docker compose up --build` with upstream Zoekt; gRPC search, streaming (SSE), every tool and Ask against a real LLM; repo removal; zoekt port not published.
 Not verified: GitHub connector, multi-branch/tag indexing against a large repo, ACCESS_FILE fail-closed path end to end (unit-tested only), search contexts (unsupported).

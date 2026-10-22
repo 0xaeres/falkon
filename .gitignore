@@ -5,3 +5,4 @@ data
 *.tsbuildinfo
 /config.json
 packages/api/dist
+packages/ui/.data/
