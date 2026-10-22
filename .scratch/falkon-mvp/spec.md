@@ -726,3 +726,7 @@ Cycle 9 for comparison: +0.090 [0.040, 0.149], 17 / 2, no malformed. Both views 
 1. Gate 3 read: PASS with the two malformed reruns, "withheld" as recorded (numbers pass; two Haiku formatting failures out of 80). Accept the rerun view, as cycle 9 did for a harness-rule artifact, or not. A malformed run is a model failure, not a harness artifact, so this is a stricter reading of the precedent.
 2. `CONTEXT.md` still defines Map and Potential impact as domain terms although D28 deferred both; leave as the target language or trim.
 3. The README tagline calls Falkon "modeled on an existing source-available code context engine" (untouched, pre-existing text).
+
+## Gate 2 decision, cycle 11 (human, 2026-10-22: approve)
+
+Approved as built: S40, S42 and S41 kept, including the gate 3 reading with the two malformed first-try Haiku runs rerun (as recorded: withheld on those two runs). The loop edit and project lesson were not accepted (no `+loop`, no `+project`). Release 0.1.0 is merged to `main` and tagged `v0.1.0` locally; nothing is pushed. Open after the MVP: move `.scratch/` to a private branch or repository before any public push (D65); the three small UI findings; memory and size work; the code graph and Map (D28).
