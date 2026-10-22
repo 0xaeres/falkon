@@ -25,6 +25,6 @@ Code that runs per HTTP poll or request must not do remote I/O or unbounded read
 
 ## Cycle workflow
 
-The current delivery spec, with its decisions, regression gate, and slices, is `.scratch/falkon-mvp/spec.md`. Work one slice at a time against it. Neither the spec nor the ADR takes precedence: raise any conflict between them to the human, who resolves it explicitly.
+The current delivery spec, with its decisions, regression gate, and slices, is `.scratch/falkon-enterprise/spec.md`. The MVP spec `.scratch/falkon-mvp/spec.md` (D1 to D81) is the record of release 0.1.0; its decisions hold unless the current spec amends them. Work one slice at a time against it. Neither the spec nor the ADR takes precedence: raise any conflict between them to the human, who resolves it explicitly.
 
 Never read, print, or copy `.env`.

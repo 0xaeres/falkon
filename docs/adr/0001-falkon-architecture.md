@@ -3,7 +3,7 @@
 **Status:** Proposed
 **Date:** 2026-10-18
 **Scope:** This is Falkon's only architecture decision record. Change the architecture by amending this file in place; add no other ADR files. Terms in bold italics on first use are defined in [CONTEXT.md](../../CONTEXT.md).
-**Sources:** Paths written as *earlier:* `path` are relative to the earlier design repository, which is a read-only donor until it is archived (D1). Its architecture record is the single file matching *earlier:* `docs/adr/0001-*-architecture.md`, cited below as *earlier ADR*. Decision tags D1 to D11 refer to the delivery spec `.scratch/falkon-mvp/spec.md`. Neither this record nor the spec takes precedence over the other: a conflict between them is raised to the human and resolved explicitly, then both are brought into line.
+**Sources:** Paths written as *earlier:* `path` are relative to the earlier design repository, which is a read-only donor until it is archived (D1). Its architecture record is the single file matching *earlier:* `docs/adr/0001-*-architecture.md`, cited below as *earlier ADR*. Decision tags D1 to D81 refer to the MVP delivery spec `.scratch/falkon-mvp/spec.md`; D82 onwards refer to the current delivery spec `.scratch/falkon-enterprise/spec.md`. Neither this record nor the spec takes precedence over the other: a conflict between them is raised to the human and resolved explicitly, then both are brought into line.
 
 ---
 
@@ -37,7 +37,7 @@ The engine already does locate and read (Zoekt search, git readers, the eleven M
 | 2 | Relate and trace | What calls, uses, extends, or implements X; how does control reach B from A? | Deferred (D28). Served meanwhile by the ctags-backed tools and the impact-and-change recipe |
 | 3 | Impact | What could a change to X affect? | MVP via the impact-and-change recipe over the shipped tools (D28); graph-based potential impact deferred |
 | 4 | Overview | How does the Product fit together; where does a newcomer start? | Existing knowledge base documents; the deterministic map is deferred (D28) |
-| 5 | Why and history | Why is it built this way; what changed and when? | Later. Raw access exists today: `list_commits`, `list_branches`, `get_diff` |
+| 5 | Why and history | Why is it built this way; what changed and when? | Target (D82, 2026-10-22): git history first, then pull requests and issues, then tickets; measured on its own stratum first (Phase 0). Raw access exists today: `list_commits`, `list_branches`, `get_diff` |
 | 6 | Effort | How large is this change likely to be? | Later: needs history |
 
 Each capability ships only after it beats the engine without it on its own question stratum (D8, [9](#9-regression-gate)).
@@ -78,6 +78,8 @@ Both cycles ran the same harness, prompt, agent (Sonnet), and questions on the O
 - Single-run noise is about 0.1 at these sample sizes, so the gaps are a lean, not a proof (*earlier:* `.scratch/retrieval-eval/spec.md`, cycle 17 drift check).
 - Map: cycle 17 compared the reference v6 release with a map against the earlier design's slim arm with a map, on dev only: recall -0.019 (CI -0.083 to 0.046), precision -0.100 (CI below zero). That compares two engines that both have a map; it does not isolate adding a map to lexical access, so the incremental benefit of a map remains unproven (*earlier:* `.scratch/retrieval-eval/spec.md`, "Cycle 17 result").
 - Relate and trace (cycle 12) and impact (cycle 13) showed no recall gain on single-repository strata; the cross-repository stratum gained +0.68 recall on dev, but that measured access to the other repositories, which this engine now supplies (*earlier ADR* 4.10, "Baseline check").
+
+Scope of this evidence (2026-10-22): every stratum above asked about source code. Whether dense retrieval helps over prose sources (pull request discussions, tickets, design documents) is unmeasured; it is decided on those sources' own strata (D84).
 
 Consequences for this record: the lexical core is kept as is (D7, D11); embeddings, reranking, and the vector database are dropped (D2); the structural and map capabilities are built but must earn their place per stratum (D8).
 
@@ -147,6 +149,8 @@ Ports and their adapters. Domain and use cases depend only on ports; a backend c
 ### 4.1 Stack: Postgres graph behind a `GraphStore` port (D2)
 
 **Decision.** Keep Postgres, Prisma, Redis, BullMQ, and Zoekt. Adopt NestJS at the HTTP and MCP boundary only, Zod 4 at trust boundaries, ports and adapters, and SCIP indexers for TypeScript and Java. Drop Chroma, embeddings, the reranker, and MiniSearch. Declaration units, edges, and coverage live in Postgres behind a `GraphStore` port. Next.js remains as the UI only.
+
+**Amendment (D85, D87, 2026-10-22; decided, not built).** Postgres holds every table added before SCIP ingestion exists, including provenance links behind a `ProvenanceStore` port. When SCIP ingestion is built, ArcadeDB (Apache 2.0) replaces Postgres as the `GraphStore` adapter and the provenance links move into it; the port, the build and head semantics of [5](#5-graph-store-schema), the coverage records and P7 carry over. Before any tool reads from ArcadeDB it must pass capacity on the O3 Product, restart, backup and restore. The registry stays in Postgres. Option A below is therefore the chosen graph store from that point; the text of this section describes the decision as first made.
 
 **Why.** The evidence in [2.2](#22-evidence-cycles-17-and-18) removes the reason for the vector stack. Postgres already runs in the stack, holds the registry the graph must join against, and gives transactions for the per-revision head switch ([6](#6-scip-ingestion-and-freshness)) without a second store and its consistency problem. The structural operations are bounded traversals of a few hops ([4.3](#43-mvp-capabilities-d4)), which recursive CTEs over two indexed columns serve; the earlier design listed a relational database with recursive CTEs among its alternatives (*earlier ADR* 4.11). The port keeps a graph database possible if Postgres fails the size or latency probe ([11](#11-risks-and-open-questions)).
 
@@ -511,7 +515,7 @@ New capabilities also pass the D8 rule ([4.7](#47-capabilities-earn-their-place-
 - Code hosts other than GitHub and generic git.
 - Embeddings, vector search, reranking, and model-written answers in the MCP tools other than `ask_codebase` (see [12](#12-open-decisions-for-the-human) item 1).
 - The semantic overlay of model predictions (*earlier ADR* 4.8).
-- Why and history, effort, and cross-repository HTTP links.
+- Effort and cross-repository HTTP links. (Why and history left this list on 2026-10-22, D82.)
 - Skills tools (`create_skill`, `update_skill`, `list_skills`), external MCP servers inside Ask, Ask attachments.
 - Search contexts (`context:` in queries), the file viewer UI, symbol navigation UI.
 - Uncommitted or workspace edits; one tracked default branch per repository for the graph (*earlier ADR* 5.4).
