@@ -31,7 +31,7 @@ Planning files under `.scratch/` must name the old product to give scrub instruc
 1. **Tool contract.** The 11 MCP tools keep names, input schemas and output structure. Contract tests are recorded from the current clone (verified against v6.0.1 in the parity phase). Wording may change only for the descriptions the rewrite slice lists, reviewed by hand.
 2. **Search behavior.** A golden query set over a fixture repo set (query syntax, `rev:`, `sym:`, `lang:`, pagination, `isSearchExhaustive`) returns identical results before and after.
 3. **Ask quality.** Rule D25: the O3 stratum, dev and hidden pooled (n=80, paired per question id, seed 20261017), with v6.0.1 run on the same client model as the reference (the recorded Sonnet runs, dev 0.973 and hidden 0.923, for Sonnet). Passes when the lower 95% bootstrap bound of (arm minus reference) recall is at or above -0.10, losses are at most twice wins (a win or loss is a recall difference of more than 0.001), and no run failed, was malformed or leaked.
-4. **Ops.** The compose stack comes up cold, indexes, resyncs on a push, and deletes a repo. Core memory stays at most +20% over 545 MB before new services.
+4. **Ops.** The compose stack comes up cold, indexes, resyncs on a push, and deletes a repo. Core memory is reported, not enforced, for 0.1.0 (D76, D78): `scripts/ops-smoke.sh` prints it as `INFO` against the reference of 545 MB +20% (654 MB) and fails only if it cannot measure all six services.
 
 Anything v6 does that these checks do not cover is a named non-goal in this spec, not silent.
 
