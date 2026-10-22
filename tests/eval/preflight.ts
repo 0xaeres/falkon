@@ -1,4 +1,6 @@
-import { lstatSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, lstatSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { DATASETS, loadDataset, loadProduct, stackRepoName } from "./data.js";
@@ -75,3 +77,30 @@ export async function preflight(o: { expectedRepos: string[]; gold: string[]; ur
 }
 
 export const expectedRepos = () => loadProduct().repositories.map((r) => r.name);
+
+type Checkout = { checkout: string; commit: string };
+const gitIn = (dir: string, args: string[]) => execFileSync("git", ["-C", dir, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+
+/** Checkouts under o3Dir that are shallow clones. A missing checkout is skipped here; the pin check reports it. */
+export function shallowCheckouts(o3Dir: string, repos: Checkout[] = loadProduct().repositories): string[] {
+  return repos.map((r) => join(o3Dir, r.checkout)).filter((dir) => existsSync(dir) && gitIn(dir, ["rev-parse", "--is-shallow-repository"]) === "true");
+}
+
+/** The eval stack needs full history; a shallow checkout names itself and the fix. */
+export function assertFullHistory(o3Dir: string, repos?: Checkout[]): void {
+  const shallow = shallowCheckouts(o3Dir, repos);
+  if (shallow.length) throw new Error(`Shallow checkout (partial history): ${shallow.join(", ")}. Run pnpm eval corpus deepen first.`);
+}
+
+/** Unshallows each shallow checkout and checks its HEAD still equals its pin. Moves no head and no pin. */
+export function deepenCheckouts(o3Dir: string, repos: Checkout[] = loadProduct().repositories): string {
+  return repos.map((r) => {
+    const dir = join(o3Dir, r.checkout);
+    if (!existsSync(dir)) throw new Error(`Checkout ${dir} is missing; clone it before deepening.`);
+    const wasShallow = gitIn(dir, ["rev-parse", "--is-shallow-repository"]) === "true";
+    if (wasShallow) gitIn(dir, ["fetch", "--unshallow"]);
+    const head = gitIn(dir, ["rev-parse", "HEAD"]);
+    if (head !== r.commit) throw new Error(`Checkout ${dir} HEAD is ${head}, expected pin ${r.commit}; deepen does not move heads.`);
+    return `${r.checkout}: ${wasShallow ? "deepened" : "already complete"} at ${head}`;
+  }).join("\n");
+}
