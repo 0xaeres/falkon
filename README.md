@@ -1,171 +1,475 @@
-# Falkon
+<p align="center">
+  <img src="packages/ui/public/brand/falkon-app-icon.svg" width="96" alt="Falkon logo">
+</p>
 
-Self-hosted code search + Ask agent + MCP server, modeled on an existing source-available code context engine. Version 0.1.0 (see [`RELEASE_NOTES.md`](RELEASE_NOTES.md)).
+<h1 align="center">Falkon</h1>
 
-```
-config.json ──► backend (BullMQ worker) ──► bare git clones + zoekt shards (shared /data volume)
-                  │ state                                   │
-               Postgres (Prisma)                     zoekt-webserver :6070 (internal only)
-                                                            │ gRPC
-        MCP clients ──HTTP──► web (Next.js) ◄──────────────┘
-                              /api/search[/stream]  /api/mcp  /api/chat/blocking  /api/chat  UI
-```
+<p align="center"><strong>A self-hosted code search server for AI coding agents.</strong></p>
 
-| Package | Role |
+<p align="center">
+  Index your Git repositories once. Any agent that speaks MCP can then search, read and cite your code.
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
+  <a href="RELEASE_NOTES.md"><img alt="Version 0.1.0" src="https://img.shields.io/badge/version-0.1.0-informational.svg"></a>
+  <img alt="Node.js 24" src="https://img.shields.io/badge/node-24-339933.svg">
+  <img alt="pnpm 10" src="https://img.shields.io/badge/pnpm-10-F69220.svg">
+  <img alt="Docker Compose" src="https://img.shields.io/badge/docker-compose-2496ED.svg">
+</p>
+
+---
+
+Falkon is a service you run yourself. You give it a list of Git repositories. It indexes them and offers search, file reading, git history and symbol lookup as tools that an AI coding agent can call over [MCP](https://modelcontextprotocol.io), the Model Context Protocol that AI clients use to talk to external tools.
+
+Falkon does not call a language model while it answers a tool request. Your agent's own model does the reasoning, and Falkon returns the source code the agent needs.
+
+Every result states the repository, path, line range and commit it came from. If Falkon could not see part of a repository, the result says so. Without that note, an empty result would look the same as "no match".
+
+For example, you ask your agent where API keys are validated. The agent calls `grep` to find candidate lines, then `read_file` to read one file. Each reply carries a repository, path and commit, so the agent can cite the exact lines it relied on.
+
+## Contents
+
+- [Why Falkon](#why-falkon)
+- [Key terms](#key-terms)
+- [What Falkon does](#what-falkon-does)
+- [How it works](#how-it-works)
+- [Evaluation](#evaluation)
+- [Requirements](#requirements)
+- [Quick start with Docker](#quick-start-with-docker)
+- [Local development](#local-development)
+- [Connecting an MCP client](#connecting-an-mcp-client)
+- [Configuration](#configuration)
+- [Query syntax](#query-syntax)
+- [MCP tools](#mcp-tools)
+- [Ask and the knowledge base](#ask-and-the-knowledge-base)
+- [Security](#security)
+- [Project layout](#project-layout)
+- [Known limits](#known-limits)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Why Falkon
+
+Many tools that give an AI agent knowledge of a codebase use retrieval-augmented generation (RAG). A RAG system splits code into chunks, turns each chunk into a vector with an embedding model, stores the vectors, and returns the chunks closest to the question. Falkon does not work this way. It builds a text index of the code and gives the agent exact-search, file-read and git tools. The agent runs several queries, reads what they return and decides what to look at next.
+
+The table lists what that choice means and how well each point is backed. "Measured" points link to the [Evaluation](#evaluation) section. "By design" points are properties of the architecture. Tests check them, but no accuracy evaluation measures them.
+
+| Point | Basis |
 | --- | --- |
-| `packages/db` | Prisma schema: `Repo`, `Chat` |
-| `packages/shared` | config schema, query parser + IR, gRPC Zoekt client, git readers, access scopes, **tool registry** (one definition used by MCP and Ask) |
-| `packages/backend` | syncs config `connections` (GitHub, generic git URL, `file://` in place), clone/fetch (bare), `zoekt-git-index`, reindex/resync on `settings` schedules and on config change, orphan cleanup, search contexts |
-| `packages/web` | search UI, repos page, Ask page, REST API |
-| `packages/contracts` | Zod 4 schemas shared by the engine and the Falkon UI |
-| `packages/ui` | Falkon UI (Next 16): Products, status, Connect and Ask chat, served by the engine's admin API |
+| Falkon scored higher recall than the semantic stack it replaced (embeddings, reranker and vector database): +0.057 on dev and +0.094 on hidden questions. The gap is small next to run-to-run noise, so read it as "at least as good". | Measured, [result 1](#result-1-falkon-against-a-semantic-rag-stack) |
+| No language model runs while Falkon serves a tool request. A variant that sent the agent through a model-driven research step first scored lower. | By design. The variant is measured in [result 2](#result-2-where-falkon-did-not-win) |
+| Reindexing builds a Zoekt text index. No embedding model runs, so there are no vectors to rebuild when code changes. | By design |
+| Every result names the commit it read and lists the parts of the repository Falkon could not see. | By design, pinned by `tests/contract` and `tests/golden` |
+| The whole stack needed about 545 MB in the semantic-stack comparison and 665 MB at 0.1.0. The semantic stack's MCP server alone needed about 1.5 GB. | Measured, [result 2](#result-2-where-falkon-did-not-win) |
 
-## Run (Docker)
+Falkon is a weaker fit when your questions contain no identifiers or phrases to search for. The evaluation covers cross-repository code questions only, so it says nothing about vague conceptual questions. See [what the evaluations do not show](#what-the-evaluations-do-not-show).
+
+## Key terms
+
+| Term | Meaning |
+| --- | --- |
+| Product | A named group of repositories that Falkon serves together. Each Product has its own MCP URL, and every question is about exactly one Product. |
+| Zoekt | An open-source code search engine ([sourcegraph/zoekt](https://github.com/sourcegraph/zoekt)). Falkon uses it to index and search code. |
+| Shard | One file of the Zoekt search index. |
+| Git mirror | A full copy of a repository's history, stored on the Falkon server with no checked-out files. Falkon reads files and git history from it. |
+| Index revision | The commit of a repository that the search index was built from. Every result names it. |
+| Coverage gap | A part of a repository that Falkon could not see at that commit, for example a file that failed to parse. Results list gaps so that an empty answer is not read as "nothing there". |
+| Knowledge base | Optional architecture documents that a language model writes about each repository. Falkon checks every citation in them against the code. |
+| Ask | A chat in the web app that answers questions about one Product with the same tools an MCP client uses. |
+## What Falkon does
+
+- **Searches every repository in a Product at once.** Zoekt indexes each repository's default branch, plus any branches and tags you list. It answers literal and regular-expression queries.
+- **Reads files at a fixed commit.** `read_file` and `list_tree` read from the git mirror at the index revision, so the content always matches the commit a result cites.
+- **Shows history and changes.** `list_commits`, `list_branches` and `get_diff` read git history without a checkout.
+- **Finds symbols.** `find_symbol_definitions` and `find_symbol_references` use universal-ctags, a tool that lists the definitions in source files. They answer where a name is defined or mentioned.
+- **Groups repositories into Products.** The engine applies a Product's repository scope before any search runs.
+- **Writes architecture notes.** An optional knowledge base produces citation-checked documents for each repository. Falkon accepts a document only when every citation resolves at the commit it describes.
+- **Includes a web UI.** The Falkon UI sets up Products, shows index status, hosts an Ask chat and gives MCP clients a connect page.
+
+## How it works
+
+Falkon has four main parts. The engine API answers MCP calls and admin requests. A backend worker clones repositories and builds the index. Zoekt serves search. Postgres stores the registry of repositories, Products and chats. Redis holds the job queue.
+
+### System components
+
+The diagram shows every service in the Docker Compose stack and the outside systems it talks to. Select it to open the full-size image.
+
+[![Falkon system components: MCP clients and browsers reach the engine API, UI and web app, which use Zoekt, Postgres, Redis and the data volume](docs/diagrams/falkon-system-components.svg)](docs/diagrams/falkon-system-components.svg)
+
+| Part | What it does |
+| --- | --- |
+| Engine API (NestJS), ports 3001 and 3002 | Serves MCP at `/mcp/<product>` on port 3001 and the admin API on port 3002. |
+| Falkon UI (Next.js), port 3100 | Browser UI for Products, index status, connect snippets and settings. |
+| Web app (Next.js), port 3000 | Search page, Ask chat and the older MCP route `/api/mcp`. |
+| Backend worker | Fetches from code hosts, writes git mirrors, runs `zoekt-git-index` and runs knowledge base scans. |
+| `zoekt-webserver`, port 6070 | Search server. It reads shards from the data volume and is reachable only inside the stack. |
+| Postgres | Registry of repositories and Products, chat history and the knowledge base index. |
+| Redis | BullMQ job queues. |
+| `/data` volume | Git mirrors and Zoekt shards. |
+
+The compose file publishes only the ports you need, and only on host loopback. Zoekt has no authentication, so compose never publishes its port.
+
+### Search request path
+
+A search goes through the engine API to Zoekt. A file read skips Zoekt and goes to the git mirror.
+
+[![Search request path: an MCP client calls grep and read_file through the engine API, which queries Zoekt and the git mirror](docs/diagrams/falkon-search-path.svg)](docs/diagrams/falkon-search-path.svg)
+
+1. The MCP client calls `grep` on `/mcp/<product>`.
+2. The engine parses the query into a tree called the query IR (intermediate representation). User text only goes into leaf nodes of that tree, so a query cannot add an `or` branch or widen the set of repositories.
+3. The engine applies the Product's scope and asks Zoekt for one more match than it will return, so it can tell whether the result is complete.
+4. Zoekt returns the matches and the index revision.
+5. The engine replies with the hits, the revision and any coverage gaps.
+6. For `read_file`, the engine reads the file at the index revision from the git mirror and returns the content with an evidence span (repository, path and line range).
+
+### Repository sync and index lifecycle
+
+Connection sync runs on the schedule in `settings`. A config change or an admin sync request also starts work. Each repository then moves through the states below.
+
+[![Repository lifecycle: PENDING, SYNCING, INDEXED, FAILED and Removed, with the transitions between them](docs/diagrams/falkon-repo-lifecycle.svg)](docs/diagrams/falkon-repo-lifecycle.svg)
+
+- **PENDING.** A connection found the repository and queued it.
+- **SYNCING.** The `repo-index` job clones or fetches the repository and writes Zoekt shards.
+- **INDEXED.** The new shards are swapped in and served. The repository returns to SYNCING when the reindex interval passes or a new commit appears.
+- **FAILED.** The job ran out of attempts. A retry or resync moves the repository back to SYNCING.
+- **Removed.** The repository was dropped from the config. Falkon deletes its shards and git mirror.
+
+A failed repository keeps serving its last good index. The `repo-index` job retries twice with exponential backoff.
+
+### Knowledge base pipeline
+
+The knowledge base is optional. It needs the `LLM_*` environment variables. Without them Falkon skips scans and records nothing.
+
+```mermaid
+flowchart TD
+  repo["Repository at head commit"] --> terr["Territories<br/>weight-bounded slices, no LLM"]
+  terr --> scouts["Scouts<br/>one agent per territory"]
+  scouts --> recon["Reconciler<br/>at most 24 canonical systems"]
+  recon --> surv["Surveyors<br/>keep, merge or delete docs"]
+  surv --> merge["Merge agent<br/>one validated work list"]
+  merge --> docs["Doc agents<br/>one per item, own path only"]
+  docs --> check{"finish_doc checks<br/>frontmatter, size, citations"}
+  check -->|"rejected, retry"| docs
+  check -->|"accepted"| kr[("repo::knowledge<br/>git commit per document")]
+  kr --> idx[("Zoekt index<br/>docs rank first")]
+```
+
+1. **Territories.** Falkon splits the repository into slices of bounded size. No model is involved.
+2. **Scouts.** One agent reads each territory and reports what it finds.
+3. **Reconciler.** One agent merges the reports into at most 24 canonical systems.
+4. **Surveyors.** Agents decide whether each existing document should be kept, merged or deleted.
+5. **Merge agent.** One agent combines the decisions into a single validated work list.
+6. **Doc agents.** One agent per work item writes a document, and each agent can write only its own path.
+7. **`finish_doc` checks.** Falkon checks the frontmatter, size and citations of each document. A rejected document goes back for a retry. An accepted document is committed to the `<repo>::knowledge` repository, one commit per document, and Zoekt indexes it with documents ranked first.
+
+Each scan spends at most `tokenBudget` tokens (2,000,000 by default). Cache hits cost nothing. Agents read only the repository they document, unless `citeRepos` lists others.
+
+Explorable HTML versions of the system, search and lifecycle diagrams, with dark and light themes, are in [`docs/diagrams/`](docs/diagrams/). Download a file and open it in a browser. GitHub does not render HTML files.
+
+## Evaluation
+
+Falkon's design choices came from measurements, and this section reports them, including the ones that did not favour Falkon. The full record for the RAG comparison is [ADR 0001, section 2.2](docs/adr/0001-falkon-architecture.md#22-evidence-cycles-17-and-18). The harness, datasets and scoring code are in [`tests/eval`](tests/eval).
+
+### What was measured
+
+- **Corpus.** The O3 Product, 42 OpenMRS repositories, each pinned to a commit. The harness refuses a checkout at any other commit.
+- **Questions.** 40 cross-repository questions, 10 in each of four kinds. They ask which REST code uses a core service method, which patient chart code uses a frontend framework function, how a user action flows from the frontend to a database write, and where a frontend feature is documented and implemented. Twenty questions name a symbol in backticks. The other twenty (the traces and the documentation questions) describe behaviour in words.
+- **Paired runs.** Each question is asked in two phrasings, one that names the module and one that does not. That gives 80 paired runs per arm, split into 48 dev and 32 hidden.
+- **Gold answers.** 142 required source spans (file and line range) across the 40 questions. Most are Java (68) and TypeScript (64), plus 10 in Markdown.
+- **Agent.** Claude Sonnet in the RAG comparison and Claude Haiku 5.5 in later runs, run through the Claude Code command line against the tools under test. Every arm uses the same prompt and harness.
+- **Recall.** The share of required spans covered by a span the agent cites. A cited span covers a required span when the file matches, the lines overlap, and the cited span is at most three times the required width plus 20 lines.
+- **Precision.** The share of cited spans that cover a required span or a span accepted as equivalent.
+- **Statistics.** Differences are paired by question. Confidence intervals (95%) come from a bootstrap with 10,000 resamples and a fixed seed. An interval that includes zero means the difference cannot be told apart from noise.
+
+### Result 1: Falkon against a semantic (RAG) stack
+
+Same harness, prompt, agent (Claude Sonnet) and questions for every row. The Falkon row comes from cycle 18, and the semantic stack row from its cycle 15 runs. The semantic stack is Falkon's earlier design, which used embeddings, a cross-encoder reranker and a vector database. It is not an off-the-shelf RAG product.
+
+| Arm | Dev recall | Hidden recall | Cost per run (dev) | Memory |
+| --- | ---: | ---: | ---: | --- |
+| Falkon | 0.967 | 0.948 | $0.042 | about 545 MB for the stack |
+| Semantic stack | 0.910 | 0.854 | $0.043 | about 1.5 GB for its MCP server |
+
+Falkon minus the semantic stack, with 95% confidence intervals:
+
+- Recall on dev is +0.057 (0.016 to 0.113). On hidden it is +0.094 (0.015 to 0.173).
+- Precision on dev is -0.064 (-0.132 to 0.007), so Falkon is not more precise.
+- Cost differences straddle zero.
+- The record's verdict is that the semantic stack added nothing measurable. Lexical access with an agent loop matched retrieval-augmented access on recall, with less memory and no embedding or reranker models.
+- Single-run noise is about 0.1 at these sample sizes, so the recorded gaps are a lean toward Falkon and not a proof.
+
+### Result 2: where Falkon did not win
+
+- **A model-driven research step.** An arm that sent the agent through a `research_codebase` tool first scored lower than plain tools. On Sonnet dev, recall was 0.905 against 0.950, precision was 0.509 against 0.583, and cost per run was $0.053 against $0.042. On Sonnet hidden it was 0.943 against 0.926, which is within noise. On Haiku, recall over 80 runs was 0.823 against 0.907. These are point estimates. This is why Falkon keeps no model on the serving path.
+- **A code graph.** Relate and trace tools (cycle 12) and an impact tool (cycle 13) showed no recall gain on single-repository questions. The +0.68 recall gain on cross-repository questions measured access to the other repositories, which Falkon already provides. The graph is not built in 0.1.0.
+- **The impact recipe.** An opt-in recipe that guides the agent through definition, references and callers scored 0.955 against 0.780 for plain tools on 11 impact questions (+0.174, interval -0.046 to 0.409). Eleven questions are too few for a firm conclusion, so read it as a direction. It lowered precision by about 0.04 on the 80-question set.
+- **Memory.** The whole stack used about 545 MB in the RAG comparison and 665 MB at the 0.1.0 release, which is above the 654 MB ceiling set in the project's regression gate. The release treats memory as information and does not enforce it.
+- **Precision.** Falkon's precision is 0.58 on Sonnet dev and 0.41 on Haiku. Agents cite extra spans that do not match a required span, and on dev Falkon was less precise than the semantic stack (-0.064, interval crosses zero).
+
+### What the evaluations do not show
+
+- **One corpus.** Every question is about OpenMRS O3, mostly Java and TypeScript. Other languages, other repository shapes and single-repository question answering were not evaluated, apart from the graph tools in result 2.
+- **One question family.** All 40 questions ask which code is affected, how a request flows or where a feature is documented. Half name a symbol. None is a vague conceptual question with no identifiers, which is where a semantic index is most likely to help.
+- **Few independent samples.** The 80 runs per arm come from 40 questions asked twice, and each question ran once per arm. Intervals are about 0.05 to 0.09 wide on each side, and the earlier record puts single-run noise near 0.1.
+- **One agent family.** Only Claude Sonnet and Haiku 5.5 were used.
+- **One RAG implementation.** The RAG comparison uses Falkon's own earlier semantic stack, measured in earlier cycles on earlier code. No other RAG product was tested.
+- **Ask answers.** The Ask chat was checked with a 15-question smoke test (all 10 code questions answered as grounded or partial, and one citation was dropped), not with a scored accuracy evaluation.
+- **Latency.** Mean wall-clock time per question was 34 seconds on Haiku and about 21 seconds on Sonnet, with 14 and 5 agent turns. Falkon was not compared against others on latency.
+
+### Reproducing the results
+
+The harness and datasets are in the repository. The raw run files are not, so a rerun gives you new scores, not the recorded ones.
 
 ```bash
-cp .env.example .env && cp config.example.json config.json   # edit both
-docker compose up --build
+pnpm --filter @falkon/eval eval -- stack up                      # Falkon over the 42 checkouts (needs Docker and EVAL_O3_DIR)
+pnpm --filter @falkon/eval eval -- pilot --model haiku           # 5 dev questions first
+pnpm --filter @falkon/eval eval -- run --split dev --model haiku
+pnpm --filter @falkon/eval eval -- run --split hidden --model haiku
+pnpm --filter @falkon/eval eval -- report --model haiku          # per-split tables from stored runs, no spend
 ```
 
-UI: http://localhost:3000
+The runs call Claude, so they cost money. The Haiku gate at the 0.1.0 release cost $0.59, and `EVAL_SPEND_CAP` limits spend. The header of [`tests/eval/cli.ts`](tests/eval/cli.ts) lists every option and environment variable.
 
-Falkon UI (compose service `ui`, host loopback only): http://127.0.0.1:3100. Locally: `pnpm --filter @falkon/ui dev --hostname 127.0.0.1 --port 3100`.
+## Requirements
 
-## Run (local dev)
+Docker is the supported way to run Falkon. The image builds Zoekt, the Node packages and the UI.
 
-Needs Postgres, Redis, and `zoekt-webserver` + `zoekt-git-index` + git (+ universal-ctags for `sym:` / symbol tools) on PATH.
+| Requirement | Version | Used for |
+| --- | --- | --- |
+| Docker Engine with Compose v2 | Current release | Running the stack with `docker compose` |
+| Free memory | About 700 MB for the stack | Measured at about 665 MB for 0.1.0 |
+| Git | Any recent release | Cloning and reading repositories (installed in the image) |
+
+Local development needs these in addition:
+
+| Requirement | Version | Notes |
+| --- | --- | --- |
+| Node.js | 24 | The image uses `node:24` |
+| pnpm | 10.28.0 | Pinned by `packageManager` in `package.json` |
+| PostgreSQL | 17 | Holds the registry and the knowledge base index |
+| Redis | 7 | BullMQ job queues |
+| Go | 1.26 | Only to build Zoekt from the commit in `ZOEKT_REF` (`docker/Dockerfile`) |
+| `zoekt-webserver`, `zoekt-git-index` | Built from `ZOEKT_REF` | Search server and indexer, on `PATH` |
+| universal-ctags | Any recent release | Symbol tools. Set `CTAGS_COMMAND` if the binary has another name |
+
+## Quick start with Docker
+
+1. Clone the repository and copy the example files.
+
+   ```bash
+   git clone https://github.com/0xaeres/falkon.git
+   cd falkon
+   cp .env.example .env
+   cp config.example.json config.json
+   ```
+
+2. Put a code-host token in `.env`, for example `GITHUB_TOKEN=...`.
+
+3. Edit `config.json` to list your repositories. A minimal file looks like this.
+
+   ```jsonc
+   {
+     "connections": {
+       "github": {
+         "type": "github",
+         "token": { "env": "GITHUB_TOKEN" },   // reads the token from .env
+         "repos": ["octocat/Hello-World"]
+       }
+     },
+     "contexts": {
+       "octocat": { "include": ["github.com/octocat/*"], "description": "Octocat repos" }
+     }
+   }
+   ```
+
+   Each `contexts` entry becomes a Product, and its name becomes the Product slug. This file creates a Product called `octocat`, served at `http://127.0.0.1:3001/mcp/octocat`.
+
+4. Start the stack.
+
+   ```bash
+   docker compose up --build
+   ```
+
+Then open:
+
+| URL | What it is |
+| --- | --- |
+| http://localhost:3000 | Web app: search, repositories, Ask |
+| http://127.0.0.1:3100 | Falkon UI: Products, status, connect page, settings |
+| http://127.0.0.1:3001/mcp/`<product>` | MCP endpoint for one Product |
+| http://127.0.0.1:3002 | Admin API. Needs the admin token |
+
+Open the Falkon UI and wait for your repositories to reach `INDEXED`. Then [connect an MCP client](#connecting-an-mcp-client).
+
+The first `api` start creates an admin token. Show it, or reset it, from the repository root:
+
+```bash
+scripts/admin-token.sh show
+scripts/admin-token.sh reset
+```
+
+## Local development
 
 ```bash
 pnpm install && pnpm db:generate && pnpm db:push
-pnpm dev:backend     # terminal 1
-zoekt-webserver -index ./data/index -rpc -listen :6070   # terminal 2
-pnpm dev:web         # terminal 3
+pnpm dev:backend                                          # terminal 1
+zoekt-webserver -index ./data/index -rpc -listen :6070    # terminal 2
+pnpm dev:web                                              # terminal 3
 ```
 
-## Engine
+To run the Falkon UI and the NestJS engine API as well:
 
-Zoekt-based architecture, written independently:
+```bash
+pnpm --filter @falkon/api start
+ENGINE_URL=http://127.0.0.1:3002 pnpm --filter @falkon/ui dev --hostname 127.0.0.1 --port 4311
+```
 
-- **Zoekt.** Docker builds upstream `sourcegraph/zoekt` (Apache-2.0) at the commit pinned by `ZOEKT_REF` in `docker/Dockerfile`; the license text ships in the image under `/usr/share/licenses/zoekt/`. The repository name goes to the indexer through a `-meta` file containing `{"Name":"<repository name>"}`. Go 1.26 is required. **Upgrading from the fork build:** existing shards load under upstream Zoekt unchanged, and each repository reindexes once on its next sync because the indexer options changed; `repository_id` and `tenant_id` now read as 0 in results, and nothing in the engine uses them.
-- **Query path.** Search syntax string, then `queryParser.ts` (own recursive-descent parser) into a query IR (`ir.ts`, mirrors the `Q` proto), then a gRPC `Search`/`StreamSearch` call (`zoekt.ts`, protos in `packages/shared/proto`). User text only ever lands in IR leaves, so it cannot add an `or` or widen a repo scope.
-- **Defaults.** Without `rev:` a search is AND-ed with `branch HEAD` (the indexed default branch). The request asks zoekt for `n+1` matches so `isSearchExhaustive` can tell a complete result from a cut one.
-- **Indexing.** `zoekt-git-index -allow_missing_branches -max_trigram_count 20000 -file_limit 2MB -meta <metadata.json> -shard_prefix_override 1_<id>`, repo metadata (`zoekt.name`, `archived`, `fork`, `public`) via the bare repo's git config, revisions = default branch + `revisions.branches`/`tags` globs, capped at 64.
-- **Zoekt has no auth.** It is `expose`d inside the compose network only. Never publish its port.
+Set `DATABASE_URL`, `REDIS_URL`, `DATA_DIR` and `CONFIG_PATH` in `.env`. The file `.env.example` lists every variable.
 
-### Query syntax
+## Connecting an MCP client
 
-`foo bar` (AND), `"exact phrase"`, `a or b`, `( )`, `-(group)`, `-file:x`; filters `file:`/`f:`, `repo:`/`r:`, `rev:` (`rev:*` = all branches), `lang:`, `sym:`, `content:`/`c:`, `reposet:a,b`, `archived:yes|no|only`, `fork:yes|no|only`, `visibility:public|private|any`. Terms are literal substrings; the regex toggle makes them RE2. `context:` is not supported.
-
-### Licensing note
-
-The engine this project is modeled on is source-available under a license that forbids competing commercial use, and its newest release is closed source. None of its code was copied here: the parser, IR, gRPC client and indexer glue are original. The Zoekt `.proto` files come from the Apache-2.0 Zoekt lineage. I did read its source while building this, so this is not a formal clean-room.
-
-## Knowledge base
-
-Generated, citation-backed architecture docs per repo (`knowledgeBase` in `config.json`; on by default, set `enabled: false` to turn it off). It needs the `LLM_*` environment variables: without them scans are skipped, nothing is spent, the backend logs `knowledge base skipped: no model configured` once at start, and no scan is recorded. One scan spends at most `tokenBudget` tokens (default 2,000,000). A repository's first scan logs `kb <repo> first scan estimate ~N tokens (cap M)` before the first model call, where N is the total size of the files in the repo's tree at the head commit divided by 4, capped at `tokenBudget` (an upper bound: agents read part of the tree). A multi-stage LLM pipeline writes them:
-
-| Stage | What it does |
-| --- | --- |
-| Territories | Splits the file tree into weight-bounded slices (deterministic, no LLM) |
-| Scouts | One agent per territory finds load-bearing systems; a too-big territory is re-carved at half size |
-| Reconciler | Merges duplicates into at most 24 canonical systems and assigns existing docs |
-| Surveyors | One per system: dispositions for existing docs (keep/merge/delete) and up to 6 proposals, each with claims that name proving files |
-| Merge agent | One validated work list (coverage, path rules, sources, absorb caps, at most 120 creates) |
-| Doc agents | One per item, confined to its own path. `finish_doc` refuses frontmatter, stubs, over 20k chars, and any `@file:{repo::path}` that does not resolve at the scanned commit |
-| README | Narrative from the LLM; the index and dependency list are composed by code |
-
-- **Storage.** A bare git repo per source repo, named `<repo>::knowledge`, committed per document and indexed by Zoekt like any repo, so search, MCP tools and Ask find the docs with no new tools. They rank first in non-streaming results. A knowledge repo is visible exactly when its owner repo is.
-- **Delta scans.** A citation index (doc to cited files and commits) selects only docs whose cited files changed or were renamed; changed files no doc cites go to surveyors. It escalates to a full scan when there was never one, the last is over 7 days old, over 500 files changed, or over half the cited files changed.
-- **Cost control.** Hard `tokenBudget` per scan (cache hits are free); old tool output is elided from agent prompts; agents are warned, then forced to call their finishing tool near the step cap. A small repo costs about 50k tokens, a 144-file repo about 1.6M.
-- **Safety.** Agents read only the repo being documented unless `citeRepos` lists others: repo text could steer an agent, and a knowledge base is readable by anyone who can read its owner.
-- **Operate.** `/knowledge` page and `POST /api/knowledge {repo, action: scan|delete|include}` (unrestricted key only). Needs `LLM_*` env vars (OpenAI-compatible).
-
-Design is from the modeled engine's public docs and my reading of its enterprise-licensed code, implemented independently; that code is under a commercial license (see the licensing note above).
-
-## MCP
-
-Streamable HTTP at `/api/mcp`, stateful sessions owned by the caller, API key via `Authorization: Bearer`. No OAuth. Tools keep the reference engine's names, input schemas, descriptions, annotations, registration order and output text: `grep`, `glob`, `get_diff`, `list_commits`, `list_branches`, `list_repos`, `read_file`, `list_tree`, `find_symbol_definitions`, `find_symbol_references`, `list_language_models`, and `ask_codebase` when a model is configured (verified against v6.0.1 with a differential harness, since retired). Not implemented: the skills tools (`create_skill`, `update_skill`, `list_skills`).
+Falkon serves MCP over Streamable HTTP. Point the client at the Product path:
 
 ```json
-{ "mcpServers": { "falkon": { "type": "http", "url": "http://localhost:3000/api/mcp",
-  "headers": { "Authorization": "Bearer <key>" } } } }
+{
+  "mcpServers": {
+    "falkon": {
+      "type": "http",
+      "url": "http://127.0.0.1:3001/mcp/<product>"
+    }
+  }
+}
 ```
 
-A second NestJS service (`packages/api`, compose service `api`) serves the same tools per Product at `POST|DELETE /mcp/<product>`; an unknown or malformed name (`^[a-z0-9][a-z0-9-]{0,62}$`) is a 404 with no fallback. It runs beside the routes above, which are unchanged. It listens on `API_HOST` (default `127.0.0.1`) and `API_PORT` (default `3001`), and compose publishes it on host loopback only. Compose runs the esbuild bundle (`pnpm --filter @falkon/api build`, then `node packages/api/dist/main.js`); locally, `pnpm --filter @falkon/api start` runs the source under tsx.
+When `AUTH_MODE=apiKey`, add `"headers": { "Authorization": "Bearer <key>" }`. The UI's Connect page shows the exact snippet for each Product.
 
-Products live in Postgres (`Product` rows). Config `contexts` are imported as read-only `source=config` Products on every sync (a context whose name is not a valid slug, or whose slug an API-created Product holds, is skipped with a log line). Products created through the admin API (`source=api`) are never touched by the import; their `definition` (the shape of a config context: `include`, `includeConnections`, `includeTopics` and the `exclude*` counterparts) is resolved to repositories when written and again on every sync. The admin API is a second listener in the same process on `API_ADMIN_HOST` (default `127.0.0.1`) and `API_ADMIN_PORT` (default `3002`), published on host loopback only. It is always on and needs the admin token (see "Admin token" below). Every request needs exactly one `Authorization: Bearer <admin token>` header (the scheme is case-sensitive); anything else is the same `401`, whatever the path. The token is read from that header only and is never logged. The admin API is for operators on the host and for the UI container (`api` is in `API_ALLOWED_HOSTS`): `GET|POST /products`, `GET|PUT|DELETE /products/<slug>`, `POST|GET /connections`, `DELETE /connections/<id>`, `PUT /connections/<id>/token`, `GET /connections/<id>/repositories`, and the UI-shaped Product routes `GET|POST /ui/products`, `GET|PATCH /ui/products/<slug>`, `GET /ui/products/<slug>/status`, `POST /ui/products/<slug>/sync`, and the chat routes `GET|POST /ui/products/<slug>/threads`, `GET /ui/products/<slug>/threads/<id>`, `POST /ui/products/<slug>/threads/<id>/messages` (the UI chat: body `{ text }` only, history is kept by the engine, the answer streams as an AI SDK UI message stream with `data-evidence` and `data-answer` parts; needs a configured language model and the Product's first generation) (JSON only, 64 KiB bodies; the slug is fixed at creation; config Products answer 409 to writes). Both listeners answer only `Host` names on loopback; add names behind a proxy with `API_ALLOWED_HOSTS` (comma-separated).
+The web app also serves an MCP route at `/api/mcp` on port 3000. It covers every repository the web app can see. Prefer the Product path, because it scopes every call.
 
-`AUTH_MODE` selects the access policy on `/mcp/<product>`: `none` (default) admits every caller to the Product's repositories; `apiKey` requires `Authorization: Bearer <key>` checked against `ACCESS_FILE` and serves the Product's repositories that the key also covers. With `apiKey`, a missing, unreadable, malformed or empty access file denies everyone; any other `AUTH_MODE` value stops the service at start. An MCP session is bound to the Product, the caller and the repository set it opened with: it is refused under another Product path, by another caller, or after the Product's membership or the key's scope changed.
+## Configuration
 
-### Stored credentials
+`config.json` describes what to index and how to serve it. It follows the JSON schema at `packages/shared/schemas/falkon/config.json`. Comments and trailing commas are allowed. Falkon rejects an unknown key and the error names it.
 
-Tokens entered in the UI are stored encrypted (AES-256-GCM) in Postgres and are never returned by any endpoint or written to logs. The key is `FALKON_SECRET_KEY` (base64 of 32 random bytes, e.g. `openssl rand -base64 32`) or the file named by `FALKON_SECRET_KEY_FILE`; with neither set, `api` and `backend` generate one into `/data/secrets/master.key` (mode 600) on first use.
-Losing the key makes stored tokens unreadable (re-enter a token with `PUT /connections/<id>/token`); there is no key rotation yet. Hardening beyond this is out of scope for now (ADR 4.5, "Credential storage").
+| Key | Purpose |
+| --- | --- |
+| `connections` | Code hosts to sync. Types are `github` (cloud or Enterprise) and `git` (an http(s) remote, or a `file://` glob of local repositories indexed in place) |
+| `settings` | Index limits, reindex and resync intervals, concurrency and timeouts |
+| `contexts` | Products. Each name is a Product slug and an MCP path |
+| `environmentOverrides` | Environment values resolved at load time |
+| `models` | Language models for Ask, of type `openai-compatible`, `openai` or `anthropic` |
+| `knowledgeBase` | Knowledge base switches, budget and repositories to document |
 
-### Admin token
+A token is either `{ "env": "NAME" }` or `{ "googleCloudSecret": "..." }`. To convert a file written for an older Falkon build, run `pnpm convert-config /absolute/path/old.json > new.json`.
 
-The first `api` start generates one admin token into `/data/secrets/admin.token` (64 hex characters, mode 600) and keeps it. The UI container reads the same file read-only from the data volume. Show or reset it from the repository root (needs Docker access to the host):
+### Environment variables
 
-```
-scripts/admin-token.sh show
-scripts/admin-token.sh reset   # api and ui pick it up on the next request, no restart
-```
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `FALKON_API_KEY` | unset | Requires `Authorization: Bearer <key>` on `/api/*` in the web app |
+| `AUTH_MODE` | `none` | `none` admits every caller to a Product. `apiKey` requires a key from `ACCESS_FILE` |
+| `ACCESS_FILE` | unset | JSON file of per-key repository scopes. With `apiKey`, a missing or malformed file denies everyone |
+| `ADMIN_TOKEN` | generated | Admin bearer, at least 32 characters. Otherwise stored in `${DATA_DIR}/secrets/admin.token` |
+| `FALKON_SECRET_KEY` | generated | Base64 of 32 bytes. Encrypts stored code-host tokens |
+| `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | unset | OpenAI-compatible model for Ask and the knowledge base |
+| `API_ALLOWED_HOSTS` | loopback | Extra host names the listeners answer, for example behind a proxy |
 
-Setting `ADMIN_TOKEN` (at least 32 characters) on `api` overrides the file; `reset` then refuses. In compose the `ui` service then needs `ENGINE_ADMIN_TOKEN` set to the same value. If the file is shorter than 32 characters the `api` refuses to start: delete the file on the data volume and restart to generate a new one.
+## Query syntax
 
+Terms are literal substrings. The regex toggle in the UI switches them to RE2 regular expressions. Filters combine with search terms, for example `repo:payments lang:typescript "retry limit"`.
 
-## Upgrading from an earlier build
+| Syntax | Meaning |
+| --- | --- |
+| `foo bar` | Both terms, in any order |
+| `"exact phrase"` | Literal phrase |
+| `a or b`, `( )`, `-(group)` | Boolean grouping and negation |
+| `file:`, `f:` | Limit to file paths |
+| `-file:x` | Exclude file paths |
+| `repo:`, `r:` | Limit to repositories |
+| `rev:` | Branch or tag. `rev:*` searches every indexed revision |
+| `lang:` | Language |
+| `sym:` | Symbol name |
+| `content:`, `c:` | Match content only |
+| `reposet:a,b` | Named repository set |
+| `archived:yes\|no\|only`, `fork:yes\|no\|only`, `visibility:public\|private\|any` | Repository filters |
+| `context:` | Not supported |
 
-Earlier builds named the Postgres role, password and database `sbc`; they are now `falkon`. A fresh `docker compose up` needs nothing. An existing Postgres volume keeps the old names, so rename them once, from the repository root, before starting the new build. No data is lost. `sbc` is the only superuser and a role cannot be renamed while connected as it, so a temporary superuser does the rename:
+## MCP tools
 
-```
-docker compose stop backend web api ui
-docker compose up -d postgres
-docker compose exec postgres psql -U sbc -d postgres -c "CREATE ROLE falkon_tmp SUPERUSER LOGIN"
-docker compose exec postgres psql -U falkon_tmp -d postgres -c "ALTER DATABASE sbc RENAME TO falkon" -c "ALTER ROLE sbc RENAME TO falkon" -c "ALTER ROLE falkon PASSWORD 'falkon'"
-docker compose exec postgres psql -U falkon -d postgres -c "DROP ROLE falkon_tmp"
-docker compose up -d
-```
+MCP clients and the Ask chat share one tool registry, so they see the same names and schemas.
 
-Renaming a role clears an MD5 password; Postgres 17 defaults to SCRAM, which keeps it, but the `PASSWORD` statement sets it again either way. The browser cookie is now `falkon_key`; sign in again if `FALKON_API_KEY` is set.
+| Tool | Question it answers |
+| --- | --- |
+| `grep` | Where does this text or pattern appear? |
+| `glob` | Which paths match this pattern? |
+| `read_file` | What does this file say at this revision? |
+| `list_tree` | What is in this directory? |
+| `find_symbol_definitions` | Where is this symbol defined? |
+| `find_symbol_references` | Where is this symbol mentioned? |
+| `list_repos` | Which repositories does this Product contain? |
+| `list_branches` | Which branches are indexed? |
+| `list_commits` | What changed recently? |
+| `get_diff` | What does this commit or range change? |
+| `ask_codebase` | Answer a question with a configured model (only when a model is set) |
+| `list_language_models` | Which models can Ask use? |
 
-## Ask
+Version 0.1.0 has no code graph. Change and impact questions run through the symbol and reference tools, guided by an "impact and change" recipe.
 
-MCP clients can research with their own model. Server instructions explain the tools, and `research_codebase` accepts `{ query, repos? }` and returns a short research brief without calling a server model. The `ask_codebase` MCP prompt returns the same brief, taking `query` and optional comma-separated `repos`. These are available even when no model is configured. Repository selections intersect the caller's access policy; unavailable names are reported and an empty selection stays empty. Follow the brief with the search, read, symbol and history tools, then answer in Markdown with `@file:{repo::path}` or `@file:{repo::path:start-end}` citations. The existing `ask_codebase` tool still runs the server model when configured.
+## Ask and the knowledge base
 
-The Ask agent runs on the AI SDK (`ai` 6): static and per-chat system prompts, the same ten tools in the same order as MCP (scoped to the chat's selected repos), up to `FALKON_CHAT_MAX_STEP_COUNT` steps (default 100), lowercase tool-name repair, an answer after the `<!--answer-->` tag with `@file:{repo::path:a-b}` citations, and a chat title from a naming prompt. Models come from config `models` (providers `openai-compatible`, `openai`, `anthropic`; `temperature` or `FALKON_CHAT_MODEL_TEMPERATURE`), else one openai-compatible model from `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. Input capabilities are looked up on models.dev.
+**Ask** is a chat over one Product. It calls the same tools, then answers with `@file:{repo::path:a-b}` citations that link to the source. The answer reads evidence from files the tools opened, and Falkon drops any citation that does not match them.
 
-- `POST /api/chat/blocking` `{ query, repos?, languageModel?, visibility? }` → `{ answer, chatId, chatUrl, languageModel }`, the answer as portable markdown (citations become browse links with `highlightRange`). `/api/ask` is an alias.
-- `POST /api/chat` streams one turn as an AI SDK UI message stream; `GET /api/chats` lists and reads stored chats.
-- MCP `ask_codebase` and `list_language_models` return Falkon's own tool text.
+**The knowledge base** writes architecture documents for each repository and commits them to a companion git repository named `<repo>::knowledge`. Zoekt indexes that repository like any other, so search and MCP tools find the documents without extra tools. A knowledge repository is visible exactly when its owner repository is.
 
-The prompts and tool descriptions are Falkon's own wording; `ORIGINALITY_REF_DIR=<dir> pnpm originality` fails when any run of 8 or more words in them matches a reference text set. Not implemented: skills tools, external MCP servers inside Ask, attachments, prompt caching options.
+Enable it with `knowledgeBase.enabled` (on by default) and set the `LLM_*` variables. Without a model, Falkon logs `knowledge base skipped: no model configured` once and records no scan.
 
-## Auth
+## Security
 
-Set `FALKON_API_KEY` to require `Authorization: Bearer <key>` on `/api/*`. The browser UI then also needs a cookie `falkon_key=<key>`. There is no user model, permission sync, or SSO. Only `FALKON_*` variables and the `Authorization: Bearer` header have effect; the earlier product-prefixed variables and API-key header are ignored (clean break, no aliases).
+- **Localhost by default.** The engine binds `127.0.0.1` unless you change `API_HOST` or `API_ADMIN_HOST`. With `AUTH_MODE=none`, any process that can reach the port can read every configured Product. Use `AUTH_MODE=apiKey` before you expose either listener.
+- **Admin API.** Every request needs the admin bearer token. The token never appears in logs, responses or the query string.
+- **Zoekt has no authentication.** Its port stays inside the compose network. Never publish it.
+- **Stored tokens are encrypted.** Code-host tokens use AES-256-GCM in Postgres. If you lose the master key, stored tokens become unreadable and you must enter them again. Key rotation is not implemented.
+- **Not in 0.1.0.** Users, organizations, SSO, permission syncing and per-user ownership of connections.
 
-## Config
+To report a vulnerability, do not open a public issue. See [CONTRIBUTING.md](CONTRIBUTING.md#reporting-security-issues).
 
-`config.json` follows Falkon's own JSON Schema (`packages/shared/schemas/falkon/config.json`); `$schema` in the file is an editor hint and is ignored; a published URL comes later, until then point it at the schema file path (see `config.example.json`). Comments and trailing commas are allowed and `CONFIG_PATH` may be an http(s) URL. Keys: `connections`, `settings` (index limits, reindex/resync intervals, concurrency, timeouts), `contexts` (`context:` in queries), `environmentOverrides`, `models` (Ask language models; providers `openai-compatible`, `openai` and `anthropic`), `knowledgeBase`; tokens are `{ "env" }` or `{ "googleCloudSecret" }`. An unknown key is rejected and named in the error.
+## Project layout
 
-Connectors: `github` (cloud and Enterprise: `orgs`, `repos`, `users`, `topics`, `exclude.*`, `revisions`) and `git` (an http(s) remote, or a `file://` glob of local repos indexed in place and named after their origin). No other connection type is accepted.
-
-To convert an older config file once (unsupported connection types and keys are dropped with a warning on stderr): `pnpm convert-config /absolute/path/old.json > new.json`.
-
-## Not implemented (vs the reference engine)
-
-Users/orgs/SSO, permission syncing, GitHub Apps, GitLab/Gitea/Gerrit/Bitbucket/Azure DevOps connectors, skills tools, Ask attachments and external MCP servers, file viewer UI, symbol navigation UI.
+| Package | Role |
+| --- | --- |
+| `packages/db` | Prisma schema for repositories, connections, Products, chats and knowledge scans |
+| `packages/shared` | Config schema, query parser and IR, Zoekt gRPC client, git readers, access policy, tool registry and knowledge base pipeline |
+| `packages/backend` | Connection sync, clone and fetch, `zoekt-git-index`, reindex and resync jobs, knowledge base scans |
+| `packages/web` | Next.js web app with search, repositories, Ask and `/api/mcp` |
+| `packages/api` | NestJS engine API with `/mcp/<product>` and the admin API |
+| `packages/contracts` | Zod schemas shared by the API and the UI |
+| `packages/ui` | Falkon UI (Next.js) |
+| `docker/` | Image build, including Zoekt |
+| `scripts/` | Admin token helper, config converter, smoke test |
+| `tests/` | Contract, golden, eval and originality checks |
 
 ## Known limits
 
-- Two turns running at once on the same Ask thread overwrite each other's messages; the last write wins.
-- `Credential.lastError` is never written or read.
-- A sync running while a Product is edited can briefly show a new member as Skipped.
-- No automated browser test covers mermaid drawing, streaming or the failed-first-send flow.
-- Memory is information only: the whole stack was about 665 MB at the last probe against a 654 MB reference, and 0.1.0 does not enforce it.
+- The code graph (relate, trace and potential impact over compiler-resolved edges) and the deterministic overview map are not built.
+- Two turns on the same Ask thread at once overwrite each other. The last write wins.
+- Connectors cover GitHub and generic git only. GitLab, Gitea, Bitbucket and Azure DevOps are not implemented.
+- Search contexts are not supported.
+- Automated browser tests do not cover Mermaid rendering, streaming or the failed-first-send flow.
 
-## Verified vs not
+## Documentation
 
-Verified: the unit and contract tests (`pnpm test`: parser, IR mapping, config, auth scope, tools, Ask answer formatting and errors); typecheck; `docker compose up --build` with upstream Zoekt; gRPC search, streaming (SSE), every tool and Ask against a real LLM; repo removal; zoekt port not published.
-Not verified: GitHub connector, multi-branch/tag indexing against a large repo, ACCESS_FILE fail-closed path end to end (unit-tested only), search contexts (unsupported).
+- [`CONTEXT.md`](CONTEXT.md) is the domain glossary (Product, index revision, evidence, coverage gap).
+- [`docs/adr/0001-falkon-architecture.md`](docs/adr/0001-falkon-architecture.md) is the architecture decision record.
+- [`RELEASE_NOTES.md`](RELEASE_NOTES.md) lists what 0.1.0 includes.
+- [`docs/diagrams/`](docs/diagrams/) holds the explorable HTML versions of the diagrams.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) explains how to build, test and send changes.
+
+## Contributing
+
+Bug reports, fixes and documentation are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before you open a pull request. It covers the checks a change must pass, the rules for the architecture record and the naming rules.
+
+## License
+
+Falkon is licensed under the [Apache License 2.0](LICENSE).
+
+Falkon builds on [Zoekt](https://github.com/sourcegraph/zoekt), which is also Apache-2.0. The Docker image ships Zoekt's license text under `/usr/share/licenses/zoekt/`.

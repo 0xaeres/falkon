@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Falkon system components",
+    "subtitle": "One Product per MCP path, one index per repository",
+    "output": ".archify/architecture-system-20261022-220000/falkon-system.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "mcp", "type": "external", "label": "MCP clients", "sublabel": "Claude Code, IDEs, any MCP host", "pos": [40, 110], "size": [170, 64] },
+    { "id": "browser", "type": "external", "label": "Operator browser", "sublabel": "loopback only", "pos": [40, 300], "size": [170, 64] },
+    { "id": "api", "type": "backend", "label": "Engine API", "sublabel": "NestJS: MCP :3001, admin :3002", "pos": [340, 110], "size": [200, 64] },
+    { "id": "ui", "type": "frontend", "label": "Falkon UI", "sublabel": "Next.js :3100", "pos": [340, 300], "size": [200, 64] },
+    { "id": "web", "type": "frontend", "label": "Web app", "sublabel": "Next.js :3000: search, Ask, /api/mcp", "pos": [340, 470], "size": [200, 64] },
+    { "id": "store", "type": "database", "label": "/data volume", "sublabel": "git mirrors and zoekt shards", "pos": [660, 110], "size": [190, 64] },
+    { "id": "zoekt", "type": "backend", "label": "zoekt-webserver", "sublabel": "gRPC :6070, internal only", "pos": [660, 300], "size": [190, 64] },
+    { "id": "redis", "type": "messagebus", "label": "Redis", "sublabel": "BullMQ queues", "pos": [660, 470], "size": [190, 64] },
+    { "id": "backend", "type": "backend", "label": "Backend worker", "sublabel": "sync, index, KB scan", "pos": [960, 300], "size": [190, 64] },
+    { "id": "pg", "type": "database", "label": "Postgres", "sublabel": "registry, threads, KB index", "pos": [960, 470], "size": [190, 64] },
+    { "id": "github", "type": "external", "label": "Code hosts", "sublabel": "GitHub, generic git", "pos": [1240, 300], "size": [180, 64] },
+    { "id": "llm", "type": "external", "label": "LLM endpoint", "sublabel": "optional, OpenAI-compatible", "pos": [1240, 110], "size": [180, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Falkon (docker compose)", "wraps": ["api", "ui", "web", "store", "zoekt", "redis", "backend", "pg"] }
+  ],
+  "connections": [
+    { "id": "mcp-to-api", "from": "mcp", "to": "api", "label": "MCP /mcp/<product>", "variant": "emphasis" },
+    { "id": "browser-to-ui", "from": "browser", "to": "ui", "label": "HTTPS :3100" },
+    { "id": "ui-to-api", "from": "ui", "to": "api", "label": "admin bearer", "fromSide": "top", "toSide": "bottom" },
+    { "id": "api-to-store", "from": "api", "to": "store", "label": "git readers" },
+    { "id": "api-to-zoekt", "from": "api", "to": "zoekt", "label": "gRPC Search" },
+    { "id": "web-to-zoekt", "from": "web", "to": "zoekt", "label": "gRPC Search", "variant": "dashed" },
+    { "id": "zoekt-reads-store", "from": "zoekt", "to": "store", "label": "reads shards", "fromSide": "top", "toSide": "bottom" },
+    { "id": "backend-writes-store", "from": "backend", "to": "store", "label": "writes clones and shards" },
+    { "id": "backend-redis", "from": "backend", "to": "redis", "label": "jobs" },
+    { "id": "backend-pg", "from": "backend", "to": "pg", "label": "state", "fromSide": "bottom", "toSide": "top" },
+    { "id": "api-pg", "from": "api", "to": "pg", "label": "registry", "variant": "dashed" },
+    { "id": "backend-github", "from": "backend", "to": "github", "label": "fetch" },
+    { "id": "backend-llm", "from": "backend", "to": "llm", "label": "KB scans", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Serving", "items": ["Clients call /mcp/<product> on the Engine API", "Search, file reads and history come from Zoekt and git"] },
+    { "dot": "emerald", "title": "Background", "items": ["The backend syncs clones and rebuilds Zoekt shards", "Redis queues connection-sync, repo-index and kb-scan jobs"] },
+    { "dot": "rose", "title": "Exposure", "items": ["Zoekt has no auth and is never published", "Admin and MCP listeners bind loopback by default"] }
+  ]
+}

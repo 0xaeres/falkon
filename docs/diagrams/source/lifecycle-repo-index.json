@@ -1,0 +1,127 @@
+{
+  "schema_version": 2,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Repository sync and index lifecycle",
+    "output": ".archify/lifecycle-repo-index-20261022-220000/falkon-repo-lifecycle.html",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Repo status"
+    },
+    {
+      "id": "recovery",
+      "label": "Retry and resync"
+    },
+    {
+      "id": "terminal",
+      "label": "Removed"
+    }
+  ],
+  "states": [
+    {
+      "id": "pending",
+      "type": "start",
+      "label": "PENDING",
+      "sublabel": "config connection found",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "tag": "queued"
+    },
+    {
+      "id": "syncing",
+      "type": "active",
+      "label": "SYNCING",
+      "sublabel": "clone, fetch, index",
+      "lane": "main",
+      "col": 1,
+      "step": "02",
+      "tag": "repo-index"
+    },
+    {
+      "id": "indexed",
+      "type": "success",
+      "label": "INDEXED",
+      "sublabel": "shards swapped in",
+      "lane": "main",
+      "col": 2,
+      "step": "03",
+      "tag": "served"
+    },
+    {
+      "id": "failed",
+      "type": "failure",
+      "label": "FAILED",
+      "sublabel": "error recorded",
+      "lane": "recovery",
+      "col": 1,
+      "tag": "retry"
+    },
+    {
+      "id": "removed",
+      "type": "neutral",
+      "label": "Removed",
+      "sublabel": "shards and clone deleted",
+      "lane": "terminal",
+      "col": 2,
+      "tag": "orphan"
+    }
+  ],
+  "transitions": [
+    {
+      "from": "pending",
+      "to": "syncing",
+      "label": "repo-index job"
+    },
+    {
+      "from": "syncing",
+      "to": "indexed",
+      "label": "shards written"
+    },
+    {
+      "from": "syncing",
+      "to": "failed",
+      "variant": "security",
+      "label": "attempts exhausted"
+    },
+    {
+      "from": "failed",
+      "to": "syncing",
+      "variant": "dashed",
+      "label": "retry or resync"
+    },
+    {
+      "from": "indexed",
+      "to": "syncing",
+      "variant": "dashed",
+      "label": "interval or new commit"
+    },
+    {
+      "from": "indexed",
+      "to": "removed",
+      "label": "dropped from config"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Triggers",
+      "items": [
+        "Connection sync runs on the settings schedule",
+        "Config changes and admin sync requests also enqueue work"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Failure",
+      "items": [
+        "repo-index retries twice with exponential backoff",
+        "A failed repo keeps serving its last good index"
+      ]
+    }
+  ]
+}

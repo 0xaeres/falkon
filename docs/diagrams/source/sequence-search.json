@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Search and read request path",
+    "subtitle": "Every result names its repository, path and index revision",
+    "output": ".archify/sequence-search-20261022-220000/falkon-search-path.html",
+    "viewBox": [1080, 580],
+    "column_fit": "spread",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    { "id": "client", "type": "external", "label": "MCP client", "sublabel": "tools/call" },
+    { "id": "api", "type": "backend", "label": "Engine API", "sublabel": "tool runner + Scope" },
+    { "id": "zoekt", "type": "database", "label": "zoekt-webserver", "sublabel": "shards, gRPC" },
+    { "id": "git", "type": "database", "label": "Git mirror", "sublabel": "git readers" }
+  ],
+  "segments": [
+    { "from": 150, "to": 300, "label": "Search" },
+    { "from": 310, "to": 470, "label": "Read" }
+  ],
+  "messages": [
+    { "id": "grep-call", "from": "client", "to": "api", "y": 170, "label": "grep query, repos", "variant": "emphasis" },
+    { "id": "parse", "from": "api", "to": "zoekt", "y": 205, "label": "IR from queryParser, n+1 matches", "variant": "emphasis" },
+    { "id": "matches", "from": "zoekt", "to": "api", "y": 240, "label": "matches + revision", "variant": "return" },
+    { "id": "grep-result", "from": "api", "to": "client", "y": 275, "label": "hits, exhaustive flag", "variant": "return" },
+    { "id": "read-call", "from": "client", "to": "api", "y": 340, "label": "read_file path, rev", "variant": "default" },
+    { "id": "read-object", "from": "api", "to": "git", "y": 375, "label": "object at index revision", "variant": "emphasis" },
+    { "id": "read-bytes", "from": "git", "to": "api", "y": 410, "label": "file bytes", "variant": "return" },
+    { "id": "read-result", "from": "api", "to": "client", "y": 445, "label": "content with evidence span", "variant": "return" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Query safety",
+      "items": ["User text lands only in IR leaves", "A repository scope cannot be widened by query text"]
+    },
+    {
+      "dot": "emerald",
+      "title": "Completeness",
+      "items": ["Zoekt is asked for n+1 matches", "isSearchExhaustive tells a full result from a cut one"]
+    },
+    {
+      "dot": "rose",
+      "title": "Boundary",
+      "items": ["Zoekt has no auth and stays inside the compose network", "The Engine API applies the Product scope before any call"]
+    }
+  ]
+}
