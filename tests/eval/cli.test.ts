@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadDataset, loadProduct, readRaw, writeRaw, type Raw } from "./data.js";
+import { EVAL_DIR, datasetSchema, loadDataset, loadProduct, readRaw, writeRaw, type Raw } from "./data.js";
 import { existsSync } from "node:fs";
 import { lineCounter, main, pilotIds } from "./cli.js";
 import { goldPaths } from "./preflight.js";
@@ -103,7 +103,7 @@ test("the impact set: 11 questions, 6 dev and 5 hidden, with 3 to 8 gold spans e
   for (const q of d.questions) {
     assert.ok(q.required.length >= 3 && q.required.length <= 8, q.id);
     assert.deepEqual(q.declarations, q.required, q.id);
-    assert.ok(q.required.every((s) => s.endLine >= s.startLine && loadProduct().repositories.some((r) => s.path.startsWith(`${r.name}/`))), q.id);
+    assert.ok(q.declarations!.every((s) => s.endLine >= s.startLine && loadProduct().repositories.some((r) => s.path.startsWith(`${r.name}/`))), q.id);
   }
   assert.deepEqual([...pilotIds(d, 6)].sort(), d.questions.filter((q) => q.split === "dev").map((q) => q.id).sort());
 });
@@ -230,7 +230,7 @@ test("report --pilot prints the stop rules as PASS or STOP lines", async () => {
 const o3 = process.env.EVAL_O3_DIR ?? "/Users/aeres/Desktop/projects/falkon/.local/eval";
 test("every impact gold span lies inside its file at the pinned commit", { skip: existsSync(join(o3, "openmrs-core")) ? false : "corpus checkouts not present" }, () => {
   const count = lineCounter(o3);
-  for (const q of loadDataset("o3-impact").questions) for (const s of q.required) {
+  for (const q of loadDataset("o3-impact").questions) for (const s of q.declarations!) {
     const lines = count(s.path);
     assert.ok(lines !== undefined && s.endLine <= lines, `${q.id} ${s.path}:${s.startLine}-${s.endLine}`);
   }
@@ -254,4 +254,20 @@ test("line counts come from the pinned commit and cover all 104 gold files", { s
   assert.equal(count("openmrs-core"), undefined);
   assert.equal(count("openmrs-core/api"), undefined);
   assert.equal(count("nonexistent/x.ts"), undefined);
+});
+
+test("the question schema takes spans, change units and tickets; unknown shapes are rejected", () => {
+  const base = { id: "d", repo: { url: "https://github.com/openmrs/openmrs-core", ref: "main", commit: "a".repeat(40) }, corpus: { include: [], exclude: [] } };
+  const q = (required: unknown[]) => ({ ...base, questions: [{ id: "q", question: "Q", vocab: "natural", split: "dev", author: "a", required }] });
+  const ok = [{ path: "a/b.ts", startLine: 1, endLine: 2 }, { repo: "openmrs-core", commit: "a".repeat(40), pr: 3 }, { ticket: "TRUNK-1" }];
+  assert.equal(datasetSchema.safeParse(q(ok)).success, true);
+  for (const bad of [{ repo: "openmrs-core", commit: "abc", pr: 3 }, { repo: "openmrs-core", commit: "a".repeat(40) }, { ticket: "" }, { ticket: "T-1", extra: 1 }]) assert.equal(datasetSchema.safeParse(q([bad])).success, false, JSON.stringify(bad));
+});
+
+test("clone-tools-git is a valid arm that lists the git tools; --dataset history without its file says so", async () => {
+  await withRuns(async (runs) => {
+    const out = await main(["pilot", "--list", "--arms", "clone-tools-git"], env(runs));
+    assert.match(out, /clone-tools-git: .*mcp__falkon__list_commits,mcp__falkon__get_diff,mcp__falkon__list_branches/);
+    if (!existsSync(join(EVAL_DIR, "datasets/o3-history.json"))) await assert.rejects(main(["pilot", "--dataset", "history", "--list"], env(runs)), /o3-history\.json/);
+  });
 });

@@ -1,16 +1,35 @@
 export type Span = { path: string; startLine: number; endLine: number };
+export type Commit = { repo: string; commit: string };
+export type PullRequest = { repo: string; pr: number };
+export type Ticket = { ticket: string };
+/** What an answer cites: a source span, a commit, a pull request or a ticket. */
+export type Evidence = Span | Commit | PullRequest | Ticket;
+/** A change unit (one squash-merged commit and its pull request, scored once), a ticket unit or a span unit. Accepted extras may also be a bare commit or pull request. */
+export type Gold = Span | Ticket | Commit | PullRequest | (Commit & PullRequest);
 
 /** A span covers a gold unit when paths match, lines overlap and the span is at most 3x the gold width + 20 lines. */
 const covers = (gold: Span, span: Span) =>
   gold.path === span.path && gold.startLine <= span.endLine && span.startLine <= gold.endLine &&
   span.endLine - span.startLine + 1 <= 3 * (gold.endLine - gold.startLine + 1) + 20;
 
-/** Recall counts gold units covered; precision counts answer spans covering gold or an accepted span. */
-export function scoreAnswer(gold: Span[], answer: Span[], malformed = false, accepted: Span[] = []): { recall: number; precision: number } {
+/**
+ * An answer item hits a gold unit by kind. A commit hits when the repo matches and the cited SHA (at least 7 hex chars) is a prefix of the gold SHA;
+ * so a prefix shared by two gold commits hits each of those units. A PR hits on repo and number, a ticket on key ignoring case.
+ */
+function hits(gold: Gold, a: Evidence): boolean {
+  if ("path" in gold) return "path" in a && covers(gold, a);
+  if ("ticket" in gold) return "ticket" in a && a.ticket.toLowerCase() === gold.ticket.toLowerCase();
+  if ("path" in a || "ticket" in a || a.repo !== gold.repo) return false;
+  if ("pr" in a && "pr" in gold) return a.pr === gold.pr;
+  return "commit" in a && "commit" in gold && a.commit.length >= 7 && gold.commit.toLowerCase().startsWith(a.commit.toLowerCase());
+}
+
+/** Recall counts gold units hit; precision counts answer items hitting gold or an accepted item. */
+export function scoreAnswer(gold: Gold[], answer: Evidence[], malformed = false, accepted: Gold[] = []): { recall: number; precision: number } {
   if (malformed) answer = [];
   return {
-    recall: gold.length ? gold.filter((g) => answer.some((a) => covers(g, a))).length / gold.length : 0,
-    precision: answer.length ? answer.filter((a) => [...gold, ...accepted].some((g) => covers(g, a))).length / answer.length : 0,
+    recall: gold.length ? gold.filter((g) => answer.some((a) => hits(g, a))).length / gold.length : 0,
+    precision: answer.length ? answer.filter((a) => [...gold, ...accepted].some((g) => hits(g, a))).length / answer.length : 0,
   };
 }
 

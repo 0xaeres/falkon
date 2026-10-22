@@ -130,3 +130,47 @@ test("the plain arm trying the denied research tool is counted, not a leak", () 
 test("both prompts tell the agent to ignore the server's citation format", () => {
   for (const arm of ["clone-tools", "clone-research", "v6-tools"] as const) assert.match(prompt(arm, "Q"), /Ignore any citation format the server describes; end only with the json array described here\./);
 });
+
+test("the prompt for the existing datasets is byte-identical to the one on main", () => {
+  assert.equal(prompt("clone-tools", "Where?"), "Answer the repository question by listing every code declaration that answers it (all of them, since scoring is by recall), best first. End with one fenced json array of at most 20 objects with exactly {\"path\": \"repo-relative path\", \"startLine\": 1, \"endLine\": 1} (inclusive, 1-based). Ignore any citation format the server describes; end only with the json array described here. Do not modify files.\n\nQuestion:\nWhere?\n\nThis product's repositories are indexed by Falkon, available as MCP tools. Your checkout holds only openmrs-esm-patient-chart; the product's other 41 repositories are reachable only through Falkon. Falkon names repositories github.com/openmrs/<name>, for example github.com/openmrs/openmrs-esm-core. The tools are grep (regex search across repositories, optional repo, path and include filters), glob, read_file (repo, path, offset, limit), list_tree, list_repos, find_symbol_definitions and find_symbol_references. Falkon returns repo-relative paths; cite each path as <repository-name>/<path inside the repository>, without the github.com/openmrs/ prefix; for example openmrs-esm-core/packages/.... Limit: at most ten search calls (grep, glob, find_symbol_definitions, find_symbol_references) and at most twenty read calls (read_file, list_tree, list_repos).");
+  assert.equal(prompt("clone-research", "Where?"), "Answer the repository question by listing every code declaration that answers it (all of them, since scoring is by recall), best first. End with one fenced json array of at most 20 objects with exactly {\"path\": \"repo-relative path\", \"startLine\": 1, \"endLine\": 1} (inclusive, 1-based). Ignore any citation format the server describes; end only with the json array described here. Do not modify files.\n\nQuestion:\nWhere?\n\nThis product's repositories are indexed by Falkon, available as MCP tools. Your checkout holds only openmrs-esm-patient-chart; the product's other 41 repositories are reachable only through Falkon. Falkon names repositories github.com/openmrs/<name>, for example github.com/openmrs/openmrs-esm-core. The tools are grep (regex search across repositories, optional repo, path and include filters), glob, read_file (repo, path, offset, limit), list_tree, list_repos, find_symbol_definitions and find_symbol_references. Falkon returns repo-relative paths; cite each path as <repository-name>/<path inside the repository>, without the github.com/openmrs/ prefix; for example openmrs-esm-core/packages/.... Limit: at most ten search calls (grep, glob, find_symbol_definitions, find_symbol_references) and at most twenty read calls (read_file, list_tree, list_repos). Before any other tool, call research_codebase first with the question; it returns a research brief. Then continue with the other tools to do the research.");
+});
+
+test("the history prompt asks for the four-shape array; existing prompt text is untouched", () => {
+  const p = prompt("clone-tools", "Q", true);
+  assert.ok(p.includes("Question:\nQ"));
+  for (const s of ['{"path"', '{"repo"', '"commit"', '"pr"', '{"ticket"', "openmrs-core", "TRUNK-1234", "at most 20"]) assert.ok(p.includes(s), s);
+  assert.notEqual(p, prompt("clone-tools", "Q"));
+  assert.equal(prompt("clone-tools", "Q", false), prompt("clone-tools", "Q"));
+});
+
+test("clone-tools-git allows the seven tools plus list_commits, get_diff and list_branches; every other arm denies them", () => {
+  const git = ["list_commits", "get_diff", "list_branches"];
+  const c = buildCommand("clone-tools-git", base);
+  assert.deepEqual(flag(c.args, "--allowedTools").split(",").slice(3), [...seven, ...git].map((n) => `mcp__falkon__${n}`));
+  const denied = flag(c.args, "--disallowedTools").split(",");
+  for (const n of git) assert.ok(!denied.includes(`mcp__falkon__${n}`), n);
+  for (const n of ["research_codebase", "ask_codebase", "create_skill"]) assert.ok(denied.includes(`mcp__falkon__${n}`), n);
+  for (const n of git) {
+    assert.equal(parseClaudeOutput(stream([`mcp__falkon__${n}`]), "clone-tools-git").leak, false, n);
+    assert.deepEqual(parseClaudeOutput(stream([`mcp__falkon__${n}`]), "clone-tools-git").toolCalls, { [n]: 1 });
+    for (const arm of ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr", "clone-tools-recipe"] as const) {
+      assert.equal(parseClaudeOutput(stream([`mcp__falkon__${n}`]), arm).leak, true, `${arm} ${n}`);
+      assert.ok(flag(buildCommand(arm, base).args, "--disallowedTools").split(",").includes(`mcp__falkon__${n}`), `${arm} ${n}`);
+    }
+  }
+  assert.equal(parseClaudeOutput(stream(["mcp__falkon__research_codebase"]), "clone-tools-git").deniedAttempts, 1);
+});
+
+test("answers accept spans, commits, pull requests and tickets; malformed typed items are dropped", () => {
+  const lines = (path: string) => path === "repo-a/x.ts" ? 30 : undefined;
+  const items = [
+    { path: "repo-a/x.ts", startLine: 1, endLine: 2 }, { repo: "openmrs-core", commit: "abcdef1234" }, { repo: "openmrs-core", pr: 77 }, { ticket: "TRUNK-1234" },
+    { repo: "openmrs-core", commit: "abcdef" }, { repo: "openmrs-core", commit: "xyzxyzxyz" }, { repo: "openmrs-core", pr: 1.5 }, { repo: "openmrs-core", pr: "7" }, { repo: "openmrs-core", pr: 0 }, { ticket: "" }, { ticket: 5 }, { repo: "", commit: "abcdef1" }, 7, null,
+  ];
+  assert.deepEqual(parseAnswer("```json\n" + JSON.stringify(items) + "\n```", lines), {
+    answer: [{ path: "repo-a/x.ts", startLine: 1, endLine: 2 }, { repo: "openmrs-core", commit: "abcdef1234" }, { repo: "openmrs-core", pr: 77 }, { ticket: "TRUNK-1234" }], malformed: false,
+  });
+  const many = "```json\n" + JSON.stringify(Array.from({ length: 21 }, (_, i) => ({ ticket: `T-${i + 1}` }))) + "\n```";
+  assert.equal(parseAnswer(many, lines).answer.length, 20);
+});
