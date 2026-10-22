@@ -82,12 +82,12 @@ test("client research instructions, tool and prompt work with and without a serv
   }
 });
 
-test("the server identifies itself as falkon-mcp-server 0.0.1, whatever the old version variable says", async () => {
+test("the server identifies itself as falkon-mcp-server 0.1.0, whatever the old version variable says", async () => {
   const oldVersion = "SOURCE" + "BOT_CLONE_VERSION";
   process.env[oldVersion] = "9.9.9";
   const session = await connect(false);
   try {
-    assert.deepEqual(session.client.getServerVersion(), { name: "falkon-mcp-server", version: "0.0.1" });
+    assert.deepEqual(session.client.getServerVersion(), { name: "falkon-mcp-server", version: "0.1.0" });
   } finally { delete process.env[oldVersion]; await session.close(); }
 });
 
