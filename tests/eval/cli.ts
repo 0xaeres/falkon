@@ -10,7 +10,9 @@
  *   pnpm eval -- report --pilot                     one line per pilot run, and the stop rules
  *   pnpm eval -- stack up|down [-v] [--instructions off]   the clone stack over the 42 checkouts (Docker, 127.0.0.1:EVAL_PORT);
  *                                                   --instructions off: project falkon-eval-noinstr on EVAL_NOINSTR_PORT with MCP_INSTRUCTIONS=off
- *   pnpm eval -- preflight [--arms ...]             42 repositories and 104 gold paths readable through each selected arm's server
+ *   pnpm eval -- preflight [--arms ...]             42 repositories and 104 gold paths readable through each selected arm's server; refuses a shallow checkout
+ *   pnpm eval -- corpus deepen                      git fetch --unshallow per checkout (complete ones are left as they are), then HEAD must equal its pin.
+ *                                                   After deepening, run `stack down -v` then `stack up`: existing bare clones keep the old depth.
  *
  * Options for pilot, run and report: --model sonnet|haiku (or the full id; default sonnet), --arms from
  * clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git (default clone-tools,clone-research). Runs are stored per model under
@@ -36,7 +38,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ALL_ARMS, ARMS, DATASETS, EVAL_DIR, HISTORY_DATASETS, IMPACT_DATASETS, FLOOR_DIR, REPO_ROOT, hasRaw, goldOf, loadAccepted, loadDataset, loadProduct, modelDir, readRaw, resolveModel, type Arm, type Dataset, type Raw } from "./data.js";
 import { buildCommand } from "./harness.js";
-import { expectedRepos, goldPaths, preflight, readKey } from "./preflight.js";
+import { assertFullHistory, deepenCheckouts, expectedRepos, goldPaths, preflight, readKey } from "./preflight.js";
 import { report } from "./report.js";
 import { execute, runTasks, spentSoFar, type Task } from "./runner.js";
 import { scoreAnswer } from "./score.js";
@@ -143,12 +145,16 @@ function pilotReport(named: Dataset, stored: Raw[], arms: Arm[], alias: string, 
 export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env): Promise<string> {
   const args = argv.filter((a, i) => !(a === "--" && i < 2)); // pnpm may pass a leading "--"
   const command = args[0], cfg = config(env), listing = args.includes("--list");
-  if (!["pilot", "run", "report", "preflight", "stack"].includes(command ?? "")) throw new Error("Usage: pnpm eval -- pilot|run|report|preflight|stack [--split dev|hidden] [--model sonnet|haiku] [--arms clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git] [--dataset impact|history] [--reference arm] [--list] [--pilot] [--instructions off] [--recipe on]");
+  if (!["pilot", "run", "report", "preflight", "stack", "corpus"].includes(command ?? "")) throw new Error("Usage: pnpm eval -- pilot|run|report|preflight|stack|corpus deepen [--split dev|hidden] [--model sonnet|haiku] [--arms clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git] [--dataset impact|history] [--reference arm] [--list] [--pilot] [--instructions off] [--recipe on]");
   const splitFlag = flagValue(args, "--split");
   if (splitFlag && !["dev", "hidden"].includes(splitFlag)) throw new Error("--split must be dev or hidden");
   const split = (splitFlag ?? "dev") as "dev" | "hidden";
   if (!(cfg.spendCap > 0) || !Number.isFinite(cfg.spendCap)) throw new Error("EVAL_SPEND_CAP must be a positive number of dollars.");
   const model = resolveModel(flagValue(args, "--model"));
+  if (command === "corpus") {
+    if (args[1] !== "deepen") throw new Error("Usage: pnpm eval -- corpus deepen");
+    return deepenCheckouts(cfg.o3Dir) + "\n";
+  }
   if (command === "stack") {
     const instructions = flagValue(args, "--instructions"), recipe = flagValue(args, "--recipe");
     if (instructions && instructions !== "off") throw new Error("--instructions must be off (the default stack keeps the instructions on).");
@@ -234,6 +240,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
 
 /** One preflight per distinct server among the arms, each with its own URL and key. */
 async function preflightArms(arms: Arm[], cfg: ReturnType<typeof config>, env: NodeJS.ProcessEnv, datasetIds: readonly string[]): Promise<string> {
+  assertFullHistory(cfg.o3Dir);
   const servers = new Map(arms.map((arm) => backendOf(arm, cfg, env)).map((b) => [b.id, b]));
   const out: string[] = [];
   for (const b of servers.values()) out.push(`${b.id} (${new URL(b.url).host}): ${await preflight({ expectedRepos: expectedRepos(), gold: goldPaths(datasetIds), url: b.url, apiKey: b.key, kind: b.kind, instructions: b.instructions })}`);

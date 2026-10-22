@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { execFileSync } from "node:child_process";
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { goldPaths, preflight, readKey, type EvalClient } from "./preflight.js";
+import { assertFullHistory, deepenCheckouts, goldPaths, preflight, readKey, shallowCheckouts, type EvalClient } from "./preflight.js";
 import { TOOLS } from "./harness.js";
 
 const names = ["a", "b", "c"];
@@ -69,4 +70,46 @@ test("the instructions setting of a stack is checked when the arm needs a known 
 
 test("a v6 target that lists research_codebase is the wrong server and is rejected", async () => {
   await assert.rejects(preflight({ ...base, kind: "v6", createClient: async () => fakeClient({ tools: [...TOOLS, "research_codebase"], v6: true }) }), /research_codebase.*not the v6 instance/);
+});
+
+const git = (dir: string, args: string[]) => execFileSync("git", ["-C", dir, ...args], { encoding: "utf8" }).trim();
+/** A two-commit origin and a depth-1 clone of it under root/clone; the pin is the origin's head. */
+function shallowFixture() {
+  const root = mkdtempSync(join(tmpdir(), "eval-corpus-"));
+  const origin = join(root, "origin");
+  execFileSync("git", ["init", "-q", origin]);
+  for (const msg of ["one", "two"]) {
+    writeFileSync(join(origin, "f.txt"), msg);
+    git(origin, ["add", "."]);
+    execFileSync("git", ["-C", origin, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", msg]);
+  }
+  execFileSync("git", ["clone", "-q", "--depth", "1", `file://${origin}`, join(root, "clone")]);
+  return { root, pin: git(origin, ["rev-parse", "HEAD"]), repos: [{ checkout: "clone", commit: git(origin, ["rev-parse", "HEAD"]) }] };
+}
+
+test("a shallow checkout fails the full-history check and the message names it and the fix", () => {
+  const fx = shallowFixture();
+  try {
+    assert.deepEqual(shallowCheckouts(fx.root, fx.repos), [join(fx.root, "clone")]);
+    assert.throws(() => assertFullHistory(fx.root, fx.repos), (e: Error) => e.message.includes(join(fx.root, "clone")) && e.message.includes("pnpm eval corpus deepen"));
+  } finally { rmSync(fx.root, { recursive: true, force: true }); }
+});
+
+test("deepen unshallows a checkout, keeps its pin, and treats an already complete checkout as success", () => {
+  const fx = shallowFixture();
+  try {
+    deepenCheckouts(fx.root, fx.repos);
+    assert.equal(git(join(fx.root, "clone"), ["rev-list", "--count", "HEAD"]), "2");
+    assert.equal(git(join(fx.root, "clone"), ["rev-parse", "HEAD"]), fx.pin);
+    assert.deepEqual(shallowCheckouts(fx.root, fx.repos), []);
+    assert.doesNotThrow(() => assertFullHistory(fx.root, fx.repos));
+    assert.doesNotThrow(() => deepenCheckouts(fx.root, fx.repos));
+  } finally { rmSync(fx.root, { recursive: true, force: true }); }
+});
+
+test("deepen refuses a checkout whose HEAD is not its pin", () => {
+  const fx = shallowFixture();
+  try {
+    assert.throws(() => deepenCheckouts(fx.root, [{ checkout: "clone", commit: "0".repeat(40) }]), /HEAD/);
+  } finally { rmSync(fx.root, { recursive: true, force: true }); }
 });
