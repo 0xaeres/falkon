@@ -60,8 +60,8 @@ export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] 
     const item = node as Record<string, unknown>;
     if (item.type === "tool_use" && typeof item.name === "string") {
       out.firstTool ??= item.name.replace(`mcp__${SERVER}__`, "");
-      // The plain arm may try the tool it was denied; that is counted, not a leak.
-      if (arm !== "clone-research" && item.name === mcp("research_codebase")) out.deniedAttempts++;
+      // An arm may try a tool it was denied (research_codebase, git history tools); that is counted, not a leak.
+      if ((arm !== "clone-research" && item.name === mcp("research_codebase")) || (arm !== "clone-tools-git" && GIT_TOOLS.map(mcp).includes(item.name))) out.deniedAttempts++;
       else if (!allowed.includes(item.name)) out.leak = true;
       else if (item.name.startsWith(`mcp__${SERVER}__`)) { const short = item.name.slice(mcp("").length); out.toolCalls[short] = (out.toolCalls[short] ?? 0) + 1; }
       if (Object.hasOwn(pathFields, item.name)) {

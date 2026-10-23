@@ -91,6 +91,24 @@ Base `main` at `54bcec8`. Cycle branch `loop/falkon-enterprise-c12`. Roles: Opus
 - Dataset `o3-history.json` frozen as it stands (human, 2026-10-23): 16 a / 12 b / 12 c, 24 dev / 16 hidden, 10 repositories. Known weak (a) items accepted: hist-a-04 and hist-a-10 (ticket key readable in the repo at the pin), hist-a-02, -05, -12, -16 (medium strength); hist-a-13 and hist-a-14 carry two change units for one ticket. The spot-check of 4 hidden questions (`history-mining/spotcheck.md`) stays with the human.
 - D104 (human, 2026-10-23): an attempt by `clone-tools` or another arm at a git history tool it is denied counts as a denied attempt, like `research_codebase`, not as a leak. Implemented in cycle 13 before the baseline.
 
-## Cycle 13 (outline, planned after gate 2 of cycle 12)
+## Cycle 13 results: the Phase 0 baseline floor (2026-10-23)
 
-Implement D104 in `tests/eval/harness.ts` (with tests), run both arms on all 40 questions on Haiku, report `clone-tools-git` against `clone-tools` (`report --reference clone-tools`), and record the floor for Phase 1. Spend inside the D102 cap ($5 total; $0.526 used in cycle 12).
+S46 kept: D104 (denied git-tool attempts count as denied attempts, not leaks) and, for `--dataset history` only, the pilot stop rule "plain-arm recall at least 0.70" is skipped (the plain arm is expected low, D100). Both arms, all 40 questions, Haiku (claude-haiku-5-5), one run each, fresh stack over the deepened corpus. Raw runs `eval-runs-c13/`, full report `baseline-c13-report.md` (`report --reference clone-tools`). Failed 0, malformed 0 on every run. Agent spend this cycle $1.0485 (cumulative Phase 0 $1.574 of the $5 cap, D102).
+
+| | clone-tools | clone-tools-git | difference [95% CI], paired |
+|---|---|---|---|
+| recall, all 40 | 0.096 | **0.696** | 0.600 [0.515, 0.682] (38 wins, 0 losses, 2 ties) |
+| precision, all 40 | 0.125 | 0.567 | 0.443 [0.299, 0.578] |
+| recall, dev 24 / hidden 16 | 0.083 / 0.115 | 0.686 / 0.710 | |
+| recall, kind (a) why, 16 | 0.063 | 0.531 | |
+| recall, kind (b) what and when, 12 | 0.000 | 0.839 | |
+| recall, kind (c) ticket to code, 12 | 0.236 | 0.771 | |
+| mean cost per run | $0.007 | $0.032 | |
+
+**The floor for Phase 1 is `clone-tools-git` recall 0.696 (precision 0.567), with `clone-tools` at 0.096.** A history capability must beat 0.696 on this stratum (D8). The headroom is mostly kind (a) (0.531: the change is found, the ticket text is not) and kind (c) (0.771); kind (b) is 0.839 but costs the most per run. Single-run Haiku results are noisy per question; the pooled numbers carry the comparison.
+
+Flags: the pooled verdict prints "withheld" because the reference arm `clone-tools` has 1 leak flag: hist-a-05 read a file under its own Claude scratchpad (`/private/tmp/claude-501/...`), which the leak pattern treats as private; no corpus or eval data was read, a false positive of the harness pattern, left as is. `clone-tools` made 3 denied git-tool attempts in hidden and 1 in dev (D104 working). The `clone-tools-git` arm's own gate verdict is not a regression gate; it is a floor, not a pass or fail.
+
+## Next (planned at gate 2 of cycle 13)
+
+Phase 1: shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor (history provenance linking commit, pull request and ticket behind the `ProvenanceStore` port, D87). Slice and grill it as cycle 14.

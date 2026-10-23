@@ -133,12 +133,14 @@ function pilotReport(named: Dataset, stored: Raw[], arms: Arm[], alias: string, 
   const rules: string[] = [];
   const rule = (ok: boolean, text: string) => rules.push(`${ok ? "PASS" : "STOP"}: ${text}`);
   const shown = (n: number) => Number.isNaN(n) ? "n/a" : n.toFixed(3);
-  if (arms.includes("clone-tools")) rule(plain.length === ids.length && meanPlain >= plainMin, `plain-arm pilot recall ${shown(meanPlain)} (needs complete runs and at least ${plainMin.toFixed(2)})`);
-  if (arms.includes("clone-tools-recipe")) rule(recipe.length === ids.length && meanRecipe >= plainMin, `recipe-arm pilot recall ${shown(meanRecipe)} (needs complete runs and at least ${plainMin.toFixed(2)})`);
+  // The history set expects the plain arm to score low (D100 asks for a gradient above it), so the plain-arm minimum applies to the other sets only.
+  const history = named.id === "o3-history";
+  if (arms.includes("clone-tools") && !history) rule(plain.length === ids.length && meanPlain >= plainMin, `plain-arm pilot recall ${shown(meanPlain)} (needs complete runs and at least ${plainMin.toFixed(2)})`);
+  if (arms.includes("clone-tools-recipe") && !history) rule(recipe.length === ids.length && meanRecipe >= plainMin, `recipe-arm pilot recall ${shown(meanRecipe)} (needs complete runs and at least ${plainMin.toFixed(2)})`);
   if (arms.includes("v6-tools")) rule(v6.length === ids.length && meanV6 >= 0.5, `v6-tools pilot recall ${shown(meanV6)} (needs complete runs and at least 0.50; a reference near zero shows nothing)`);
   rule(mine.length > 0 && !mine.some((r) => r.leak), `no leaks (${mine.filter((r) => r.leak).length} of ${mine.length} runs)`);
   if (arms.includes("clone-research")) rule(research.length > 0 && research.every((r) => r.firstTool === "research_codebase"), `research_codebase first in every research run (${research.filter((r) => r.firstTool === "research_codebase").length}/${research.length})`);
-  lines.push("", `Stop rules (spec S5, model ${alias}):`, ...rules, `Denied research_codebase attempts by the plain arms: ${mine.filter((r) => r.arm !== "clone-research").reduce((n, r) => n + (r.deniedAttempts ?? 0), 0)}.`);
+  lines.push("", `Stop rules (spec S5, model ${alias}):`, ...rules, `Denied tool attempts by arms (research_codebase, list_commits, get_diff, list_branches): ${mine.reduce((n, r) => n + (r.deniedAttempts ?? 0), 0)}.`);
   return { lines, stop: rules.some((r) => r.startsWith("STOP")) };
 }
 

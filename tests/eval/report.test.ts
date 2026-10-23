@@ -119,7 +119,7 @@ test("the report shows the plain arm's denied research_codebase attempts and mal
   input[0]!.runs[0]!.deniedAttempts = 3; input[0]!.runs[1]!.malformed = true;
   const text = dev(input);
   assert.match(text, /malformed 1; leaks 0\./);
-  assert.match(text, /Denied research_codebase attempts: 3\./);
+  assert.match(text, /Denied tool attempts \(research_codebase, list_commits, get_diff, list_branches\): 3\./);
 });
 
 test("a history run scores commits, PRs and tickets against typed gold, with accepted extras for precision", () => {

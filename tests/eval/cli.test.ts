@@ -217,12 +217,12 @@ test("report --pilot prints the stop rules as PASS or STOP lines", async () => {
     assert.match(low, /STOP: plain-arm pilot recall 0\.000/);
     assert.match(low, /PASS: no leaks \(0 of 10 runs\)/);
     assert.match(low, /PASS: research_codebase first in every research run \(5\/5\)/);
-    assert.match(low, /Denied research_codebase attempts by the plain arms: 0\./);
+    assert.match(low, /Denied tool attempts by arms \(research_codebase, list_commits, get_diff, list_branches\): 0\./);
     allPilot(runs, (arm) => arm === "clone-research" ? { firstTool: "grep", leak: true, deniedAttempts: 0 } : { deniedAttempts: 2 });
     const bad = await main(["report", "--pilot"], env(runs));
     assert.match(bad, /STOP: no leaks \(5 of 10/);
     assert.match(bad, /STOP: research_codebase first in every research run \(0\/5\)/);
-    assert.match(bad, /attempts by the plain arms: 10\./);
+    assert.match(bad, /list_branches\): 10\./);
     assert.match(bad, /malformed=false/);
   });
 });

@@ -49,7 +49,7 @@ test("stream parsing counts MCP calls, records the first tool and flags every un
   assert.deepEqual(ok.toolCalls, { research_codebase: 1, grep: 2 });
   assert.equal(ok.firstTool, "research_codebase");
   assert.equal(ok.leak, false);
-  for (const name of ["Bash", "Write", "WebFetch", "mcp__falkon__ask_codebase", "mcp__falkon__list_commits", "mcp__other__x", "mcp__falkon__future_tool"]) assert.equal(parseClaudeOutput(stream([name]), "clone-research").leak, true, name);
+  for (const name of ["Bash", "Write", "WebFetch", "mcp__falkon__ask_codebase", "mcp__other__x", "mcp__falkon__future_tool"]) assert.equal(parseClaudeOutput(stream([name]), "clone-research").leak, true, name);
 });
 
 test("leak checks inspect paths but not Grep or Glob patterns", () => {
@@ -114,7 +114,8 @@ test("the v6 and no-instructions arms expose the plain arm's tools and denials, 
     assert.equal(c.env.EVAL_MCP_KEY, "s3cret");
     assert.ok(!c.mcpConfig.includes("s3cret") && !c.args.join(" ").includes("s3cret"));
     assert.equal(parseClaudeOutput(stream(["mcp__falkon__research_codebase", "mcp__falkon__grep"]), arm).deniedAttempts, 1, arm);
-    assert.equal(parseClaudeOutput(stream(["mcp__falkon__list_commits"]), arm).leak, true, arm);
+    const git = parseClaudeOutput(stream(["mcp__falkon__list_commits"]), arm);
+    assert.deepEqual([git.leak, git.deniedAttempts], [false, 1], arm);
   }
 });
 
@@ -125,6 +126,7 @@ test("the plain arm trying the denied research tool is counted, not a leak", () 
   assert.deepEqual(out.toolCalls, { grep: 1 });
   assert.equal(parseClaudeOutput(stream(["mcp__falkon__research_codebase"]), "clone-research").deniedAttempts, 0);
   assert.equal(parseClaudeOutput(stream(["Bash"]), "clone-tools").leak, true);
+  assert.equal(parseClaudeOutput(stream(["mcp__falkon__future_tool"]), "clone-tools").leak, true);
 });
 
 test("both prompts tell the agent to ignore the server's citation format", () => {
@@ -154,8 +156,10 @@ test("clone-tools-git allows the seven tools plus list_commits, get_diff and lis
   for (const n of git) {
     assert.equal(parseClaudeOutput(stream([`mcp__falkon__${n}`]), "clone-tools-git").leak, false, n);
     assert.deepEqual(parseClaudeOutput(stream([`mcp__falkon__${n}`]), "clone-tools-git").toolCalls, { [n]: 1 });
+    assert.equal(parseClaudeOutput(stream([`mcp__falkon__${n}`]), "clone-tools-git").deniedAttempts, 0, n);
     for (const arm of ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr", "clone-tools-recipe"] as const) {
-      assert.equal(parseClaudeOutput(stream([`mcp__falkon__${n}`]), arm).leak, true, `${arm} ${n}`);
+      const out = parseClaudeOutput(stream([`mcp__falkon__${n}`]), arm);
+      assert.deepEqual([out.leak, out.deniedAttempts, out.toolCalls], [false, 1, {}], `${arm} ${n}`);
       assert.ok(flag(buildCommand(arm, base).args, "--disallowedTools").split(",").includes(`mcp__falkon__${n}`), `${arm} ${n}`);
     }
   }

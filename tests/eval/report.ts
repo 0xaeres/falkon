@@ -40,7 +40,7 @@ export function report({ datasets, accepted, split, arms, model = "sonnet", refe
   ];
   const section = (arm: Arm, s: string | undefined) => {
     const rows = rowsFor(arm, s), paired = pairedOf(rows), { runs, failed, malformed, leaks } = counts(rows);
-    lines.push(`Coverage ${arm}: ${paired.length}/${rows.length} paired; failed ${failed}; malformed ${malformed}; leaks ${leaks}.`, `Denied research_codebase attempts: ${runs.reduce((n, r) => n + (r.deniedAttempts ?? 0), 0)}.`);
+    lines.push(`Coverage ${arm}: ${paired.length}/${rows.length} paired; failed ${failed}; malformed ${malformed}; leaks ${leaks}.`, `Denied tool attempts (research_codebase, list_commits, get_diff, list_branches): ${runs.reduce((n, r) => n + (r.deniedAttempts ?? 0), 0)}.`);
     if (paired.length) {
       lines.push("", "| Metric | Arm mean | Reference mean | n | Difference [95% CI] |", "| --- | ---: | ---: | ---: | --- |");
       const metrics = { recall: [(r: Paired) => r.score.recall, (r: Paired) => r.floorScore.recall], precision: [(r: Paired) => r.score.precision, (r: Paired) => r.floorScore.precision], cost: [(r: Paired) => r.run.total_cost_usd, (r: Paired) => r.floor.total_cost_usd] } as const;
