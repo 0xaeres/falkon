@@ -1,0 +1,12 @@
+{"task":"hist-b-08","dataset":"o3-history","arm":"clone-tools","cost":0.00309282}
+{"task":"hist-c-03","dataset":"o3-history","arm":"clone-tools","cost":0.007780049999999999}
+{"task":"hist-a-14","dataset":"o3-history","arm":"clone-tools","cost":0.01597474}
+{"task":"hist-c-03","dataset":"o3-history","arm":"clone-tools-git","cost":0.008273819999999998}
+{"task":"hist-b-08","dataset":"o3-history","arm":"clone-tools-git","cost":0.14292146000000003}
+{"task":"hist-a-14","dataset":"o3-history","arm":"clone-tools-git","cost":0.02102492}
+{"task":"hist-b-01","dataset":"o3-history","arm":"clone-tools","cost":0.0030773000000000003}
+{"task":"hist-c-06","dataset":"o3-history","arm":"clone-tools","cost":0.0036906}
+{"task":"hist-c-06","dataset":"o3-history","arm":"clone-tools-git","cost":0.00251718}
+{"task":"hist-a-03","dataset":"o3-history","arm":"clone-tools","cost":0.01197999}
+{"task":"hist-a-03","dataset":"o3-history","arm":"clone-tools-git","cost":0.012918760000000001}
+{"task":"hist-b-01","dataset":"o3-history","arm":"clone-tools-git","cost":0.29287834}

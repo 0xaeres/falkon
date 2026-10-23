@@ -43,3 +43,23 @@ What the rewrite did and did not do:
 - Cause, as far as this evidence shows: gold units (commit, PR, ticket) are identifiable from a commit subject, and `list_commits` on a path returns subjects. Anchor removal changes how the model finds the path, not what the tool gives back. Kind (c) also scored 1.00 on one question this round (0.50 before), so single-run noise is large on 6 questions.
 
 Leak flag (clone-tools, hist-b-08): the plain arm called `list_commits` once (denied; the tool replied "No such tool available") because the server instructions name it. The harness counts any call outside the allowlist as a leak (only `research_codebase` attempts are counted as denied attempts, not leaks). Recall of that run is 0 either way. This is a harness rule on evaluation semantics, left unchanged; decision in `.loop/REVIEW.md`.
+
+## Round 2 (human: "round 2 per option (i)", 2026-10-23)
+
+Change (details in `history-mining/rewrite-notes.md`, "Round 2"): all 16 kind (a) targets replaced by changes whose full commit message names no Jira key; the ticket and the rationale live only in the PR body or the Jira ticket (5 questions resolve the key through a Jira issue naming the PR URL). Kinds (b) and (c) as in round 1. Validator: 0 violations, with new checks that no commit message at any pin names the gold ticket. Same 6 pilot ids, Haiku, fresh stack, one run per cell. Raw runs: `.scratch/falkon-enterprise/eval-runs-r2/`. Spend $0.5261 cumulative of $5 (round 2 alone $0.169). 12 runs, 0 leaks, 0 malformed.
+
+| Question | Kind | clone-tools recall | clone-tools-git recall | git tool calls (git arm) |
+|---|---|---|---|---|
+| hist-c-03 | c | 0.50 | 0.50 | list_commits 3, get_diff 1 |
+| hist-c-06 | c | 0.33 | 1.00 | list_commits 2 |
+| hist-a-14 | a | 0.00 | 0.33 | list_commits 3, get_diff 3 |
+| hist-a-03 | a | 0.00 | 0.50 | list_commits 2, get_diff 2 |
+| hist-b-08 | b | 0.00 | 0.80 | list_commits 2, get_diff 9 |
+| hist-b-01 | b | 0.00 | 1.00 | list_commits 18, get_diff 44 |
+| **Mean** | | **0.139** | **0.689** | |
+
+### Verdict under D100, round 2: NOT too easy (0.689 is below 0.85); gradient present (`clone-tools` 0.139, not at or below 0.05 on every question). The gap between arms is 0.55, the floor Phase 1 must beat.
+
+Reading: kind (a) now caps the git arm (0.33 and 0.50: change unit found by history, ticket unit missing, as designed). Kind (b) is still solvable by brute force (b-01: 18 `list_commits` and 44 `get_diff` calls, recall 1.00, $0.29 for one run, about 35% of the round's spend), so the bar is met through (a) and (c). One run per cell on 6 questions is noisy (c-03 moved 0.50 to 1.00 to 0.50 over three rounds); the full 40-question baseline in cycle 13 is the real measurement.
+
+Known weaknesses the human may want to veto (from the author's report): two (a) questions (hist-a-04, hist-a-10) have their ticket key in a file at the pin (a changeset and a code comment), so code search can read it; four (a) targets are medium strength (hist-a-02 test-only, hist-a-05 sub-task, hist-a-12 parent epic, hist-a-16 lockfile-only with the rationale in the commit body).
