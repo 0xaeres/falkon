@@ -1,0 +1,245 @@
+[
+ {
+  "number": 41,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/41",
+  "title": "(fix) O3-6140: Leave voided diagnoses out of the visit summary",
+  "branch": "fix/O3-6140-visit-summary-voided-diagnoses",
+  "mergedAt": "2026-10-21T17:05:35Z",
+  "mergeCommit": "ee61554b36fcc1c876df605dc0f3994c670adc3a",
+  "body": "## Summary\r\n\r\nThe Diagnoses section of the visit summary PDF now leaves out voided diagnoses and lists the primary diagnosis first.\r\n\r\n`DiagnosesSection` reads `DiagnosisService#getDiagnosesByVisit`, which also returns voided diagnoses. Editing a visit note in O3 voids every saved diagnosis and saves the current list again ([visit-notes-form.component.tsx](https://github.com/openmrs/openmrs-esm-patient-chart/blob/v13.0.1/packages/esm-patient-notes-app/src/notes/visit-notes-form.component.tsx#L444-L449)). So each edit left another copy of the earlier diagnoses in the PDF, while the chart showed the right list. Deleting a visit note left its diagnoses in the PDF too. The section now skips voided diagnoses, the same way `getNonVoidedEncounters` skips voided encounters for the other sections.\r\n\r\nThe query also returns diagnoses newest first, so the primary diagnosis could land anywhere in the table. They're now sorted by rank, and stay newest first within a rank.\r\n\r\n## Related\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-6140\r\n\r\n## Testing\r\n\r\n- Two new `DiagnosesSectionTest` cases use a visit whose note was edited: a voided Malaria, then Anemia as primary and Malaria again. Both fail without the fix.\r\n\r\n## Screenshots\r\n\r\nA visit with a note that was saved with Fatigue, then edited to add Loss of sense of smell and SARS-CoV-2 as the primary diagnosis, and a second note with Malaria that was deleted. The chart shows three diagnoses.\r\n\r\nBefore (1.2.0):\r\n\r\n<img width=\"2134\" height=\"541\" alt=\"o3-6140-before\" src=\"https://github.com/user-attachments/assets/b0695f2c-2749-47fb-ae50-0b681909f744\" />\r\n\r\nAfter:\r\n\r\n<img width=\"2134\" height=\"408\" alt=\"o3-6140-after\" src=\"https://github.com/user-attachments/assets/621bbb40-b14f-4b27-b95a-600385f3101e\" />\r\n"
+ },
+ {
+  "number": 40,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/40",
+  "title": "Require o3forms 4.0.0-SNAPSHOT, the Platform 3.0 build",
+  "branch": "core-3.x-o3forms-4",
+  "mergedAt": "2026-10-13T11:59:01Z",
+  "mergeCommit": "821890d66666f534b55d45e20ecb680b7f00a42c",
+  "body": "`core-3.x` pins `o3FormsVersion` to 3.0.0-SNAPSHOT, which is o3forms' `main` branch, its Platform 2.x build. So this branch compiled against, and required at runtime, the wrong o3forms line. o3forms' `core-3.x` now builds and deploys its own version, 4.0.0-SNAPSHOT (openmrs/openmrs-module-o3forms#13). It was published as `o3forms-omod-4.0.0-20261013.105649-1`.\n\n`o3FormsVersion` sets both the Maven dependency and the omod's `require_module`, so this one line moves both.\n\n- `mvn -U clean verify` on JDK 21 succeeds: api 17 tests and omod 292 tests, with no failures or errors. Maven downloads `o3forms-omod-4.0.0-20261013.105649-1.jar`.\n- The built omod's `config.xml` has `<require_module version=\"4.0.0-SNAPSHOT\">org.openmrs.module.o3forms</require_module>`.\n- The other two dependencies, reporting `core-3.x` (43cf8eb) and initializer from mekomsolutions/openmrs-module-initializer#338 (ac75814), came from a local repository, built with `-DskipTests`. Neither has a published 3.0 SNAPSHOT yet. So this PR's CI will still fail to resolve them, as `core-3.x` already does, until reporting deploys and initializer#338 merges.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n"
+ },
+ {
+  "number": 39,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/39",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T18:00:41Z",
+  "mergeCommit": "23fb5c8e0fd1d89e06bda3640fc9a77d9abcb0b7",
+  "body": "Updates patientdocuments so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7). It depends on the Platform 3 upgrades of reporting (openmrs/openmrs-module-reporting#274), initializer (mekomsolutions/openmrs-module-initializer#338) and o3forms (openmrs/openmrs-module-o3forms#12), and on openmrs/openmrs-module-serialization.xstream#23: serialization.xstream's upgrade is merged, but its 1.0.0-SNAPSHOT won't deploy until that fixes its Java 25 build. Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions and build:\n  - Module version is now 2.0.0-SNAPSHOT, since this drops 2.x support.\n  - It builds against core 3.0.0-SNAPSHOT (with `openmrs-bom` imported), reporting, initializer, o3forms and calculation 3.0.0-SNAPSHOT, webservices.rest 5.0.0-SNAPSHOT and serialization.xstream 1.0.0-SNAPSHOT.\n  - The `serialization.xstream-api-1.9/-1.10/-2.0` artifacts are removed (they don't exist at 1.0.0), as is the unused `reportingcompatibility-api` test dependency.\n  - Builds with Java 21 and `-parameters`.\n- Dependencies:\n  - `openmrs-web` moves to the omod only.\n  - The api tests get spring-webmvc, spring-oxm and the jakarta Servlet API (test scope, BOM-managed), since they used to arrive through openmrs-web.\n  - The PowerMock exclusions, the pinned Jackson 2.17.2 versions and `javax.servlet-api` are removed.\n- `commons-logging` is excluded from pdfbox and barcode4j, so the omod no longer bundles 1.2 next to core's 1.4.0. None of the remaining bundled FOP/Batik jars overlap with core's war.\n- `javax.servlet` becomes `jakarta.servlet` in the controllers, and commons-lang becomes lang3.\n- `config.xml` now sets `require_version` to 3.0.0. GitHub workflows use Java 21.\n- Tests:\n  - JUnit 4 assertions become Jupiter.\n  - `labResultsSectionTestDataset.xml` drops `obs_reference_range_id`. Core 3.0's `ObsReferenceRange` uses `@MapsId`, so `obs_id` is its key.\n  - The facility-header test helper saves the location after adding the phone attribute, because an auto-flush otherwise cascaded an unsaved attribute.\n\n## Verification\n- `mvn clean install` passes: 292 api and 17 omod tests.\n- On openmrs-core master with openmrs/openmrs-core#6631 and #6633 (needed for reporting's enum mappings), via `mvn jetty:run` on MySQL 8:\n  - The module starts with legacyui, webservices.rest, fhir2, calculation, htmlwidgets, serialization.xstream, reporting, initializer and o3forms. The server log has no errors from it, and logging in through the UI works.\n  - `GET /ws/rest/v1/patientdocuments/patientIdSticker` reaches FOP rendering once openmrs/openmrs-module-webservices.rest#771 is applied.\n    - Without #771, REST's bundled joda-time causes a `LinkageError`.\n    - On my unconfigured dev database, FOP then rejects an empty `fo:block-container`. Every child of that container in `patientIdStickerFopStylesheet.xsl` is conditional (header, barcode, fields), and none are configured there. I didn't configure a sticker layout to take that further.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Fp7T1pGYEMrMVp1M7AW9Fg\n"
+ },
+ {
+  "number": 38,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/38",
+  "title": "(feat) O3-5678: Make the visit summary responsive to the configured paper size",
+  "branch": "feat/O3-5678-responsive-visit-summary",
+  "mergedAt": "2026-09-15T17:22:07Z",
+  "mergeCommit": "fc5dbea3458f9334a13aa38179b2f4f36e90e76e",
+  "body": "## Summary\r\n\r\nMakes the visit summary PDF responsive to the configured paper size. Finishes the page-size config that has existed since #16 but never reflowed, scales the page frame and facility logo to the paper, and reflows every multi-column section to stacked labelled blocks once the columns stop fitting side by side. Standard-width paper is byte-for-byte unchanged.\r\n\r\nThis is one coherent feature that was developed as three branches (page frame, data-table reflow, label/value-grid reflow); it's presented as one PR because the frame alone renders nothing a user sees and the reflow can't work without it.\r\n\r\n## Does this change existing output?\r\n\r\nNo. At A4 the FO is byte-identical to before, pinned by a whole-document golden test, not sampled attributes. Every derived dimension is a ratio of its A4 value, so A4 resolves to exactly the previous 15mm margins and 28mm/24mm logo by construction.\r\n\r\n## What it does\r\n\r\n- Declares and validates `report.visitSummary.size.width` / `.height`, and scales the side margins and logo to the configured width. A mistyped or too-small size warns and falls back to the whole A4 frame rather than reaching FOP as an unrenderable page.\r\n- Emits a `layout-profile` token (standard / narrow / compact, banded on content width) that the stylesheet branches on.\r\n- Reflows the five data tables (diagnoses, conditions, allergies, medications, lab results) to stacked `Label: value` blocks on narrow/compact paper, through one shared arrangement layer so a section's labels exist in exactly one place and the table and stacked forms can't drift. No abbreviation; no field dropped in any profile; the lab safety `Flag` is present and labelled everywhere.\r\n- Reflows the patient-information and vitals grids to a single labelled column on narrow/compact. This fixes a real overflow: at receipt width a patient ID like `MRN-100234` was drawn on top of the neighbouring field. It isn't a wrap bug \u2014 Unicode line-breaking forbids a break between a hyphen and a digit, and a single-word visit type has no break point at all, so the only fix is giving the value the full width.\r\n\r\n\r\n## Related\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5678 \r\nparent epic https://openmrs.atlassian.net/browse/O3-5667\r\n\r\n## Tests\r\n\r\napi 257, omod 13, 0 failures. Whole-document A4 byte-equivalence; narrow and compact renders asserting every field of every reflowed section reaches the page and the full body produces zero FOP overflow events; the lab flag specifically at compact; the footer-only remaining overflow pinned."
+ },
+ {
+  "number": 34,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/34",
+  "title": "(feat) O3-5698: Add sample-data preview for visit summary config page",
+  "branch": "feat/O3-visit-summary-sample-preview",
+  "mergedAt": "2026-08-10T10:45:56Z",
+  "mergeCommit": "1a8cc251e2065036295358b7989e594d96574bd6",
+  "body": "## Summary\r\n\r\nAdds a sample-data preview of the visit summary PDF for the settings page, so an admin can see what their section configuration produces without opening a patient record.\r\n\r\n## What this does\r\n\r\n- New endpoint `GET /ws/rest/v1/patientdocuments/visitSummary/preview` renders a sample PDF through the same renderer, stylesheet and FOP config as the real summary. No `Visit` is ever loaded from the database.\r\n- Section sort-and-filter is now one shared method for both paths, so the preview cannot drift from the real summary: a disabled or reordered section shows the same in both.\r\n- Sample content is section aware via a new `default` method on the `VisitSummarySection` SPI. The default delegates to the section's real `renderXml` with a transient sample visit, so unmigrated and downstream sections render populated with no change to this module. The seven concept/drug/role-resolving sections override it to return plain in-memory text, so the preview needs no concept dictionary. The three identity sections use the default unchanged.\r\n- Failures stay visible: a throwing section renders a `section-error` while siblings still render, a section that contributes nothing renders a `section-notice`, and an empty preview says whether nothing is registered or nothing is enabled.\r\n- The PDF opens with a banner marking it as sample data. Access uses the core `Get Global Properties` privilege, since the page already requires it and no patient data is read.\r\n\r\n## Testing\r\n\r\napi 175, omod 17, 0 failures.\r\n\r\n- Renderer tests (stub sections): downstream section appears and gets populated data, disabled sections omitted, configured order beats registration order, a throwing section surfaces a visible error without taking out siblings, a silent section is reported, empty preview explains itself.\r\n- Real-beans test: every registered section plus a compile-time-unknown section produces content with no `section-error`, on a database with no concept dictionary.\r\n- Controller test: response is a real PDF, unprivileged caller gets 403, unauthenticated caller gets 403 not 500.\r\n\r\n## Related\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5698\r\n"
+ },
+ {
+  "number": 33,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/33",
+  "title": "(feat) O3-5675: add facility header, patient age, page numbers and empty-state styling and fix repeat table column headers across page breaks",
+  "branch": "visit-summary-xslt-polish",
+  "mergedAt": "2026-08-03T09:56:45Z",
+  "mergeCommit": "b9f13e3d9d30084c6790d057ce7c3604774a7176",
+  "body": "## Summary\r\n\r\nPolish pass on the visit summary PDF layout, plus a fix for column headers not repeating across page breaks.\r\n\r\n## What this does\r\n\r\n- The header is now a horizontal band: configured facility logo, name and contact on the left, document title and visit date on the right. The logo resolves through the same app-data-dir mechanism the patient ID sticker uses, and renders nothing rather than failing the PDF when unconfigured or unreadable.\r\n- The patient block is two compact rows of four fields. Age is derived at the visit start date rather than today, so it stays consistent with the vitals, diagnoses and medications on the same page, and reprinting an old visit does not change what it says. The date of birth prints beside it either way.\r\n\r\n- The footer carries the facility name and `Page N of M` on every page. Section spacing was tightened without reducing body font sizes.\r\n\r\n- Empty sections render a grey dashed block, visually distinct from the red section-error banner, so a clinician can tell \"nothing was recorded\" from \"this could not be retrieved\" on paper alone.\r\n\r\n- The bug fix: column header rows lived in `fo:table-body`, which XSL-FO treats as ordinary data, so a table spanning a page break opened the next page with unlabeled columns. Page 2 of a lab table showed values and flags with no indication of which column was the result and which was the reference range. Moved to `fo:table-header`, which repeats by default. Affects diagnoses, conditions, lab results, allergies and medications.\r\n\r\n- Supporting changes: date and datetime patterns are configurable and formatted in the user's locale; `Helper.getImageAsDataUri` detects PNG, JPEG and GIF from signature bytes instead of labelling every file `image/png`.\r\n\r\n\r\n## Testing\r\n\r\napi 197, omod 13, 0 failures.\r\n\r\nThe table-header fix has a regression test that renders each affected section through FOP with enough rows to force a page break, then asserts every column header appears on every page. It also asserts the table actually spanned more than one page, so a future change making the data fit on one page cannot turn it into a silent pass. Verified by reverting one header back into `fo:table-body` and confirming only that test failed.\r\n\r\nAdding a test class that sets date-format properties exposed a test-isolation issue: `AdministrationService` caches global-property values in memory, so a value saved by one test class survives its rolled-back transaction and leaks into later classes. Test classes that set properties now clean up after themselves.\r\n\r\n## Related\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5675\r\n\r\n## Notes\r\n\r\n- New global properties: `report.visitSummary.logourl`, `report.visitSummary.facility.phoneAttributeType`, `report.visitSummary.dateFormat`, `report.visitSummary.datetimeFormat`. Naming follows `report.patientIdSticker.logourl` and `report.visitSummary.visitNotes.clinicianEncounterRole`.\r\n- The logo key is deliberately separate from the sticker's, since a printed document and an ID label may want different images. The cost is that a site using one logo configures it twice."
+ },
+ {
+  "number": 32,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/32",
+  "title": "Fix render visit summary sections in configured order",
+  "branch": "fix/visit-summary-section-order",
+  "mergedAt": "2026-07-23T09:28:37Z",
+  "mergeCommit": "4a72bd818a3908a9508a77fcf034a44c9b8dae7f",
+  "body": "## Summary\r\n\r\nThe visit summary PDF ignored each section's configured order. Section order is stored as `report.visitSummary.section.<key>.order` and the renderer already emits sections into the intermediate XML sorted by `getOrder()`, but `visitSummaryFopStylesheet.xsl` called each section's template from a hardcoded sequence, so the PDF always came out in that fixed order regardless of configuration. Enabling and disabling sections worked; reordering silently did nothing.\r\n\r\nThe root template now walks the XML in document order (`<xsl:apply-templates select=\"*\"/>`), so the renderer's sort determines the PDF sequence. Each section's named template became a match template, which shortens its internal paths from document-root-relative to node-relative. Per-section output is unchanged. The footer is skipped in the body flow since it renders as `fo:static-content` on every page.\r\n\r\nThis surfaced now because the admin config page makes reordering possible for the first time.\r\n\r\n## Does this change existing PDFs?\r\n\r\nNo. With no order configured, each section's default order (facility header 100, patient info 200, vitals 300, diagnoses 400, conditions 450, lab results 475, allergies 500, medications 550, footer 900) produces the same sequence the hardcoded list did. Verified by transforming a default-ordered document through both the old and new stylesheet and diffing the FO output: byte identical, both for a fully populated document and one with empty sections plus `section-notice` / `section-error` siblings.\r\n\r\n## Related\r\n\r\nPart of https://openmrs.atlassian.net/browse/O3-5667\r\n\r\n## Tests\r\n\r\n130 passing, including 7 new: the pre-FOP XML sequence follows `getOrder()` including scrambled configurations, disabled sections are omitted, FO output follows document order, section errors stay beside their section, and the footer renders once."
+ },
+ {
+  "number": 31,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/31",
+  "title": "Declare Visit Summary privilege in config.xml",
+  "branch": "priviledge-fix",
+  "mergedAt": "2026-07-20T04:45:44Z",
+  "mergeCommit": "9fc46c2cf8f6b7d3f2758379ac9b7af2d848b22a",
+  "body": "## Summary\r\n\r\nDeclares the `App: Can generate a Visit Summary` privilege in the module's `config.xml` so it is created at startup and can be granted to roles.\r\n\r\nThe privilege is already enforced in `VisitSummaryPdfReport` via `Context.requirePrivilege(...)`, but it was never declared, so no privilege row existed. That made it un-grantable and left visit summary PDF generation effectively superuser-only. Copies the pattern of the existing sticker and encounter-forms privileges in the same file.\r\n\r\n## Related\r\n\r\nPart of https://openmrs.atlassian.net/browse/O3-5667"
+ },
+ {
+  "number": 30,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/30",
+  "title": "O3-5674: add visit notes section to visit summary PDF",
+  "branch": "feat/O3-5674-visit-notes-section",
+  "mergedAt": "2026-07-20T05:45:01Z",
+  "mergeCommit": "26af3142cf1f6a98770407ecd6dcca15114fc5c3",
+  "body": "## Summary\r\nAdds a VisitNotesSection to the visit summary PDF, showing the free-text clinical notes recorded during the visit. Follows the TypedSection architecture from #16\r\n\r\n## What this does\r\n- Emits one block per note, oldest-first, each with an encounter-datetime + provider provenance line above the narrative (linefeed preserved).\r\n- Note concept configurable via `report.visitSummary.visitNotes.concept` (default CIEL:162169), resolved by mapping so a non-CIEL deployment can retarget without touching Java.\r\n- Provider resolution prefers the configured clinician role and falls back to the first provider on the encounter; \"Unknown\" only when the encounter has none \u2014 matching how the O3 notes page attributes authorship.\r\n- Failure handling: Unresolvable note concept -> section-error. Unresolvable clinician-role config -> section-notice, notes still render. Note obs with no text -> placeholder + warn, provenance kept. Genuine absence -> \"None recorded\".\r\nNo path silently drops a note.\r\n\r\n## Scope decision\r\nVisit-scoped: notes recorded under this visit's non-voided encounters, not the patient's note history \u2014 same encounter filter as Vitals/Diagnoses. Narrative only; \r\n\r\n## Testing\r\n17 new integration tests (multi-note ordering, empty states, blank-value placeholder, missing/other-role provider, unresolvable-concept error, voided exclusion, XML structure); full suite green. Verified end-to-end by rendering sample XML through the production FOP config \u2014 which surfaced a missing section-notice hook in the stylesheet, now fixed.\r\n\r\n## Related\r\nTicket: https://openmrs.atlassian.net/browse/O3-5674"
+ },
+ {
+  "number": 29,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/29",
+  "title": "O3-5698: Add visit summary sections REST endpoint and SPI label/toggleable defaults",
+  "branch": "feat/O3-5698-sections-endpoint",
+  "mergedAt": "2026-07-22T06:57:34Z",
+  "mergeCommit": "c64d2116e1060d32a445f01e2ac903c4da86c0d0",
+  "body": "## Summary\r\n\r\nAdds `GET /ws/rest/v1/patientdocuments/visitSummary/sections`, which lists the registered visit summary sections so an admin UI can display, toggle, and reorder them. Returns the standard REST collection shape (`{ \"results\": [...] }`), one entry per section with `sectionKey`, `label`, `enabled`, `order`, and `toggleable`, sorted by effective order.\r\n\r\nThe endpoint reads the same `@Autowired List<VisitSummarySection>` the PDF renderer uses, so a downstream module's custom section appears automatically with no change here. Access is guarded by the core `Get Global Properties` privilege (section metadata is not sensitive; no new module privilege).\r\n\r\nTwo additive `default` methods on the `VisitSummarySection` SPI back this:\r\n- `getLabel()` resolves the section's localized heading via the existing message-source mechanism, falling back to a humanized section key so downstream sections without message bundles still get a usable label.\r\n- `isToggleable()` defaults to `true`, overridden to `false` on the three always-on sections (facility header, patient info, footer) so their toggle can be locked in the UI.\r\n\r\nMissing `heading` keys for the facility header and footer sections were added to the en/fr/ar bundles (fr/ar mirror English as placeholders, matching the module's existing convention).\r\n\r\n## Related\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5698 \r\n\r\n## Tests\r\n\r\nModule suite green (api 120, omod including 6 new controller tests + 4 new SPI tests). Covers: every registered section listed, sorted by order, GP overrides reflected, always-on sections non-toggleable, labels resolved from the message source, and 403 on logout."
+ },
+ {
+  "number": 28,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/28",
+  "title": "O3-5723: Improvements in printing feature",
+  "branch": "O3-5723-2",
+  "mergedAt": "2026-07-20T04:55:11Z",
+  "mergeCommit": "2aef957365e06efddad47ad5dd2ec61a6e140aae",
+  "body": "What have been resolved?\r\n1. Repeated questions no longer duplicate their values. \r\nForms that reuse the same concept across several sections previously printed the concatenation of every observation for that concept in each occurrence instead of single value.\r\n2. Special characters render correctly now.\r\nCharacters outside the base Latin set were printed in wrong way e.g. `>=18` was printed as `#18`  or arabic texts like `\u0627\u0644\u0646\u0641\u0633\u064a\u0629 \u0627\u0644\u0635\u062d` were printed as `##########`\r\n3. Consistent date formatting across the whole document"
+ },
+ {
+  "number": 27,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/27",
+  "title": "Fix show placeholders for missing values instead of dropping or misrendering them",
+  "branch": "fix/section-value-rendering-gaps",
+  "mergedAt": "2026-07-16T08:56:00Z",
+  "mergeCommit": "3e924d2ff2082613bede8ce5fe314e48b0b79f11",
+  "body": "## Summary\r\nFour related gaps where a section silently dropped or misrendered a missing value, so the PDF showed something that looked like data but wasn't. Follow-up to review comments on #25.\r\n\r\n## Changes\r\n\r\n- Vitals: stale values shown as current. `buildObsMap` kept the first non-null value from a datetime-desc list, so if the newest obs for a concept had no value, an older reading was rendered as if it were current. Confirmed by tests written against the unfixed code (heart rate showed an hour-old 72; BP showed a stale 120). Now the newest obs wins regardless of value, and a missing value renders \u2014 (or ? inside a combined BP) with a warn log.\r\n- Labs: null value rendered as bare units. The value guard returned empty, but the XSLT appended units independently, so a valueless obs showed U/L in the Result column with a reference range and flag beside it. Now renders \u2014 with units suppressed; the stored interpretation flag is kept, since it's real data.\r\n- Labs: unresolvable concept name rendered blank for panel members, standalone results, and panel headings. Now renders the localized \"Unknown\" + warn, matching Diagnoses/Allergies/Conditions/Medications.\r\n- Hoisted `getNonVoidedEncounters` into `AbstractVisitSummarySection` (it was byte-identical in Vitals and Labs). (`formatNumeric` was deliberately not hoisted \u2014 it's duplicated by name but Labs keeps full precision while Vitals rounds to one decimal.)\r\n\r\n## Testing\r\n121 tests green. New tests for the valueless and stale-value paths were written first and verified to fail against the old code. Also verified in a real rendered PDF, since the null-value bug lived in the seam between the Java (correct in isolation) and the XSLT (also correct in isolation)."
+ },
+ {
+  "number": 26,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/26",
+  "title": "Fix render Unknown for unresolvable diagnosis names instead of blank",
+  "branch": "diagnoses-unknown-fallback",
+  "mergedAt": "2026-07-13T09:39:37Z",
+  "mergeCommit": "4f1a1da783097020deedcf7913267333c02a897c",
+  "body": "## Summary\r\n`DiagnosesSection` rendered an empty name when a diagnosis had neither a coded name nor non-coded text, a blank row with nothing logged, inconsistent with the other sections. Aligns it to the \"Unknown\" fallback pattern already used by Allergies (PR #23), Conditions, and Medications.\r\n## Changes\r\n\r\n- Extracted name resolution into `extractDiagnosisName`, mirroring `AllergiesSection.extractAllergenName`: coded name \u2192 non-coded text \u2192 localized \"Unknown\", with a `log.warn` including the diagnosis UUID at each dead end.\r\n- Added `...diagnoses.unknown` message key (English in all three properties files, following the one-per-section convention).\r\n- Added a test + dataset fixture (a diagnosis with neither coded nor non-coded value) asserting it renders \"Unknown\", not blank.\r\n\r\n## Note\r\nA coded diagnosis whose concept has no name in the active locale now also renders \"Unknown\" (previously blank), same fallback as Allergies."
+ },
+ {
+  "number": 25,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/25",
+  "title": "O3-5673: add lab results section to visit summary PDF",
+  "branch": "lab-results-section",
+  "mergedAt": "2026-07-14T13:15:04Z",
+  "mergeCommit": "a6ebcb754fdef4866783bfcaa63b98e609341b20",
+  "body": "## Summary\r\nAdds a `LabResultsSection` to the visit summary PDF, showing the lab results recorded during the visit \u2014 grouped by panel, with reference ranges and abnormal-result flags. Follows the same `TypedSection` architecture established in PR [#16](https://github.com/openmrs/openmrs-module-patientdocuments/pull/16)\r\n## What this does\r\n\r\n* New `LabResultsSection` extending `TypedSection<LabResultsData>`, registered via `@Component`\r\n* Renders a 4-column table: **Test, Result, Reference Range, Flag**\r\n* **Grouped panels:** an obs group (e.g. Complete Blood Count) renders as a panel heading with its member results beneath; standalone results render as flat rows \u2014 mirroring the O3 Results page\r\n* **Heterogeneous result types**, branching on `ConceptDatatype`: numeric (value + units + reference range + flag), coded (e.g. \"Positive\", no reference range), and text \u2014 so a mixed result set renders correctly rather than assuming every result is a number\r\n* **Reference-range precedence:** prefers the per-obs snapshot `Obs.getReferenceRange()` (platform 2.7), falling back to `ConceptNumeric` low/hi-normal bounds \u2014 the same precedence the fhir2 module uses on 2.7. Range shapes handled: `low \u2013 high`, low-only, high-only, and none (blank)\r\n* **Abnormal flag:** reads the stored `Obs.getInterpretation()` and never computes it; `NORMAL`/absent interpretation \u2192 no flag (see *Open question* below)\r\n* **Lab selection (how labs are told apart from vitals):** obs are filtered by concept class,configurable via `report.visitSummary.labResults.conceptClasses` (default `Test,LabSet`), resolved by class name. The O3 Results page identifies labs by the FHIR `laboratory` category, which the fhir2 module maps to the OpenMRS concept class (`Test`; panels are `LabSet`); vitals are class `Finding`, so they are cleanly excluded and never double-render as labs. Resolving by name (not UUID) lets a deployer on a non-CIEL dictionary retarget the section without touching Java\r\n* Voided obs and voided encounters are excluded\r\n* Configurable via `report.visitSummary.section.labResults.enabled` and `.order` (`DEFAULT_ORDER = 475`, between Conditions and Allergies)\r\n\r\n## Scope decision\r\nThis section is **visit-scoped** \u2014 it shows lab results recorded under this visit's (non-voided) encounters, not the patient's full lab history. This matches Vitals and Diagnoses, which are visit-scoped through the same encounter filter; a lab result is a point-in-time measurement taken for this visit, so it belongs with the \"what happened during this visit\" sections rather than the patient-level ones (Conditions, Allergies).\r\n\r\n## Note\r\nA test *ordered* during the visit but *resulted* later \u2014 where the result obs lands on a later encounter or none \u2014 will not appear, because the section anchors on obs recorded within the visit's encounters.\r\n\r\n## Testing\r\n19 integration tests: numeric / coded / text results; grouped panels vs standalone rows; voided-obs exclusion; reference-range source precedence (per-obs snapshot vs `ConceptNumeric`) and range shapes (low+high, low-only, high-only, none); interpretation abnormal / `NORMAL` / absent \u2192 flag behavior; concept-class config (a partially-invalid class list warns and skips the bad entry; a wholly-invalid list throws \u2192 `section-error`); empty states (visit with no lab obs, and visit with no encounters); and XML structure. `mvn clean test` green (108 total across the module).\r\n\r\n## Related\r\nTicket: [O3-5673](https://openmrs.atlassian.net/browse/O3-5673)\n\n[O3-5673]: https://openmrs.atlassian.net/browse/O3-5673?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ },
+ {
+  "number": 24,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/24",
+  "title": "O3-5672: add Medications section to visit summary PDF",
+  "branch": "medications-section",
+  "mergedAt": "2026-07-06T09:09:33Z",
+  "mergeCommit": "63d4c04f3c7ce20c4dde2bcf45a779489cc5e7f3",
+  "body": "## Summary\r\nAdds a `MedicationsSection` to the visit summary PDF, showing the patient's active medications. Follows the same `TypedSection` architecture established in PR #16.\r\n\r\n## What this does\r\n- New `MedicationsSection` extending `TypedSection<List<MedicationEntry>>`, registered via `@Component`\r\n- Renders a 4-column table: Medication, Dosing, Duration, Start Date\r\n- Drug name resolves via a fallback chain: non-coded drug \u2192 coded `Drug` \u2192 order concept \u2192 \"Unknown\"\r\n- Dosing is built null-safely from dose, units, route and frequency (free-text orders use their dosing instructions directly); avoids `SimpleDosingInstructions.getDosingInstructionsAsString`, which NPEs when any of those fields is null\r\n- Configurable via `report.visitSummary.section.medications.enabled` and `.order` (DEFAULT_ORDER = 550, after allergies)\r\n- Labels internationalised via the `msg()` mechanism from PR #22; English in `messages.properties`, English placeholders in `messages_ar`/`messages_fr` pending native-speaker translation (consistent with the other sections)\r\n- XSLT template mirrors the existing allergies table layout\r\n\r\n## Scope decision\r\nThis section shows the **full active medication list** (`OrderService.getActiveOrders(patient, drugOrderType, null, null)`), not just drugs ordered during this visit. A printed summary is most often used for referral/hand-off, where the receiving provider needs the patient's complete current regimen for interaction and reconciliation checks \u2014 showing only this visit's new prescriptions would hide what they're already on.\r\n\r\nThe visit-scoped alternative (`getOrders(patient, visit, \u2026)`) was considered; I raised it for community input on [Talk](https://talk.openmrs.org/t/gsoc-2026-patient-visit-summary-printing-project-updates-discussion/49505/11?u=amrita21p) and went with patient-level for the reason above.\r\n\r\n(Note: Conditions and Allergies are also patient-level, but because their OpenMRS APIs are patient-only \u2014 for Medications this was a deliberate choice between two available APIs.)\r\n\r\n## Testing\r\n19 integration tests: active-only filtering, coded/non-coded/concept-only drug names, simple and free-text dosing, integer/fractional dose formatting, null route/frequency handling, duration with/without units, empty state, XML structure, GP-based disabling.\r\n\r\n## Related\r\nTicket: [O3-5672](https://openmrs.atlassian.net/browse/O3-5672)\r\n\r\n[O3-5672]: https://openmrs.atlassian.net/browse/O3-5672?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ },
+ {
+  "number": 23,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/23",
+  "title": "Remove nvl wrapper and align allergies unknown-name fallback",
+  "branch": "cleanup-nvl-and-allergies-fallback",
+  "mergedAt": "2026-06-30T09:55:56Z",
+  "mergeCommit": "79bdab8fb7c89377f37c465398db9ddb1b4f2fb8",
+  "body": "## Summary\r\nTwo small follow-up cleanups from the [i18n PR](https://github.com/openmrs/openmrs-module-patientdocuments/pull/22).\r\n## What this does\r\n\r\n- Removes the `nvl` helper and calls `StringUtils.defaultString` directly at the call sites\r\n- Aligns `AllergiesSection`'s unresolvable allergen-name fallback to return \"Unknown\" (internationalized) instead of a blank\r\n- Adds warn-level logging at the allergies unknown-name fallback points (with the allergy UUID) so unresolved records are traceable\r\n\r\n## Note\r\n`AllergiesSection` here uses `@Slf4j` for the logger to match the logging migration on the [conditions-section PR](https://github.com/openmrs/openmrs-module-patientdocuments/pull/21), rather than this branch's(main) current explicit `LoggerFactory` style. Flagging since it differs from the sibling sections until that migration lands."
+ },
+ {
+  "number": 22,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/22",
+  "title": "O3-5755: Internationalize diagnoses section labels",
+  "branch": "i18n-setup",
+  "mergedAt": "2026-06-25T10:19:39Z",
+  "mergeCommit": "8b5cc2b8f367faa5c7eb028ef5d2a9d5d4b209aa",
+  "body": "## Summary\r\nInternationalizes visit summary section labels via `MessageSourceService`. Wires `DiagnosesSection` as the first section.\r\n\r\n## What this does\r\n\r\n- Adds a `msg(key, fallback)` helper to `AbstractVisitSummarySection` ; missing keys fall back to a readable default, not a raw key string\r\n- Reads locale via `Context.getLocale()` so the VisitSummarySection SPI contract is unchanged\r\n- Wires `DiagnosesSection` labels and certainty values through` patientdocuments.visitSummary.* keys` ; certainty shows as \"Confirmed\"/\"Provisional\" instead of raw enum names\r\n- Registers `messages_fr.properties` in `config.xml`\r\n- Adds keys to all three bundles; `_ar` and `_fr` use English placeholders pending translation\r\n\r\n## Related\r\nTicket: [O3-5755](https://openmrs.atlassian.net/browse/O3-5755)\n\n[O3-5755]: https://openmrs.atlassian.net/browse/O3-5755?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ },
+ {
+  "number": 21,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/21",
+  "title": "O3-5670: Add ConditionsSection for visit summary PDF",
+  "branch": "conditions-section",
+  "mergedAt": "2026-07-01T04:40:44Z",
+  "mergeCommit": "21be9f0c3e69510f2ed3d2ec623818a9d18b9950",
+  "body": "## Summary\r\nAdds a new `ConditionsSection` to the visit summary PDF, showing the patient's active conditions. Follows the same `TypedSection` architecture established in PR #16.\r\n\r\n## What this does\r\n\r\n- New `ConditionsSection` extending `TypedSection<List<ConditionEntry>>`, registered via `@Component`\r\n- Calls `ConditionService.getActiveConditions(patient)` to show active conditions only \r\n- Renders a 3-column table: Condition name, Onset Date, Verification Status\r\n- Handles both coded conditions (from concept dictionary) and non-coded freetext entries\r\n- Configurable via `report.visitSummary.section.conditions.enabled` and .`order` (DEFAULT_ORDER = 450, between diagnoses and allergies)\r\n- Extracted shared `formatDate()` utility to `AbstractVisitSummarySection` (was duplicated as a private method in `PatientInfoSection`)\r\n- XSLT template mirrors the existing allergies table layout\r\n\r\n## Testing\r\n7 integration tests: active-only filtering, coded/non-coded conditions, null onset date handling, empty state, XML structure, GP-based disabling.\r\n\r\n## Related\r\nTicket: [O3-5670](https://openmrs.atlassian.net/browse/O3-5670)\r\nTalk discussion: [ConditionsSection for Visit Summary PDF: What should clinicians see?](https://talk.openmrs.org/t/gsoc-2026-patient-visit-summary-printing-project-updates-discussion/49505/6?u=amrita21p)\n\n[O3-5670]: https://openmrs.atlassian.net/browse/O3-5670?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ },
+ {
+  "number": 20,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/20",
+  "title": "Exclude vulnerable Apache Ant dependency from barcode4j in pom.xml (CVE-2020-1945)",
+  "branch": "ant-exclusion",
+  "mergedAt": "2026-06-04T11:54:23Z",
+  "mergeCommit": "010d60f12ea1e52cb1714f9ecbd3f1e6dfdc552a",
+  "body": ""
+ },
+ {
+  "number": 19,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/19",
+  "title": "Update GitHub Actions secrets in release workflow",
+  "branch": "gpg",
+  "mergedAt": "2026-06-04T11:08:06Z",
+  "mergeCommit": "1b7b3f0cedef8026f8ce1ff0cbba163a00ce5549",
+  "body": ""
+ },
+ {
+  "number": 18,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/18",
+  "title": "O3-5723 Improvements in O3 forms printing",
+  "branch": "O3-5723",
+  "mergedAt": "2026-06-04T11:39:47Z",
+  "mergeCommit": "69165302a736a32a5782675e14bfaab36b4216bd",
+  "body": "Related ticket - https://openmrs.atlassian.net/browse/O3-5723\r\n\r\nWhat has been done:\r\n1. Fix page-break/footer overlap when a form section does not fit on a single page (applied for default stylesheet)\r\n2. Prefer form-schema labels over concept names (concept names used when no form-schema labels defined)\r\n3. Improved way of loading custom XSL stylesheets - no module rebuild (with new stylesheet) required"
+ },
+ {
+  "number": 17,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/17",
+  "title": "Specify Java versions for reusable backend build workflow",
+  "branch": "gha-java",
+  "mergedAt": "2026-05-12T09:02:04Z",
+  "mergeCommit": "28ad254e08887771acd354eb156f1440cd54c922",
+  "body": "This module still doesn't support Java 17, and migration is going to be a whole other piece of work, as it still depends on some modules that don't support Java 17+ either."
+ },
+ {
+  "number": 16,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/16",
+  "title": "O3-5668: Core visit summary pipeline with patient info and vitals",
+  "branch": "feat/document-section-architecture",
+  "mergedAt": "2026-06-11T04:02:45Z",
+  "mergeCommit": "a7e0bfb966bf2fe8df6a9b93a2cebd9e813bcd28",
+  "body": "This PR introduces a section-based architecture for visit summary PDF generation using a Spring SPI.\r\n\r\n## Architecture\r\n\r\n- The core abstraction is VisitSummarySection, an interface that any Spring @Component can implement to contribute a section to the PDF. TypedSection<T> provides a generic base that separates data gathering from XML rendering with clinical-safety error handling, sections that fail to load render a visible warning in the PDF rather than silently disappearing.\r\n- Sections are collected via @Autowired List<VisitSummarySection> in the renderer and appended in @Order sequence. Each section reads its enabled flag from AdministrationService.getGlobalProperty() with safe boolean parsing and fallback defaults.\r\n\r\n## What this PR adds\r\n\r\n- `VisitSummarySection` interface + `AbstractVisitSummarySection` base class + `TypedSection<T>` generic base\r\n- Six concrete sections: `FacilityHeaderSection`, `PatientInfoSection`, `VitalsSection`, `DiagnosesSection`, `AllergiesSection`, `FooterSection`\r\n- `VisitSummaryXmlReportRenderer` that iterates enabled sections - no hardcoded section references\r\n- `VisitSummaryDataSetEvaluator` that resolves the Visit and passes it to sections\r\n- `VisitSummaryPdfReport` pipeline: Visit \u2192 XML \u2192 XSLT \u2192 PDF\r\n- `VisitSummaryPdfExportController` REST endpoint\r\n- `CielConceptConstants` for shared CIEL concept UUID defaults\r\n- Section-error XSLT template for clinical safety visibility\r\n- Unit tests for TypedSection orchestration and integration tests for `VitalsSection`\r\n\r\n## Configuration\r\n\r\n- Section toggles: documents.section.\\<key>.enabled (default: true)\r\n- Vitals concept UUID overrides: report.visitSummary.vitals.<concept> (default: CIEL UUIDs)\r\n- Page dimensions: report.visitSummary.size.height, report.visitSummary.size.width\r\n\r\n## How to test\r\n\r\n- mvn clean install - all tests pass\r\n- Call GET /rest/v1/patientdocuments/visitSummary?visitUuid=<uuid> \u2192 verify PDF contains all 6 sections\r\n- Set documents.section.vitals.enabled=false in global properties \u2192 verify vitals section absent from PDF\r\n\r\n## Ticket: \r\n[O3-5668](https://openmrs.atlassian.net/browse/O3-5668)\n\n[O3-5668]: https://openmrs.atlassian.net/browse/O3-5668?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ },
+ {
+  "number": 14,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/14",
+  "title": "O3-5452: Fixed displaying # char in footer date",
+  "branch": "O3-5452-2",
+  "mergedAt": "2026-04-15T15:15:30Z",
+  "mergeCommit": "894104a5fe00b1bc23f6fa8b0b8a3822a8e7d69c",
+  "body": "Related ticket: https://openmrs.atlassian.net/browse/O3-5452\r\n\r\nBefore fix:\r\n<img width=\"378\" height=\"76\" alt=\"image\" src=\"https://github.com/user-attachments/assets/a245df2c-c84b-4f03-b3df-0a392d21134e\" />\r\n\r\nAfter fix:\r\n<img width=\"343\" height=\"29\" alt=\"image\" src=\"https://github.com/user-attachments/assets/ba6bd121-d1e0-462f-b610-8899f3c406a5\" />\r\n"
+ },
+ {
+  "number": 13,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/13",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:33:24Z",
+  "mergeCommit": "3648e5367f4df0fb0c036e5f049e91f88e4036c8",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ },
+ {
+  "number": 10,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/10",
+  "title": "O3-5519: Add BOT_GH_TOKEN to GitHub Actions secrets",
+  "branch": "patientdocumennts-Add-BOT_GH_TOKEN-to-build-workflow-secrets",
+  "mergedAt": "2026-03-19T13:39:23Z",
+  "mergeCommit": "3b705696432225c561cd792e2cbabe03d9b29d97",
+  "body": "- Ticket Link - [https://openmrs.atlassian.net/browse/O3-5519](url)\r\n- Ticket ID - O3-5519\r\n\r\n## Summary\r\n\r\nThe shared OWASP Dependency Check workflow (`openmrs-contrib-gha-workflows`) has been updated to automatically push generated vulnerability reports to the central dashboard repository ([openmrs-contrib-dependency-vulnerability-dashboard](https://github.com/openmrs/openmrs-contrib-dependency-vulnerability-dashboard)).\r\n\r\nTo support this, the reusable workflow now requires the `GH_BOT_TOKEN` secret to be passed by calling repositories. Without it, the workflow cannot push reports to the dashboard.\r\n\r\n## Change\r\n\r\nAdded `BOT_GH_TOKEN: ${{ secrets.OMRS_BOT_GH_TOKEN }}` to the `secrets` block in `.github/workflows/build.yml`."
+ },
+ {
+  "number": 8,
+  "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/8",
+  "title": "O3-5452: Printing of encounters based on O3-forms",
+  "branch": "O3-5452",
+  "mergedAt": "2026-04-02T20:27:09Z",
+  "mergeCommit": "cab8c3f7101943c15bef8caa60dd16b3aa472d30",
+  "body": "Ticket: https://openmrs.atlassian.net/browse/O3-5452"
+ }
+]

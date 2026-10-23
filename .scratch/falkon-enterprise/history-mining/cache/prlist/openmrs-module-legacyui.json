@@ -1,0 +1,110 @@
+[
+ {
+  "number": 281,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/281",
+  "title": "TRUNK-3333: Voiding an encounter does not void its encounter providers (openmrs-core)",
+  "branch": "TRUNK-3333",
+  "mergedAt": "2026-10-22T17:16:05Z",
+  "mergeCommit": "09eb8c9b9037915b5355133a4e71fc139b5b6989",
+  "body": "Port of #280 (2.x) to master, for the legacy UI side of [TRUNK-3333](https://openmrs.atlassian.net/browse/TRUNK-3333).\n\nWhen core voids an encounter, it now also voids the encounter's providers (with the same void date) and restores them when the encounter is unvoided. The legacy encounter form didn't show those providers, so saving an unvoided encounter added them back as new providers, creating duplicates.\n\n- `EncounterFormController` adds the providers voided along with the encounter to a new `providersByRoles` model attribute. `encounterForm.jsp` uses that attribute, so the form shows those providers and posts them back.\n- On submit, those providers aren't added again (core restores them on unvoid). At most one record per kept provider keeps the encounter's void date, and only if that provider has no active record. Every other matching record gets its own void date. So a provider removed on the form isn't restored, and a kept provider isn't duplicated, even when it already has duplicate records or was re-added while the encounter was voided.\n- Adds tests for both cases and for the reference data, both when core voids the encounter providers along with the encounter and when it doesn't.\n\nThe code is the same as #280. The only change is that the new tests use JUnit 5 `Assertions` instead of JUnit 4 `Assert`, to match master.\n\nTesting: `EncounterFormControllerTest` passes against core 3.0.0-SNAPSHOT (15 tests, 14 of them new).\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\n\n[TRUNK-3333]: https://openmrs.atlassian.net/browse/TRUNK-3333?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ },
+ {
+  "number": 280,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/280",
+  "title": "TRUNK-3333: Voiding an encounter does not void its encounter providers (openmrs-core)",
+  "branch": "TRUNK-3333-2.x",
+  "mergedAt": "2026-10-22T17:02:58Z",
+  "mergeCommit": "9974fc243e140ed470315e9f5ce09b56124d5aec",
+  "body": "Backport to 2.x of the legacy UI side of [TRUNK-3333](https://openmrs.atlassian.net/browse/TRUNK-3333).\n\nWhen core voids an encounter, it now also voids the encounter's providers (with the same void date) and restores them when the encounter is unvoided. The legacy encounter form didn't show those providers, so saving an unvoided encounter added them back as new providers, creating duplicates.\n\n- `EncounterFormController` adds the providers voided along with the encounter to a new `providersByRoles` model attribute. `encounterForm.jsp` uses that attribute, so the form shows those providers and posts them back.\n- On submit, those providers aren't added again (core restores them on unvoid). At most one record per kept provider keeps the encounter's void date, and only if that provider has no active record. Every other matching record gets its own void date. So a provider removed on the form isn't restored, and a kept provider isn't duplicated, even when it already has duplicate records or was re-added while the encounter was voided.\n- Adds tests for both cases and for the reference data, both when core voids the encounter providers along with the encounter (2.8.x/3.x) and when it doesn't (earlier versions, including the 2.7.3 that 2.x builds against).\n\nTesting: `EncounterFormControllerTest` passes (15 tests, 14 of them new). The tests for when core voids the providers fail without the fix, and the ones for when it doesn't guard against regressions. 3 check that voiding and unvoiding an encounter through the form keeps the same obs rows (voided, then restored) and doesn't create duplicates. 5 cover duplicate provider records and providers re-added while the encounter was voided. The tests pass against core 2.7.3, 2.8.10 and a 2.8.11-SNAPSHOT that voids encounter providers along with the encounter (compiled against 2.7.3, since the 2.x omod doesn't compile against 2.8.x).\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\n\n[TRUNK-3333]: https://openmrs.atlassian.net/browse/TRUNK-3333?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ\n\n"
+ },
+ {
+  "number": 277,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/277",
+  "title": "Run the program form tests outside a transaction",
+  "branch": "program-form-test-read-write",
+  "mergedAt": "2026-10-14T19:11:53Z",
+  "mergeCommit": "90fc6334a81ac07986be053be2e571d7ac1bc939",
+  "body": "`ProgramFormControllerTest` submitted the program form inside a test transaction. In a read-write transaction, the query in the form's `programValidator` flushes the new workflows before `onSubmit` runs. The rows the edit test counts are written before `saveProgram` is called. Against core master, both saves in `onSubmit_shouldEditExistingWorkflowsWithinPrograms` throw TRUNK-6836's NPE, which `onSubmit` catches into `OPENMRS_ERROR_ATTR`, and the test still passes. Against openmrs/openmrs-core#6694 (TRUNK-6836), both tests pass with `saveProgram` deleted. In the read-only transaction the edit test used before, nothing the form changes can be flushed, so against #6694 it fails with `expected: <2> but was: <0>`.\n\nBoth tests now run with `Propagation.NOT_SUPPORTED`, so each save commits in its own transaction, as in a request. They clear the session before asserting, and `deleteAllData()` removes the committed data afterwards. This passes against both core master and #6694, so it can go in first, and each test fails when `onSubmit` doesn't save.\n\n`mvn clean package` against core master and against a core built from #6694: 396 tests, 0 failures, 3 skipped on both, with no \"Error saving Program\" in the output.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n"
+ },
+ {
+  "number": 275,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/275",
+  "title": "Skip loading alerts in forEachAlert when no user is logged in",
+  "branch": "skip-alerts-when-unauthenticated",
+  "mergedAt": "2026-10-06T14:00:23Z",
+  "mergeCommit": "970cc97c64f97159e11998ab1e32677728189b40",
+  "body": "`AlertService.getAlertsByUser()` is `@Authorized`, and since core enforces interface-level `@Authorized` annotations (openmrs/openmrs-core#6508), the `<openmrs:forEachAlert>` tags in `headerFull.jsp` log this twice on every page viewed before logging in, such as the login page:\n\n```\nERROR - ForEachAlertTag.prepare(60) | org.openmrs.api.APIAuthenticationException: Basic authentication required\n```\n\nAlerts are addressed to users, so the tag now returns no alerts when nobody is authenticated instead of calling the service.\n\nVerified on core master with `jetty:run`: the login page renders without the error, and logged-in pages are unchanged. `mvn test`: 393 tests, 0 failures.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01NK4kFG8qyevx9Bk9jWoEgS"
+ },
+ {
+  "number": 274,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/274",
+  "title": "LUI-209: Support non-default multipart requests in XSSFilter",
+  "branch": "xss-standard-multipart",
+  "mergedAt": "2026-10-14T01:04:01Z",
+  "mergeCommit": "d398cbde9a60331f837b91dde948832e9dec130e",
+  "body": "Every multipart request fails with a `ClassCastException` while legacyui is installed on Platform 3.0. Core's `MultipartFilter` now uses `StandardServletMultipartResolver`, which produces a `StandardMultipartHttpServletRequest`, but `XSSFilter` (mapped to `/*`) cast every non-GET multipart request to `DefaultMultipartHttpServletRequest`. This breaks all uploads on the server, not only legacyui pages. For example, O3's `POST /ws/rest/v1/attachment` returned:\n\n```\njava.lang.ClassCastException: class org.springframework.web.multipart.support.StandardMultipartHttpServletRequest cannot be cast to class org.springframework.web.multipart.support.DefaultMultipartHttpServletRequest\n\tat org.openmrs.web.xss.XSSFilter.doFilter(XSSFilter.java:34)\n```\n\nSince TRUNK-6799 (openmrs/openmrs-core#6544) added Spring Security, the request no longer reaches `XSSFilter` as the multipart request itself. Spring Security's `FilterChainProxy` runs between core's `multipartFilter` and the module filters and passes them a `StrictHttpFirewall$StrictFirewalledRequest`, so a cast to `MultipartHttpServletRequest` fails too.\n\n`XSSFilter` now looks the multipart request up through the wrappers with `WebUtils.getNativeRequest`, as Spring's `DispatcherServlet` does. `XSSMultipartRequestWrapper` wraps the request it was given, so parameters and headers still go through the firewall, and takes the files from the multipart request: `getFile`, `getFiles`, `getFileMap`, `getFileNames`, `getMultiFileMap`, `getMultipartContentType` and `getMultipartHeaders`. Parameter sanitizing is unchanged. A multipart request that no filter resolved fails with a `ServletException` saying so.\n\nThe new `XSSFilterTest` uses Spring's `MockMultipartHttpServletRequest`, which is not a `DefaultMultipartHttpServletRequest`. It fails with the same `ClassCastException` without the fix and passes with it. Two more tests cover a multipart request held in another filter's wrapper, checking that the wrapper still answers for the request, and one that no filter resolved. Both fail with a `ClassCastException` on the first commit of this PR.\n\nVerification:\n- Against core 3.0.0-SNAPSHOT build 441, `mvn test` runs 396 tests and fails 11, the same 11 that fail on legacyui master against that build.\n- I deployed this omod with attachments (openmrs/openmrs-module-attachments#94), webservices.rest and fhir2 on openmrs-core master a69b14a, which has openmrs/openmrs-core#6544, and on c49ffef just before it:\n  - A multipart `POST /ws/rest/v1/attachment` returns 201 on both, and a `<b>` caption is stored escaped. On a69b14a, legacyui master and the first commit of this PR return 500.\n  - On a69b14a, O3's Attachments widget uploads an image, a PDF and a webcam photo, previews them, and deletes the image and the PDF.\n  - Uploading a file that is not a module through legacyui's own module upload page reaches `ModuleListController`, which reports \"Unable to get jar file Module: ui-check-junk.omod\".\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Fp7T1pGYEMrMVp1M7AW9Fg\n\n\n\n"
+ },
+ {
+  "number": 273,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/273",
+  "title": "LUI-215: Fix privilege tests failing against core's role privilege cache",
+  "branch": "LU-215",
+  "mergedAt": "2026-09-28T14:24:26Z",
+  "mergeCommit": "26e99a8a1ca86f2c96bd905c3c022f55eecf48e9",
+  "body": "Move dataset loading in `PrivilegeTagTest` into a `@BeforeEach` that commits the connection after `executeDataSet`. Add an `@AfterEach` that logs out and calls deleteAllData() so the committed rows do not leak into later test classes."
+ },
+ {
+  "number": 271,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/271",
+  "title": "(docs) Replace the dead Travis badge with the GitHub Actions one",
+  "branch": "fix-readme-ci-badge",
+  "mergedAt": "2026-09-08T20:42:37Z",
+  "mergeCommit": "da89912c82ecc7f52e74c66fbfd779000c933414",
+  "body": "The README badge still points at travis-ci.org, which shut down and now redirects to a 404, so the badge renders blank. This module builds on GitHub Actions via build.yml, so this points the badge and its link there.\n\nHeads up that the badge will show red right now: the latest build.yml run on master failed on 2026-09-03. In this repo it's the Java 25 build job itself, not just the OWASP dependency check."
+ },
+ {
+  "number": 270,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/270",
+  "title": "LUI-214: safeguard against text without code",
+  "branch": "LUI-214",
+  "mergedAt": "2026-09-01T12:49:55Z",
+  "mergeCommit": "73c12e9f3eed80da1329b23001e4f87c407b54a1",
+  "body": "This is just a simple safeguard against text without code. Here is the complete analysis for this issue:\r\n`\u23fa Root cause\r\n\r\nomod/src/main/webapp/tags/locationTree.tag:78 renders the encounter's location with:\r\n\r\n<openmrs:message javaScriptEscape=\"true\" text=\"${initialValue.name}\"/>\r\n\r\ni.e. a text attribute with no code. In OpenmrsMessageTag.resolveMessage() the text/body was only honored when the tag's locale matched the user's locale:\r\n\r\nif (OpenmrsUtil.nullSafeEquals(this.locale, Context.getLocale().getLanguage()))\r\n\r\nthis.locale defaults to LocaleUtility.getDefaultLocale().getLanguage() \u2014 the system default locale (the default_locale global property), not the user's. On your dev instance that property resolves to French,\r\nso:\r\n\r\nViewing in fr \u2192 \"fr\".equals(\"fr\") \u2192 the location name is used \u2192 page renders.\r\nViewing in en \u2192 \"fr\".equals(\"en\") is false \u2192 text is discarded, code is null, body is null \u2192 resolveMessage() returns null \u2192 HtmlUtils.htmlEscape(null) at OpenmrsMessageTag.java:199 throws\r\nIllegalArgumentException: Input is required.\r\nThat locale gate is meant for a localized fallback of a code (<openmrs:message code=\"foo\" locale=\"fr\">Bonjour</openmrs:message>). With no code there is nothing to look up, so gating on locale can only produce\r\nnull. Same latent crash exists at patientDashboardForm.jsp:10, portlets/findPatient.jsp:186, portlets/globalProperties.jsp:78.\r\n\r\nFix\r\n\r\nomod/src/main/java/org/openmrs/web/taglib/OpenmrsMessageTag.java:\r\n\r\nresolveMessage() \u2014 apply the locale gate only when a code is actually set; with no code, the text/body is the message and is always used.\r\ndoEndTagInternal() \u2014 treat an unresolvable message as \"\" instead of null, so a null can never blow up the whole page through HtmlUtils.htmlEscape / JavaScriptUtils.javaScriptEscape again.\r\nThree regression tests added in OpenmrsMessageTagTest. Verified they fail against the unpatched tag (expected:<[Clinique Bon Sauveur]> but was:<[null]>) and pass with the fix; all 52 taglib tests pass.\r\n\r\nNote this is a legacyui fix \u2014 nothing in openmrs-core needs changing; LocaleUtility.getDefaultLocale() behaved correctly. You can also confirm the trigger by checking the default_locale global property on\r\nyour instance \u2014 it should be non-English.`"
+ },
+ {
+  "number": 268,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/268",
+  "title": "LUI-212 - DWR requests in reportingcompatibility fail with a Forbidde\u2026",
+  "branch": "LUI-212",
+  "mergedAt": "2026-07-21T12:19:54Z",
+  "mergeCommit": "c2122d605a40c92f7cdd971ac3789f05df1162fa",
+  "body": "\u2026n exception"
+ },
+ {
+  "number": 266,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/266",
+  "title": "Add Codecov job",
+  "branch": "add-new-codecov-workflow",
+  "mergedAt": "2026-07-15T21:38:36Z",
+  "mergeCommit": "30db42dda7ea741727e56498e1c27cb462eeb1b6",
+  "body": "This is intended to make codecov continue working after openmrs-contrib-gha-workflows#47 is merged"
+ },
+ {
+  "number": 264,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/264",
+  "title": "Adapt scheduler tests to JobRunr-backed core scheduler",
+  "branch": "fix/scheduler-tests-jobrunr",
+  "mergedAt": "2026-06-08T20:56:34Z",
+  "mergeCommit": "7a8b83603aefa83633209eeff70f72413a63fb9e",
+  "body": "## Summary\n\n`mvn clean install` was failing on 4 scheduler tests. The root cause is upstream: **OpenMRS core's scheduler was rewritten to use JobRunr**, so `TaskDefinition.getTaskInstance()` is now always `null` (nothing in core calls `setTaskInstance` anymore) and the legacy in-process `Task` instance with `isExecuting()` polling no longer exists. The tests relying on it failed with `NullPointerException` and `assertNotSame(null, null)`.\n\n## Changes\n\n- **`SchedulerFormControllerTest`** \u2014 replace the task-instance identity assertions with assertions on the persisted `started` flag and start time, read back via `SchedulerService.getTask(id)`. Comments document that the reschedule call itself is no longer observable through the `TaskDefinition` under JobRunr.\n- **`TaskHelper`** \u2014 remove `waitUntilTaskIsExecuting(...)` (and its now-unused logger/imports); JobRunr exposes no in-process executing state to poll.\n- **`TaskHelperTest`** \u2014 remove the two `waitUntilTaskIsExecuting_*` tests.\n- Remove the `onSubmit_shouldNotRescheduleAnExecutingTask` controller test (the \"executing task\" state can't be reproduced under JobRunr).\n\nThe production `SchedulerFormController` is intentionally left unchanged; its `getTaskInstance() == null` guard remains null-safe (always short-circuits) under JobRunr.\n\n## Test plan\n\n- `mvn clean install` \u2192 **BUILD SUCCESS**, 391 tests run, 0 failures, 0 errors, 3 skipped.\n- `SchedulerFormControllerTest` 4/4 and `TaskHelperTest` 4/4 pass.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)"
+ },
+ {
+  "number": 262,
+  "url": "https://github.com/openmrs/openmrs-module-legacyui/pull/262",
+  "title": "Implement authorization checks for all controllers and DWR endpoints",
+  "branch": "secure-controllers",
+  "mergedAt": "2026-05-05T13:15:02Z",
+  "mergeCommit": "f864eca8c21b6c32173769cacf283a1631471878",
+  "body": ""
+ }
+]

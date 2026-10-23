@@ -1,0 +1,11 @@
+{
+ "number": 358,
+ "url": "https://github.com/openmrs/openmrs-esm-admin-tools/pull/358",
+ "title": "(chore) O3-5965: Remove inert Carbon CSS rules from reports app",
+ "mergedAt": "2026-10-01T18:08:14Z",
+ "mergeCommit": "fbda030326a3a0a691844ad052fe7aed34ca44ac",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\nRemoves four `width: 100%` rules in `reports.scss` targeting `.cds--date-picker`, `.cds--select`, `.cds--select-input`, and `.cds--date-picker__input`. These selectors lack `:global()`, so CSS Modules rewrites their class names and they never match Carbon's actual markup \u2014 the rules have never had any effect. This is a behavior-preserving dead code removal.\r\n\r\nVerified via:\r\n- Grep confirms no `cds--` class names remain in the file\r\n- Production build passes\r\n- Existing test and lint suites pass unchanged\r\n\r\n## Screenshots\r\nNot applicable \u2014 no visual or behavioral change, since the removed rules were already inert.\r\n\r\n## Related Issue\r\nhttps://issues.openmrs.org/browse/O3-5965\r\n\r\n## Other\r\nNo new tests added intentionally: the deleted rules had no effect, so there is no new behavior to cover. A clean production build is the verification that no rendering depended on them.",
+ "files": [
+  "packages/esm-reports-app/src/components/reports.scss"
+ ]
+}

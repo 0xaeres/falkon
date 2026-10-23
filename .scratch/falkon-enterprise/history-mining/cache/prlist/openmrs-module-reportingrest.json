@@ -1,0 +1,56 @@
+[
+ {
+  "number": 47,
+  "url": "https://github.com/openmrs/openmrs-module-reportingrest/pull/47",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T18:01:19Z",
+  "mergeCommit": "1e2ad0bee8a7f04eb9824bf5749c1b3f8d50da1f",
+  "body": "Updates reportingrest so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7). It depends on the reporting upgrade (openmrs/openmrs-module-reporting, platform 3.0 PR). Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions and build:\n  - Module version is now 3.0.0-SNAPSHOT. It builds against core 3.0.0-SNAPSHOT (with `openmrs-bom` imported), webservices.rest 5.0.0-SNAPSHOT, reporting 3.0.0-SNAPSHOT, htmlwidgets 3.0.0-SNAPSHOT, serialization.xstream 1.0.0-SNAPSHOT and calculation 3.0.0-SNAPSHOT.\n  - Builds with Java 21 and `-parameters`, with surefire 3.5.3.\n  - `javax.servlet-api`, the javax/powermock exclusions and `hamcrest-all` are removed.\n- `config.xml` now sets `require_version` to 3.0.0.\n- Jackson 1 becomes Jackson 2 in the ad hoc model and resources. REST 5 serializes with Jackson 2, so the `@JsonProperty` annotations now take effect.\n- commons-lang becomes lang3, and javax.servlet/persistence become jakarta.\n- Tests:\n  - Migrated to JUnit 5.\n  - `EvaluatedResourceTest` now uses Spring's `MockHttpServletRequest`.\n  - `AdHocQueryResourceTest.testRowFilterQuery` expects `{7}` for the \"encounter during period\" filter. Core's test dataset moved patient 2's only encounter out of that window (TRUNK-6569), and the combined result is unchanged.\n- CI (Bamboo, release workflow) uses JDK 21.\n\n## Verification\n- `mvn clean install` passes (59 tests).\n- On openmrs-core master with openmrs/openmrs-core#6631 and #6633 (`mvn jetty:run`, MySQL 8), in the full set of 26 upgraded O3 modules:\n  - All modules start, and logging in through the UI works.\n  - `reportingrest/reportDefinition`, `cohortDefinition` and `dataSetDefinition` return 200.\n  - `POST reportingrest/adhocquery` evaluates a patient data set with a built-in cohort row filter and returns the expected rows.\n- reporting itself needs #6633 to start on core master.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Fp7T1pGYEMrMVp1M7AW9Fg\n"
+ },
+ {
+  "number": 46,
+  "url": "https://github.com/openmrs/openmrs-module-reportingrest/pull/46",
+  "title": "(docs) Replace the dead Travis badge with the GitHub Actions one",
+  "branch": "fix-readme-ci-badge",
+  "mergedAt": "2026-09-09T16:42:44Z",
+  "mergeCommit": "99a755e26b1468668ccea1a237b605c427b741b6",
+  "body": "The README badge still points at travis-ci.org, which shut down and now redirects to a 404, so the badge renders blank. This module builds on GitHub Actions via build.yml, so this points the badge and its link there.\n\nHeads up that the badge will show red right now: the latest build.yml run on master failed on 2026-09-03. In this repo it's the Java 17 build job as well as the OWASP dependency check."
+ },
+ {
+  "number": 45,
+  "url": "https://github.com/openmrs/openmrs-module-reportingrest/pull/45",
+  "title": "REPORT-922 - Support endpoint that can immediate run and render report",
+  "branch": "REPORT-922",
+  "mergedAt": "2026-05-13T13:44:26Z",
+  "mergeCommit": "0fca35ef2f5199f26eb8f6bf08c03242eb6b2afd",
+  "body": ""
+ },
+ {
+  "number": 43,
+  "url": "https://github.com/openmrs/openmrs-module-reportingrest/pull/43",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:36:44Z",
+  "mergeCommit": "ed9f561ea85ca191f2a98f5a359131f2cbc8b7f4",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ },
+ {
+  "number": 42,
+  "url": "https://github.com/openmrs/openmrs-module-reportingrest/pull/42",
+  "title": "O3-5519: Add BOT_GH_TOKEN to build workflow secrets",
+  "branch": "add-gh-bot-token-owasp-openmrs-module-reportingrest",
+  "mergedAt": "2026-03-19T13:08:17Z",
+  "mergeCommit": "0f190f6e85933cb76e4e701bfcd92a7a3b5a6ef9",
+  "body": "- Ticket Link - [https://openmrs.atlassian.net/browse/O3-5519](url)\r\n- Ticket ID - O3-5519\r\n\r\n## Summary\r\n\r\nThe shared OWASP Dependency Check workflow (`openmrs-contrib-gha-workflows`) has been updated to automatically push generated vulnerability reports to the central dashboard repository ([openmrs-contrib-dependency-vulnerability-dashboard](https://github.com/openmrs/openmrs-contrib-dependency-vulnerability-dashboard)).\r\n\r\nTo support this, the reusable workflow now requires the `GH_BOT_TOKEN` secret to be passed by calling repositories. Without it, the workflow cannot push reports to the dashboard.\r\n\r\n## Change\r\n\r\nAdded `BOT_GH_TOKEN: ${{ secrets.OMRS_BOT_GH_TOKEN }}` to the `secrets` block in `.github/workflows/build.yml`.\r\n"
+ },
+ {
+  "number": 41,
+  "url": "https://github.com/openmrs/openmrs-module-reportingrest/pull/41",
+  "title": "Migrate to Reusable GitHub Action",
+  "branch": "gh-action",
+  "mergedAt": "2026-03-13T06:25:41Z",
+  "mergeCommit": "0d591d6e45847a41d733ac146463dcc483becc96",
+  "body": ""
+ }
+]

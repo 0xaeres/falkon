@@ -20,16 +20,19 @@
         "openmrs-esm-patient-chart": "45cb44919ca658d571a30355536c03e775552678",
         "openmrs-esm-admin-tools": "3d76809c1766a7d933a08f718b203fa0d37e0511",
         "openmrs-esm-billing-app": "c770afca8921295dd87d8e7c185a8a4fef231376",
+        "openmrs-esm-dispensing-app": "4e8cbeeb72bef9bd22bb77ead5300d422fbef57d",
         "openmrs-esm-form-engine-lib": "8f4fd2677aae1d8a8c522f710059b0f26b22d4bb",
         "openmrs-esm-patient-management": "96a7237f4ef0dea296a9e6b3a8c67b3837a8ad82",
-        "openmrs-esm-stock-management-app": "9777f6d4a456e0ea336dfce4b002830475dfa965"
+        "openmrs-esm-stock-management-app": "9777f6d4a456e0ea336dfce4b002830475dfa965",
+        "openmrs-module-billing": "6409aa01cf31b462149416a7eeb19d1d34cd6f8d",
+        "openmrs-module-patientdocuments": "d13767c8432fc2bd233aab85172a5130ef83fc89"
       }
     }
   },
   "questions": [
     {
       "id": "hist-a-01",
-      "question": "On the openmrs-core 3.0 line, REST and FHIR calls whose URL ends in a trailing path separator stopped reaching the controller that serves the same URL without it. Why did that happen, how does core now deal with such URLs, and which change and ticket fixed it?",
+      "question": "In openmrs-core's continuous integration, the scan of third-party libraries for known vulnerabilities crashed with a missing command-line argument on every pull request opened from a fork, whatever that pull request changed. Why did it crash only there, how does the workflow now run the scan when the vulnerability database's key is unavailable, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -37,269 +40,35 @@
       "required": [
         {
           "repo": "openmrs-core",
-          "commit": "2d32d20938e007f2f9bf8e3a3c946758d52d6bfe",
-          "pr": 6680
+          "commit": "8ec94d215074e0202637508c083eaff430065c94",
+          "pr": 6210
         },
         {
-          "ticket": "TRUNK-6826"
+          "ticket": "TRUNK-6670"
         }
       ]
     },
     {
       "id": "hist-a-02",
-      "question": "In openmrs-core 3.0, a call whose URL had two path separators in a row right after the web application's context path got an internal server error instead of being served. Why, how does core now treat such URLs, and which change and ticket fixed it?",
+      "question": "In the O3 frontend framework, the wrapper around the browser's fetch call reacts to an unauthorized response either by following the redirect target the server sent back or, when there is none, by going to the configured authentication-failure page, yet neither path was protected by tests. Why was coverage added, what exactly do the new tests pin down, and which change and ticket added them?",
       "vocab": "natural",
       "split": "hidden",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-core",
-          "commit": "085d24ca28913de746060914ba4c0305680c9321",
-          "pr": 6673
-        },
-        {
-          "ticket": "TRUNK-6824"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-03",
-      "question": "In openmrs-core, background tasks could begin executing while the Spring application context, or the platform itself, was still being set up, which caused failures at startup. Why did that happen, what does core now do to hold the task scheduler back, and which change and ticket fixed it?",
-      "vocab": "natural",
-      "split": "dev",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-core",
-          "commit": "83411b2f8a52325e867fccc223a54d6a6f701400",
-          "pr": 6654
-        },
-        {
-          "ticket": "TRUNK-6819"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-04",
-      "question": "In openmrs-core, ending the API session on a thread could unbind and close a Hibernate session that other code had bound to that thread, with errors such as \"Pre-bound JDBC Connection found!\" as one symptom. Why, what does core now check instead of a per-thread counter, and which change and ticket fixed it?",
-      "vocab": "natural",
-      "split": "dev",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-core",
-          "commit": "b64e0729cce60c40dffb75788c4b43937a6fc77e",
-          "pr": 6651
-        },
-        {
-          "ticket": "TRUNK-6818"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-05",
-      "question": "In openmrs-core, moving a child location under a different parent location could silently delete the child's database row when the session flushed. Why did that start happening after the persistence mapping was migrated, and which change and ticket fixed it?",
-      "vocab": "natural",
-      "split": "hidden",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-core",
-          "commit": "b147e0dcae701feb4670b53a454daf0cfb210ee9",
-          "pr": 6444
-        },
-        {
-          "ticket": "TRUNK-6684"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-06",
-      "question": "In openmrs-core, the lookup store for the save, void, retire and validation handlers could be emptied whenever the JVM reclaimed memory, so handlers kept being looked up again. Why was the store exposed to that, what does it use now, and which change and ticket fixed it?",
-      "vocab": "natural",
-      "split": "dev",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-core",
-          "commit": "6e77bfd03ab134fc7d66a0e3140d6e468f569ec5",
-          "pr": 6494
-        },
-        {
-          "ticket": "TRUNK-6697"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-07",
-      "question": "In openmrs-core, the advice that logs calls into service methods built its debug and trace messages on every call, even when neither level would be written to the log. Why was that worth changing, what does it now check first, and which change and ticket changed it?",
-      "vocab": "natural",
-      "split": "dev",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-core",
-          "commit": "e2056c9af9036ddef415212ec8da7b0bc2eda96e",
-          "pr": 6488
-        },
-        {
-          "ticket": "TRUNK-6784"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-08",
-      "question": "On Hibernate 7, openmrs-core's database event publishing sent no event when a new entity was created and none when an entity was removed. Why were those events lost, which interceptor callbacks are now passed on, and which change and ticket fixed it?",
-      "vocab": "natural",
-      "split": "hidden",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-core",
-          "commit": "0e0255b872f08dabafe9414d623820272cd475be",
-          "pr": 6637
-        },
-        {
-          "ticket": "TRUNK-6827"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-09",
-      "question": "In the REST web services module, a client still holding a cookie for an expired HTTP session got a 401 reply from the very service it calls to log in again. Why was that reply wrong there, and which change and ticket stopped it?",
-      "vocab": "natural",
-      "split": "dev",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-module-webservices.rest",
-          "commit": "ce758bc0f16a4f981fd31eeff70d0662f551f1c0",
-          "pr": 768
-        },
-        {
-          "ticket": "RESTWS-1053"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-10",
-      "question": "In the REST web services module, once core moved to Spring Security, requests refused for missing authentication or a missing privilege started coming back as HTTP 500 instead of 401 or 403. Why, and which change and ticket restored the expected status codes?",
-      "vocab": "natural",
-      "split": "hidden",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-module-webservices.rest",
-          "commit": "66d284b5105a13d5221e103e0243711b69f2dac0",
-          "pr": 767
-        },
-        {
-          "ticket": "RESTWS-1056"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-11",
-      "question": "In the O3 frontend framework, when a promise was rejected with an error object and nothing handled it, the error notification the app shell tried to show failed to render. Why, what is now done with the rejection reason, and which change and ticket fixed it?",
-      "vocab": "natural",
-      "split": "dev",
       "author": "history-probe",
       "relation": "history-why",
       "required": [
         {
           "repo": "openmrs-esm-core",
-          "commit": "57315b89fd6725e86df4a4569d2c4978c5572fcf",
-          "pr": 1888
+          "commit": "e16e2d9e16a891670bbf4dd0a79ebe81414405d8",
+          "pr": 1754
         },
         {
-          "ticket": "O3-5981"
+          "ticket": "O3-5629"
         }
       ]
     },
     {
-      "id": "hist-a-12",
-      "question": "In the patient chart's vitals and biometrics app, a patient exactly 5 years old with a healthy mid-upper arm circumference (for example 13 cm) got no colour coding at all. Why, and which change and ticket fixed the age bracket comparisons?",
-      "vocab": "natural",
-      "split": "dev",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-esm-patient-chart",
-          "commit": "50773fe3f3d8253cf20e0f25dc0113ad8067f2b0",
-          "pr": 3626
-        },
-        {
-          "ticket": "O3-5957"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-13",
-      "question": "In the patient chart's form entry app, the Angular form engine formatted dates and numbers with Angular's built-in US English data whatever the user's language. Why was the regional formatting data never registered, and which change and ticket fixed it?",
-      "vocab": "natural",
-      "split": "hidden",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-esm-patient-chart",
-          "commit": "c7d6eb8dcec4dc4ce60a285798920842d88820d2",
-          "pr": 3657
-        },
-        {
-          "ticket": "O3-5976"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-14",
-      "question": "In the patient registration app, a second attempt at saving a patient, after the first had only partly completed, could use up more than one newly issued identifier value. Why, and which change and ticket fixed it?",
-      "vocab": "natural",
-      "split": "dev",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-esm-patient-management",
-          "commit": "b4b76423feb220db7e78f27e769f3d32ffaf89b7",
-          "pr": 2780
-        },
-        {
-          "ticket": "O3-5916"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-15",
-      "question": "In the React form engine, z-scores of stature against age for female children aged 5 and over were computed against a table whose medians were the World Health Organization values for males. Why, and which change and ticket corrected that table?",
-      "vocab": "natural",
-      "split": "hidden",
-      "author": "history-probe",
-      "relation": "history-why",
-      "required": [
-        {
-          "repo": "openmrs-esm-form-engine-lib",
-          "commit": "129c1f7fd78a83d1b8958ae6dcaa7fe7b51eb143",
-          "pr": 834
-        },
-        {
-          "ticket": "O3-6045"
-        }
-      ]
-    },
-    {
-      "id": "hist-a-16",
-      "question": "In the billing app's printout of a bill, a bill that was fully paid but had a discount applied still showed the discount amount as still owed. Why, and which change and ticket fixed it?",
+      "id": "hist-a-03",
+      "question": "In the O3 billing app, unpaid bills left behind by visits that patients abandoned stayed in the billing records, and staff had no way to clear them. What was added so they can be cleared, for which bills is it offered and from where, what must the user supply, and which change and ticket added it?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -307,11 +76,255 @@
       "required": [
         {
           "repo": "openmrs-esm-billing-app",
-          "commit": "3ecce2a55223b21d3c53d4905b346455f94f4fd2",
-          "pr": 743
+          "commit": "db22701b986ae73bc876df2327fa0f82a7fd3ed5",
+          "pr": 717
         },
         {
-          "ticket": "O3-5705"
+          "ticket": "O3-5414"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-04",
+      "question": "In the O3 frontend, every frontend module's remote entry carried its own complete copy of the loader runtime that federated modules need, roughly two thirds of each entry's size, although that runtime is identical for every module. Why was that a problem, what does the app shell now do so the runtime is downloaded once, and which change and ticket made it so?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "04f538d18519df68de61dd0b076084b85dfb358d",
+          "pr": 1853
+        },
+        {
+          "ticket": "O3-5873"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-05",
+      "question": "In the patient chart's procedures app, the form for recording a past procedure had no scoped concept set in the shared terminology to draw its status choices from. Once a dedicated status concept was published there, what default did the app change, and which change and ticket did it?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "6e8da1b1b5a459933ca78eaabf87713592f5ab61",
+          "pr": 3412
+        },
+        {
+          "ticket": "O3-5652"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-06",
+      "question": "Implementers asked for the release of O3 a site is running to be visible on the sign-in page. In the O3 frontend, how is that value now supplied when a distribution is assembled, where is it shown by default, what does it read when nobody set it, and which change and ticket added it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "9f0c6aa831f37ffcaf167a7096b07ec3e96a0431",
+          "pr": 1815
+        },
+        {
+          "ticket": "O3-4671"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-07",
+      "question": "In the dispensing app, a pharmacist who started filling a prescription, searched for a patient, began a drug order and then tried to record a new allergy saw the allergy form crash. Why did it crash outside the patient chart, what is launched instead, and which change and ticket fixed it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-dispensing-app",
+          "commit": "120d22e968d57a1ce47a5a908e50e79f485cfcb1",
+          "pr": 854
+        },
+        {
+          "ticket": "O3-5734"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-08",
+      "question": "In the admin tools' reports app, a few full-width rules aimed at the design system's date picker and dropdown classes never had any visible effect. Why could they never match the rendered markup, what was done about them, and which change and ticket handled it?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-admin-tools",
+          "commit": "fbda030326a3a0a691844ad052fe7aed34ca44ac",
+          "pr": 358
+        },
+        {
+          "ticket": "O3-5965"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-09",
+      "question": "In O3 patient management, looking up patients was slowed because, for every request that carries no explicit caching-strategy header, the offline service worker reopened its local browser database and rescanned every registered dynamic route. Why was the lookup exposed to that cost, what do its requests now do, and which change and ticket are behind it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-management",
+          "commit": "e4aacbd5a6242821c4f956230535f598cdeac835",
+          "pr": 2638
+        },
+        {
+          "ticket": "O3-5832"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-10",
+      "question": "In the stock management app, on a system with more user accounts than the REST module returns by default in one response, an administrator could not find, and so could not give location-scoped stock permissions to, any user left off that first response. Why, and which change and ticket fixed it?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-stock-management-app",
+          "commit": "3c071999ea6f2b75706d5ba602caeba07ec55a02",
+          "pr": 567
+        },
+        {
+          "ticket": "O3-4518"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-11",
+      "question": "In the patient chart's lab results viewer, one platelet result could show a count of two, because overlapping root concept sets (bloodwork containing haematology, for example) deliver the same observation through several tree branches, while two genuinely separate results with the same value and time collapsed into one row. How was the de-duplication reworked, what server-side change does the ticket propose so clients can tell copies apart, and which change and ticket are these?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "d47d346cc105c4c72dfb1ce68a05abbcb1ad4f84",
+          "pr": 3374
+        },
+        {
+          "ticket": "RESTWS-1038"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-12",
+      "question": "In the patient chart, body mass index values in the biometrics listing were never flagged as low or high the way abnormal vital signs are, because the value was only calculated in the browser. What does the form now store so the server can judge it against reference ranges, how do older encounters still show a value, and which change and ticket are behind it?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "d4857fbf84af21943b989c91c1b37277ff3ff2fd",
+          "pr": 3238
+        },
+        {
+          "ticket": "O3-4585"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-13",
+      "question": "In O3 billing, the list of bills could only be narrowed by payment state, such as pending or paid, and not by when the bills were created. Which changes, one in the billing frontend and one in the billing backend module, made that possible, what does the frontend do when the chosen end comes before the chosen start, and which ticket asked for it?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-billing-app",
+          "commit": "6e4cdcd9db634a947b317df793d5b8170a9768e9",
+          "pr": 831
+        },
+        {
+          "repo": "openmrs-module-billing",
+          "commit": "c47f6d87e0352dcfa5a51b5a743016e0a8c40be9",
+          "pr": 193
+        },
+        {
+          "ticket": "O3-5112"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-14",
+      "question": "In the patient chart, a diagnosis entered through the visit note did not show up under the patient's conditions until the page was reloaded. What did the community decide the conditions list should show instead, what else had to be fixed so those diagnoses still appear with the right visit, and which changes and ticket implement this?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "64d3c9902168b1a43b08d5da09558e7da6288a0d",
+          "pr": 3403
+        },
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "b147fb5906f1c3df18f12e3c804daeea486813d2",
+          "pr": 3406
+        },
+        {
+          "ticket": "O3-5741"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-15",
+      "question": "In the patient documents module, only superusers could produce the printable visit summary, even though the code checks a dedicated permission before generating it, because no role could ever be granted that permission. Why, and which change and ticket fixed it?",
+      "vocab": "natural",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-module-patientdocuments",
+          "commit": "9fc46c2cf8f6b7d3f2758379ac9b7af2d848b22a",
+          "pr": 31
+        },
+        {
+          "ticket": "O3-5667"
+        }
+      ]
+    },
+    {
+      "id": "hist-a-16",
+      "question": "In the patient chart repository, the dependency vulnerability report flagged high-severity findings in three pinned versions of the glob pattern matching library used by the build tooling. Which versions were moved to which patched releases, how was the lockfile made to pick them up, and which change and ticket did this?",
+      "vocab": "natural",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-why",
+      "required": [
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "5ba5b70a72d0a60d3dfa6136efe8237ce118d80b",
+          "pr": 3433
+        },
+        {
+          "ticket": "O3-5781"
         }
       ]
     },

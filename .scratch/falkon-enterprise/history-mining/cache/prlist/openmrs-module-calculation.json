@@ -1,0 +1,47 @@
+[
+ {
+  "number": 20,
+  "url": "https://github.com/openmrs/openmrs-module-calculation/pull/20",
+  "title": "(docs) Replace the dead Travis badge with the GitHub Actions one",
+  "branch": "fix-readme-ci-badge",
+  "mergedAt": "2026-09-08T21:13:17Z",
+  "mergeCommit": "b22f6aa4704d636455a868bbb8e6db7abbf6130a",
+  "body": "The README badge still points at travis-ci.org, which shut down and now redirects to a 404, so the badge renders blank. This module builds on GitHub Actions via build.yml, so this points the badge and its link there."
+ },
+ {
+  "number": 19,
+  "url": "https://github.com/openmrs/openmrs-module-calculation/pull/19",
+  "title": "Upgrade to support platform 3.x",
+  "branch": "CALC-59",
+  "mergedAt": "2026-09-07T23:12:23Z",
+  "mergeCommit": "1bf3cddebd10be771fa9ce34a3f7774ee061f769",
+  "body": "This PR upgrades the calculation module to support platform 3.x including upgrading to JDK 21.\r\n\r\nResolves ticket: https://openmrs.atlassian.net/browse/CALC-59\r\n\r\n**Changes Summary**\r\n\r\n- Use OpenMRS BOM from core, so many pinned versions are removed to sync with core\r\n- Update legacy UI to 3.0.0\r\n- Replace commons lang 2 with commons lang 3\r\n- Hibernate migrations away from criterion to new criteria builder\r\n- Migrated junit 4 to 5\r\n- Removed web from api as it was causing some spring context issues and didn't seem to be used in api\r\n\r\n**Possible issues**\r\n\r\n- I added `<context:component-scan base-package=\"org.openmrs.calculation.web.controller\"/>` because it wasn't picking this up, let me know if this is the wrong solution or if I could be missing something with this one.\r\n\r\n**Testing**\r\n\r\n- Ran unit tests and all passing\r\n- Ran the calculation module with core 3.0.0 snapshot and the legacy UI. I was able to create and use a custom calculation on the UI. See JIRA for screenshots."
+ },
+ {
+  "number": 18,
+  "url": "https://github.com/openmrs/openmrs-module-calculation/pull/18",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:27:04Z",
+  "mergeCommit": "b1860a17e225407d3c72dfc37422f9fc5020893d",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ },
+ {
+  "number": 17,
+  "url": "https://github.com/openmrs/openmrs-module-calculation/pull/17",
+  "title": "O3-5519: Add BOT_GH_TOKEN to build workflow secrets",
+  "branch": "fix/O3-5519-add-bot-gh-token-to-build-workflow-secrets",
+  "mergedAt": "2026-03-23T08:22:38Z",
+  "mergeCommit": "4710ac6285acee9838b78690a34e7edb7e1f49a5",
+  "body": "## Description\r\nTicket Link - https://openmrs.atlassian.net/browse/O3-5519\r\nTicket ID - O3-5519\r\n\r\n## Summary\r\nThe shared OWASP Dependency Check workflow (openmrs-contrib-gha-workflows) has been updated to automatically push generated vulnerability reports to the central dashboard repository (openmrs-contrib-dependency-vulnerability-dashboard). To support this, the reusable workflow now requires the GH_BOT_TOKEN secret to be passed by calling repositories. Without it, the workflow cannot push reports to the dashboard.\r\n\r\n## Change\r\nAdded `BOT_GH_TOKEN: ${{ secrets.OMRS_BOT_GH_TOKEN }}` to the secrets block in `.github/workflows/build.yml`."
+ },
+ {
+  "number": 16,
+  "url": "https://github.com/openmrs/openmrs-module-calculation/pull/16",
+  "title": "Migrate to Reusable GitHub Action",
+  "branch": "gh-action",
+  "mergedAt": "2026-03-13T06:33:27Z",
+  "mergeCommit": "0f12226912e15ff95c50424ca97e330704f4e5ed",
+  "body": ""
+ }
+]

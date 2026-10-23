@@ -1,0 +1,9 @@
+{
+ "key": "RESTWS-1038",
+ "url": "https://openmrs.atlassian.net/browse/RESTWS-1038",
+ "summary": "Include obs uuid in the obstree response",
+ "status": "In Progress",
+ "created": "2026-06-10T23:32:33.930+1000",
+ "resolved": null,
+ "description": "The obstree resource (the ObsTreeResource class in the REST module) serializes each observation as value, obsDatetime, interpretation, and reference range fields, but not the obs uuid.\nThis means clients cannot distinguish:\nthe same observation appearing in multiple branches of the tree (for example when configured root concept sets overlap, such as Bloodwork containing Hematology), versus\n\ntwo genuinely distinct observations that happen to share the same value and datetime (for example one result per order, entered against the same encounter).\n\nThe patient chart's test results viewer currently has to de-duplicate using an obsDatetime plus value heuristic, which cannot tell those two cases apart. See https://github.com/openmrs/openmrs-esm-patient-chart/pull/3374 for the frontend side and the full investigation.\nProposed change: add the obs uuid to the observation map built by the resource, alongside value and obsDatetime. This is additive and backwards compatible. Existing consumers ignore the extra field, and the frontend can switch its de-duplication identity to the uuid when present, falling back to the heuristic for older servers.\nRelated PR: https://github.com/openmrs/openmrs-esm-patient-chart/pull/3374"
+}

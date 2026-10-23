@@ -4,256 +4,433 @@
   "kind": "a",
   "split": "dev",
   "repo": "openmrs-core",
-  "commit": "2d32d20938e007f2f9bf8e3a3c946758d52d6bfe",
-  "subject": "TRUNK-6826: Request paths with a trailing slash find no handler on core 3.0 (#6680)",
-  "pr": 6680,
-  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6680",
-  "ticket": "TRUNK-6826",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/TRUNK-6826",
-  "mergedAt": "2026-10-13T11:03:21Z",
-  "commitDate": "2026-10-13T14:03:20+03:00",
+  "ticket": "TRUNK-6670",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/TRUNK-6670",
   "sourceFrom": "jira",
-  "source": "On core 3.0, a URL with a trailing slash no longer reaches the handler for the same URL without it."
+  "source": "causes the OWASP dependency check to crash on fork PRs because forks cannot access the",
+  "changes": [
+   {
+    "repo": "openmrs-core",
+    "commit": "8ec94d215074e0202637508c083eaff430065c94",
+    "subject": "Fix OWASP dependency check CI failure on fork PRs without NVD_API_KEY (#6210)",
+    "pr": 6210,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6210",
+    "mergedAt": "2026-06-24T23:05:58Z",
+    "commitDate": "2026-06-25T02:05:57+03:00",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "pr title",
+     "pr body",
+     "pr branch"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-02",
   "kind": "a",
   "split": "hidden",
-  "repo": "openmrs-core",
-  "commit": "085d24ca28913de746060914ba4c0305680c9321",
-  "subject": "TRUNK-6824: Request paths with a repeated slash fail with 500 on core 3.0 (#6673)",
-  "pr": 6673,
-  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6673",
-  "ticket": "TRUNK-6824",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/TRUNK-6824",
-  "mergedAt": "2026-10-12T10:43:38Z",
-  "commitDate": "2026-10-12T13:43:38+03:00",
+  "repo": "openmrs-esm-core",
+  "ticket": "O3-5629",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5629",
   "sourceFrom": "jira",
-  "source": "a request whose path has a double slash after the context path fails with 500"
+  "source": "Discussed as missing test coverage during the OpenMRS Talk GSoC 2026 frontend architecture.",
+  "changes": [
+   {
+    "repo": "openmrs-esm-core",
+    "commit": "e16e2d9e16a891670bbf4dd0a79ebe81414405d8",
+    "subject": "(test) Add regression tests for 401 Location-header redirect in openmrsFetch (#1754)",
+    "pr": 1754,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1754",
+    "mergedAt": "2026-05-01T13:02:39Z",
+    "commitDate": "2026-05-01T09:02:38-04:00",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "pr body"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-03",
   "kind": "a",
   "split": "dev",
-  "repo": "openmrs-core",
-  "commit": "83411b2f8a52325e867fccc223a54d6a6f701400",
-  "subject": "TRUNK-6819: Start the JobRunr job server only once OpenMRS has started (#6654)",
-  "pr": 6654,
-  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6654",
-  "ticket": "TRUNK-6819",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/TRUNK-6819",
-  "mergedAt": "2026-10-06T19:20:09Z",
-  "commitDate": "2026-10-06T22:20:08+03:00",
+  "repo": "openmrs-esm-billing-app",
+  "ticket": "O3-5414",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5414",
   "sourceFrom": "jira",
-  "source": "The JobRunr background job server is started while its Spring application context is still being created, so jobs can run before the context, or OpenMRS, is ready."
+  "source": "so that unpaid bills from incomplete visits don't clutter the billing system",
+  "changes": [
+   {
+    "repo": "openmrs-esm-billing-app",
+    "commit": "db22701b986ae73bc876df2327fa0f82a7fd3ed5",
+    "subject": "(feat) Add delete action for pending bills (#717)",
+    "pr": 717,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-billing-app/pull/717",
+    "mergedAt": "2026-04-21T20:38:56Z",
+    "commitDate": "2026-04-21T23:38:55+03:00",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "jira issue text names the PR URL"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-04",
   "kind": "a",
   "split": "dev",
-  "repo": "openmrs-core",
-  "commit": "b64e0729cce60c40dffb75788c4b43937a6fc77e",
-  "subject": "TRUNK-6818: Context.closeSession() closes sessions it did not open (#6651)",
-  "pr": 6651,
-  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6651",
-  "ticket": "TRUNK-6818",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/TRUNK-6818",
-  "mergedAt": "2026-10-05T12:23:38Z",
-  "commitDate": "2026-10-05T08:23:37-04:00",
+  "repo": "openmrs-esm-core",
+  "ticket": "O3-5873",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5873",
   "sourceFrom": "jira",
-  "source": "decides whether to close the thread's Hibernate session using a per-thread counter, not by checking who bound the session."
+  "source": "the runtime itself is identical across remotes and should ship once",
+  "changes": [
+   {
+    "repo": "openmrs-esm-core",
+    "commit": "04f538d18519df68de61dd0b076084b85dfb358d",
+    "subject": "(feat) Federate most of the Module Federation runtime (#1853)",
+    "pr": 1853,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1853",
+    "mergedAt": "2026-08-27T12:17:03Z",
+    "commitDate": "2026-08-27T08:17:02-04:00",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "pr branch"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-05",
   "kind": "a",
   "split": "hidden",
-  "repo": "openmrs-core",
-  "commit": "b147e0dcae701feb4670b53a454daf0cfb210ee9",
-  "subject": "TRUNK-6684: Location.childLocations gained unintended orphanRemoval=true in the JPA migration (#6444)",
-  "pr": 6444,
-  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6444",
-  "ticket": "TRUNK-6684",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/TRUNK-6684",
-  "mergedAt": "2026-09-28T13:07:23Z",
-  "commitDate": "2026-09-28T18:37:23+05:30",
+  "repo": "openmrs-esm-patient-chart",
+  "ticket": "O3-5652",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5652",
   "sourceFrom": "jira",
-  "source": "so any code that removes an entry from childLocations (e.g. re-parenting a location) now silently issues a DELETE of that location row on flush."
+  "source": "since there is no scoped concept set or concept class for either in OCL",
+  "changes": [
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "commit": "6e8da1b1b5a459933ca78eaabf87713592f5ab61",
+    "subject": "(fix) Update Default Procedure Status Concept (#3412)",
+    "pr": 3412,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3412",
+    "mergedAt": "2026-06-23T11:52:30Z",
+    "commitDate": "2026-06-23T11:52:29Z",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "pr body"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-06",
   "kind": "a",
   "split": "dev",
-  "repo": "openmrs-core",
-  "commit": "6e77bfd03ab134fc7d66a0e3140d6e468f569ec5",
-  "subject": "TRUNK-6697: HandlerUtil's cache should not be garbage collected (#6494)",
-  "pr": 6494,
-  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6494",
-  "ticket": "TRUNK-6697",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/TRUNK-6697",
-  "mergedAt": "2026-08-25T15:39:20Z",
-  "commitDate": "2026-08-25T11:39:19-04:00",
+  "repo": "openmrs-esm-core",
+  "ticket": "O3-4671",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-4671",
   "sourceFrom": "jira",
-  "source": "HandlerUtil caches handler lookups in a WeakHashMap whose keys are referenced by nothing but the map itself, so any GC cycle can evict the entire cache."
+  "source": "Add the version of O3 running on the login screen.",
+  "changes": [
+   {
+    "repo": "openmrs-esm-core",
+    "commit": "9f0c6aa831f37ffcaf167a7096b07ec3e96a0431",
+    "subject": "(feat) Add a distribution-controlled version property (#1815)",
+    "pr": 1815,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1815",
+    "mergedAt": "2026-08-21T17:13:20Z",
+    "commitDate": "2026-08-21T13:13:19-04:00",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "jira issue text names the PR URL"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-07",
   "kind": "a",
   "split": "dev",
-  "repo": "openmrs-core",
-  "commit": "e2056c9af9036ddef415212ec8da7b0bc2eda96e",
-  "subject": "TRUNK-6784: LoggingAdvice should have a fast exit path (#6488)",
-  "pr": 6488,
-  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6488",
-  "ticket": "TRUNK-6784",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/TRUNK-6784",
-  "mergedAt": "2026-08-24T14:44:30Z",
-  "commitDate": "2026-08-24T10:44:30-04:00",
+  "repo": "openmrs-esm-dispensing-app",
+  "ticket": "O3-5734",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5734",
   "sourceFrom": "jira",
-  "source": "verify that any messages it generates will be logged before generating them"
+  "source": "Try to record a new allergy",
+  "changes": [
+   {
+    "repo": "openmrs-esm-dispensing-app",
+    "commit": "120d22e968d57a1ce47a5a908e50e79f485cfcb1",
+    "subject": "(fix) Allow recording allergies from the fill prescription order basket (#854)",
+    "pr": 854,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-dispensing-app/pull/854",
+    "mergedAt": "2026-06-11T12:24:34Z",
+    "commitDate": "2026-06-11T17:54:33+05:30",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "pr title",
+     "pr body"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-08",
   "kind": "a",
   "split": "hidden",
-  "repo": "openmrs-core",
-  "commit": "0e0255b872f08dabafe9414d623820272cd475be",
-  "subject": "TRUNK-6827: Forward onPersist and onRemove through ChainingInterceptor (#6637)",
-  "pr": 6637,
-  "prUrl": "https://github.com/openmrs/openmrs-core/pull/6637",
-  "ticket": "TRUNK-6827",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/TRUNK-6827",
-  "mergedAt": "2026-10-13T14:24:59Z",
-  "commitDate": "2026-10-13T17:24:58+03:00",
+  "repo": "openmrs-esm-admin-tools",
+  "ticket": "O3-5965",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5965",
   "sourceFrom": "jira",
-  "source": "core's EventInterceptor never publishes a SaveDbEvent when a new entity is created, and never publishes a DeleteDbEvent when an entity is removed."
+  "source": "cannot match Carbon's markup, and have never had any effect.",
+  "changes": [
+   {
+    "repo": "openmrs-esm-admin-tools",
+    "commit": "fbda030326a3a0a691844ad052fe7aed34ca44ac",
+    "subject": "chore: Remove inert Carbon CSS rules from reports app (#358)",
+    "pr": 358,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-admin-tools/pull/358",
+    "mergedAt": "2026-10-01T18:08:14Z",
+    "commitDate": "2026-10-01T21:08:13+03:00",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "pr title",
+     "pr body"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-09",
   "kind": "a",
   "split": "dev",
-  "repo": "openmrs-module-webservices.rest",
-  "commit": "ce758bc0f16a4f981fd31eeff70d0662f551f1c0",
-  "subject": "RESTWS-1053: Don't return a 401 for timed-out session on the session endpoint (#768)",
-  "pr": 768,
-  "prUrl": "https://github.com/openmrs/openmrs-module-webservices.rest/pull/768",
-  "ticket": "RESTWS-1053",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/RESTWS-1053",
-  "mergedAt": "2026-09-29T17:12:00Z",
-  "commitDate": "2026-09-29T13:11:59-04:00",
-  "sourceFrom": "jira",
-  "source": "As a result, a client holding an old cookie gets a 401 from the session endpoint."
+  "repo": "openmrs-esm-patient-management",
+  "ticket": "O3-5832",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5832",
+  "sourceFrom": "pr",
+  "source": "this bypasses an expensive per-request Dexie lookup that was unnecessarily slowing things down.",
+  "changes": [
+   {
+    "repo": "openmrs-esm-patient-management",
+    "commit": "e4aacbd5a6242821c4f956230535f598cdeac835",
+    "subject": "(fix) Patient search should bypass service worker caching (#2638)",
+    "pr": 2638,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2638",
+    "mergedAt": "2026-07-24T23:54:05Z",
+    "commitDate": "2026-07-24T23:54:04Z",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "pr body"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-10",
   "kind": "a",
   "split": "hidden",
-  "repo": "openmrs-module-webservices.rest",
-  "commit": "66d284b5105a13d5221e103e0243711b69f2dac0",
-  "subject": "RESTWS-1056: Translate AccessDeniedException to the same 401/403 handling as APIAuthenticationException (#767)",
-  "pr": 767,
-  "prUrl": "https://github.com/openmrs/openmrs-module-webservices.rest/pull/767",
-  "ticket": "RESTWS-1056",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/RESTWS-1056",
-  "mergedAt": "2026-10-14T00:53:18Z",
-  "commitDate": "2026-10-14T03:53:17+03:00",
+  "repo": "openmrs-esm-stock-management-app",
+  "ticket": "O3-4518",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-4518",
   "sourceFrom": "jira",
-  "source": "so these requests now return 500 instead of 401 or 403."
+  "source": "then whatever users are not returned when the user endpoint is queried are unable to be found, and unable to have permissions granted.",
+  "changes": [
+   {
+    "repo": "openmrs-esm-stock-management-app",
+    "commit": "3c071999ea6f2b75706d5ba602caeba07ec55a02",
+    "subject": "(chore) Update OpenMRS dependencies (#566) (#567)",
+    "pr": 567,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/567",
+    "mergedAt": "2026-07-06T15:26:40Z",
+    "commitDate": "2026-07-06T18:26:40+03:00",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "pr title",
+     "pr body",
+     "pr branch"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-11",
   "kind": "a",
   "split": "dev",
-  "repo": "openmrs-esm-core",
-  "commit": "57315b89fd6725e86df4a4569d2c4978c5572fcf",
-  "subject": "(fix) O3-5981: Coerce error reasons to strings before showing the error toast (#1888)",
-  "pr": 1888,
-  "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1888",
-  "ticket": "O3-5981",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5981",
-  "mergedAt": "2026-10-01T20:16:54Z",
-  "commitDate": "2026-10-01T20:16:53Z",
+  "repo": "openmrs-esm-patient-chart",
+  "ticket": "RESTWS-1038",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/RESTWS-1038",
   "sourceFrom": "jira",
-  "source": "React cannot render an object as a child, so the toast fails to render"
+  "source": "which cannot tell those two cases apart.",
+  "changes": [
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "commit": "d47d346cc105c4c72dfb1ce68a05abbcb1ad4f84",
+    "subject": "(fix) Deduplicate overlapping test result branches in the results viewer (#3374)",
+    "pr": 3374,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3374",
+    "mergedAt": "2026-06-10T12:22:43Z",
+    "commitDate": "2026-06-10T08:22:43-04:00",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "jira issue text names the PR URL"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-12",
   "kind": "a",
   "split": "dev",
   "repo": "openmrs-esm-patient-chart",
-  "commit": "50773fe3f3d8253cf20e0f25dc0113ad8067f2b0",
-  "subject": "(fix) O3-5957: Correct MUAC color code age boundaries (#3626)",
-  "pr": 3626,
-  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3626",
-  "ticket": "O3-5957",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5957",
-  "mergedAt": "2026-10-07T20:13:04Z",
-  "commitDate": "2026-10-07T23:13:03+03:00",
-  "sourceFrom": "jira",
-  "source": "This means a patient exactly 5 years old with a healthy MUAC value (e.g. 13cm) gets no color code at all."
+  "ticket": "O3-4585",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-4585",
+  "sourceFrom": "pr",
+  "source": "Persists BMI as its own observation on the vitals and biometrics encounter so the backend can apply the concept reference ranges",
+  "changes": [
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "commit": "d4857fbf84af21943b989c91c1b37277ff3ff2fd",
+    "subject": "(feat) Surface BMI reference ranges in the biometrics table (#3238)",
+    "pr": 3238,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3238",
+    "mergedAt": "2026-04-17T13:01:14Z",
+    "commitDate": "2026-04-17T13:01:13Z",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "pr body"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-13",
   "kind": "a",
   "split": "hidden",
-  "repo": "openmrs-esm-patient-chart",
-  "commit": "c7d6eb8dcec4dc4ce60a285798920842d88820d2",
-  "subject": "(fix) O3-5976: Fix Angular locale import requesting non-existent .mjs files (#3657)",
-  "pr": 3657,
-  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3657",
-  "ticket": "O3-5976",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5976",
-  "mergedAt": "2026-10-05T13:15:36Z",
-  "commitDate": "2026-10-05T09:15:35-04:00",
+  "repo": "openmrs-esm-billing-app",
+  "ticket": "O3-5112",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5112",
   "sourceFrom": "jira",
-  "source": "registerLocaleData() has therefore never run."
+  "source": "Currently, the billing list can only be filtered by status, such as pending or paid, without the option to filter records by specific date ranges.",
+  "changes": [
+   {
+    "repo": "openmrs-esm-billing-app",
+    "commit": "6e4cdcd9db634a947b317df793d5b8170a9768e9",
+    "subject": "(feat) Add date range filter to bills table (#831)",
+    "pr": 831,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-billing-app/pull/831",
+    "mergedAt": "2026-09-17T15:13:13Z",
+    "commitDate": "2026-09-17T15:13:12Z",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "jira issue text names the PR URL"
+    ]
+   },
+   {
+    "repo": "openmrs-module-billing",
+    "commit": "c47f6d87e0352dcfa5a51b5a743016e0a8c40be9",
+    "subject": "Add locationUuid, startDate and endDate filters to GET /bill (#193)",
+    "pr": 193,
+    "prUrl": "https://github.com/openmrs/openmrs-module-billing/pull/193",
+    "mergedAt": "2026-09-03T08:36:52Z",
+    "commitDate": "2026-09-03T14:06:52+05:30",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "jira issue text names the PR URL"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-14",
   "kind": "a",
   "split": "dev",
-  "repo": "openmrs-esm-patient-management",
-  "commit": "b4b76423feb220db7e78f27e769f3d32ffaf89b7",
-  "subject": "(fix) O3-5916: Reuse generated identifiers when retrying a patient save (#2780)",
-  "pr": 2780,
-  "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2780",
-  "ticket": "O3-5916",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5916",
-  "mergedAt": "2026-09-28T13:06:21Z",
-  "commitDate": "2026-09-28T18:36:21+05:30",
-  "sourceFrom": "jira",
-  "source": "Retrying a partially completed save can consume multiple generated identifier values."
+  "repo": "openmrs-esm-patient-chart",
+  "ticket": "O3-5741",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5741",
+  "sourceFrom": "pr",
+  "source": "so that encounter-diagnoses (diagnoses added from the visit note form) do not appear in the conditions table",
+  "changes": [
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "commit": "64d3c9902168b1a43b08d5da09558e7da6288a0d",
+    "subject": "(fix) Filter conditions query to problem-list-item category (#3403)",
+    "pr": 3403,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3403",
+    "mergedAt": "2026-06-19T13:21:12Z",
+    "commitDate": "2026-06-19T16:21:12+03:00",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "jira issue text names the PR URL"
+    ]
+   },
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "commit": "b147fb5906f1c3df18f12e3c804daeea486813d2",
+    "subject": "(fix) Attach visit to visit note submissions (#3406)",
+    "pr": 3406,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3406",
+    "mergedAt": "2026-06-22T11:11:49Z",
+    "commitDate": "2026-06-22T11:11:48Z",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "jira issue text names the PR URL"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-15",
   "kind": "a",
   "split": "hidden",
-  "repo": "openmrs-esm-form-engine-lib",
-  "commit": "129c1f7fd78a83d1b8958ae6dcaa7fe7b51eb143",
-  "subject": "(fix) O3-6045: Use WHO girls' height-for-age reference and cover month after age 5 (#834)",
-  "pr": 834,
-  "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/834",
-  "ticket": "O3-6045",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-6045",
-  "mergedAt": "2026-10-07T20:13:58Z",
-  "commitDate": "2026-10-07T20:13:57Z",
-  "sourceFrom": "jira",
-  "source": "The two files are byte-identical, and every row's median matches WHO's published boys' values rather than the girls'."
+  "repo": "openmrs-module-patientdocuments",
+  "ticket": "O3-5667",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5667",
+  "sourceFrom": "pr",
+  "source": "That made it un-grantable and left visit summary PDF generation effectively superuser-only.",
+  "changes": [
+   {
+    "repo": "openmrs-module-patientdocuments",
+    "commit": "9fc46c2cf8f6b7d3f2758379ac9b7af2d848b22a",
+    "subject": "Declare Visit Summary privilege in config.xml (#31)",
+    "pr": 31,
+    "prUrl": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/31",
+    "mergedAt": "2026-07-20T04:45:44Z",
+    "commitDate": "2026-07-20T10:15:44+05:30",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "pr body"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-a-16",
   "kind": "a",
   "split": "dev",
-  "repo": "openmrs-esm-billing-app",
-  "commit": "3ecce2a55223b21d3c53d4905b346455f94f4fd2",
-  "subject": "(fix) O3-5705: Use netAmount instead of totalAmount for balance due on printable invoice (#743)",
-  "pr": 743,
-  "prUrl": "https://github.com/openmrs/openmrs-esm-billing-app/pull/743",
-  "ticket": "O3-5705",
-  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5705",
-  "mergedAt": "2026-05-26T18:48:29Z",
-  "commitDate": "2026-05-26T18:48:29Z",
-  "sourceFrom": "jira",
-  "source": "On a fully paid bill with a discount applied, the Amount balance in the header and the Balance below Total tendered should both read zero, not the discount amount."
+  "repo": "openmrs-esm-patient-chart",
+  "ticket": "O3-5781",
+  "ticketUrl": "https://openmrs.atlassian.net/browse/O3-5781",
+  "sourceFrom": "pr",
+  "source": "Patches 9 High-severity OWASP-flagged CVEs in **minimatch** by bumping each affected version branch to its latest patched release within the same major version.",
+  "changes": [
+   {
+    "repo": "openmrs-esm-patient-chart",
+    "commit": "5ba5b70a72d0a60d3dfa6136efe8237ce118d80b",
+    "subject": "(fix) Patch OWASP-reported minimatch vulnerabilities (#3433)",
+    "pr": 3433,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3433",
+    "mergedAt": "2026-06-30T02:56:54Z",
+    "commitDate": "2026-06-30T02:56:53Z",
+    "commitMessageHasKey": false,
+    "keyIn": [
+     "pr title",
+     "pr body"
+    ]
+   }
+  ]
  },
  {
   "id": "hist-b-01",

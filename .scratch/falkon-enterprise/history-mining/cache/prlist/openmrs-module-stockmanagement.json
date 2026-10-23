@@ -1,0 +1,65 @@
+[
+ {
+  "number": 50,
+  "url": "https://github.com/openmrs/openmrs-module-stockmanagement/pull/50",
+  "title": "Clear the SonarCloud findings left by #49 on core-3.x",
+  "branch": "sonar-core-3.x-quality-gate",
+  "mergedAt": "2026-10-10T18:42:53Z",
+  "mergeCommit": "0a6e3c7576d79b9a719f13507aa22059cfc91c58",
+  "body": "#49 failed the SonarCloud gate on new reliability (D) and new maintainability (B, debt ratio 7.34% against the 5% limit).\n\n- Reliability (javabugs:S6466): `StockItemInventoryReport.writeRow` sized its array and wrote its columns from two separate `includeConsumptionInfo()` calls. Both overrides return a constant, so it could not overflow today; it now reads the flag once so the two cannot disagree.\n- Maintainability, 403 of the 1179 minutes of new debt: duplicated parameter names in `StockManagementDao` become constants (S1192), `StringBuilder.length() > 0` becomes `!isEmpty()` (S7158), one `String.format(\"param.%s.value\", ...)` becomes concatenation (S9397), and `Stream.toList()` replaces `collect(Collectors.toList())` at 43 sites where the list is only passed to `addAll` or streamed again, never mutated or returned (S6204). The other `Collectors.toList()` sites are left alone because `toList()` returns an unmodifiable list.\n\nBehaviour-preserving: the compiled classes contain the same string constants as before, apart from the one removed format string. `mvn clean install` on Java 21 passes (api 47 tests, omod 6, no failures), same as `core-3.x` without this change.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01ASZcAmLun5HaBwCZ4kjEjx"
+ },
+ {
+  "number": 49,
+  "url": "https://github.com/openmrs/openmrs-module-stockmanagement/pull/49",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T18:01:27Z",
+  "mergeCommit": "c9c3c333e50d636cbf5c81f4c8cbead88caba28c",
+  "body": "Updates stockmanagement so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7, Hibernate 7). It is needed by the billing module's Platform 3 upgrade. Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions and build:\n  - Module version is now 4.0.0-SNAPSHOT, on Platform 3.0.0-SNAPSHOT and webservices.rest 5.0.0-SNAPSHOT, and `openmrs-bom` is imported.\n  - Builds with Java 21 and `-parameters`.\n  - `config.xml` now sets `require_version` to 3.0.0.\n- Mail: `javax.activation` (compile scope, bundled) is replaced by `jakarta.mail-api` (provided), and `SmtpUtil` uses `jakarta.mail` / `jakarta.activation`.\n- javax.persistence/servlet become jakarta.*, and commons-lang becomes lang3 (`escapeHtml` becomes `escapeHtml4`).\n- DAOs: every Hibernate Criteria/Restrictions/Projections use is now HQL with the same semantics:\n  - Ordering and paging are unchanged, and counts now go through `DaoBase`'s existing HQL helper.\n  - `ilike` is now `lower(x) like lower(:p)`, and `createAlias` is now an inner join. `CriteriaImplWrapper` is removed.\n- Session API:\n  - `saveOrUpdate` is now `HibernateUtil.saveOrUpdate` and returns the managed instance; `save` is now `persist`.\n  - `createSQLQuery` is now `createNativeQuery`, and the `setString`/`setInteger`/`setDate` calls are now `setParameter`. Dates still use `TemporalType.DATE`.\n- Hibernate 7 HQL strictness:\n  - Boolean comparisons use `true`/`false`.\n  - The `voidedBy` bulk updates bind `getReference(User.class, id)`, not a raw int.\n  - `getFlattenedUserRoleScopesByUser` binds the location id as its own parameter. Hibernate 7 rejects comparing `lt.childLocationId` with a `Location`, which broke every permission check that passes a location.\n- Entity mappings:\n  - `@Enumerated(STRING)` fields get `@JdbcTypeCode(SqlTypes.VARCHAR)`, like core does.\n  - `StockItem.drug` and `OrderItem.stockItem/createdFrom/fulfilmentLocation` are now `@ManyToOne`. Hibernate 7 adds a UNIQUE constraint for `@OneToOne`, which the schema never had.\n- REST resources now include `\"3.*\"` in `supportedOpenmrsVersions`; before, every resource was \"Unknown resource\" on 3.0. The Swagger `getGETModel` overrides are kept, since REST 5.0.0 still has Swagger.\n- webservices.rest 3.2.0 and later no longer validate the resource delegate on create and update (RESTWS-1016), and core only validates `OpenmrsObject`s. The six resources whose delegate is a DTO now call `ValidateUtil.validate(delegate)` in `save()`. Without it, creating a stock operation fails on the NOT NULL `at_location_id` column, because the validator is what fills in `atLocationUuid`.\n- New liquibase changeset `stockmanagement-2026-10-02-scheduler-task-creator`, guarded by `columnExists`:\n  - Core 3.0 maps `TaskDefinition.creator` to the new `scheduler_task_config.creator` column. The module's task inserts only set `created_by`.\n  - The changeset copies `created_by` into `creator` for this module's three tasks.\n  - With a null creator, the start-on-startup \"Asynchronous Report Generation And Batch Jobs\" task crashes core master's `JobRunrSchedulerService.onStartup` with a NullPointerException, and OpenMRS fails to start. The core-side null-safety fix is tracked separately.\n- Tests are migrated to JUnit 5. CI (`release.yml`, Bamboo) uses JDK 21. `EntityUtil` is no longer kept in a static field, because its entities outlived the session that loaded them. The omod gets the api module's test dependencies and its first test.\n\n## Verification\n- `mvn clean verify` passes: 47 api tests and 6 omod tests.\n- I deployed the omod on openmrs-core master (`mvn jetty:run`, MySQL 8) with legacyui, webservices.rest 5.0.0-SNAPSHOT, calculation, fhir2 6.0.0-SNAPSHOT, htmlwidgets, idgen, event and teleconsultation:\n  - All modules started, and the server log has no errors from this module.\n  - Logging in through the UI works.\n  - The new change"
+ },
+ {
+  "number": 46,
+  "url": "https://github.com/openmrs/openmrs-module-stockmanagement/pull/46",
+  "title": "(fix) O3-5811: Fix MySQL FK constraint error on stockmgmt_user_role_scope.role",
+  "branch": "master",
+  "mergedAt": "2026-10-20T13:10:44Z",
+  "mergeCommit": "b1c332668fe5cc218e81f8e80a345a510d578cfa",
+  "body": "## Summary\r\nFixes O3-5811. Stock Management failed to start on some MySQL/MariaDB installations because `stockmgmt_user_role_scope.role` and core's `role.role` could have mismatched character sets/collations, causing the FK `stockmgmt_user_role_scope_role_fk` to fail on creation.\r\n\r\n## Root cause\r\nCore doesn't pin a charset for `role.role` (plain `VARCHAR(50)`), so it inherits whatever the database default was when core created the table \u2014 varies by installation (`utf8mb3`, `utf8mb4`, `latin1`, etc.).\r\n\r\n## Fix\r\nAdded a changeset that runs before the FK is created. It reads `role.role`'s actual charset/collation via `information_schema` and applies the same to `stockmgmt_user_role_scope.role` via a dynamically-built `ALTER TABLE` \u2014 no hardcoded assumption.\r\n\r\n- Scoped to MySQL/MariaDB via `<dbms type=\"mysql,mariadb\"/>` \u2014 skipped entirely on PostgreSQL.\r\n- Doesn't touch the existing FK changeset, so already-working upgrades are unaffected.\r\n- Only changes column storage/comparison rules, not data \u2014 idempotent, safe to re-run.\r\n- Explicit no-op `<rollback>`: there's no single \"previous\" state to revert to, and reverting could reintroduce the incompatibility.\r\n\r\n## Testing performed\r\n- `mvn clean package` \u2014 build succeeds, changelog parses.\r\n- Reproduced the original bug (latin1 column vs utf8mb3 core), confirmed the new changeset fixes it and the FK is created.\r\n- Simulated an upgrade from a broken install \u2014 starts cleanly, FK created, data preserved.\r\n- Re-ran migrations \u2014 no errors (idempotent).\r\n- PostgreSQL \u2014 skipped via `dbms` precondition.\r\n- Verified the approach handles utf8mb4 and MariaDB collations correctly by tracing through the dynamic lookup logic against those fixtures.\r\n\r\n## Related issues \r\nhttps://openmrs.atlassian.net/browse/O3-5811 \r\nParent: https://openmrs.atlassian.net/browse/O3-4139"
+ },
+ {
+  "number": 45,
+  "url": "https://github.com/openmrs/openmrs-module-stockmanagement/pull/45",
+  "title": "Add Codecov job",
+  "branch": "add-new-code-cov-workflow",
+  "mergedAt": "2026-07-15T21:39:17Z",
+  "mergeCommit": "cf559b49458c6af976882c015b9d3dc1a70d55fc",
+  "body": "This is intended to make codecov continue working after openmrs-contrib-gha-workflows#47 is merged"
+ },
+ {
+  "number": 44,
+  "url": "https://github.com/openmrs/openmrs-module-stockmanagement/pull/44",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:35:01Z",
+  "mergeCommit": "83bae876813ce30aa4dafdb98f290b459082c29a",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ },
+ {
+  "number": 43,
+  "url": "https://github.com/openmrs/openmrs-module-stockmanagement/pull/43",
+  "title": "O3-5519: Add BOT_GH_TOKEN to build workflow secrets",
+  "branch": "ix/O3-5519-add-bot-gh-token-to-build-workflow-secrets",
+  "mergedAt": "2026-03-23T08:19:44Z",
+  "mergeCommit": "fa4a7fb5ee14d1ca0897958be50ec9e103727adb",
+  "body": "## Description\r\nTicket Link - https://openmrs.atlassian.net/browse/O3-5519\r\nTicket ID - O3-5519\r\n\r\n## Summary\r\nThe shared OWASP Dependency Check workflow (openmrs-contrib-gha-workflows) has been updated to automatically push generated vulnerability reports to the central dashboard repository (openmrs-contrib-dependency-vulnerability-dashboard). To support this, the reusable workflow now requires the GH_BOT_TOKEN secret to be passed by calling repositories. Without it, the workflow cannot push reports to the dashboard.\r\n\r\n## Change\r\nAdded `BOT_GH_TOKEN: ${{ secrets.OMRS_BOT_GH_TOKEN }}` to the secrets block in `.github/workflows/build.yml`."
+ },
+ {
+  "number": 42,
+  "url": "https://github.com/openmrs/openmrs-module-stockmanagement/pull/42",
+  "title": "Migrate to Reusable GitHub Action",
+  "branch": "gh-action",
+  "mergedAt": "2026-03-13T10:30:00Z",
+  "mergeCommit": "ed5191c9eeb783cb603ec970079362c700580b77",
+  "body": ""
+ }
+]

@@ -1,0 +1,9 @@
+{
+ "key": "O3-4671",
+ "url": "https://openmrs.atlassian.net/browse/O3-4671",
+ "summary": "Add the version number on the login Page.",
+ "status": "Done",
+ "created": "2025-04-29T07:29:37.965+1000",
+ "resolved": null,
+ "description": "Add the version of O3 running on the login screen. Follow discussion here"
+}

@@ -1,0 +1,16 @@
+{
+ "number": 193,
+ "url": "https://github.com/openmrs/openmrs-module-billing/pull/193",
+ "title": "Add locationUuid, startDate and endDate filters to GET /bill",
+ "mergedAt": "2026-09-03T08:36:52Z",
+ "mergeCommit": "c47f6d87e0352dcfa5a51b5a743016e0a8c40be9",
+ "body": "- Filter by location through the bill's cash point location\r\n-  Apply startDate and endDate as inclusive bounds on dateCreated",
+ "files": [
+  "api/src/main/java/org/openmrs/module/billing/api/db/BillDAO.java",
+  "api/src/main/java/org/openmrs/module/billing/api/db/hibernate/HibernateBillDAO.java",
+  "api/src/main/java/org/openmrs/module/billing/api/search/BillSearch.java",
+  "api/src/test/java/org/openmrs/module/billing/db/HibernateBillDAOTest.java",
+  "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillResource.java",
+  "omod/src/test/java/org/openmrs/module/billing/web/rest/resource/BillResourceTest.java"
+ ]
+}

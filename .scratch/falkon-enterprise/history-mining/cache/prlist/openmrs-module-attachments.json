@@ -1,0 +1,38 @@
+[
+ {
+  "number": 94,
+  "url": "https://github.com/openmrs/openmrs-module-attachments/pull/94",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T17:59:05Z",
+  "mergeCommit": "85895774d0ad6feb00640264819de573ad24fb39",
+  "body": "Updates attachments so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7, Hibernate 7). Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions and build:\n  - Module version is now 5.0.0-SNAPSHOT, `openMRSVersion` is 3.0.0-SNAPSHOT, webservices.rest is 5.0.0-SNAPSHOT, and `openmrs-bom` is imported.\n  - Builds with Java 21 and `-parameters`.\n  - CI (release workflow and Bamboo) uses JDK 21.\n- Complex obs handler registration: core 3.0 no longer has an `obsServiceTarget` bean, so `<bean parent=\"obsServiceTarget\">` broke the module context. `DefaultAttachmentHandler` and `ImageAttachmentHandler` are now registered through a `MethodInvokingBean` calling `obsService.setHandlers(...)`.\n- Dependencies:\n  - `openmrs-web` moves off the api module, because core's `WebConfig` broke the api test context (\"No ServletContext set\").\n  - The api module now declares `spring-web` (provided, for `MultipartFile`).\n  - The api's `TestingApplicationContext.xml` is removed. Its only bean, an `xStreamMarshaller`, has no user in the api tests on 3.0, and the omod tests get `WebConfig`'s own.\n  - `javax.servlet-api` is dropped, and so are the `javax.servlet` exclusions on `openmrs-web`, which exclude nothing on 3.0.\n  - `mockito-inline` 4.8.0 is replaced by BOM-managed `mockito-core`.\n- Code: commons-lang becomes lang3, Jackson 1 becomes Jackson 2, `javax.servlet` becomes `jakarta.servlet`, and `javax.activation` becomes `jakarta.activation`. The Swagger model overrides are kept.\n- Tests are migrated to JUnit 5. `AttachmentResourceTest` stays disabled, as it was `@Ignore` upstream.\n- The README's runtime requirements now say Core 3.0.0, REST 5.0.0 and Java 21.\n\n## Verification\n- `mvn clean install` passes (36 tests; `AttachmentResourceTest`'s 7 are skipped as before).\n- I deployed the omod on openmrs-core master (`mvn jetty:run`, MySQL 8) with legacyui, webservices.rest 5.0.0-SNAPSHOT, calculation, fhir2 6.0.0-SNAPSHOT, htmlwidgets, idgen, event, stockmanagement, serialization.xstream, metadatamapping and teleconsultation:\n  - All modules started, and the server log has no errors from this module.\n  - Logging in through the UI works.\n- A real multipart `POST /ws/rest/v1/attachment` of a PNG for a patient returned 201. Listing by patient and `GET .../bytes` (a valid re-encoded PNG) work, and purge returns 204.\n  - That needs openmrs/openmrs-module-legacyui#274. Without it, legacyui's `XSSFilter` casts every multipart request to `DefaultMultipartHttpServletRequest`. Core 3.0's `MultipartFilter` produces `StandardMultipartHttpServletRequest`, so any upload fails with a `ClassCastException` while legacyui is installed.\n- In a browser, I used O3's Attachments widget (patient-attachments-app 12.3.4, from RefApp 3.7.1) against core master c49ffef, with webservices.rest 5.0.0-SNAPSHOT, fhir2 6.0.0-SNAPSHOT and this branch at 6356cb0. legacyui was not installed for this run.\n  - Uploading a PNG and a PDF returns 201. The image's thumbnail and preview load, and the server writes a 200\u00d7150 thumbnail next to the file.\n  - A webcam capture (Chromium's fake camera) is sent as `base64Content` and stored as a 640\u00d7480 PNG.\n  - The table view lists the files as IMAGE and PDF. `GET .../bytes` returns the PDF byte for byte, and the PNG re-encoded with identical pixels.\n  - Deleting from the preview's menu returns 204 and removes the file from the widget.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Fp7T1pGYEMrMVp1M7AW9Fg\n\n\n\n"
+ },
+ {
+  "number": 93,
+  "url": "https://github.com/openmrs/openmrs-module-attachments/pull/93",
+  "title": "Remove this useless \"eq(...)\" invocation",
+  "branch": "fix",
+  "mergedAt": "2026-09-17T07:43:51Z",
+  "mergeCommit": "c456a2d12c9fc55ec9b8e5258b9267119c16c19e",
+  "body": ""
+ },
+ {
+  "number": 92,
+  "url": "https://github.com/openmrs/openmrs-module-attachments/pull/92",
+  "title": "ATT-65: Fix Saving a visit note with multiple image attachments fails",
+  "branch": "ATT-65",
+  "mergedAt": "2026-09-18T01:35:03Z",
+  "mergeCommit": "3a43eff9ad45541e17dca0cb4c373636eaa06218",
+  "body": "Removed the two fields and the unused `getObs()` accessor. `prepareComplexObs` now takes the concept and returns a new `Obs`, and both save methods keep it as a local variable. The bean has no per-call state left, so the singleton scope is safe."
+ },
+ {
+  "number": 89,
+  "url": "https://github.com/openmrs/openmrs-module-attachments/pull/89",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:26:21Z",
+  "mergeCommit": "0b0f1c264176c7f65c95d4685f1766baeae0ef8c",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ }
+]

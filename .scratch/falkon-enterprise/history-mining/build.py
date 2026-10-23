@@ -10,42 +10,46 @@ PIN = {n: r["commit"] for n, r in REPOS.items()}
 CORE, REST, ESMCORE, CHART, PM, FEL, ADMIN, BILL, DISP, STOCK = ("openmrs-core", "openmrs-module-webservices.rest", "openmrs-esm-core",
     "openmrs-esm-patient-chart", "openmrs-esm-patient-management", "openmrs-esm-form-engine-lib", "openmrs-esm-admin-tools",
     "openmrs-esm-billing-app", "openmrs-esm-dispensing-app", "openmrs-esm-stock-management-app")
+ANYKEY = re.compile(r"\b[A-Z][A-Z0-9]+-\d+\b")
 RELATION = {"a": "history-why", "b": "history-what-when", "c": "history-ticket-to-code"}
 
-# (id, split, repo, short sha, question, source sentence from the Jira description or PR body)
+# Kind (a), round 2 rewrite (D100, option i): targets whose full commit message names no Jira key (mined by mine_a2.py into
+# a2-candidates.json); the ticket is reachable only through the PR or the Jira issue. Rows are (id, split, [(repo, short sha)],
+# ticket, question, source sentence from the Jira description or a PR body).
+MBILL, PDOC = "openmrs-module-billing", "openmrs-module-patientdocuments"
 A = [
-    ("hist-a-01", "dev", CORE, "2d32d209", "On the openmrs-core 3.0 line, REST and FHIR calls whose URL ends in a trailing path separator stopped reaching the controller that serves the same URL without it. Why did that happen, how does core now deal with such URLs, and which change and ticket fixed it?",
-     "On core 3.0, a URL with a trailing slash no longer reaches the handler for the same URL without it."),
-    ("hist-a-02", "hidden", CORE, "085d24ca", "In openmrs-core 3.0, a call whose URL had two path separators in a row right after the web application's context path got an internal server error instead of being served. Why, how does core now treat such URLs, and which change and ticket fixed it?",
-     "a request whose path has a double slash after the context path fails with 500"),
-    ("hist-a-03", "dev", CORE, "83411b2f", "In openmrs-core, background tasks could begin executing while the Spring application context, or the platform itself, was still being set up, which caused failures at startup. Why did that happen, what does core now do to hold the task scheduler back, and which change and ticket fixed it?",
-     "The JobRunr background job server is started while its Spring application context is still being created, so jobs can run before the context, or OpenMRS, is ready."),
-    ("hist-a-04", "dev", CORE, "b64e0729", "In openmrs-core, ending the API session on a thread could unbind and close a Hibernate session that other code had bound to that thread, with errors such as \"Pre-bound JDBC Connection found!\" as one symptom. Why, what does core now check instead of a per-thread counter, and which change and ticket fixed it?",
-     "decides whether to close the thread's Hibernate session using a per-thread counter, not by checking who bound the session."),
-    ("hist-a-05", "hidden", CORE, "b147e0dc", "In openmrs-core, moving a child location under a different parent location could silently delete the child's database row when the session flushed. Why did that start happening after the persistence mapping was migrated, and which change and ticket fixed it?",
-     "so any code that removes an entry from childLocations (e.g. re-parenting a location) now silently issues a DELETE of that location row on flush."),
-    ("hist-a-06", "dev", CORE, "6e77bfd0", "In openmrs-core, the lookup store for the save, void, retire and validation handlers could be emptied whenever the JVM reclaimed memory, so handlers kept being looked up again. Why was the store exposed to that, what does it use now, and which change and ticket fixed it?",
-     "HandlerUtil caches handler lookups in a WeakHashMap whose keys are referenced by nothing but the map itself, so any GC cycle can evict the entire cache."),
-    ("hist-a-07", "dev", CORE, "e2056c9a", "In openmrs-core, the advice that logs calls into service methods built its debug and trace messages on every call, even when neither level would be written to the log. Why was that worth changing, what does it now check first, and which change and ticket changed it?",
-     "verify that any messages it generates will be logged before generating them"),
-    ("hist-a-08", "hidden", CORE, "0e0255b8", "On Hibernate 7, openmrs-core's database event publishing sent no event when a new entity was created and none when an entity was removed. Why were those events lost, which interceptor callbacks are now passed on, and which change and ticket fixed it?",
-     "core's EventInterceptor never publishes a SaveDbEvent when a new entity is created, and never publishes a DeleteDbEvent when an entity is removed."),
-    ("hist-a-09", "dev", REST, "ce758bc0", "In the REST web services module, a client still holding a cookie for an expired HTTP session got a 401 reply from the very service it calls to log in again. Why was that reply wrong there, and which change and ticket stopped it?",
-     "As a result, a client holding an old cookie gets a 401 from the session endpoint."),
-    ("hist-a-10", "hidden", REST, "66d284b5", "In the REST web services module, once core moved to Spring Security, requests refused for missing authentication or a missing privilege started coming back as HTTP 500 instead of 401 or 403. Why, and which change and ticket restored the expected status codes?",
-     "so these requests now return 500 instead of 401 or 403."),
-    ("hist-a-11", "dev", ESMCORE, "57315b89", "In the O3 frontend framework, when a promise was rejected with an error object and nothing handled it, the error notification the app shell tried to show failed to render. Why, what is now done with the rejection reason, and which change and ticket fixed it?",
-     "React cannot render an object as a child, so the toast fails to render"),
-    ("hist-a-12", "dev", CHART, "50773fe3", "In the patient chart's vitals and biometrics app, a patient exactly 5 years old with a healthy mid-upper arm circumference (for example 13 cm) got no colour coding at all. Why, and which change and ticket fixed the age bracket comparisons?",
-     "This means a patient exactly 5 years old with a healthy MUAC value (e.g. 13cm) gets no color code at all."),
-    ("hist-a-13", "hidden", CHART, "c7d6eb8d", "In the patient chart's form entry app, the Angular form engine formatted dates and numbers with Angular's built-in US English data whatever the user's language. Why was the regional formatting data never registered, and which change and ticket fixed it?",
-     "registerLocaleData() has therefore never run."),
-    ("hist-a-14", "dev", PM, "b4b76423", "In the patient registration app, a second attempt at saving a patient, after the first had only partly completed, could use up more than one newly issued identifier value. Why, and which change and ticket fixed it?",
-     "Retrying a partially completed save can consume multiple generated identifier values."),
-    ("hist-a-15", "hidden", FEL, "129c1f7f", "In the React form engine, z-scores of stature against age for female children aged 5 and over were computed against a table whose medians were the World Health Organization values for males. Why, and which change and ticket corrected that table?",
-     "The two files are byte-identical, and every row's median matches WHO's published boys' values rather than the girls'."),
-    ("hist-a-16", "dev", BILL, "3ecce2a5", "In the billing app's printout of a bill, a bill that was fully paid but had a discount applied still showed the discount amount as still owed. Why, and which change and ticket fixed it?",
-     "On a fully paid bill with a discount applied, the Amount balance in the header and the Balance below Total tendered should both read zero, not the discount amount."),
+    ("hist-a-01", "dev", [(CORE, "8ec94d21")], "TRUNK-6670", "In openmrs-core's continuous integration, the scan of third-party libraries for known vulnerabilities crashed with a missing command-line argument on every pull request opened from a fork, whatever that pull request changed. Why did it crash only there, how does the workflow now run the scan when the vulnerability database's key is unavailable, and which change and ticket fixed it?",
+     "causes the OWASP dependency check to crash on fork PRs because forks cannot access the"),
+    ("hist-a-02", "hidden", [(ESMCORE, "e16e2d9e")], "O3-5629", "In the O3 frontend framework, the wrapper around the browser's fetch call reacts to an unauthorized response either by following the redirect target the server sent back or, when there is none, by going to the configured authentication-failure page, yet neither path was protected by tests. Why was coverage added, what exactly do the new tests pin down, and which change and ticket added them?",
+     "Discussed as missing test coverage during the OpenMRS Talk GSoC 2026 frontend architecture."),
+    ("hist-a-03", "dev", [(BILL, "db22701b")], "O3-5414", "In the O3 billing app, unpaid bills left behind by visits that patients abandoned stayed in the billing records, and staff had no way to clear them. What was added so they can be cleared, for which bills is it offered and from where, what must the user supply, and which change and ticket added it?",
+     "so that unpaid bills from incomplete visits don't clutter the billing system"),
+    ("hist-a-04", "dev", [(ESMCORE, "04f538d1")], "O3-5873", "In the O3 frontend, every frontend module's remote entry carried its own complete copy of the loader runtime that federated modules need, roughly two thirds of each entry's size, although that runtime is identical for every module. Why was that a problem, what does the app shell now do so the runtime is downloaded once, and which change and ticket made it so?",
+     "the runtime itself is identical across remotes and should ship once"),
+    ("hist-a-05", "hidden", [(CHART, "6e8da1b1")], "O3-5652", "In the patient chart's procedures app, the form for recording a past procedure had no scoped concept set in the shared terminology to draw its status choices from. Once a dedicated status concept was published there, what default did the app change, and which change and ticket did it?",
+     "since there is no scoped concept set or concept class for either in OCL"),
+    ("hist-a-06", "dev", [(ESMCORE, "9f0c6aa8")], "O3-4671", "Implementers asked for the release of O3 a site is running to be visible on the sign-in page. In the O3 frontend, how is that value now supplied when a distribution is assembled, where is it shown by default, what does it read when nobody set it, and which change and ticket added it?",
+     "Add the version of O3 running on the login screen."),
+    ("hist-a-07", "dev", [(DISP, "120d22e9")], "O3-5734", "In the dispensing app, a pharmacist who started filling a prescription, searched for a patient, began a drug order and then tried to record a new allergy saw the allergy form crash. Why did it crash outside the patient chart, what is launched instead, and which change and ticket fixed it?",
+     "Try to record a new allergy"),
+    ("hist-a-08", "hidden", [(ADMIN, "fbda0303")], "O3-5965", "In the admin tools' reports app, a few full-width rules aimed at the design system's date picker and dropdown classes never had any visible effect. Why could they never match the rendered markup, what was done about them, and which change and ticket handled it?",
+     "cannot match Carbon's markup, and have never had any effect."),
+    ("hist-a-09", "dev", [(PM, "e4aacbd5")], "O3-5832", "In O3 patient management, looking up patients was slowed because, for every request that carries no explicit caching-strategy header, the offline service worker reopened its local browser database and rescanned every registered dynamic route. Why was the lookup exposed to that cost, what do its requests now do, and which change and ticket are behind it?",
+     "this bypasses an expensive per-request Dexie lookup that was unnecessarily slowing things down."),
+    ("hist-a-10", "hidden", [(STOCK, "3c071999")], "O3-4518", "In the stock management app, on a system with more user accounts than the REST module returns by default in one response, an administrator could not find, and so could not give location-scoped stock permissions to, any user left off that first response. Why, and which change and ticket fixed it?",
+     "then whatever users are not returned when the user endpoint is queried are unable to be found, and unable to have permissions granted."),
+    ("hist-a-11", "dev", [(CHART, "d47d346c")], "RESTWS-1038", "In the patient chart's lab results viewer, one platelet result could show a count of two, because overlapping root concept sets (bloodwork containing haematology, for example) deliver the same observation through several tree branches, while two genuinely separate results with the same value and time collapsed into one row. How was the de-duplication reworked, what server-side change does the ticket propose so clients can tell copies apart, and which change and ticket are these?",
+     "which cannot tell those two cases apart."),
+    ("hist-a-12", "dev", [(CHART, "d4857fbf")], "O3-4585", "In the patient chart, body mass index values in the biometrics listing were never flagged as low or high the way abnormal vital signs are, because the value was only calculated in the browser. What does the form now store so the server can judge it against reference ranges, how do older encounters still show a value, and which change and ticket are behind it?",
+     "Persists BMI as its own observation on the vitals and biometrics encounter so the backend can apply the concept reference ranges"),
+    ("hist-a-13", "hidden", [(BILL, "6e4cdcd9"), (MBILL, "c47f6d87")], "O3-5112", "In O3 billing, the list of bills could only be narrowed by payment state, such as pending or paid, and not by when the bills were created. Which changes, one in the billing frontend and one in the billing backend module, made that possible, what does the frontend do when the chosen end comes before the chosen start, and which ticket asked for it?",
+     "Currently, the billing list can only be filtered by status, such as pending or paid, without the option to filter records by specific date ranges."),
+    ("hist-a-14", "dev", [(CHART, "64d3c990"), (CHART, "b147fb59")], "O3-5741", "In the patient chart, a diagnosis entered through the visit note did not show up under the patient's conditions until the page was reloaded. What did the community decide the conditions list should show instead, what else had to be fixed so those diagnoses still appear with the right visit, and which changes and ticket implement this?",
+     "so that encounter-diagnoses (diagnoses added from the visit note form) do not appear in the conditions table"),
+    ("hist-a-15", "hidden", [(PDOC, "9fc46c2c")], "O3-5667", "In the patient documents module, only superusers could produce the printable visit summary, even though the code checks a dedicated permission before generating it, because no role could ever be granted that permission. Why, and which change and ticket fixed it?",
+     "That made it un-grantable and left visit summary PDF generation effectively superuser-only."),
+    ("hist-a-16", "dev", [(CHART, "5ba5b70a")], "O3-5781", "In the patient chart repository, the dependency vulnerability report flagged high-severity findings in three pinned versions of the glob pattern matching library used by the build tooling. Which versions were moved to which patched releases, how was the lockfile made to pick them up, and which change and ticket did this?",
+     "Patches 9 High-severity OWASP-flagged CVEs in **minimatch** by bumping each affected version branch to its latest patched release within the same major version."),
 ]
 
 # Kind (b), round 1 rewrite (D100): gold is computed by a stated criterion over the window that starts the day after
@@ -128,19 +132,38 @@ def change(repo, short):
 
 def main():
     questions, record = [], []
-    for kind, rows in (("a", A), ("c", C)):
-        for row in rows:
-            qid, split, repo, short, text, source = row[:6]
-            ch = change(repo, short)
-            t = jira(ch["ticket"])
-            where = "jira" if norm(source) in norm(t.get("description", "")) else "pr" if norm(source) in norm(pr(repo, ch["pr"])["body"]) else None
-            assert where, (qid, "source sentence not found")
-            required = [{"repo": repo, "commit": ch["commit"], "pr": ch["pr"]}, {"ticket": ch["ticket"]}]
-            if kind == "c":
-                required += [{"path": f"{repo}/{p}", "startLine": s, "endLine": e} for p, s, e in row[6]]
-            questions.append({"id": qid, "question": text, "vocab": "natural", "split": split, "author": "history-probe", "relation": RELATION[kind], "required": required})
-            record.append({"id": qid, "kind": kind, "split": split, "repo": repo, "commit": ch["commit"], "subject": ch["subject"], "pr": ch["pr"], "prUrl": ch["prUrl"],
-                           "ticket": ch["ticket"], "ticketUrl": t["url"], "mergedAt": ch["mergedAt"], "commitDate": ch["commitDate"], "sourceFrom": where, "source": source})
+    # Kind (a), round 2 (D100, option i): no commit message names a key; the ticket is reachable only through the PR
+    # (title, body or branch) or a Jira issue that names the PR's URL. A row may list more than one change for its ticket.
+    for qid, split, targets, ticket, text, source in A:
+        chs = [change(repo, short) for repo, short in targets]
+        t = jira(ticket)
+        bodies = [pr(c["repo"], c["pr"])["body"] for c in chs]
+        where = "jira" if norm(source) in norm(t.get("description", "")) else "pr" if any(norm(source) in norm(b) for b in bodies) else None
+        assert where, (qid, "source sentence not found")
+        changes = []
+        for c in chs:
+            assert not ANYKEY.search(git(c["repo"], "log", "-1", "--format=%B", c["commit"])), (qid, c["commit"], "commit message names a key")
+            p = pr(c["repo"], c["pr"])
+            branch = next(x["branch"] for x in json.load(open(os.path.join(HERE, "cache/prlist", c["repo"] + ".json"))) if x["number"] == c["pr"])
+            key_in = [w for w, v in (("pr title", p["title"]), ("pr body", p["body"]), ("pr branch", branch)) if re.search(rf"\b{ticket}\b", v, re.I)]
+            if not key_in:
+                assert ticket in json.load(open(os.path.join(HERE, "cache/jiralink", f"{c['repo']}#{c['pr']}.json"))), (qid, "ticket not linked to the PR")
+                key_in = ["jira issue text names the PR URL"]
+            changes.append({k: c[k] for k in ("repo", "commit", "subject", "pr", "prUrl", "mergedAt", "commitDate")} | {"commitMessageHasKey": False, "keyIn": key_in})
+        required = [{"repo": c["repo"], "commit": c["commit"], "pr": c["pr"]} for c in chs] + [{"ticket": ticket}]
+        questions.append({"id": qid, "question": text, "vocab": "natural", "split": split, "author": "history-probe", "relation": RELATION["a"], "required": required})
+        record.append({"id": qid, "kind": "a", "split": split, "repo": chs[0]["repo"], "ticket": ticket, "ticketUrl": t["url"], "sourceFrom": where, "source": source, "changes": changes})
+    for row in C:
+        qid, split, repo, short, text, source = row[:6]
+        ch = change(repo, short)
+        t = jira(ch["ticket"])
+        where = "jira" if norm(source) in norm(t.get("description", "")) else "pr" if norm(source) in norm(pr(repo, ch["pr"])["body"]) else None
+        assert where, (qid, "source sentence not found")
+        required = [{"repo": repo, "commit": ch["commit"], "pr": ch["pr"]}, {"ticket": ch["ticket"]}]
+        required += [{"path": f"{repo}/{p}", "startLine": s, "endLine": e} for p, s, e in row[6]]
+        questions.append({"id": qid, "question": text, "vocab": "natural", "split": split, "author": "history-probe", "relation": RELATION["c"], "required": required})
+        record.append({"id": qid, "kind": "c", "split": split, "repo": repo, "commit": ch["commit"], "subject": ch["subject"], "pr": ch["pr"], "prUrl": ch["prUrl"],
+                       "ticket": ch["ticket"], "ticketUrl": t["url"], "mergedAt": ch["mergedAt"], "commitDate": ch["commitDate"], "sourceFrom": where, "source": source})
     for qid, split, repo, criterion, anchor, name, *decl in B:
         since, pin = window(repo), PIN[repo]
         if criterion == "pickaxe":
@@ -165,7 +188,7 @@ def main():
     questions.sort(key=lambda q: q["id"])
     record.sort(key=lambda r: r["id"])
     impact = json.load(open(os.path.join(ROOT, "tests/eval/datasets/o3-impact.json")))
-    used = sorted({r["repo"] for r in record}, key=list(PIN).index)
+    used = sorted({g["repo"] for q in questions for g in q["required"] if "repo" in g}, key=list(PIN).index)
     dataset = {"id": "o3-history", "repo": impact["repo"],
                "corpus": {"include": ["**/*"], "exclude": [], "product": {"id": "openmrs", "reference": "products/openmrs.json", "commits": {n: PIN[n] for n in used}}},
                "questions": questions}

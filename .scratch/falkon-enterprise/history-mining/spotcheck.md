@@ -1,21 +1,36 @@
 # S45 spot-check (D97): 4 hidden questions, 25% of the dataset
 
-Round 1 rewrite (D100): the previous list is void for the rewritten kinds; this list replaces it. One per repository, covering all three kinds (hist-c-07 is unchanged and stays on the list). For each, open the sources and confirm the claim. Gold is what `tests/eval/datasets/o3-history.json` scores against; the mining record for every question is in `questions.json` next to this file.
+Round 2 rewrite (D100, option i): all 16 kind (a) targets were replaced, so the round 1 list is void for kind (a); hist-b-04 and hist-c-07 are unchanged and stay. Two kind (a), one kind (b), one kind (c), across five repositories. For each, open the sources and confirm the claim. Gold is what `tests/eval/datasets/o3-history.json` scores against; the mining record for every question is in `questions.json` next to this file.
 
-## hist-a-10 (kind a, why it changed) - openmrs-module-webservices.rest
+## hist-a-13 (kind a, why it changed) - openmrs-esm-billing-app and openmrs-module-billing
 
-Question: In the REST web services module, once core moved to Spring Security, requests refused for missing authentication or a missing privilege started coming back as HTTP 500 instead of 401 or 403. Why, and which change and ticket restored the expected status codes?
+Question: In O3 billing, the list of bills could only be narrowed by payment state, such as pending or paid, and not by when the bills were created. Which changes, one in the billing frontend and one in the billing backend module, made that possible, what does the frontend do when the chosen end comes before the chosen start, and which ticket asked for it?
 
 Gold:
-- change `openmrs-module-webservices.rest` commit `66d284b5105a13d5221e103e0243711b69f2dac0`, PR #767
-- ticket `RESTWS-1056`
+- change `openmrs-esm-billing-app` commit `6e4cdcd9db634a947b317df793d5b8170a9768e9`, PR #831
+- change `openmrs-module-billing` commit `c47f6d87e0352dcfa5a51b5a743016e0a8c40be9`, PR #193
+- ticket `O3-5112`
 
 Sources:
-- https://github.com/openmrs/openmrs-module-webservices.rest/pull/767
-- https://github.com/openmrs/openmrs-module-webservices.rest/commit/66d284b5105a13d5221e103e0243711b69f2dac0
-- https://openmrs.atlassian.net/browse/RESTWS-1056
+- https://github.com/openmrs/openmrs-esm-billing-app/pull/831
+- https://github.com/openmrs/openmrs-module-billing/pull/193
+- https://openmrs.atlassian.net/browse/O3-5112
 
-Claim to verify: RESTWS-1056 says that since TRUNK-6799 core denies a call lacking a privilege with Spring Security's access-denied exception, which the REST module's controller exception handling did not match, so such requests returned 500 instead of 401 or 403; PR #767 (squash-merged as `66d284b5`, 2026-10-14) handles it like the older authentication exception, and no other commit at the pin names RESTWS-1056. The question names no file, class, PR or ticket, so the agent has to find the exception handling first.
+Claim to verify: O3-5112 says the billing list can only be filtered by status (pending, paid) and asks for start and end date filters; PR #193 (squash-merged as `c47f6d87`, 2026-09-03) adds the date bounds to the backend bill search and PR #831 (squash-merged as `6e4cdcd9`, 2026-09-17) adds the date range filter to the bills table and skips the fetch when the end date is before the start. Where the key appears: only in Jira; O3-5112's text names both PR URLs, and neither PR's title, body nor branch names it. Neither commit message names any Jira key (`git log -1 --format=%B` on each), and no commit reachable from any of the 42 corpus pins names O3-5112.
+
+## hist-a-15 (kind a, why it changed) - openmrs-module-patientdocuments
+
+Question: In the patient documents module, only superusers could produce the printable visit summary, even though the code checks a dedicated permission before generating it, because no role could ever be granted that permission. Why, and which change and ticket fixed it?
+
+Gold:
+- change `openmrs-module-patientdocuments` commit `9fc46c2cf8f6b7d3f2758379ac9b7af2d848b22a`, PR #31
+- ticket `O3-5667`
+
+Sources:
+- https://github.com/openmrs/openmrs-module-patientdocuments/pull/31
+- https://openmrs.atlassian.net/browse/O3-5667
+
+Claim to verify: PR #31 (squash-merged as `9fc46c2c`, 2026-07-20) says the visit summary privilege was enforced in code but never declared in the module config, so no privilege row existed, it could not be granted, and visit summary PDFs were effectively superuser-only; it declares the privilege. Where the key appears: only in the PR body ("Part of https://openmrs.atlassian.net/browse/O3-5667"); the commit message (subject plus a co-author line) names no Jira key, and no commit reachable from any corpus pin names O3-5667. O3-5667 is the parent visit summary ticket; PR #32 in the same repository is also part of it but changes section ordering, so it does not answer this question.
 
 ## hist-b-04 (kind b, what changed and when) - openmrs-core
 
@@ -30,23 +45,6 @@ Gold (change units):
 Sources: https://github.com/openmrs/openmrs-core/pull/6680, https://github.com/openmrs/openmrs-core/pull/6673, https://github.com/openmrs/openmrs-core/pull/6544, https://github.com/openmrs/openmrs-core/pull/6505
 
 Claim to verify: on the first-parent line up to the pin `5eb8cba2` (2026-10-13), `git log --first-parent --since=2026-04-14 -GdoFilterInternal 5eb8cba2 -- web/src/main/java` lists exactly these four squash-merged PRs (the two path-normalising filters, the Spring Security filter chain, and the gzip filter rework), out of 22 first-parent commits under that directory since 2026-04-14, and each PR's merge commit is the listed SHA.
-
-## hist-b-09 (kind b, what changed and when) - openmrs-esm-billing-app
-
-Question: In openmrs-esm-billing-app, which merged pull requests since 2026-04-16 added or removed a line containing `lineItems` in any file under `src`, and when was each merged? Count only commits on the main line up to the pinned head.
-
-Gold (change units):
-- `c770afca8921295dd87d8e7c185a8a4fef231376`, PR #885, merged 2026-10-15 ((feat) O3-6112: Create bill / Add bill items workspace should show which patient is being billed in tablet mode)
-- `6e4cdcd9db634a947b317df793d5b8170a9768e9`, PR #831, merged 2026-09-17 ((feat) Add date range filter to bills table)
-- `e8126b39dc10bcdc719250b004afe86f7782f36a`, PR #738, merged 2026-06-04 ((feat) O3-5413: Add bill refunds)
-- `4aa8e4c993d5fe06147c9561c949a6da36aea47e`, PR #741, merged 2026-06-02 ((feat) O3-5421: Add visit-bills panel showing visit-scoped bills in visit summary)
-- `e5b80768f3166c82b2db7c710e166adf01ce3f70`, PR #744, merged 2026-05-25 ((fix) O3-5708: Keep discount review modal open after approve/reject/delete actions)
-- `8ba8b18ae423df842acd93584f85cafa44577a02`, PR #733, merged 2026-05-20 ((chore) Update BillLineItem type)
-- `5127b0c031addf584cc49f6252272121d50c5cad`, PR #732, merged 2026-05-18 ((feat) O3-5417: Add bill discounts feature)
-
-Sources: https://github.com/openmrs/openmrs-esm-billing-app/pull/885, https://github.com/openmrs/openmrs-esm-billing-app/pull/831, https://github.com/openmrs/openmrs-esm-billing-app/pull/738, https://github.com/openmrs/openmrs-esm-billing-app/pull/741, https://github.com/openmrs/openmrs-esm-billing-app/pull/744, https://github.com/openmrs/openmrs-esm-billing-app/pull/733, https://github.com/openmrs/openmrs-esm-billing-app/pull/732
-
-Claim to verify: on the first-parent line up to the pin `c770afca` (2026-10-15), `git log --first-parent --since=2026-04-16 -GlineItems c770afca -- src` lists exactly these seven squash-merged PRs, out of 28 first-parent commits under `src` since 2026-04-16, and each PR's merge commit is the listed SHA (the pin itself, PR #885, is one of them).
 
 ## hist-c-07 (kind c, ticket to code) - openmrs-esm-core
 

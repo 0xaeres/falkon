@@ -1,0 +1,12 @@
+{
+ "number": 3406,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3406",
+ "title": "(fix) Attach visit to visit note submissions",
+ "mergedAt": "2026-06-22T11:11:49Z",
+ "mergeCommit": "b147fb5906f1c3df18f12e3c804daeea486813d2",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nThis attaches the active visit uuid to the saved visit note payload in `VisitNotesForm` (`visit: activeVisit?.uuid ?? null`), guarding against a null active visit. This fixes the issue of visit notes not being attached to the active visit.\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\nBefore - \r\n\r\nhttps://github.com/user-attachments/assets/a166bcd7-e70d-450b-8f8e-f8d81a7034f9\r\n\r\n\r\nAfter -\r\n\r\n\r\nhttps://github.com/user-attachments/assets/cacd12df-e777-414b-a1b2-8472d7ad81cc\r\n\r\n\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n\r\n## Other\r\nRemoves the dead `testsFilter` `useMemo` (and the now-orphaned `ExternalOverviewProps` import) from `VisitSummary`. The encounter-based filtering it represented now lives inside the `TestsSummary` component, which builds the filter itself from its `encounters` prop \u2014 so the parent's copy was unused.\r\n",
+ "files": [
+  "packages/esm-patient-chart-app/src/visit/visits-widget/past-visits-components/visit-summary.component.tsx",
+  "packages/esm-patient-notes-app/src/notes/visit-notes-form.workspace.tsx"
+ ]
+}

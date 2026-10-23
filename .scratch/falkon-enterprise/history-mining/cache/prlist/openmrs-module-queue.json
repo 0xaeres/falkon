@@ -1,0 +1,92 @@
+[
+ {
+  "number": 127,
+  "url": "https://github.com/openmrs/openmrs-module-queue/pull/127",
+  "title": "Clear the user context with clearUserContext() in QueueEntryServiceTest",
+  "branch": "core-3.x-clear-user-context",
+  "mergedAt": "2026-10-10T19:08:58Z",
+  "mergeCommit": "1ccae7b23b4e41b6359fc74deb5d9d47955e212e",
+  "body": "Since TRUNK-6799 (openmrs-core #6544), `Context.setUserContext(null)` throws an NPE, because it now wraps its argument in an `OpenmrsAuthenticationToken`. `shouldUndoTransitionQueueEntry` cleaned up with `setUserContext(null)` and failed on core-3.x. `clearUserContext()` is the API for removing the context.\n\n`QueueEntryServiceTest` locally on Java 21 against the current core 3.0.0-SNAPSHOT: before, 31 run with 1 error (that NPE); after, 31 run with 0 failures and 0 errors.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01ASZcAmLun5HaBwCZ4kjEjx"
+ },
+ {
+  "number": 126,
+  "url": "https://github.com/openmrs/openmrs-module-queue/pull/126",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T18:00:55Z",
+  "mergeCommit": "acbb1a8a61c7bfce68c5396e706fc1bca61d664f",
+  "body": "Updates queue so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7, Hibernate 7). Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions and build:\n  - Module version is now 4.0.0-SNAPSHOT, on Platform 3.0.0-SNAPSHOT (`openmrs-bom` imported) and webservices.rest 5.0.0-SNAPSHOT.\n  - Builds with Java 21 and `-parameters`.\n  - mockito-inline, the byte-buddy pin and the PowerMock exclusions are removed; Mockito 5 now comes from `openmrs-test`.\n- `config.xml` now sets `require_version` to 3.0.0, and the README's prerequisites say Platform 3.0.0 and Java 21. CI (release workflow and Bamboo) uses JDK 21.\n- javax.persistence/validation/servlet become jakarta, and commons-lang becomes lang3.\n- DAOs:\n  - All Hibernate Criteria code is now JPA `CriteriaBuilder`. `AbstractBaseQueueDaoImpl` keeps its helper names. `QueueEntryDaoImpl` follows the predicate-builder shape from #101, but without #101's fetch joins / `distinct`, and keeps the newer \"exclude entries of voided patients\" join.\n  - `saveOrUpdate`/`delete` become `HibernateUtil.saveOrUpdate`/`remove`, and `updateIfUnmodified` runs #119's `CriteriaUpdate` through `createMutationQuery`.\n- Entities:\n  - Ids use `GenerationType.IDENTITY`.\n  - `QueueEntry.queueComingFrom` becomes `@ManyToOne`. Many entries can come from the same queue, and Hibernate 7 adds a UNIQUE constraint for `@OneToOne`.\n- Tests are migrated to JUnit 5. `QueueServicesWrapperTest` marks its shared `getConceptByUuid` setup stub `lenient()`, since not every test uses it; the rest of its stubs stay strict.\n- main is merged in, including #119 (O3-5765):\n  - #119's tests are ported to JUnit 5, and `AutoCloseQueueEntryTaskIntegrationTest` runs the task through core's `LegacyTask`, which is how the JobRunr scheduler runs a task definition now that `TaskFactory` is gone.\n  - #119's tasks stay on the `TaskDefinition` API. `scheduler_task_config` is still what core restores scheduled tasks from at startup, which is why TRUNK-6752 was closed without removing that API.\n\n## Depends on\n- openmrs/openmrs-core#6631 (merged). `queue.QueueEntryService` is a `TransactionProxyFactoryBean` whose target references `visitService` and `adminService`, which could leave those core services without core's advisors (openmrs/openmrs-core#6630).\n- For #119's two scheduled tasks to work on core master, these scheduler issues need fixing in core. None of them is in this module:\n  - New task definitions cannot be saved on MySQL. TRUNK-6391 moved `TaskDefinition` to annotations, which write `scheduler_task_config.creator`, but the old `created_by` column keeps `DEFAULT 0` and its FK to `users`, so the insert fails on `scheduler_creator`. `QueueModuleActivator` then logs \"Unable to register task\" for both tasks.\n  - Tasks scheduled by `daemon` run without privileges. `Daemon.executeScheduledTaskAsUser` becomes the scheduling user and then drops daemon status, and tasks registered at startup are scheduled by `daemon`, which has no roles. The visit task fails with `APIAuthenticationException: Privileges required: Get Queue Entries`, and the close-time task makes the same `getQueueEntries` call once its time is set. Core's own Auto Close Visits Task is scheduled as `daemon` too, since its `creator` column is null.\n  - A task with a start time first runs about a day after it is scheduled. `JobRunrSchedulerService.scheduleTask` gives it a placeholder recurring job with an interval of a day plus the wait to its first run, and the helper that later sets the real interval leaves the occurrence the placeholder already scheduled.\n  - openmrs/openmrs-core#6629 (open). On a site that ran queue 3.1.0 or later on 2.x, both task definitions have no `creator`, because TRUNK-6391 added the column without copying `created_by` into it. `onStartup()` then throws an NPE and startup fails.\n  - `onStartup()` never recreate"
+ },
+ {
+  "number": 125,
+  "url": "https://github.com/openmrs/openmrs-module-queue/pull/125",
+  "title": "(docs) Point the README CI badge at build.yml",
+  "branch": "fix-readme-ci-badge",
+  "mergedAt": "2026-09-08T10:25:38Z",
+  "mergeCommit": "cdd14f5a9c9a3935a3594de2a86eaac3f51fb149",
+  "body": "The badge and its link in the README still point at maven.yml. That workflow was renamed to build.yml in #100 when we moved to the reusable OpenMRS action, and GitHub keys badge URLs by file name, so the old URL 404s and the badge renders blank. This swaps both the image URL and the link target to build.yml."
+ },
+ {
+  "number": 124,
+  "url": "https://github.com/openmrs/openmrs-module-queue/pull/124",
+  "title": "O3-5955: Void queue entries when a patient is voided",
+  "branch": "O3-5955",
+  "mergedAt": "2026-09-09T11:38:03Z",
+  "mergeCommit": "bdfaa72846d87ac123c89791c6cce1c04a888065",
+  "body": "  - Add PatientWithQueueEntriesVoidHandler and PatientWithQueueEntriesUnvoidHandler, so voiding a patient voids their queue entries with the         \r\n    patient's void reason, user and date, and unvoiding the patient restores exactly those entries                                                   \r\n  - Add QueueEntryService.unvoidQueueEntry, and skip QueueEntryValidator for voided entries, so both cascades work even when an entry no longer      \r\n    validates (e.g. its visit was stopped or moved to another patient by a merge)                                                                    \r\n  - Exclude unvoided entries of voided patients from queue entry searches and counts unless includedVoided is set                                    \r\n  - Add integration tests"
+ },
+ {
+  "number": 123,
+  "url": "https://github.com/openmrs/openmrs-module-queue/pull/123",
+  "title": "O3-5770: Report queue entry metrics per queue, and for open waits",
+  "branch": "O3-5770-per-queue-metrics",
+  "mergedAt": "2026-09-07T08:14:03Z",
+  "mergeCommit": "fb6de2acbf31b4dd50e518f74badf28163d6e67d",
+  "body": "## Summary\r\nAdds `groupBy=queue` plus three open-wait metrics to `/queue-entry-metric`, so a client can get a per-queue breakdown in one request instead of pulling every unfinished entry and counting them in the browser. Raised from\r\n[#2681](https://github.com/openmrs/openmrs-esm-patient-management/pull/2681#discussion_r3857206467).\r\n\r\nExisting callers are unaffected: `count` and `averageWaitTime` are still returned when no `metric` is named, the new ones only when asked for.\r\n\r\nWorth noting:\r\n\r\n- `longestOpenWait.queueEntry` uses a custom representation rather than `REF`, which for a queue entry drags six lazy associations along for every queue reported on. The cost is that the rep string is not covered by a test, the controller test mocks `ConversionUtil` wholesale and the module has no web-context-sensitive test setup.\r\n- The `queues` array is seeded from the queue search but extended from the entries, because the two do not select identically: the queue search excludes retired queues, the entry search has no such filter. Without that the totals could exceed the sum of the rows.\r\n\r\n## Related Issue\r\n[O3-5770](https://openmrs.atlassian.net/browse/O3-5770)\n\n[O3-5770]: https://openmrs.atlassian.net/browse/O3-5770?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ },
+ {
+  "number": 122,
+  "url": "https://github.com/openmrs/openmrs-module-queue/pull/122",
+  "title": "O3-5763: Fetch queue entry associations lazily",
+  "branch": "O3-5763-lazy-queue-associations",
+  "mergedAt": "2026-08-25T18:33:25Z",
+  "mergeCommit": "2afe7c55938965b5d5342f63fdc003c153c9e978",
+  "body": "## Summary\r\n`service-queues.spec.ts` in [#2600](https://github.com/openmrs/openmrs-esm-patient-management/pull/2600) started timing out once the suite created a queue entry.\r\n\r\n`QueueEntry` leaves all eight `*ToOne` associations at the JPA default of `EAGER`, and `Queue` does the same for its four `@ManyToOne` fields. Reading one entry pulls every association's own eager graph in a single statement \u2014 21KB of SQL, 30 joins. On a fresh install, which ships zero-row table statistics, the optimizer plans that badly.\r\n\r\nSame database, same 51 entries, the query the frontend actually makes:\r\n\r\n| | eager (`main`) | lazy (this PR) |\r\n|---|---|---|\r\n| 51 queue entries | never finished \u2014 still running at 26 min | 1.09s cold, 0.16s warm |\r\n\r\nWorth Noting:\r\n- **REST output is unchanged** \u2014 byte-for-byte identical for `v=ref`, `v=default`, `v=full` and `isEnded=false`. Serialisation happens inside the request session, so no `LazyInitializationException`.\r\n- **This trades one bad join for N+1** \u2014 primary-key lookups instead of a 30-join statement. Faster in practice, but a real change in shape. Fetch-joining in the DAO doesn't help; `Patient`, `Visit` and `Concept` bring their own eager graphs from core.\r\n\r\n## Related Issue\r\n[O3-5763](https://openmrs.atlassian.net/browse/O3-5763)\n\n[O3-5763]: https://openmrs.atlassian.net/browse/O3-5763?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ },
+ {
+  "number": 121,
+  "url": "https://github.com/openmrs/openmrs-module-queue/pull/121",
+  "title": "O3-5760: Accept timezone-qualified dates in queue entry searches",
+  "branch": "O3-5760-rest-date-timezone",
+  "mergedAt": "2026-08-27T04:54:33Z",
+  "mergeCommit": "13ee65a3a29278630e2d2b775d35881a21c0430f",
+  "body": "## Summary\r\nFrom [#2615](https://github.com/openmrs/openmrs-esm-patient-management/pull/2615#discussion_r3822929676): scoping the average-wait-time card to \"today\" meant sending `startedOnOrAfter`, but there was no way to say *which* midnight \u2014 the parser used a bare `SimpleDateFormat(\"yyyy-MM-dd HH:mm:ss\")`, which carries no offset and throws on anything else. Clients were left guessing the server's timezone, and a browser ahead of the server silently hid the whole morning.\r\n\r\nNow parsed with `ConversionUtil.convert(String, Date.class)`, the same call `EncounterSearchHandler2_0` and `VisitResource1_9` use upstream, so a client can send an instant and let the server resolve it.\r\n\r\nWorth Noting:\r\n- **Backward compatible**: `ConversionUtil` still accepts the old zone-less form, so existing clients are unaffected (there's a test pinning it).\r\n- **Unparseable dates now return 400, not 500** \u2014 `ConversionException` is annotated `@ResponseStatus(BAD_REQUEST)`.\r\n\r\n## Related Issue\r\n[O3-5760](https://openmrs.atlassian.net/browse/O3-5760)\r\n\r\n## Other\r\nFrontend counterpart: [#2615](https://github.com/openmrs/openmrs-esm-patient-management/pull/2615).\n\n[O3-5760]: https://openmrs.atlassian.net/browse/O3-5760?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ },
+ {
+  "number": 120,
+  "url": "https://github.com/openmrs/openmrs-module-queue/pull/120",
+  "title": "O3-5760: Return null rather than NaN for the average wait time",
+  "branch": "O3-5760-average-wait-time-nan",
+  "mergedAt": "2026-07-31T07:50:56Z",
+  "mergeCommit": "04895c372518b82e972f988373950ad65baf6f19",
+  "body": "## Summary\r\nCame up while reviewing [openmrs-esm-patient-management#2615](https://github.com/openmrs/openmrs-esm-patient-management/pull/2615#discussion_r3606177037), where the Service Queues dashboard rendered \"NaN mins\".\r\n\r\n`QueueUtils.computeAverageWaitTimeInMinutes` only guards against an empty entry list, but it averages over entries that have both a `startedAt` and an `endedAt`. A non-empty list where nothing has ended leaves the denominator at zero, so `queue-entry-metrics?metric=averageWaitTime` returns `{\"averageWaitTime\":\"NaN\"}`.\r\n\r\nReturns `null` instead when there is no completed wait to average.\r\n\r\n## Related Issue\r\n[O3-5760](https://openmrs.atlassian.net/browse/O3-5760)\r\n\r\n## Other\r\nRelated PR [here](https://github.com/openmrs/openmrs-esm-patient-management/pull/2615).\r\n\r\n[O3-5760]: https://openmrs.atlassian.net/browse/O3-5760?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ },
+ {
+  "number": 119,
+  "url": "https://github.com/openmrs/openmrs-module-queue/pull/119",
+  "title": "O3-5765: Automatically clear queue entries on a schedule",
+  "branch": "O3-5765-scheduled-queue-clear",
+  "mergedAt": "2026-10-05T10:51:36Z",
+  "mergeCommit": "32297489ae36edd386956f97e754da46076a27ee",
+  "body": "## Summary\r\n\r\nAdds `AutoCloseQueueEntryTask`. Each minute it ends active entries whose `startedAt` is on or before the most recent occurrence of the configured time of day. So a run missed at that time is caught up by the next one, and entries started since then stay in the queue.\r\n\r\nBoth this and the existing visit-close task are now registered with core's scheduler as `TaskDefinitions` from `QueueModuleActivator`, replacing the module's own `QueueTaskExecutor` and `QueueTimerTask`. They appear on the Manage Scheduler page, where the interval can be changed or a task stopped.\r\n\r\nTwo new global properties:\r\n\r\n`queue.autoCloseQueueEntriesAtTime` - `HH:mm`, blank by default, which disables clearing. An outpatient clinic would set 23:59.\r\n`queue.autoCloseQueueEntriesForQueues` - comma-separated queue uuids; blank means all queues.\r\n\r\nBlank by default so nothing changes for an existing deployment until an implementer opts in ([O3-2443](https://openmrs.atlassian.net/browse/O3-2443)).\r\n\r\n## Related Issue\r\n[O3-5765](https://openmrs.atlassian.net/browse/O3-5765)\n\n[O3-2443]: https://openmrs.atlassian.net/browse/O3-2443?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ\n[O3-5765]: https://openmrs.atlassian.net/browse/O3-5765?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ },
+ {
+  "number": 116,
+  "url": "https://github.com/openmrs/openmrs-module-queue/pull/116",
+  "title": "O3-5697: Add indexes to queue_entry for queue_id, patient_id & started_at/ended_at",
+  "branch": "O3-5697-index-queue-entry",
+  "mergedAt": "2026-08-31T09:18:38Z",
+  "mergeCommit": "706ca3b1c9c0503ff99c2e8f0f53a5c38eab82ae",
+  "body": "## Summary\r\nThe `queue_entry` table of Service Queues  has no indexes on the columns those queries filter by (`queue_id`, `patient_id`, `started_at`, `ended_at`). Every query therefore scans the entire table.\r\n\r\nOn a fresh demo install with a handful of patients this is invisible. But in a real clinic with months or years of accumulated queue history (potentially tens of thousands of rows), the queue page gets progressively slower until staff notice it taking seconds to load and by then the table is large enough that adding indexes needs careful migration planning. Indexing it now, while it's small, avoids that.\r\n\r\n## Related Issue\r\n[O3-5697](https://openmrs.atlassian.net/browse/O3-5697)\n\n[O3-5697]: https://openmrs.atlassian.net/browse/O3-5697?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ"
+ }
+]

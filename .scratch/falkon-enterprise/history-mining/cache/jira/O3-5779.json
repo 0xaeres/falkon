@@ -1,0 +1,9 @@
+{
+ "key": "O3-5779",
+ "url": "https://openmrs.atlassian.net/browse/O3-5779",
+ "summary": "Patch OWASP-reported high severity dependency vulnerabilities in Patient chart",
+ "status": "Done",
+ "created": "2026-06-30T15:27:13.924+1000",
+ "resolved": "2026-06-30T15:30:36.504+1000",
+ "description": ""
+}

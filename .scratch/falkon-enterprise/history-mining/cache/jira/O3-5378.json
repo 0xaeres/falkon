@@ -1,0 +1,9 @@
+{
+ "key": "O3-5378",
+ "url": "https://openmrs.atlassian.net/browse/O3-5378",
+ "summary": "UI Updates on Visits Component",
+ "status": "Cancelled",
+ "created": "2026-01-28T04:44:15.964+1100",
+ "resolved": "2026-05-26T21:55:19.704+1000",
+ "description": "With respect to changes discussed in  \nThis ticket will include changes to the visits page to properly display the scheduled dates of ordered medications and mark the medications ordered in the future (as of visit date) with a visual cue for a better indication. More changes possible when implementing."
+}

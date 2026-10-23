@@ -1,0 +1,9 @@
+{
+ "key": "O3-4115",
+ "url": "https://openmrs.atlassian.net/browse/O3-4115",
+ "summary": "'Add patient to list' button missing from search results in service queues",
+ "status": "Done",
+ "created": "2024-10-24T22:40:34.718+1100",
+ "resolved": null,
+ "description": "Currently, it is not clear how to add a patient to the list on the service queues page. Search results in the workspace don\u2019t show the user how to add a patient to the queue. \n\nPlease use the Patient Search Results component from this ticket to achieve the designs illustrated on Zeplin here:"
+}

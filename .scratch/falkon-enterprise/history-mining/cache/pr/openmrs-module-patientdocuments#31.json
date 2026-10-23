@@ -1,0 +1,11 @@
+{
+ "number": 31,
+ "url": "https://github.com/openmrs/openmrs-module-patientdocuments/pull/31",
+ "title": "Declare Visit Summary privilege in config.xml",
+ "mergedAt": "2026-07-20T04:45:44Z",
+ "mergeCommit": "9fc46c2cf8f6b7d3f2758379ac9b7af2d848b22a",
+ "body": "## Summary\r\n\r\nDeclares the `App: Can generate a Visit Summary` privilege in the module's `config.xml` so it is created at startup and can be granted to roles.\r\n\r\nThe privilege is already enforced in `VisitSummaryPdfReport` via `Context.requirePrivilege(...)`, but it was never declared, so no privilege row existed. That made it un-grantable and left visit summary PDF generation effectively superuser-only. Copies the pattern of the existing sticker and encounter-forms privileges in the same file.\r\n\r\n## Related\r\n\r\nPart of https://openmrs.atlassian.net/browse/O3-5667",
+ "files": [
+  "omod/src/main/resources/config.xml"
+ ]
+}

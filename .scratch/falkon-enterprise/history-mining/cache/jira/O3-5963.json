@@ -1,0 +1,9 @@
+{
+ "key": "O3-5963",
+ "url": "https://openmrs.atlassian.net/browse/O3-5963",
+ "summary": "Remove-attachment button on file thumbnails has poor contrast and inconsistent positioning",
+ "status": "Done",
+ "created": "2026-09-10T01:43:28.295+1000",
+ "resolved": "2026-09-29T04:02:17.154+1000",
+ "description": "Steps to Reproduce\nOpen a form containing a file/image attachment field.\nClinical form \u2192 Test form 2 \u2192 Body Conditions section \u2192 file attachment component\n\n\nAttach one or more image files with a white background and with different colours.\n\nObserve the remove (\"X\") button on each thumbnail.\n\nCurrent Behaviour\nThe remove button's icon has a white no border or backgroud drop shadow behind it. When the attached image has a light or white background near the top-right corner, the button becomes nearly invisible.\n\nThe thumbnail container is missing position: relative, so it is absolutely positioned. removeButton isn't consistently anchored to that thumbnail's top-right corner \u2014 it appears misaligned relative to different thumbnails.\n\nExpected Behaviour\nThe remove button should stay clearly visible regardless of the underlying image.\n\nThe button should be consistently anchored to the top-right corner of every thumbnail.\n\nScreenshots"
+}

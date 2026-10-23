@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Validates tests/eval/datasets/o3-history.json against D88, D89, D91, D95, D96 and D98, plus the D100 round 1 rewrite
-// rules (kind a: no path or changed-file identifier in the text; kind b: criterion-computed gold of at least 4), and prints counts and violations.
+// rules (kind a: no path or changed-file identifier in the text; kind b: criterion-computed gold of at least 4) and the round 2
+// rules (kind a: the commit message names no Jira key, no corpus commit names the ticket, the PR or a Jira issue linking it
+// names the key), and prints counts and violations.
 // Plain node, no dependencies. Usage: node validate.mjs [--live]   (--live re-reads every ticket from the public Jira)
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -70,6 +72,26 @@ async function ticketResolves(key) {
   return res.ok && (await res.json()).key === key;
 }
 
+const ANYKEY = /\b[A-Z][A-Z0-9]+-\d+\b/;
+const cached = (p) => existsSync(join(HERE, p)) ? JSON.parse(readFileSync(join(HERE, p), "utf8")) : null;
+// Where the PR names the key: its cached title or body, its branch (from the merged-PR listing), or, with --live or from
+// cache/jiralink, a Jira issue whose text names the PR URL.
+async function keyReachesPr(repo, pr, key) {
+  const k = new RegExp(`\\b${key}\\b`, "i");
+  const p = cached(`cache/pr/${repo}#${pr}.json`) ?? {};
+  const branch = (cached(`cache/prlist/${repo}.json`) ?? []).find((x) => x.number === pr)?.branch ?? "";
+  if (k.test(`${p.title} ${p.body} ${branch}`)) return true;
+  if (!live) return (cached(`cache/jiralink/${repo}#${pr}.json`) ?? []).includes(key);
+  const url = `github.com/openmrs/${repo}/pull/${pr}`;
+  let text = "";
+  for (const path of [`${key}?fields=description,comment`, `${key}/remotelink`]) {
+    const res = await fetch(`https://openmrs.atlassian.net/rest/api/3/issue/${path}`);
+    await new Promise((r) => setTimeout(r, 300));
+    if (res.ok) text += JSON.stringify(await res.json());
+  }
+  return new RegExp(`${url.replace(/[.\/]/g, "\\$&")}(?!\\d)`).test(text);
+}
+
 let changeUnits = 0, ticketUnits = 0, spanUnits = 0, overlapChecks = 0;
 for (const q of dataset.questions) {
   const kind = KIND[q.relation];
@@ -108,6 +130,19 @@ for (const q of dataset.questions) {
         const code = git(c.repo, "show", "--format=", c.commit) + git(c.repo, "show", "--format=", "--name-only", c.commit).split("\n").filter(Boolean)
           .map((p) => { try { return git(c.repo, "show", `${pinOf(c.repo).pin}:${p}`); } catch { return ""; } }).join("\n");
         for (const id of q.question.match(CAMEL) ?? []) if (new RegExp(`\\b${id}\\b`).test(code)) bad(q.id, `kind a question names identifier ${id} from the changed files`);
+      }
+      if (kind === "a") {
+        // Round 2 rewrite (D100, option i): the commit message names no Jira key, no corpus commit names the gold ticket,
+        // and the key is reachable only through the PR (title, body, branch) or a Jira issue that names the PR URL.
+        const message = git(c.repo, "log", "-1", "--format=%B", c.commit);
+        if (ANYKEY.test(message)) bad(q.id, `commit message of ${c.commit.slice(0, 8)} names a Jira key: ${message.match(ANYKEY)[0]}`);
+        for (const t of tickets) {
+          for (const r of repos.keys()) {
+            const named = git(r, "log", "--format=%H", "-i", "-E", `--grep=${t.ticket}([^0-9]|$)`, repos.get(r).commit).split(/\s+/).filter(Boolean);
+            if (named.length) bad(q.id, `${r} ${named[0].slice(0, 8)} names ${t.ticket} in its message, so git recovers the ticket`);
+          }
+          if (!(await keyReachesPr(c.repo, c.pr, t.ticket))) bad(q.id, `${t.ticket} is not named by PR ${c.repo}#${c.pr} (title, body, branch) nor by a Jira issue linking it`);
+        }
       }
       // Every commit at the pin that names the ticket must be gold, so exactly the gold units answer the question.
       for (const t of tickets) {

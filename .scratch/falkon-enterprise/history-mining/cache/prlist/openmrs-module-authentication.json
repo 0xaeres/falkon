@@ -1,0 +1,164 @@
+[
+ {
+  "number": 66,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/66",
+  "title": "Fix the SonarCloud reliability findings left on core-3.x",
+  "branch": "core-3.x-sonar-reliability",
+  "mergedAt": "2026-10-10T18:42:45Z",
+  "mergeCommit": "33966f40c3f6b2adb189746ec758ca46da358d4e",
+  "body": "SonarCloud failed `new_reliability_rating` on #60 with three findings.\n\n- **javabugs:S6466 (x2), `BasicWebAuthenticationScheme`**: real. The decoded Basic header was split on every colon and `[0]`/`[1]` read, so a header without a colon threw `ArrayIndexOutOfBoundsException` (only the generic catch saved it), and a password containing a colon was truncated. It now splits on the first colon only (RFC 7617) and rejects a header without a non-blank username and password with the same `invalidCredentials` error the request-parameter path gives. New tests in `BasicWebAuthenticationSchemeTest`; the colon-password and empty-username cases failed before the fix.\n- **javabugs:S2259, `AuthenticationSession`**: false positive. The request constructor read `userLogin` after `this(request.getSession())`, and the delegated constructor always sets it non-null. The analyzer's flow treats the field as freshly initialised to null after the delegation. Rather than suppressing it, both public constructors now delegate to one private constructor that does all the set-up. Behaviour is unchanged.\n\n`mvn clean install` on Java 21: BUILD SUCCESS. api: Tests run: 18, Failures: 0, Errors: 0. omod: Tests run: 178, Failures: 0, Errors: 0.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01ASZcAmLun5HaBwCZ4kjEjx\n"
+ },
+ {
+  "number": 65,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/65",
+  "title": "AUT-35: Follow-up fix to lock the saved page on every login attempt, wherever it is made",
+  "branch": "AUT-35",
+  "mergedAt": "2026-10-08T19:52:06Z",
+  "mergeCommit": "924603abcc95453e5b8730b1c00d07a6ab04668e",
+  "body": "Follow-up to #64, from its review (greptile-apps comment, and a further code review).\n\n## Problem\n#64 locks the saved page from the filter, based on the request: one with credentials, or a post to the login page. That doesn't always match a login attempt:\n\n- **Two-factor primary factor on the session endpoint** (greptile-apps): `TwoFactorAuthenticationScheme.getCredentials` tries the primary factor itself and returns no credentials, and the request isn't a post to the login page, so the saved page isn't locked.\n- **Two-factor login form posting elsewhere:** for the same reason, a mistyped password posted to a url other than the login page (eg. legacyui's `/ms/legacyui/loginServlet`) doesn't lock it, and the home page the flow sends the user through replaces it.\n- **A post to the login page that isn't an attempt** (eg. an empty form) locks it.\n\nIn practice the first doesn't affect a login completed on the session endpoint, as it isn't redirected to the saved page (#62), and authenticationui posts each factor to its own page. The others could affect other login pages and flows.\n\n## Changes\n- **Lock where attempts are made:** `AuthenticationSession.authenticate`, which every attempt goes through (plain logins, and each factor of a two-factor login), locks the saved page before authenticating, so failures lock it too. The filter's request-based check is removed.\n- **Redirects saved after an attempt:** the filter saves a requested `redirect` after the scheme's `getCredentials`, which may already have tried the primary factor. `authenticate` also notes the attempt on the request, and a redirect saved by such a request is locked again. Without this, a mistyped password on a login page opened with `redirect` (eg. an OWA sending users to log in) loses the redirect; `shouldReturnToRequestedRedirectAfterFailedPrimaryFactor` (#63) fails without it.\n- `authenticate` and the new `isLoginAttemptedOnRequest` allow for an `AuthenticationSession` created without a request, as authenticationui creates some.\n\n## Not changed (from the review)\n- **Most recent wins before any attempt,** so a page that reloads itself in another tab before the user logs in replaces the saved page. This is the trade-off made in #64.\n- **A background request with stale Basic credentials** is an attempt, and locks the page.\n- **Opening the login page with `redirect`** replaces a locked page and unlocks it (#63). Nothing loads a protected page between that and the form's post.\n\n## Testing\n- `mvn clean install -DargLine=\"-Djava.awt.headless=true\"`: 174 tests in omod, 0 failures.\n- **New tests,** each failing on `main`: a primary factor sent to the session endpoint (failed, and accepted with the second factor outstanding) doesn't let the home page replace the saved page; a failed primary factor posted to another url returns the user to the saved page; a post to the login page that isn't an attempt doesn't lock it.\n- **Unit test helper:** `AuthenticationFilterTest` reuses one `AuthenticationSession`, whose schemes read credentials from the request it was created with, so the login attempts in the #64 tests now post on that request (and reset it afterwards). They previously passed only because any post to the login page locked the page.\n- **Manually,** on a pihsl-emr (kgh-test) docker instance with authenticationui, two-factor (secret question) and PIH/openmrs-module-pihapps#56: logout then paste a page, abandoned OWA then the home page, mistyped password with and without a second factor (also after logout, and on a login page opened with `redirect`), an OWA, a query string, normal login, change location, and an O3-style session endpoint login after a saved page.\n\n## Ticket\nhttps://openmrs.atlassian.net/browse/AUT-35\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n"
+ },
+ {
+  "number": 64,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/64",
+  "title": "AUT-35: Follow-up fix to save the most recent requested page, unless a login was attempted since",
+  "branch": "AUT-35",
+  "mergedAt": "2026-10-08T19:27:35Z",
+  "mergeCommit": "7df6d12f3102ca58381c707b6a6babc54574bb1e",
+  "body": "Follow-up to #62 (AUT-35) and #63.\n\n## Problem\n#62 keeps the first page saved until authentication succeeds, so a page saved earlier wins over the one the user then asks for:\n\n- **Logging out, then opening a page:** logout redirects to the home page, which is saved because the user is no longer logged in. A page opened next (eg. a pasted link) is ignored, and the user lands on the home page after login.\n- **An abandoned page:** opening page A while logged out, leaving without logging in, then opening page B within 5 minutes sends the user to A after login.\n\n## Changes\n- **Most recent wins:** a page load replaces any page saved earlier.\n- **Unless a login was attempted since:** once the user submits a login attempt, the saved page is locked until authentication succeeds or it expires. Pages that login pages send the user through, such as the home page after a mistyped password or between factors, still don't replace it (the reason #62 moved to keeping the first page).\n- **A login attempt** is any post to the login page, or any request with credentials. A failed two-factor primary factor leaves no credentials, so the post itself counts.\n- **The lock is on the HTTP session,** next to the saved page, and is cleared whenever a page is saved or removed. #62's first revision checked for a candidate user on the `UserLogin`, which a failed attempt leaves empty and authenticationui resets.\n- A `redirect` given to the login page still replaces the saved page (#63), and unlocks it.\n\n## Known limitation\nOpen page A, mistype the password, abandon the login, then open page B within 5 minutes: the user is returned to A, as before this change. This can't be told apart from an ordinary mistyped password without relying on the `Referer` header.\n\n## Testing\n- `mvn clean install -DargLine=\"-Djava.awt.headless=true\"`: 172 tests, 0 failures.\n- **Existing tests unchanged,** including the mistyped-password and O3 session-endpoint regressions from #62 review, except `shouldNotReplaceSavedPageWithLaterProtectedPage`, which becomes `shouldReplaceSavedPageWithLaterProtectedPage`.\n- **New unit tests:** home page saved after logout replaced by the next page; no replacement after a failed attempt, with and without credentials; a `redirect` replacing a locked page; no lock when nothing is saved.\n- **New integration tests** (two-factor): returning to the page opened after logout, and to the most recent page when an earlier one was abandoned. Both fail without this change.\n- **Manually,** on a pihsl-emr (kgh-test) docker instance with authenticationui and two-factor (secret question), plus PIH/openmrs-module-pihapps#56: logout then paste a page, abandoned OWA then the home page, mistyped password (with and without a second factor), an OWA, a query string, normal login, logout after session expiry, REST with Basic credentials, and an O3-style session endpoint login after a saved page.\n\n## Ticket\nhttps://openmrs.atlassian.net/browse/AUT-35\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n"
+ },
+ {
+  "number": 63,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/63",
+  "title": "AUT-34: Keep the requested redirect through failed login attempts",
+  "branch": "AUT-34",
+  "mergedAt": "2026-10-07T19:10:33Z",
+  "mergeCommit": "2bb874c44ce223b4cd80809160b70fbf5a2db376",
+  "body": "Follow-up to #61 and #62.\n\n## Problem\nWith 2FA, a login started with a `redirect` parameter lost it after a failed password: the user logs out of a page, enters a wrong password, then the right password and the second factor, and lands on `index.htm` instead of the requested page. #61 kept the redirect on the `UserLogin`, which authenticationui resets each time it re-displays the login page, and the bounce through `index.htm` after the failure was then saved as the requested page.\n\n## Changes\n- A `redirect`/`refererURL` given to the login page, or to a request with credentials, is kept on the session as the requested page, replacing any page saved earlier. It survives failed attempts and each step of a multi-step login. The redirect field on `UserLogin` is removed.\n- The login page is the scheme's challenge URL as it was before `getCredentials` (which moves a 2FA login on to its next page), rather than any whitelisted URL.\n- Requested redirects and saved pages go through one check (`isValidReturnUrl`): a path on this server (no scheme, `//`, `/\\`, `\\`, whitespace or control characters), not a logout URL, and not a non-redirect URL (eg. REST), after decoding and removing path parameters and dot segments. `determineSuccessRedirectUrl` uses the same check.\n- Pages that browsers prefetch or prerender (`Sec-Purpose`/`Purpose` headers) are not saved.\n\n## Behaviour changes\n- `determineSuccessRedirectUrl` now ignores a redirect to another host, to logout, or to a non-redirect URL, where before it returned any value.\n- From #62: when a page has been saved, a successful login redirects to it from the filter, so the login page's own POST handler does not run. Before #62 this happened only when the request had a `redirect` or `refererURL` parameter. authenticationui is unaffected (its POST handler only redirects home), but a login page whose POST handler does work after authentication is skipped. For example, `BasicWebAuthenticationScheme` configured with the referenceapplication login page (whose form sends `redirectUrl`, not `redirect`) would no longer set the session location, last-location cookie or locale. `BasicWithLocationAuthenticationScheme` sets the session location itself.\n- A request authenticated with Basic credentials to a non-REST URL is redirected to a saved page, as since #62.\n\n## Testing\n- New unit and integration tests, including the failed-password sequence above (which failed before the fix).\n- Tested in a browser on a Malawi distro instance with 2FA: the sequence above, first visit to an OWA, failed then successful login, logout replay, and background requests.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n"
+ },
+ {
+  "number": 62,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/62",
+  "title": "AUT-35: Return users to the originally requested page after login",
+  "branch": "AUT-35",
+  "mergedAt": "2026-10-07T11:46:16Z",
+  "mergeCommit": "aa139fe2ec2ae26788fb4efec9974579b04a04de",
+  "body": "## Summary\n\nWhen a user who isn't logged in requests a protected page, `AuthenticationFilter` redirects them to the challenge url but doesn't record which page they asked for. After logging in they land on the default home page. AUT-34 keeps a `redirect`/`refererURL` parameter across the steps of a login, but when the filter itself sends the user to log in, there is no such parameter.\n\nWith this change, the filter records the requested page when it redirects a browser page load to the challenge url, and returns the user there once authentication succeeds. This is the usual \"saved request\" behavior, like Spring Security's `SavedRequest`.\n\n## Changes\n\n`AuthenticationFilter.saveRequestedPage()` records the page's request URI and query string on the HTTP session.\n\n**Which requests are recorded:**\n- **Only browser page loads:** GET requests the browser reports as navigations (`Sec-Fetch-Mode: navigate`, `Sec-Fetch-Dest: document`). Browsers only send these headers over HTTPS and to localhost, so without them the filter falls back to a request accepting `text/html` without `X-Requested-With`. So XHR, fetch, favicon and other resource requests aren't recorded.\n- **Only redirected requests:** requests answered with a 401 instead (`nonRedirectUrls`, e.g. `/ws/**`) aren't recorded.\n- **Never logout URLs:** replayed after login, they logged the user straight out again. The check uses both the raw and the decoded path, so an encoded logout URL is caught too.\n- **Never paths starting with `//` or `/\\`:** a redirect would treat these as another host.\n\n**Which page wins:**\n- **The first recorded page is kept** until authentication succeeds, as the ticket describes.\n- **Login pages can't replace it:** they send the user through protected pages on the way: authenticationui goes to `index.htm` after a failed password, and after the primary factor on the way to the second. Keeping the first page means those don't replace the page the user asked for. (From review: an earlier revision let the most recent page win, which lost the page after a mistyped password. A separate login-in-progress check was then also dropped as unneeded.)\n- **A recorded page expires after 5 minutes** (`AuthenticationSession.REQUESTED_PAGE_MAX_AGE_MILLIS`). An abandoned login then doesn't send a later one, perhaps by someone else on a shared computer, to that page.\n\n**Where the user goes after authentication succeeds,** in order of preference:\n1. a `redirect`/`refererURL` parameter on the request,\n2. the redirect kept from earlier in the login (AUT-34),\n3. the recorded page, through `WebUtil.contextualizeUrl()` like the others.\n\nThe recorded page is then cleared.\n\n**Logins on REST URLs:** a login completed on a `nonRedirectUrls` URL (e.g. the `/ws/rest/v1/session` endpoint O3 logs in through) is answered normally, not redirected to the recorded page. So REST clients don't get a 302 to an HTML page. (From review.)\n\n**Why the session, not the `UserLogin`:** authenticationui's login page starts a new `UserLogin` each time it's displayed, which would discard the page.\n\n## Testing\n\n- `mvn clean install -DargLine=\"-Djava.awt.headless=true\"`: 155 tests, 0 failures.\n- **Unit tests** (`AuthenticationFilterTest`) cover:\n  - page loads with and without fetch metadata, and AJAX without it;\n  - non-navigation requests (including iframe loads), non-GET requests and `nonRedirectUrls`;\n  - logout URLs (including encoded), and `//`/`/\\` paths;\n  - keeping the first page and the 5-minute expiry;\n  - context paths `/openmrs` and `\"\"`.\n- **Integration tests** (two-factor) cover: the full login posting each factor to its login page, a failed password first, and a login on the session endpoint not being redirected.\n- **Manually,** on OpenMRS 2.8.7 with authenticationui and `TwoFactorAuthenticationScheme` (basic with location, plus secret question), with a user without a second factor and a user with a secret question, through both `localhost` and plain HTTP on a LAN address:\n  - **Saved page:** "
+ },
+ {
+  "number": 61,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/61",
+  "title": "AUT-34: Retain the requested redirect across multi-step logins",
+  "branch": "AUT-34",
+  "mergedAt": "2026-10-06T18:24:46Z",
+  "mergeCommit": "294dd8a8418cd12a6cc925c3bd373e3b94240311",
+  "body": "## Summary\n\n`AuthenticationFilter` redirects to the `redirect` (or `refererURL`) parameter after a successful login, but only if that parameter is on the request that completes authentication. With a multi-step scheme such as `TwoFactorAuthenticationScheme`, the redirect usually comes with the primary factor (e.g. a login page that posts back to `login.page?redirect=...`). The second-factor page doesn't pass it along, so after the second factor the user lands on the default home page instead of the page they asked for.\n\n## Changes\n\n- `UserLogin` has a new `redirectUrl` property, scoped to the login attempt.\n- While the user is unauthenticated, `AuthenticationFilter` stores any requested `redirect`/`refererURL` on the `UserLogin`. After authentication succeeds, if the final request carries no redirect, it uses the stored one (contextualized as before), then clears it. A redirect on the final request still takes precedence. The existing `determineSuccessRedirectUrl(HttpServletRequest)` is unchanged.\n- New integration test: a redirect given with the primary factor is retained while the second factor is outstanding, used after it succeeds, then cleared. It fails without the change.\n- Test fix: `EmailAuthenticationSchemeTest.teardown()` didn't call `super.teardown()`, so its mock scheme stayed installed. The next context-sensitive test then failed to authenticate as admin, and the base test class prompted for credentials in a dialog (or failed with a `HeadlessException` when headless). This already happens on `main`, depending on test order.\n\n## Testing\n\n- `mvn clean install`: 138 tests, 0 failures. Run with `-DargLine=\"-Djava.awt.headless=true\"` so that a failure like the one above errors out instead of opening the credentials dialog.\n- Manually, on OpenMRS 2.8.7 with authenticationui and `TwoFactorAuthenticationScheme` (basic with location, plus secret question), starting at `login.page?redirect=%2Fowa%2Fmyapp%2Findex.html`:\n  - User without a second factor: redirected to the OWA, as before.\n  - User with a secret question: before, landed on `/openmrs/index.htm`. With this change, redirected to the OWA.\n\n## Ticket\nhttps://openmrs.atlassian.net/browse/AUT-34\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n"
+ },
+ {
+  "number": 60,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/60",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T17:59:12Z",
+  "mergeCommit": "538b07580e97ee3d0a6af37bfa744b97301235f1",
+  "body": "Updates the authentication module so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7). Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions and build:\n  - Module version is now 3.0.0-SNAPSHOT, `openmrsVersion` is 3.0.0-SNAPSHOT, `webservices.restVersion` is 5.0.0-SNAPSHOT, and `openmrs-bom` is imported.\n  - Builds with Java 21.\n- commons-codec is excluded from the totp dependency. Core's war already ships commons-codec 1.17.2, and the omod was bundling 1.14.\n- The explicit `javax.servlet-api` dependency is dropped, since jakarta servlet comes from core.\n- `javax.servlet` becomes `jakarta.servlet`, and commons-lang `StringUtils` becomes lang3. These are the only Java changes.\n- `config.xml` now sets `require_version` to 3.0.0. Before, it was filtered from `${openmrsVersion}` and would have rendered `3.0.0-SNAPSHOT`.\n- CI: `release.yml` uses Java 21. Bamboo moves to a JDK 21 image, and the JDK 8/11/17 jobs are dropped.\n- Core's `AuthenticationScheme` / `Context.authenticate` APIs are unchanged on master. Password and secret-answer checks still go through core, so nothing else needed changing.\n\n## Verification\n- `mvn clean install` passes (155 tests).\n- I deployed the omod on openmrs-core master (`mvn jetty:run`, MySQL 8) with legacyui, webservices.rest 5.0.0-SNAPSHOT, fhir2 6.0.0-SNAPSHOT, calculation, htmlwidgets, serialization.xstream, metadatamapping, event, idgen, emrapi and queue:\n  - All modules started, and the server log has no errors from this module.\n  - Logging in through the UI works with the module's `AuthenticationFilter` in place, using the default username/password scheme.\n  - REST basic auth works through the filter.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Fp7T1pGYEMrMVp1M7AW9Fg\n"
+ },
+ {
+  "number": 59,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/59",
+  "title": "AUT-32: Preserve session while rotating session ID on login",
+  "branch": "AUT-32",
+  "mergedAt": "2026-09-29T16:56:02Z",
+  "mergeCommit": "8364db944366e9994af75f4f653374b20a3eeab5",
+  "body": "## Summary\r\n\r\nCurrently, when a user logs in with 2FA enabled, we receive a `401` error when submitting the 6-digit authenticator code.\r\n\r\nThis happens because the backend manually destroys (`session.invalidate()`) the user's session mid-login to prevent session fixation. During the split-second the session is destroyed, any background API requests made by the frontend lose sync and are rejected with a 401 error.\r\n\r\nHow I addressed to this issue?\r\nReplaced the manual session destruction. \r\nThis safely and securely rotates the Session ID under the hood without ever destroying the underlying session object itself. This guarantees that the frontend maintains a valid session throughout the entire 2FA flow, preventing 401 errors from ever occurring mid-login.\r\n\r\n## Snapshots\r\n\r\nBefore the fix:\r\n\r\nhttps://github.com/user-attachments/assets/e57f3cde-7d1f-4348-8940-2544681c34a8\r\n\r\nAfter the fix:\r\n\r\nhttps://github.com/user-attachments/assets/6a12c287-3bd8-4fde-b995-48929b8a5463\r\n\r\n## Ticket\r\nhttps://openmrs.atlassian.net/browse/AUT-32\r\n\r\n"
+ },
+ {
+  "number": 58,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/58",
+  "title": "AUT-31: Stop half-finished 2FA logins reverting to the primary login page",
+  "branch": "AUT-31",
+  "mergedAt": "2026-09-24T12:38:24Z",
+  "mergeCommit": "b6d495d5bcc96488ec4acf5b91c704ee1f47876f",
+  "body": "In this PR i'm fixing the bug where users were getting stuck in a redirect loop during Two-Factor Authentication. Previously, if a user entered their primary credentials correctly and success the secondary totp verification, the system would completely drop the candidate user session, forcing them to start over and causing a confusing **invalid username and password** error.\r\n\r\nhttps://openmrs.atlassian.net/browse/AUT-31\r\n\r\nWhat I did?\r\n\r\n1. Updated `loginFailed()` in the `UserLogin` to only clear the candidate user if they have zero validated credentials. If they successfully passed primary authentication, the user is safely retained for 2FA attempt.\r\n2. Added unit tests in `UserLoginTest` and  integration tests in `TwoFactorAuthenticationSchemeIntegrationTest` to verify the candidate user is correctly dropped or retained based on authentication progress.\r\n3. Refactored the AUT-30 PR discussion Feedback - [HERE](https://github.com/openmrs/openmrs-module-authentication/pull/57#discussion_r3803027372)"
+ },
+ {
+  "number": 57,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/57",
+  "title": "AUT-30: Fix secondary authentication not saving to DB",
+  "branch": "AUT-30",
+  "mergedAt": "2026-08-26T10:28:46Z",
+  "mergeCommit": "30cd1e5da9b5ff11563c9bfe79ad39e8d28dd247",
+  "body": "This PR is going to fix the bug where secondary authentication scheme (TOTP) fail to save to the database.\r\n\r\nTicket: https://openmrs.atlassian.net/browse/AUT-30"
+ },
+ {
+  "number": 56,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/56",
+  "title": "AUT-28: Fix username display in TOTP authenticator apps",
+  "branch": "AUT-28",
+  "mergedAt": "2026-07-21T12:45:23Z",
+  "mergeCommit": "66ac129dc54847a832325fd2fc1b74cdb10c0f4c",
+  "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\nThis PR fixes an issue where the user's account username is blank in authenticator app after scanning the totp setup qr code.\r\n\r\n## Screenshots\r\nN/A\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\nhttps://openmrs.atlassian.net/browse/AUT-28\r\n\r\n## Other\r\nN/A"
+ },
+ {
+  "number": 55,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/55",
+  "title": "AUT-6: Normalize whitespaces from the totp code",
+  "branch": "AUT-6-dilan",
+  "mergedAt": "2026-07-17T14:39:53Z",
+  "mergeCommit": "4b5091be594e0d22ed1b4e3ee917c2e4119caa33",
+  "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\nI raise this PR to normalize the verification code by stripping out all whitespaces before validating it. I used `StringUtils.deleteWhitespace` to strip all whitespace from the totp code instead of a simple `trim()` because it only removes leading and trailing whitespace. but if the user inputs \"123 456\" (which Microsoft Authenticator displays with a space between the 3rd and 4th digit), `trim()` wouldn't do our work. \r\n\r\n## Screenshots\r\nN/A\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\nhttps://openmrs.atlassian.net/browse/AUT-6\r\n\r\n## Other\r\nN/A"
+ },
+ {
+  "number": 54,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/54",
+  "title": "Add on-demand Claude PR review workflow",
+  "branch": "add-claude-pr-review",
+  "mergedAt": "2026-07-10T11:59:18Z",
+  "mergeCommit": "b16073eba3e0012468416b9767d025305931ec3d",
+  "body": "Adds the thin caller for the org's reusable Claude PR-review workflow (openmrs/openmrs-contrib-gha-workflows), so /dev/3+ members can request a review by commenting \"@claude review\" on a PR here.\n\nCopied from openmrs-module-metadataexport with two corrections against the current reusable workflow: the header comment now states the actual defaults (Sonnet 5, medium effort, not Opus 4.8 at max), and the id-token: write permission is dropped since the reusable workflow deliberately avoids the OIDC/App-token path and its documented usage omits it.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)"
+ },
+ {
+  "number": 53,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/53",
+  "title": "AUT-27: Implement new endpoints for 2FA enrollment",
+  "branch": "AUT-27",
+  "mergedAt": "2026-07-16T11:58:44Z",
+  "mergeCommit": "419e3cfd5b92b315b027381196e046c9138138f1",
+  "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\nI'm raising this PR to Introduce a REST API controller for 2FA (TOTP) enrollment and verification.\r\n\r\n1. Endpoints Added:\r\n\r\n`POST /ws/rest/v1/auth/{schemeId}/enrollment` (Initiate)\r\n- generates a new secret key for the logged in (authenticated) user.\r\n- keeps the secret key temporarily in the session.\r\n- Returns the secret and a QR code URI.\r\n\r\n`POST /ws/rest/v1/auth/{schemeId}/enrollment/verify `(Verify)\r\n- accepts the code (6-digit verification code).\r\n- verifies the code against the stored session secret.\r\n\r\n2. Dependencies:\r\n\r\nAdded web services REST dependencies to `pom.xml` and `omod/pom.xml`\r\n\r\n## Screenshots\r\nN/A\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\nhttps://openmrs.atlassian.net/browse/AUT-27\r\n\r\n## Other\r\nN/A"
+ },
+ {
+  "number": 51,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/51",
+  "title": "AUT-24 - Support passing second factor credentials as headers where possible",
+  "branch": "AUT-24",
+  "mergedAt": "2026-05-13T14:01:57Z",
+  "mergeCommit": "58592bba56f037262a0dcfe633a93831a4a4fa21",
+  "body": ""
+ },
+ {
+  "number": 50,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/50",
+  "title": "AUT-22 - Support \"Remember this device\" withing 2FA",
+  "branch": "AUT-22",
+  "mergedAt": "2026-04-28T22:24:01Z",
+  "mergeCommit": "8ee0c04901cfe3f93e213b4266d781e646eb2d46",
+  "body": ""
+ },
+ {
+  "number": 46,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/46",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:26:28Z",
+  "mergeCommit": "283c95cc9dd66129697b9f5bffcc0f5f4466a5c7",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ },
+ {
+  "number": 45,
+  "url": "https://github.com/openmrs/openmrs-module-authentication/pull/45",
+  "title": "AUT-20 - Support code via email authentication scheme",
+  "branch": "AUT-20",
+  "mergedAt": "2026-04-09T13:38:24Z",
+  "mergeCommit": "53129898ada8a9eac95fa189a7d0805ef802f495",
+  "body": ""
+ }
+]

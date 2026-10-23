@@ -1,0 +1,9 @@
+{
+ "key": "O3-5652",
+ "url": "https://openmrs.atlassian.net/browse/O3-5652",
+ "summary": "Define OCL concept set / class for body site and status fields in procedure history",
+ "status": "Done",
+ "created": "2026-05-07T05:31:55.089+1000",
+ "resolved": "2026-05-21T19:16:29.396+1000",
+ "description": "The add procedure form currently has no way to filter concepts for the body site and status fields, since there is no scoped concept set or concept class for either in OCL. We need both defined in OCL and imported into the content packages.\nReferences for what should fall under each:\nBody site:  \n\nStatus:  \n\nThe status field is conceptually close to this existing CIEL set, which can be used as a starting point: https://app.openconceptlab.org/#/orgs/CIEL/sources/CIEL/concepts/167157/\nNote: This has already been raised with Andy. needs a follow-up.\nDefinition of Done: Concept set or concept class defined in OCL for both body site and status, and imported into the content packages."
+}

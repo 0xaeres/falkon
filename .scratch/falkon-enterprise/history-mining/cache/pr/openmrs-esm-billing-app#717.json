@@ -1,0 +1,18 @@
+{
+ "number": 717,
+ "url": "https://github.com/openmrs/openmrs-esm-billing-app/pull/717",
+ "title": "(feat) Add delete action for pending bills",
+ "mergedAt": "2026-04-21T20:38:56Z",
+ "mergeCommit": "db22701b986ae73bc876df2327fa0f82a7fd3ed5",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nAdds a \"Delete bill\" action for bills in `PENDING` status:\r\n\r\n- New `deleteBill` resource that calls `DELETE /bill/{uuid}?reason=...`\r\n- New `delete-bill-confirmation-modal` prompting for a required deletion reason\r\n- Delete option surfaced from the bill-history overflow menu (gated on `PENDING`) and from the Invoice page action bar (already scoped to `PENDING`)\r\n- On success, refreshes the bill list (bill-history) or navigates back to `home/billing` (Invoice page)\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n\r\nhttps://github.com/user-attachments/assets/63b9dfb0-54f6-4f68-b233-997753ed050e\r\n\r\n\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n\r\n## Other\r\n<!-- Anything not covered above -->",
+ "files": [
+  "src/bill-history/bill-action-menu.component.tsx",
+  "src/billing.resource.ts",
+  "src/index.ts",
+  "src/invoice/invoice.component.tsx",
+  "src/modal/delete-bill-confirmation.modal.test.tsx",
+  "src/modal/delete-bill-confirmation.modal.tsx",
+  "src/routes.json",
+  "translations/en.json"
+ ]
+}
