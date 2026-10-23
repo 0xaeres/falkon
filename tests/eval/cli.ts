@@ -13,6 +13,9 @@
  *   pnpm eval -- preflight [--arms ...]             42 repositories and 104 gold paths readable through each selected arm's server; refuses a shallow checkout
  *   pnpm eval -- corpus deepen                      git fetch --unshallow per checkout (complete ones are left as they are), then HEAD must equal its pin.
  *                                                   After deepening, run `stack down -v` then `stack up`: existing bare clones keep the old depth.
+ *   pnpm eval -- corpus discussions [--verify|--check]   pull requests of the 12 gold repositories, cut at each pin date, into <EVAL_O3_DIR>/github-snapshot/ with the
+ *                                                   `gh` login (S47, D109); writes datasets/github-snapshot.manifest.json. --verify recomputes the checksums;
+ *                                                   --check validates the gold pull requests of o3-history against the snapshot and the checkouts.
  *
  * Options for pilot, run and report: --model sonnet|haiku (or the full id; default sonnet), --arms from
  * clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git (default clone-tools,clone-research). Runs are stored per model under
@@ -37,6 +40,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ALL_ARMS, ARMS, DATASETS, EVAL_DIR, HISTORY_DATASETS, IMPACT_DATASETS, FLOOR_DIR, REPO_ROOT, hasRaw, goldOf, loadAccepted, loadDataset, loadProduct, modelDir, readRaw, resolveModel, type Arm, type Dataset, type Raw } from "./data.js";
+import { MANIFEST, checkSnapshot, fetchSnapshot, goldPrs, realDeps, verifySnapshot } from "./discussions.js";
 import { buildCommand } from "./harness.js";
 import { assertFullHistory, deepenCheckouts, expectedRepos, goldPaths, preflight, readKey } from "./preflight.js";
 import { report } from "./report.js";
@@ -154,7 +158,15 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
   if (!(cfg.spendCap > 0) || !Number.isFinite(cfg.spendCap)) throw new Error("EVAL_SPEND_CAP must be a positive number of dollars.");
   const model = resolveModel(flagValue(args, "--model"));
   if (command === "corpus") {
-    if (args[1] !== "deepen") throw new Error("Usage: pnpm eval -- corpus deepen");
+    if (args[1] === "discussions") {
+      const gold = JSON.parse(readFileSync(join(EVAL_DIR, "datasets/o3-history.json"), "utf8"));
+      const names = Object.keys(gold.corpus.product.commits), repos = loadProduct().repositories.filter((r) => names.includes(r.name));
+      if (repos.length !== names.length) throw new Error("A gold repository is missing from o3.json.");
+      if (args.includes("--verify")) return verifySnapshot(cfg.o3Dir, repos, MANIFEST(EVAL_DIR)) + "\n";
+      if (args.includes("--check")) return checkSnapshot(cfg.o3Dir, repos, goldPrs(gold)) + "\n";
+      return await fetchSnapshot(cfg.o3Dir, repos, realDeps(), MANIFEST(EVAL_DIR)) + "\n";
+    }
+    if (args[1] !== "deepen") throw new Error("Usage: pnpm eval -- corpus deepen|discussions [--verify|--check]");
     return deepenCheckouts(cfg.o3Dir) + "\n";
   }
   if (command === "stack") {

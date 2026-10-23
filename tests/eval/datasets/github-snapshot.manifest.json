@@ -1,0 +1,53 @@
+{
+  "repositories": {
+    "openmrs-core": {
+      "pullRequestCount": 1862,
+      "sha256": "d4e66ce0e63e0994b7aa3030dae7958b54f4f0c4629cb3fe5a4a05135b518c81"
+    },
+    "openmrs-module-webservices.rest": {
+      "pullRequestCount": 144,
+      "sha256": "78a45fb0df36dcf5f13928750860b3fc5f564ef72749a9cf67a9fb6727a60434"
+    },
+    "openmrs-esm-core": {
+      "pullRequestCount": 762,
+      "sha256": "808d0f5761f6d76120cfa0808a967748e900c5737a15b2f62b400f0336dc11b7"
+    },
+    "openmrs-esm-patient-chart": {
+      "pullRequestCount": 1744,
+      "sha256": "9cf9191e40a9ea026d77042fffb2fb8ce2c7978521430b0c280cfb0a4faa5b5f"
+    },
+    "openmrs-esm-admin-tools": {
+      "pullRequestCount": 382,
+      "sha256": "1948c6313295ec602445d34a57048dc4cdadc148a685fced94c0f3d531c769c4"
+    },
+    "openmrs-esm-billing-app": {
+      "pullRequestCount": 820,
+      "sha256": "81781181c56ee5f2bd30f443c3d431bd7654b6ded89f438f20c1ee7d1f75751d"
+    },
+    "openmrs-esm-dispensing-app": {
+      "pullRequestCount": 823,
+      "sha256": "0fb5f39d05e20986548df315ecb5983310b66aad8370278435090785fa86695a"
+    },
+    "openmrs-esm-form-engine-lib": {
+      "pullRequestCount": 432,
+      "sha256": "2206562c8d1cfbf2b8d79594a2f171eaecd3b8d8d3f9867a87367f6ed2eaf15e"
+    },
+    "openmrs-esm-patient-management": {
+      "pullRequestCount": 1481,
+      "sha256": "d42e2781222220b2cd3ffa2ec1a5fe27c89208e1fcbcde9e8342010c3dfe77f9"
+    },
+    "openmrs-esm-stock-management-app": {
+      "pullRequestCount": 449,
+      "sha256": "8c2fa9f64f88e69bdcf21b74f6cfce92249fecfaa41b60bec3f0028b7386e2e2"
+    },
+    "openmrs-module-billing": {
+      "pullRequestCount": 179,
+      "sha256": "12eda062c2666c497d89586f763250f4257c7adf48ee6f216af14185e23915cd"
+    },
+    "openmrs-module-patientdocuments": {
+      "pullRequestCount": 38,
+      "sha256": "28152b86c732bac208b644b0c3da34d3161bb289cee5994e1c88fbf75a6e70e6"
+    }
+  },
+  "sha256": "902fbe71534218aa17e35470807f530e0d7ae8bbf0e2f711440b1870d3f8b5fc"
+}
