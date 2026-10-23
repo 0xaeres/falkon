@@ -62,4 +62,7 @@ test("--prs on mounts the pull request snapshot read-only into the backend only 
   assert.equal(backend.volumes.length, files().compose.services.backend.volumes.length + 1);
   for (const s of ["web", "zoekt"] as const) assert.ok(!JSON.stringify(on.compose.services[s]).includes("discussions"), s);
   assert.ok(!JSON.stringify(files().compose).includes("discussions"));
+  // The web service must expose the pull request tools, or the arm silently equals clone-tools-git.
+  assert.equal((on.compose.services.web as { environment: Record<string, string> }).environment.MCP_HISTORY_TOOLS, "on");
+  assert.ok(!JSON.stringify(files().compose).includes("MCP_HISTORY_TOOLS"));
 });
