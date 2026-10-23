@@ -3,13 +3,14 @@ import micromatch from "micromatch";
 import { Queue, Worker } from "bullmq";
 import { Redis } from "ioredis";
 import { prisma, ConnectionSource, RepoKind, RepoStatus, ScanStatus } from "@falkon/db";
-import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, openCredential, repoGitDir, repoPath, resolveEnvironmentOverrides, setCredentialResolver, type Config } from "@falkon/shared";
+import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, openCredential, parseTicketKeys, postgresProvenanceStore, repoGitDir, repoPath, resolveEnvironmentOverrides, setCredentialResolver, type Config } from "@falkon/shared";
 import type { RepoMetadata } from "./connectors";
 import { credentialsFor } from "./credentials";
 import { cloneOrFetch, localDefaultBranch, repoStats, sortedRefs, upsertGitConfig } from "./git";
 import { claimIndexRequests, claimSyncRequests, deleteKnowledge, removeOrphans, syncConnection, syncConnectionRows, syncSearchContexts } from "./sync";
 import { indexRepo, removeShards, writeZoektGitConfig } from "./zoekt";
 import { kbModelReady, kbSelected, runKnowledgeScan } from "./kb/scan";
+import { importDiscussions, snapshotSource } from "./discussions";
 
 const connection = new Redis(env.redisUrl, { maxRetriesPerRequest: null });
 
@@ -151,6 +152,7 @@ const worker = new Worker<{ repoId: number }>(
         },
       });
       console.log(`indexed ${repo.name}`);
+      if (discussionSource) await discussionQueue.add("import", { repoId: repo.id }, { jobId: `discussions-${repo.id}` });
     } catch (e) {
       await prisma.repo.update({ where: { id: repo.id }, data: { status: "FAILED", error: String(e).slice(0, 2000) } }).catch(() => {});
       throw e;
@@ -178,6 +180,27 @@ async function scheduleTick() {
   // a requested retry must not be deduped against the failed job of the same minute
   for (const repoId of await claimIndexRequests()) await indexQueue.add("index", { repoId }, { jobId: `index-${repoId}-retry-${Date.now()}` });
 }
+
+// ---- pull requests (ADR 0001, 4.11) ----------------------------------------------------------------
+
+// The recorded snapshot is the only source this cycle (D107); the live GitHub adapter plugs into the same job.
+const discussionSource = process.env.DISCUSSIONS_SNAPSHOT_DIR ? snapshotSource(process.env.DISCUSSIONS_SNAPSHOT_DIR) : undefined;
+const discussionQueue = new Queue<{ repoId: number }>("discussion-import", {
+  connection,
+  // jobId dedupes a repository already waiting; history lives in DiscussionSyncState
+  defaultJobOptions: { removeOnComplete: true, removeOnFail: true, attempts: 1 },
+});
+const discussionWorker = new Worker<{ repoId: number }>(
+  "discussion-import",
+  async (job) => {
+    const repo = await prisma.repo.findUnique({ where: { id: job.data.repoId } });
+    if (!repo || !discussionSource) return;
+    const r = await importDiscussions(postgresProvenanceStore(prisma), discussionSource, { id: repo.id, name: repo.name, dir: gitDirOf(repoPath(repo).path), head: repo.headCommit }, parseTicketKeys(process.env.DISCUSSION_TICKET_KEYS));
+    if (r) console.log(`discussions ${repo.name}: ${r.imported} imported, ${r.skipped} skipped (${r.total} stored), ${r.commitLinks ?? "unchanged"} commit links, ${r.ms} ms`);
+  },
+  { connection, concurrency: 1, lockDuration: 10 * 60_000 },
+);
+discussionWorker.on("failed", (job, err) => console.error(`discussion import ${job?.data.repoId} failed: ${err.message}`));
 
 // ---- knowledge base ---------------------------------------------------------------
 
@@ -270,6 +293,8 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
     await connWorker.close();
     await connQueue.close();
     await kbWorker.close();
+    await discussionWorker.close();
+    await discussionQueue.close();
     await indexQueue.close();
     await kbQueue.close();
     await prisma.$disconnect();
