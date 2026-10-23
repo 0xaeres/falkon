@@ -170,6 +170,27 @@ Not in this cycle: the live GitHub adapter (cycle 15), issues, Markdown material
 - Budget: 1.5M subagent tokens and 360 minutes (S48 is hard and the largest; recent cycles used 0.26M to 0.98M).
 - Gate 2 fires when S50's report exists, or on any trigger.
 
-## Next (planned at gate 2 of cycle 13)
+## Cycle 14 results: pull request ingestion beats the floor (2026-10-24)
+
+S47 to S50 kept (commits `4432a93`, `16f7204`, `2cfff99`, `8717ea4`, plus the stack fix `6081f09`). Claude agents built them; separate Sonnet reviewers checked S47, S48 and S49 (S48 and S49 each needed a fix round: S48 for a poison-pill import, S49 for number limits and exports); S50 had no separate review.
+
+Measurement (Haiku, one run per question, same day, fresh stacks, all 40 questions; raw runs `eval-runs-c14/`, report `baseline-c14-report.md`; `--reference clone-tools-git`):
+
+| | clone-tools-git (same-day rerun) | clone-tools-git-prs | difference [95% CI] |
+|---|---|---|---|
+| recall, all 40 | 0.691 | **0.849** | +0.158 [0.059, 0.255] (19 wins, 5 losses, 16 ties) |
+| "why" (16) | 0.531 | 0.854 | |
+| "what changed and when" (12) | 0.823 | 0.828 | |
+| "ticket to code" (12) | 0.771 | 0.861 | |
+| precision, all 40 | 0.544 | 0.544 | 0.000 [-0.088, 0.084]; "why" precision is low (0.276) |
+| mean cost per run | $0.027 | $0.041 | +$0.014 [-0.002, 0.034] |
+
+The D108 rule passes: the lower bound of the recall difference is above zero. Dev alone: +0.123 [-0.014, 0.251]; hidden alone: +0.210 [0.070, 0.345]. Tool use in the new arm (all runs): get_pull_request 89, search_discussions 37, get_provenance 39. The cycle 13 floor run of the git arm scored 0.696 and this rerun 0.691: the same-day noise is small. "Why" rose to 0.854, above the 0.81 ceiling predicted from title/body/branch keys alone, because ticket keys also reach the agent through pull request comments and the link text.
+
+Notes: an earlier pilot of the new arm was invalid (the web service of the pull request stack did not have `MCP_HISTORY_TOOLS` on, so the agent never saw the tools; the arm equalled the git arm); fixed in `6081f09` with a test; those runs are kept untracked in `eval-runs-c14-invalid/`. The runner reserves $1 per run in flight against the spend cap, which stopped the first attempt at $1.56 actual spend, so the reservation ceiling was raised to $7 for the rerun; actual Phase 2 spend $3.69 of the $5 cap. Gold links on the stack: all 89 change units (84 distinct pairs) linked and verified; 9,116 pull requests imported in about 65 seconds, 76 MB of new tables.
+
+Open limits: five "why" tickets appear only in Jira; Jira ingestion is Phase 3. Known weak spots: five questions got worse (hist-a-09, hist-b-05, hist-c-01, hist-c-09, and one smaller drop), precision on "why" is low because the agent lists many items, and the cost rises 50%.
+
+## Next (planned at gate 2 of cycle 14)
 
 Phase 1: shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor (history provenance linking commit, pull request and ticket behind the `ProvenanceStore` port, D87). Slice and grill it as cycle 14.
