@@ -138,7 +138,7 @@ function pilotReport(named: Dataset, stored: Raw[], arms: Arm[], alias: string, 
   if (arms.includes("v6-tools")) rule(v6.length === ids.length && meanV6 >= 0.5, `v6-tools pilot recall ${shown(meanV6)} (needs complete runs and at least 0.50; a reference near zero shows nothing)`);
   rule(mine.length > 0 && !mine.some((r) => r.leak), `no leaks (${mine.filter((r) => r.leak).length} of ${mine.length} runs)`);
   if (arms.includes("clone-research")) rule(research.length > 0 && research.every((r) => r.firstTool === "research_codebase"), `research_codebase first in every research run (${research.filter((r) => r.firstTool === "research_codebase").length}/${research.length})`);
-  lines.push("", `Stop rules (spec S5, model ${alias}):`, ...rules, `Denied research_codebase attempts by the plain arms: ${mine.filter((r) => r.arm !== "clone-research").reduce((n, r) => n + (r.deniedAttempts ?? 0), 0)}.`);
+  lines.push("", `Stop rules (spec S5, model ${alias}):`, ...rules, `Denied tool attempts by arms (research_codebase, list_commits, get_diff, list_branches): ${mine.reduce((n, r) => n + (r.deniedAttempts ?? 0), 0)}.`);
   return { lines, stop: rules.some((r) => r.startsWith("STOP")) };
 }
 
