@@ -260,35 +260,163 @@
   "kind": "b",
   "split": "dev",
   "repo": "openmrs-core",
-  "path": "api/src/main/java/org/openmrs/api/db/hibernate/HibernateConceptDAO.java",
-  "since": "2026-04-13",
+  "criterion": "pickaxe",
+  "since": "2026-04-14",
+  "anchorCommits": 73,
+  "dir": "api/src/main/java/org/openmrs",
+  "token": "hasPrivilege",
   "changes": [
    {
-    "commit": "4d222c6085bbe13f62be68908ad9c3abbaa75db1",
-    "subject": "TRUNK-6729:  Let batch loading engage on the identifier and concept search paths (#6420)",
-    "pr": 6420,
-    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6420",
-    "mergedAt": "2026-08-21T16:44:57Z",
-    "commitDate": "2026-08-21T12:44:57-04:00",
-    "ticket": "TRUNK-6729"
+    "commit": "5eb8cba2e30befeaec8ab7892dff14ac7dcc9d87",
+    "subject": "TRUNK-6823: Deny with APIAuthenticationException again, as an AuthorizationDeniedException (#6674)",
+    "pr": 6674,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6674",
+    "mergedAt": "2026-10-13T14:37:19Z",
+    "commitDate": "2026-10-13T17:37:18+03:00",
+    "ticket": "TRUNK-6823"
    },
    {
-    "commit": "1f6cc621cb7bf97dc4283b0c808f96373d90054f",
-    "subject": "TRUNK-6711: Batch-load search result pages (#6363)",
-    "pr": 6363,
-    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6363",
-    "mergedAt": "2026-07-22T19:41:22Z",
-    "commitDate": "2026-07-22T15:41:22-04:00",
-    "ticket": "TRUNK-6711"
+    "commit": "cb6cda4236b21a84cc4e1765a0dbaa58fdbe2565",
+    "subject": "TRUNK-6802 Extend hasPermission to support custom rules provided from modules (#6668)",
+    "pr": 6668,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6668",
+    "mergedAt": "2026-10-13T13:17:26Z",
+    "commitDate": "2026-10-13T16:17:25+03:00",
+    "ticket": "TRUNK-6802"
    },
    {
-    "commit": "c21a7cbfa2c9f67c1991372a343217e949e04f44",
-    "subject": "TRUNK-6683: Skip full-text search with drugs when a concept is provided (#6346)",
-    "pr": 6346,
-    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6346",
-    "mergedAt": "2026-07-17T22:15:33Z",
-    "commitDate": "2026-07-17T18:15:32-04:00",
-    "ticket": "TRUNK-6683"
+    "commit": "a69b14a84bf925ff7cdf34e93ca1ffb4f257265f",
+    "subject": "TRUNK-6799 Introduce Spring Security with support for legacy authentication context (#6544)",
+    "pr": 6544,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6544",
+    "mergedAt": "2026-10-08T13:44:46Z",
+    "commitDate": "2026-10-08T16:44:45+03:00",
+    "ticket": "TRUNK-6799"
+   },
+   {
+    "commit": "07e8ea06f244de96907581535d4eff8dadbd0004",
+    "subject": "TRUNK-6707: Implement full caching for Global Properties (#6598)",
+    "pr": 6598,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6598",
+    "mergedAt": "2026-10-01T13:26:05Z",
+    "commitDate": "2026-10-01T09:26:04-04:00",
+    "ticket": "TRUNK-6707"
+   },
+   {
+    "commit": "1b5421a9a8d69030adb91124c3f9cb758dbc58a8",
+    "subject": "TRUNK-6712: Cache flattened role privileges for privilege and superuser checks (#6383)",
+    "pr": 6383,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6383",
+    "mergedAt": "2026-07-24T15:14:02Z",
+    "commitDate": "2026-07-24T11:14:02-04:00",
+    "ticket": "TRUNK-6712"
+   },
+   {
+    "commit": "c4aca3af4154dc99969cb6aed48a1e71c9a70055",
+    "subject": "Porting TRUNK-6429 and TRUNK-6515 to master (#6233)",
+    "pr": 6233,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6233",
+    "mergedAt": "2026-07-01T09:17:10Z",
+    "commitDate": "2026-07-01T11:17:09+02:00",
+    "ticket": "TRUNK-6429"
+   },
+   {
+    "commit": "f5c03501860de4372d7e0e12f9c3dbe025a38dc8",
+    "subject": "Require Get Alerts privilege to read all users' alerts (#6186)",
+    "pr": 6186,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6186",
+    "mergedAt": "2026-06-18T14:08:02Z",
+    "commitDate": "2026-06-18T17:08:02+03:00",
+    "ticket": null
+   }
+  ]
+ },
+ {
+  "id": "hist-b-02",
+  "kind": "b",
+  "split": "hidden",
+  "repo": "openmrs-core",
+  "criterion": "pickaxe",
+  "since": "2026-04-14",
+  "anchorCommits": 44,
+  "dir": "api/src/main/java/org/openmrs/api",
+  "token": "ThreadLocal",
+  "changes": [
+   {
+    "commit": "a69b14a84bf925ff7cdf34e93ca1ffb4f257265f",
+    "subject": "TRUNK-6799 Introduce Spring Security with support for legacy authentication context (#6544)",
+    "pr": 6544,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6544",
+    "mergedAt": "2026-10-08T13:44:46Z",
+    "commitDate": "2026-10-08T16:44:45+03:00",
+    "ticket": "TRUNK-6799"
+   },
+   {
+    "commit": "b64e0729cce60c40dffb75788c4b43937a6fc77e",
+    "subject": "TRUNK-6818: Context.closeSession() closes sessions it did not open (#6651)",
+    "pr": 6651,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6651",
+    "mergedAt": "2026-10-05T12:23:38Z",
+    "commitDate": "2026-10-05T08:23:37-04:00",
+    "ticket": "TRUNK-6818"
+   },
+   {
+    "commit": "07e8ea06f244de96907581535d4eff8dadbd0004",
+    "subject": "TRUNK-6707: Implement full caching for Global Properties (#6598)",
+    "pr": 6598,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6598",
+    "mergedAt": "2026-10-01T13:26:05Z",
+    "commitDate": "2026-10-01T09:26:04-04:00",
+    "ticket": "TRUNK-6707"
+   },
+   {
+    "commit": "f10e3fb9a645378ab6682c21d6be478bfdab6199",
+    "subject": "TRUNK-6721: Replace StackWalker with a thread-local guard in UserDAO (#6588)",
+    "pr": 6588,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6588",
+    "mergedAt": "2026-09-21T20:28:22Z",
+    "commitDate": "2026-09-21T16:28:21-04:00",
+    "ticket": "TRUNK-6721"
+   }
+  ]
+ },
+ {
+  "id": "hist-b-03",
+  "kind": "b",
+  "split": "dev",
+  "repo": "openmrs-core",
+  "criterion": "pickaxe",
+  "since": "2026-04-14",
+  "anchorCommits": 22,
+  "dir": "api/src/main/java/org/openmrs/api/db/hibernate",
+  "token": "CriteriaBuilder",
+  "changes": [
+   {
+    "commit": "07e8ea06f244de96907581535d4eff8dadbd0004",
+    "subject": "TRUNK-6707: Implement full caching for Global Properties (#6598)",
+    "pr": 6598,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6598",
+    "mergedAt": "2026-10-01T13:26:05Z",
+    "commitDate": "2026-10-01T09:26:04-04:00",
+    "ticket": "TRUNK-6707"
+   },
+   {
+    "commit": "2ce847744295132bbe5fb97f369fab714f09b309",
+    "subject": "TRUNK-6731: Add paging support to the obs retrieval API (#6410)",
+    "pr": 6410,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6410",
+    "mergedAt": "2026-08-20T16:57:35Z",
+    "commitDate": "2026-08-20T12:57:34-04:00",
+    "ticket": "TRUNK-6731"
+   },
+   {
+    "commit": "9e011e2c09db99fd5cae20821e203fe9cc5f036b",
+    "subject": "TRUNK-6681: Improve LocationSearchCriteria query performance with pagination (#6359)",
+    "pr": 6359,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6359",
+    "mergedAt": "2026-07-21T20:50:01Z",
+    "commitDate": "2026-07-21T16:50:01-04:00",
+    "ticket": "TRUNK-6681"
    },
    {
     "commit": "b3a2fa0b2d45c31065f89651f4f9801aa45354b4",
@@ -298,34 +426,6 @@
     "mergedAt": "2026-06-01T21:21:50Z",
     "commitDate": "2026-06-01T17:21:50-04:00",
     "ticket": "TRUNK-6633"
-   }
-  ]
- },
- {
-  "id": "hist-b-02",
-  "kind": "b",
-  "split": "hidden",
-  "repo": "openmrs-core",
-  "path": "api/src/main/java/org/openmrs/Location.java",
-  "since": "2026-04-13",
-  "changes": [
-   {
-    "commit": "b147e0dcae701feb4670b53a454daf0cfb210ee9",
-    "subject": "TRUNK-6684: Location.childLocations gained unintended orphanRemoval=true in the JPA migration (#6444)",
-    "pr": 6444,
-    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6444",
-    "mergedAt": "2026-09-28T13:07:23Z",
-    "commitDate": "2026-09-28T18:37:23+05:30",
-    "ticket": "TRUNK-6684"
-   },
-   {
-    "commit": "05bc4e4dc32c4654aba49cc76b9252def11b06c2",
-    "subject": "TRUNK-6680: Restore lazy fetch semantics after JPA migration (#6379)",
-    "pr": 6379,
-    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6379",
-    "mergedAt": "2026-08-14T15:07:24Z",
-    "commitDate": "2026-08-14T11:07:23-04:00",
-    "ticket": "TRUNK-6680"
    },
    {
     "commit": "11607283d6100942c99bcdbb6713352f62c0b53a",
@@ -339,59 +439,34 @@
   ]
  },
  {
-  "id": "hist-b-03",
-  "kind": "b",
-  "split": "dev",
-  "repo": "openmrs-core",
-  "path": "api/src/main/java/org/openmrs/api/context/ServiceContext.java",
-  "since": "2026-04-13",
-  "changes": [
-   {
-    "commit": "2c9b2ee0dd005f64fa543ca8228c51f57cb319c7",
-    "subject": "TRUNK-6810: Extend cluster-safety to RolePrivilegeCache (#6627)",
-    "pr": 6627,
-    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6627",
-    "mergedAt": "2026-10-02T14:15:07Z",
-    "commitDate": "2026-10-02T10:15:07-04:00",
-    "ticket": "TRUNK-6810"
-   },
-   {
-    "commit": "b68355b3dd934c7d5be3708d6637dfae8f845ee5",
-    "subject": "TRUNK-6713: Switch to saner DaemonThread protection scheme (#6349)",
-    "pr": 6349,
-    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6349",
-    "mergedAt": "2026-07-21T15:27:00Z",
-    "commitDate": "2026-07-21T11:26:59-04:00",
-    "ticket": "TRUNK-6713"
-   },
-   {
-    "commit": "41ec2955656c6d7131c628d122d8c503b09c4cb1",
-    "subject": "TRUNK-6694 & TRUNK-6695: Avoid synchronization in service fetching (#6348)",
-    "pr": 6348,
-    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6348",
-    "mergedAt": "2026-07-21T14:37:09Z",
-    "commitDate": "2026-07-21T10:37:09-04:00",
-    "ticket": "TRUNK-6694"
-   },
-   {
-    "commit": "eb0a1006c7e188d4408deb298685c98ea1fef321",
-    "subject": "TRUNK-6688: Fix circular initialization error in logging setup (#6341)",
-    "pr": 6341,
-    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6341",
-    "mergedAt": "2026-07-17T11:59:02Z",
-    "commitDate": "2026-07-17T07:59:02-04:00",
-    "ticket": "TRUNK-6688"
-   }
-  ]
- },
- {
   "id": "hist-b-04",
   "kind": "b",
   "split": "hidden",
   "repo": "openmrs-core",
-  "path": "api/src/main/java/org/openmrs/api/cache/RolePrivilegeCache.java",
-  "since": "2026-04-13",
+  "criterion": "pickaxe",
+  "since": "2026-04-14",
+  "anchorCommits": 22,
+  "dir": "web/src/main/java",
+  "token": "doFilterInternal",
   "changes": [
+   {
+    "commit": "2d32d20938e007f2f9bf8e3a3c946758d52d6bfe",
+    "subject": "TRUNK-6826: Request paths with a trailing slash find no handler on core 3.0 (#6680)",
+    "pr": 6680,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6680",
+    "mergedAt": "2026-10-13T11:03:21Z",
+    "commitDate": "2026-10-13T14:03:20+03:00",
+    "ticket": "TRUNK-6826"
+   },
+   {
+    "commit": "085d24ca28913de746060914ba4c0305680c9321",
+    "subject": "TRUNK-6824: Request paths with a repeated slash fail with 500 on core 3.0 (#6673)",
+    "pr": 6673,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6673",
+    "mergedAt": "2026-10-12T10:43:38Z",
+    "commitDate": "2026-10-12T13:43:38+03:00",
+    "ticket": "TRUNK-6824"
+   },
    {
     "commit": "a69b14a84bf925ff7cdf34e93ca1ffb4f257265f",
     "subject": "TRUNK-6799 Introduce Spring Security with support for legacy authentication context (#6544)",
@@ -402,22 +477,13 @@
     "ticket": "TRUNK-6799"
    },
    {
-    "commit": "2c9b2ee0dd005f64fa543ca8228c51f57cb319c7",
-    "subject": "TRUNK-6810: Extend cluster-safety to RolePrivilegeCache (#6627)",
-    "pr": 6627,
-    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6627",
-    "mergedAt": "2026-10-02T14:15:07Z",
-    "commitDate": "2026-10-02T10:15:07-04:00",
-    "ticket": "TRUNK-6810"
-   },
-   {
-    "commit": "1b5421a9a8d69030adb91124c3f9cb758dbc58a8",
-    "subject": "TRUNK-6712: Cache flattened role privileges for privilege and superuser checks (#6383)",
-    "pr": 6383,
-    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6383",
-    "mergedAt": "2026-07-24T15:14:02Z",
-    "commitDate": "2026-07-24T11:14:02-04:00",
-    "ticket": "TRUNK-6712"
+    "commit": "1d0fb13892759020f6bc0824a097518d546024eb",
+    "subject": "TRUNK-6705: Reduce the overhead of the gzip filter (#6505)",
+    "pr": 6505,
+    "prUrl": "https://github.com/openmrs/openmrs-core/pull/6505",
+    "mergedAt": "2026-08-26T17:45:08Z",
+    "commitDate": "2026-08-26T13:45:08-04:00",
+    "ticket": "TRUNK-6705"
    }
   ]
  },
@@ -426,25 +492,46 @@
   "kind": "b",
   "split": "dev",
   "repo": "openmrs-esm-core",
-  "path": "packages/framework/esm-expression-evaluator/src/extractor.ts",
-  "since": "2026-04-10",
+  "criterion": "pickaxe",
+  "since": "2026-04-11",
+  "anchorCommits": 86,
+  "dir": "packages/framework",
+  "token": "getExtensionConfig",
   "changes": [
    {
-    "commit": "cd6cf1fcbdab85d05529d015dfb911dfef885b84",
-    "subject": "(fix) O3-6093: Improve support for arrow functions in expression variable extractor (#1943)",
-    "pr": 1943,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1943",
-    "mergedAt": "2026-10-10T12:51:09Z",
-    "commitDate": "2026-10-10T08:51:08-04:00",
-    "ticket": "O3-6093"
+    "commit": "744dd2abdf636d1fc4b3b6b163220e6995378022",
+    "subject": "(fix) Framework and E2E test fixes (#1934)",
+    "pr": 1934,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1934",
+    "mergedAt": "2026-10-05T22:55:55Z",
+    "commitDate": "2026-10-05T22:55:54Z",
+    "ticket": null
    },
    {
-    "commit": "9ea60732d5e57aa3f13d8f2f29654a2faf3b8996",
-    "subject": "(feat) Improvements to the expression evaluator (#1884)",
-    "pr": 1884,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1884",
-    "mergedAt": "2026-09-16T20:53:13Z",
-    "commitDate": "2026-09-16T23:53:12+03:00",
+    "commit": "c1bfbcbb06105e7ffd9b4a69556722469ac13c44",
+    "subject": "(fix) Minimize churn from config updates when there are many extensions (#1922)",
+    "pr": 1922,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1922",
+    "mergedAt": "2026-09-30T22:54:22Z",
+    "commitDate": "2026-09-30T22:54:21Z",
+    "ticket": null
+   },
+   {
+    "commit": "2864290a3797a6a581958d2d89cd00be08fe8c2d",
+    "subject": "(fix) Ensure slot-specific configuration are correctly passed everywhere (#1870)",
+    "pr": 1870,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1870",
+    "mergedAt": "2026-09-09T15:34:11Z",
+    "commitDate": "2026-09-09T11:34:10-04:00",
+    "ticket": null
+   },
+   {
+    "commit": "9042cb6c5010ab2316aeec2dc295bf4c410a66de",
+    "subject": "(BREAKING) Extension system should not re-derive in full on every write (#1856)",
+    "pr": 1856,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1856",
+    "mergedAt": "2026-09-02T18:46:11Z",
+    "commitDate": "2026-09-02T14:46:10-04:00",
     "ticket": null
    }
   ]
@@ -454,25 +541,46 @@
   "kind": "b",
   "split": "hidden",
   "repo": "openmrs-esm-core",
-  "path": "packages/apps/esm-login-app/src/login.resource.ts",
-  "since": "2026-04-10",
+  "criterion": "pickaxe",
+  "since": "2026-04-11",
+  "anchorCommits": 22,
+  "dir": "packages/tooling/openmrs",
+  "token": "configUrls",
   "changes": [
    {
-    "commit": "4cc27d388fb4a4fe49316791a20127dbb04e31ae",
-    "subject": "(fix) O3-6028: Pass locationsPerRequest to the login location picker and drop numberToShow (#1920)",
-    "pr": 1920,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1920",
-    "mergedAt": "2026-10-02T12:20:10Z",
-    "commitDate": "2026-10-02T17:50:09+05:30",
-    "ticket": "O3-6028"
+    "commit": "b439966ee59c5a9d0cc569942c6fb6d98bb28ba4",
+    "subject": "(docs) Rewrite the openmrs CLI README around how it's used (#1905)",
+    "pr": 1905,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1905",
+    "mergedAt": "2026-10-02T15:01:58Z",
+    "commitDate": "2026-10-02T11:01:58-04:00",
+    "ticket": null
    },
    {
-    "commit": "a624af22d5816773b91f0c7768daa69617c73c24",
-    "subject": "(fix) Support authentication failures from the backend (#1918)",
-    "pr": 1918,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1918",
-    "mergedAt": "2026-09-29T20:12:05Z",
-    "commitDate": "2026-09-29T16:12:04-04:00",
+    "commit": "a62f8164991a64135f438cef848fdc751e866d20",
+    "subject": "(BREAKING) Remove offline & rxjs support from framework (#1894)",
+    "pr": 1894,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1894",
+    "mergedAt": "2026-09-28T18:08:47Z",
+    "commitDate": "2026-09-28T21:08:46+03:00",
+    "ticket": null
+   },
+   {
+    "commit": "16a6c01d099267045f174f95ecf3936d3b770fb9",
+    "subject": "(feat) O3-5872: Add support for static compression of frontend (#1838)",
+    "pr": 1838,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1838",
+    "mergedAt": "2026-08-07T17:46:53Z",
+    "commitDate": "2026-08-07T20:46:52+03:00",
+    "ticket": "O3-5872"
+   },
+   {
+    "commit": "1dcccfd421c94ee0f0a8aa6c7c974cadab3d5fb8",
+    "subject": "(BREAKING) Drop IMO and don't load arbitrary content in production mode (#1743)",
+    "pr": 1743,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-core/pull/1743",
+    "mergedAt": "2026-04-15T13:22:46Z",
+    "commitDate": "2026-04-15T13:22:45Z",
     "ticket": null
    }
   ]
@@ -482,35 +590,49 @@
   "kind": "b",
   "split": "dev",
   "repo": "openmrs-esm-patient-chart",
-  "path": "packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts",
-  "since": "2026-04-15",
+  "criterion": "decl",
+  "since": "2026-04-16",
+  "anchorCommits": 11,
+  "path": "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.component.tsx",
+  "decl": "handleFormSubmission",
+  "startLine": 305,
+  "endLine": 360,
   "changes": [
    {
-    "commit": "d0f4b1bf5be04ad6f9c567635864b36de6ac36c3",
-    "subject": "(feat) O3-5823: Capture diagnosis rank and certainty in the visit note (#3621)",
-    "pr": 3621,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3621",
-    "mergedAt": "2026-10-07T13:20:04Z",
-    "commitDate": "2026-10-07T13:20:03Z",
-    "ticket": "O3-5823"
+    "commit": "f5539ea4c4101357388e5bd00678856073f4b4ae",
+    "subject": "(fix) O3-6019: Preserve medication dosage drafts when switching modes (#3639)",
+    "pr": 3639,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3639",
+    "mergedAt": "2026-10-05T18:21:10Z",
+    "commitDate": "2026-10-05T21:21:10+03:00",
+    "ticket": "O3-6019"
    },
    {
-    "commit": "52ad5642b88661b759f5e130f12e1d73a7fac66a",
-    "subject": "(fix) O3-5990: Remove saved visit-note images safely (#3684)",
-    "pr": 3684,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3684",
-    "mergedAt": "2026-09-23T08:32:39Z",
-    "commitDate": "2026-09-23T08:32:38Z",
-    "ticket": "O3-5990"
+    "commit": "d623a03ff2839cb4c82bca935d48e5ecb4bcda94",
+    "subject": "(feat) Order basket should try to rely on server-side dates (#3507)",
+    "pr": 3507,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3507",
+    "mergedAt": "2026-07-24T20:40:56Z",
+    "commitDate": "2026-07-24T23:40:55+03:00",
+    "ticket": null
    },
    {
-    "commit": "96b812bb0206c034792895cacfad69dd3f37b44a",
-    "subject": "(fix) O3-5986: Show a visit note's saved images when editing it (#3668)",
-    "pr": 3668,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3668",
-    "mergedAt": "2026-09-18T20:42:18Z",
-    "commitDate": "2026-09-18T23:42:17+03:00",
-    "ticket": "O3-5986"
+    "commit": "b8d3fe2ea7a8546c4f4800029bdaec4f6423a8c8",
+    "subject": "(feat) O3-5374: Add support for future medication start dates (#2973)",
+    "pr": 2973,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/2973",
+    "mergedAt": "2026-05-25T20:18:13Z",
+    "commitDate": "2026-05-25T23:18:12+03:00",
+    "ticket": "O3-5374"
+   },
+   {
+    "commit": "33ae989b8a29fcee7e7fe8bba7ef153a4d583b12",
+    "subject": "(fix) Floor medication order encounter datetime to visit start (#3300)",
+    "pr": 3300,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3300",
+    "mergedAt": "2026-05-12T17:23:01Z",
+    "commitDate": "2026-05-12T20:23:01+03:00",
+    "ticket": null
    }
   ]
  },
@@ -519,35 +641,56 @@
   "kind": "b",
   "split": "dev",
   "repo": "openmrs-esm-form-engine-lib",
-  "path": "src/utils/common-expression-helpers.ts",
-  "since": "2026-04-15",
+  "criterion": "pickaxe",
+  "since": "2026-04-16",
+  "anchorCommits": 37,
+  "dir": "src",
+  "token": "voidedValue",
   "changes": [
    {
-    "commit": "6a5b489b47c58f526f9988624c0bf349ec5b75ad",
-    "subject": "(fix) O3-6048: Accept numeric string height in calcWeightForHeightZscore (#832)",
-    "pr": 832,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/832",
-    "mergedAt": "2026-10-07T11:56:39Z",
-    "commitDate": "2026-10-07T14:56:38+03:00",
-    "ticket": "O3-6048"
+    "commit": "b0d8fd2e9a0c68f2c72b2415b6dbf351b6e92c30",
+    "subject": "(fix) O3-5847: Stop unchanged obs values from creating duplicate obs (#842)",
+    "pr": 842,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/842",
+    "mergedAt": "2026-10-13T10:47:06Z",
+    "commitDate": "2026-10-13T16:17:05+05:30",
+    "ticket": "O3-5847"
    },
    {
-    "commit": "79f2c23a1a4b3f45103fcd6f63746c87afa6e9fb",
-    "subject": "(fix) O3-6046: Return null when height is outside reference table or no reference applies (#830)",
-    "pr": 830,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/830",
-    "mergedAt": "2026-10-06T17:39:38Z",
-    "commitDate": "2026-10-06T20:39:38+03:00",
-    "ticket": "O3-6046"
+    "commit": "0e1edc234479890d45bc09e67b2ee25befc1c803",
+    "subject": "(fix) O3-6027: Clear order and diagnosis submissions on every write (#826)",
+    "pr": 826,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/826",
+    "mergedAt": "2026-10-05T11:52:42Z",
+    "commitDate": "2026-10-05T14:52:41+03:00",
+    "ticket": "O3-6027"
    },
    {
-    "commit": "fcf1b2562d60389dbf88c5383c2d4237d9d1ff8a",
-    "subject": "(fix) O3-6025: Load z-score tables only when a form needs them (#824)",
-    "pr": 824,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/824",
-    "mergedAt": "2026-10-05T12:02:06Z",
-    "commitDate": "2026-10-05T12:02:05Z",
-    "ticket": "O3-6025"
+    "commit": "ebb02b719931d121419669b531b6e05c77f515e9",
+    "subject": "(fix) O3-6030: Keep hidden obs group members, orders and diagnoses out of submissions (#822)",
+    "pr": 822,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/822",
+    "mergedAt": "2026-10-02T18:57:26Z",
+    "commitDate": "2026-10-02T18:57:25Z",
+    "ticket": "O3-6030"
+   },
+   {
+    "commit": "ae1b2b294c2e1a7635bb05f9ed803d7a769496f4",
+    "subject": "(test) Add tests to cover form submission orchestration (#812)",
+    "pr": 812,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/812",
+    "mergedAt": "2026-09-22T19:51:00Z",
+    "commitDate": "2026-09-22T19:51:00Z",
+    "ticket": null
+   },
+   {
+    "commit": "a6f911cf3612608cac9649229396e0ebc92ae8ba",
+    "subject": "(test) Add \"golden schemas\" for encounter payloads (#787)",
+    "pr": 787,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/787",
+    "mergedAt": "2026-08-20T19:59:33Z",
+    "commitDate": "2026-08-20T15:59:32-04:00",
+    "ticket": null
    }
   ]
  },
@@ -556,9 +699,39 @@
   "kind": "b",
   "split": "hidden",
   "repo": "openmrs-esm-billing-app",
-  "path": "src/invoice/printable-invoice/printable-invoice.component.tsx",
-  "since": "2026-04-15",
+  "criterion": "pickaxe",
+  "since": "2026-04-16",
+  "anchorCommits": 28,
+  "dir": "src",
+  "token": "lineItems",
   "changes": [
+   {
+    "commit": "c770afca8921295dd87d8e7c185a8a4fef231376",
+    "subject": "(feat) O3-6112: Create bill / Add bill items workspace should show which patient is being billed in tablet mode (#885)",
+    "pr": 885,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-billing-app/pull/885",
+    "mergedAt": "2026-10-15T15:15:44Z",
+    "commitDate": "2026-10-15T20:45:43+05:30",
+    "ticket": "O3-6112"
+   },
+   {
+    "commit": "6e4cdcd9db634a947b317df793d5b8170a9768e9",
+    "subject": "(feat) Add date range filter to bills table (#831)",
+    "pr": 831,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-billing-app/pull/831",
+    "mergedAt": "2026-09-17T15:13:13Z",
+    "commitDate": "2026-09-17T15:13:12Z",
+    "ticket": null
+   },
+   {
+    "commit": "e8126b39dc10bcdc719250b004afe86f7782f36a",
+    "subject": "(feat) O3-5413: Add bill refunds (#738)",
+    "pr": 738,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-billing-app/pull/738",
+    "mergedAt": "2026-06-04T08:53:06Z",
+    "commitDate": "2026-06-04T14:23:05+05:30",
+    "ticket": "O3-5413"
+   },
    {
     "commit": "4aa8e4c993d5fe06147c9561c949a6da36aea47e",
     "subject": "(feat) O3-5421: Add visit-bills panel showing visit-scoped bills in visit summary (#741)",
@@ -569,13 +742,22 @@
     "ticket": "O3-5421"
    },
    {
-    "commit": "3ecce2a55223b21d3c53d4905b346455f94f4fd2",
-    "subject": "(fix) O3-5705: Use netAmount instead of totalAmount for balance due on printable invoice (#743)",
-    "pr": 743,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-billing-app/pull/743",
-    "mergedAt": "2026-05-26T18:48:29Z",
-    "commitDate": "2026-05-26T18:48:29Z",
-    "ticket": "O3-5705"
+    "commit": "e5b80768f3166c82b2db7c710e166adf01ce3f70",
+    "subject": "(fix) O3-5708: Keep discount review modal open after approve/reject/delete actions (#744)",
+    "pr": 744,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-billing-app/pull/744",
+    "mergedAt": "2026-05-25T19:36:06Z",
+    "commitDate": "2026-05-25T22:36:06+03:00",
+    "ticket": "O3-5708"
+   },
+   {
+    "commit": "8ba8b18ae423df842acd93584f85cafa44577a02",
+    "subject": "(chore) Update BillLineItem type (#733)",
+    "pr": 733,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-billing-app/pull/733",
+    "mergedAt": "2026-05-20T12:29:19Z",
+    "commitDate": "2026-05-20T15:29:18+03:00",
+    "ticket": null
    },
    {
     "commit": "5127b0c031addf584cc49f6252272121d50c5cad",
@@ -593,17 +775,29 @@
   "kind": "b",
   "split": "dev",
   "repo": "openmrs-esm-patient-management",
-  "path": "packages/esm-patient-registration-app/src/patient-registration/field/address/address-field.component.tsx",
-  "since": "2026-04-15",
+  "criterion": "pickaxe",
+  "since": "2026-04-16",
+  "anchorCommits": 24,
+  "dir": "packages/esm-patient-registration-app/src",
+  "token": "SavePatientTransactionManager",
   "changes": [
    {
-    "commit": "e7b14cfb17e0871420c4023bb81b19cedcab30b4",
-    "subject": "(fix) O3-5912: Clear dependent address fields when a parent level changes (#2761)",
-    "pr": 2761,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2761",
-    "mergedAt": "2026-09-25T21:37:08Z",
-    "commitDate": "2026-09-25T21:37:07Z",
-    "ticket": "O3-5912"
+    "commit": "1aaae8c003d0ce38c32f07617277398079ccb66a",
+    "subject": "(feat) O3-1830: Allow selecting the preferred patient identifier during registration (#2786)",
+    "pr": 2786,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2786",
+    "mergedAt": "2026-10-05T12:48:58Z",
+    "commitDate": "2026-10-05T08:48:57-04:00",
+    "ticket": "O3-1830"
+   },
+   {
+    "commit": "b4b76423feb220db7e78f27e769f3d32ffaf89b7",
+    "subject": "(fix) O3-5916: Reuse generated identifiers when retrying a patient save (#2780)",
+    "pr": 2780,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2780",
+    "mergedAt": "2026-09-28T13:06:21Z",
+    "commitDate": "2026-09-28T18:36:21+05:30",
+    "ticket": "O3-5916"
    },
    {
     "commit": "81c24905675b9e4228681e1d1465497226f8d2d7",
@@ -615,13 +809,22 @@
     "ticket": null
    },
    {
-    "commit": "0c8915e87db861cc30fa3a40b494ccc8505d2863",
-    "subject": "(fix) Treat a serialized exception from the address hierarchy endpoints as an error (#2757)",
-    "pr": 2757,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2757",
-    "mergedAt": "2026-09-18T18:42:52Z",
-    "commitDate": "2026-09-18T14:42:52-04:00",
-    "ticket": null
+    "commit": "ddd67a6674f8dd70f26bd01b36b2ce5d5098e67f",
+    "subject": "(fix) O3-5913: Wait for patient data deletions before reporting save success (#2697)",
+    "pr": 2697,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2697",
+    "mergedAt": "2026-08-24T19:27:06Z",
+    "commitDate": "2026-08-24T22:27:05+03:00",
+    "ticket": "O3-5913"
+   },
+   {
+    "commit": "f298c04173e456f92b94fcd90d781c8b89d0e157",
+    "subject": "(fix) O3-5919: Clear stale death metadata when marking a patient alive (#2694)",
+    "pr": 2694,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2694",
+    "mergedAt": "2026-08-24T11:15:52Z",
+    "commitDate": "2026-08-24T11:15:51Z",
+    "ticket": "O3-5919"
    }
   ]
  },
@@ -629,27 +832,48 @@
   "id": "hist-b-11",
   "kind": "b",
   "split": "hidden",
-  "repo": "openmrs-esm-dispensing-app",
-  "path": "src/forms/dispense-form.workspace.tsx",
-  "since": "2026-04-13",
+  "repo": "openmrs-esm-patient-management",
+  "criterion": "pickaxe",
+  "since": "2026-04-16",
+  "anchorCommits": 94,
+  "dir": "packages/esm-service-queues-app",
+  "token": "encounterProviders",
   "changes": [
    {
-    "commit": "f95cf7935383e67e6e7b513a4ea91ff609b7f064",
-    "subject": "(fix) Refresh prescriptions table in place after dispensing (#859)",
-    "pr": 859,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-dispensing-app/pull/859",
-    "mergedAt": "2026-06-22T17:44:53Z",
-    "commitDate": "2026-06-22T23:14:52+05:30",
-    "ticket": null
+    "commit": "a7bd67168e3db4b095f8a1c06451549d3ec77b79",
+    "subject": "(feat) O3-6098: Show today's appointments and visit attribute tags in the current visit summary (#2824)",
+    "pr": 2824,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2824",
+    "mergedAt": "2026-10-14T13:55:15Z",
+    "commitDate": "2026-10-14T16:55:14+03:00",
+    "ticket": "O3-6098"
    },
    {
-    "commit": "1e7c82b5db6673d887e2455f5cab400244d70dc4",
-    "subject": "(fix) O3-5630: Fix substitution type and reason not populated when editing a dispense record (#825)",
-    "pr": 825,
-    "prUrl": "https://github.com/openmrs/openmrs-esm-dispensing-app/pull/825",
-    "mergedAt": "2026-05-01T19:14:09Z",
-    "commitDate": "2026-05-01T15:14:09-04:00",
-    "ticket": "O3-5630"
+    "commit": "7212897e35ee9efa79192770f019651dcbd66cc1",
+    "subject": "(feat) O3-5763: Unify the Current visit and Previous visit views (#2600)",
+    "pr": 2600,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2600",
+    "mergedAt": "2026-08-28T10:42:35Z",
+    "commitDate": "2026-08-28T16:12:34+05:30",
+    "ticket": "O3-5763"
+   },
+   {
+    "commit": "171573ddff7840281d76268628e2684ed3be64d0",
+    "subject": "(fix) O3-5693: Trim queue entry representation to what the table renders (#2583)",
+    "pr": 2583,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2583",
+    "mergedAt": "2026-07-29T10:47:11Z",
+    "commitDate": "2026-07-29T13:47:10+03:00",
+    "ticket": "O3-5693"
+   },
+   {
+    "commit": "49a93f006e49b88e2c8a607f2a9946d2ec22e344",
+    "subject": "(fix) O3-5679: De-duplicate patient notes in previous visit tab (#2541)",
+    "pr": 2541,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2541",
+    "mergedAt": "2026-06-08T09:58:03Z",
+    "commitDate": "2026-06-08T15:28:03+05:30",
+    "ticket": "O3-5679"
    }
   ]
  },
@@ -658,9 +882,30 @@
   "kind": "b",
   "split": "dev",
   "repo": "openmrs-esm-stock-management-app",
-  "path": "src/stock-reports/stock-reports.resource.ts",
-  "since": "2026-04-13",
+  "criterion": "pickaxe",
+  "since": "2026-04-14",
+  "anchorCommits": 16,
+  "dir": "src",
+  "token": "restBaseUrl",
   "changes": [
+   {
+    "commit": "12a145551cda444d3c1a79e62699b7735b8dc892",
+    "subject": "(feat) Migrate stock management to workspace v2 (#661)",
+    "pr": 661,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/661",
+    "mergedAt": "2026-09-30T16:38:56Z",
+    "commitDate": "2026-09-30T19:38:55+03:00",
+    "ticket": null
+   },
+   {
+    "commit": "9556d5a07c6263b485df10dda346f2ec47df5427",
+    "subject": "(fix) Use framework modal for stock locations (#630)",
+    "pr": 630,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/630",
+    "mergedAt": "2026-09-21T15:35:25Z",
+    "commitDate": "2026-09-21T21:05:25+05:30",
+    "ticket": null
+   },
    {
     "commit": "390dc57d290de305f41f5af1755fc8c59480407c",
     "subject": "(fix) Fix stock report generation, visibility, downloads, and role-based access (#616)",
@@ -678,6 +923,24 @@
     "mergedAt": "2026-05-17T17:28:02Z",
     "commitDate": "2026-05-17T20:28:02+03:00",
     "ticket": "O3-5648"
+   },
+   {
+    "commit": "79953cf66885a70e1b0430f14d82d9fb8b4de86e",
+    "subject": "(chore) Migrate from jest to vitest (#552)",
+    "pr": 552,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/552",
+    "mergedAt": "2026-05-13T13:45:30Z",
+    "commitDate": "2026-05-13T09:45:28-04:00",
+    "ticket": null
+   },
+   {
+    "commit": "c67e47060f34697bd5e9aa63389a35fc5df2eed8",
+    "subject": "(fix) O3-5647: Fix User Role Scope Save Functionality (#541)",
+    "pr": 541,
+    "prUrl": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/541",
+    "mergedAt": "2026-05-05T06:15:40Z",
+    "commitDate": "2026-05-05T09:15:40+03:00",
+    "ticket": "O3-5647"
    }
   ]
  },

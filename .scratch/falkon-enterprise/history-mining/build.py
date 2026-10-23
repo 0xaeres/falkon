@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Build tests/eval/datasets/o3-history.json and the mining record questions.json from the authored specs below.
-Kind (b) gold is computed: every first-parent commit touching `path` from `since` to the pin. PR data and Jira
+Kind (b) gold is computed by each row's stated criterion (see B). PR data and Jira
 issues come from mine.py's caches (fetched read-only on a miss)."""
 import json, os, re, subprocess
 from mine import E, HERE, REPOS, ROOT, jira, pr
+from mine_b import window
 
 PIN = {n: r["commit"] for n, r in REPOS.items()}
 CORE, REST, ESMCORE, CHART, PM, FEL, ADMIN, BILL, DISP, STOCK = ("openmrs-core", "openmrs-module-webservices.rest", "openmrs-esm-core",
@@ -13,54 +14,59 @@ RELATION = {"a": "history-why", "b": "history-what-when", "c": "history-ticket-t
 
 # (id, split, repo, short sha, question, source sentence from the Jira description or PR body)
 A = [
-    ("hist-a-01", "dev", CORE, "2d32d209", "openmrs-core's web.xml now maps a servlet filter that strips a final `/` from request paths before they reach Spring. Why was that needed (what did REST and FHIR clients get back for such URLs in the 3.0 line), and which change and ticket introduced it?",
+    ("hist-a-01", "dev", CORE, "2d32d209", "On the openmrs-core 3.0 line, REST and FHIR calls whose URL ends in a trailing path separator stopped reaching the controller that serves the same URL without it. Why did that happen, how does core now deal with such URLs, and which change and ticket fixed it?",
      "On core 3.0, a URL with a trailing slash no longer reaches the handler for the same URL without it."),
-    ("hist-a-02", "hidden", CORE, "085d24ca", "openmrs-core now registers a filter that collapses runs of `/` in the request URI, so that `/openmrs//ws/rest/v1/session` is handled like `/openmrs/ws/rest/v1/session`. What error did such requests hit before, and which change and ticket added the filter?",
+    ("hist-a-02", "hidden", CORE, "085d24ca", "In openmrs-core 3.0, a call whose URL had two path separators in a row right after the web application's context path got an internal server error instead of being served. Why, how does core now treat such URLs, and which change and ticket fixed it?",
      "a request whose path has a double slash after the context path fails with 500"),
-    ("hist-a-03", "dev", CORE, "83411b2f", "Why does openmrs-core create its JobRunr background job server with `startBackgroundJobServer = false` and start it later from a separate lifecycle class? Which change made that so, and which ticket describes the startup failures it fixes?",
+    ("hist-a-03", "dev", CORE, "83411b2f", "In openmrs-core, background tasks could begin executing while the Spring application context, or the platform itself, was still being set up, which caused failures at startup. Why did that happen, what does core now do to hold the task scheduler back, and which change and ticket fixed it?",
      "The JobRunr background job server is started while its Spring application context is still being created, so jobs can run before the context, or OpenMRS, is ready."),
-    ("hist-a-04", "dev", CORE, "b64e0729", "Why did openmrs-core stop relying on a per-thread counter to decide whether `Context.closeSession()` should unbind and close the current Hibernate session? Errors such as \"Pre-bound JDBC Connection found!\" were one symptom. Which change made the switch, and which ticket explains it?",
+    ("hist-a-04", "dev", CORE, "b64e0729", "In openmrs-core, ending the API session on a thread could unbind and close a Hibernate session that other code had bound to that thread, with errors such as \"Pre-bound JDBC Connection found!\" as one symptom. Why, what does core now check instead of a per-thread counter, and which change and ticket fixed it?",
      "decides whether to close the thread's Hibernate session using a per-thread counter, not by checking who bound the session."),
-    ("hist-a-05", "hidden", CORE, "b147e0dc", "Why is the `childLocations` association of openmrs-core's `Location` mapped without orphan removal, so that moving a child location under another parent no longer deletes it? Which change set it that way, and which ticket asked for it?",
+    ("hist-a-05", "hidden", CORE, "b147e0dc", "In openmrs-core, moving a child location under a different parent location could silently delete the child's database row when the session flushed. Why did that start happening after the persistence mapping was migrated, and which change and ticket fixed it?",
      "so any code that removes an entry from childLocations (e.g. re-parenting a location) now silently issues a DELETE of that location row on flush."),
-    ("hist-a-06", "dev", CORE, "6e77bfd0", "openmrs-core's `HandlerUtil` keeps its handler lookups in a `ConcurrentHashMap` instead of a weak-keyed map. What was going wrong with the old lookup store on save, void, retire and validation calls, and which change and ticket made the switch?",
+    ("hist-a-06", "dev", CORE, "6e77bfd0", "In openmrs-core, the lookup store for the save, void, retire and validation handlers could be emptied whenever the JVM reclaimed memory, so handlers kept being looked up again. Why was the store exposed to that, what does it use now, and which change and ticket fixed it?",
      "HandlerUtil caches handler lookups in a WeakHashMap whose keys are referenced by nothing but the map itself, so any GC cycle can evict the entire cache."),
-    ("hist-a-07", "dev", CORE, "e2056c9a", "Why does openmrs-core's `LoggingAdvice.invoke()` now return straight to the wrapped service method when neither DEBUG nor TRACE output would be logged for it? Which change added that, and which ticket motivated it?",
+    ("hist-a-07", "dev", CORE, "e2056c9a", "In openmrs-core, the advice that logs calls into service methods built its debug and trace messages on every call, even when neither level would be written to the log. Why was that worth changing, what does it now check first, and which change and ticket changed it?",
      "verify that any messages it generates will be logged before generating them"),
-    ("hist-a-08", "hidden", CORE, "0e0255b8", "Why does openmrs-core's `ChainingInterceptor` now override the Hibernate 7 persist and remove callbacks itself instead of only the deprecated save and delete ones? What did database event consumers miss before, and which change and ticket made it?",
+    ("hist-a-08", "hidden", CORE, "0e0255b8", "On Hibernate 7, openmrs-core's database event publishing sent no event when a new entity was created and none when an entity was removed. Why were those events lost, which interceptor callbacks are now passed on, and which change and ticket fixed it?",
      "core's EventInterceptor never publishes a SaveDbEvent when a new entity is created, and never publishes a DeleteDbEvent when an entity is removed."),
-    ("hist-a-09", "dev", REST, "ce758bc0", "Why does the REST module's `AuthorizationFilter` no longer answer 401 \"Session timed out\" on `/ws/rest/v1/session` when the request carries a cookie for an expired HTTP session? Which change and ticket made that exception?",
+    ("hist-a-09", "dev", REST, "ce758bc0", "In the REST web services module, a client still holding a cookie for an expired HTTP session got a 401 reply from the very service it calls to log in again. Why was that reply wrong there, and which change and ticket stopped it?",
      "As a result, a client holding an old cookie gets a 401 from the session endpoint."),
-    ("hist-a-10", "hidden", REST, "66d284b5", "Why does the REST module's `BaseRestController` now map Spring Security's access-denied exception to 401/403 in the way it already treated the older OpenMRS authentication exception? What were clients getting instead, and which change and ticket fixed it?",
+    ("hist-a-10", "hidden", REST, "66d284b5", "In the REST web services module, once core moved to Spring Security, requests refused for missing authentication or a missing privilege started coming back as HTTP 500 instead of 401 or 403. Why, and which change and ticket restored the expected status codes?",
      "so these requests now return 500 instead of 401 or 403."),
-    ("hist-a-11", "dev", ESMCORE, "57315b89", "Why does the global unhandled-rejection handler in esm-error-handling turn the rejection reason into text before it dispatches a toast? What happened when the reason was an `Error` object, and which change and ticket fixed it?",
+    ("hist-a-11", "dev", ESMCORE, "57315b89", "In the O3 frontend framework, when a promise was rejected with an error object and nothing handled it, the error notification the app shell tried to show failed to render. Why, what is now done with the rejection reason, and which change and ticket fixed it?",
      "React cannot render an object as a child, so the toast fails to render"),
-    ("hist-a-12", "dev", CHART, "50773fe3", "Why were the age comparisons in the vitals app's `getMuacColorCode` changed so that all colour cases in an age bracket share one bound? Which patients ended up with no colour at all before, and which change and ticket fixed it?",
+    ("hist-a-12", "dev", CHART, "50773fe3", "In the patient chart's vitals and biometrics app, a patient exactly 5 years old with a healthy mid-upper arm circumference (for example 13 cm) got no colour coding at all. Why, and which change and ticket fixed the age bracket comparisons?",
      "This means a patient exactly 5 years old with a healthy MUAC value (e.g. 13cm) gets no color code at all."),
-    ("hist-a-13", "hidden", CHART, "c7d6eb8d", "Why did the form-entry app's `FeWrapperComponent` change the way it lazily imports Angular's locale data? What had the Angular form engine been falling back to for dates and numbers, and which change and ticket fixed it?",
+    ("hist-a-13", "hidden", CHART, "c7d6eb8d", "In the patient chart's form entry app, the Angular form engine formatted dates and numbers with Angular's built-in US English data whatever the user's language. Why was the regional formatting data never registered, and which change and ticket fixed it?",
      "registerLocaleData() has therefore never run."),
-    ("hist-a-14", "dev", PM, "b4b76423", "Why does the patient registration app's form manager now keep identifier values it has already generated across save attempts? What went wrong when a partly completed save was tried again, and which change and ticket addressed it?",
+    ("hist-a-14", "dev", PM, "b4b76423", "In the patient registration app, a second attempt at saving a patient, after the first had only partly completed, could use up more than one newly issued identifier value. Why, and which change and ticket fixed it?",
      "Retrying a partially completed save can consume multiple generated identifier values."),
-    ("hist-a-15", "hidden", FEL, "129c1f7f", "Why were the contents of the React form engine's `hfa_girls_5_above.json` z-score table replaced? What was wrong with the old table for girls aged 5 and over, and which change and ticket fixed it?",
+    ("hist-a-15", "hidden", FEL, "129c1f7f", "In the React form engine, z-scores of stature against age for female children aged 5 and over were computed against a table whose medians were the World Health Organization values for males. Why, and which change and ticket corrected that table?",
      "The two files are byte-identical, and every row's median matches WHO's published boys' values rather than the girls'."),
-    ("hist-a-16", "dev", BILL, "3ecce2a5", "Why does the billing app's printable invoice now base the outstanding amount it shows on the bill's net amount? What did a fully paid bill with a discount show before, and which change and ticket fixed it?",
+    ("hist-a-16", "dev", BILL, "3ecce2a5", "In the billing app's printout of a bill, a bill that was fully paid but had a discount applied still showed the discount amount as still owed. Why, and which change and ticket fixed it?",
      "On a fully paid bill with a discount applied, the Amount balance in the header and the Balance below Total tendered should both read zero, not the discount amount."),
 ]
 
-# (id, split, repo, path inside the repository, since)
+# Kind (b), round 1 rewrite (D100): gold is computed by a stated criterion over the window that starts the day after
+# the pin's committer date minus six months (mine_b.window). Rows are (id, split, repo, criterion, anchor, name[, decl args]):
+# - "pickaxe": first-parent commits since then whose diff adds or removes a line containing `name` under directory `anchor`;
+# - "decl": first-parent commits since then that changed lines startLine..endLine of file `anchor` (`git log -L`), the
+#   function `name` at the pin; `where` says where it lives without naming the file.
 B = [
-    ("hist-b-01", "dev", CORE, "api/src/main/java/org/openmrs/api/db/hibernate/HibernateConceptDAO.java", "2026-04-13"),
-    ("hist-b-02", "hidden", CORE, "api/src/main/java/org/openmrs/Location.java", "2026-04-13"),
-    ("hist-b-03", "dev", CORE, "api/src/main/java/org/openmrs/api/context/ServiceContext.java", "2026-04-13"),
-    ("hist-b-04", "hidden", CORE, "api/src/main/java/org/openmrs/api/cache/RolePrivilegeCache.java", "2026-04-13"),
-    ("hist-b-05", "dev", ESMCORE, "packages/framework/esm-expression-evaluator/src/extractor.ts", "2026-04-10"),
-    ("hist-b-06", "hidden", ESMCORE, "packages/apps/esm-login-app/src/login.resource.ts", "2026-04-10"),
-    ("hist-b-07", "dev", CHART, "packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts", "2026-04-15"),
-    ("hist-b-08", "dev", FEL, "src/utils/common-expression-helpers.ts", "2026-04-15"),
-    ("hist-b-09", "hidden", BILL, "src/invoice/printable-invoice/printable-invoice.component.tsx", "2026-04-15"),
-    ("hist-b-10", "dev", PM, "packages/esm-patient-registration-app/src/patient-registration/field/address/address-field.component.tsx", "2026-04-15"),
-    ("hist-b-11", "hidden", DISP, "src/forms/dispense-form.workspace.tsx", "2026-04-13"),
-    ("hist-b-12", "dev", STOCK, "src/stock-reports/stock-reports.resource.ts", "2026-04-13"),
+    ("hist-b-01", "dev", CORE, "pickaxe", "api/src/main/java/org/openmrs", "hasPrivilege"),
+    ("hist-b-02", "hidden", CORE, "pickaxe", "api/src/main/java/org/openmrs/api", "ThreadLocal"),
+    ("hist-b-03", "dev", CORE, "pickaxe", "api/src/main/java/org/openmrs/api/db/hibernate", "CriteriaBuilder"),
+    ("hist-b-04", "hidden", CORE, "pickaxe", "web/src/main/java", "doFilterInternal"),
+    ("hist-b-05", "dev", ESMCORE, "pickaxe", "packages/framework", "getExtensionConfig"),
+    ("hist-b-06", "hidden", ESMCORE, "pickaxe", "packages/tooling/openmrs", "configUrls"),
+    ("hist-b-07", "dev", CHART, "decl", "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.component.tsx", "handleFormSubmission",
+     305, 360, "the medications app's drug order form"),
+    ("hist-b-08", "dev", FEL, "pickaxe", "src", "voidedValue"),
+    ("hist-b-09", "hidden", BILL, "pickaxe", "src", "lineItems"),
+    ("hist-b-10", "dev", PM, "pickaxe", "packages/esm-patient-registration-app/src", "SavePatientTransactionManager"),
+    ("hist-b-11", "hidden", PM, "pickaxe", "packages/esm-service-queues-app", "encounterProviders"),
+    ("hist-b-12", "dev", STOCK, "pickaxe", "src", "restBaseUrl"),
 ]
 
 # (id, split, repo, short sha, question, source sentence, spans [(path inside the repository, start, end)])
@@ -135,14 +141,27 @@ def main():
             questions.append({"id": qid, "question": text, "vocab": "natural", "split": split, "author": "history-probe", "relation": RELATION[kind], "required": required})
             record.append({"id": qid, "kind": kind, "split": split, "repo": repo, "commit": ch["commit"], "subject": ch["subject"], "pr": ch["pr"], "prUrl": ch["prUrl"],
                            "ticket": ch["ticket"], "ticketUrl": t["url"], "mergedAt": ch["mergedAt"], "commitDate": ch["commitDate"], "sourceFrom": where, "source": source})
-    for qid, split, repo, path, since in B:
-        shas = git(repo, "log", "--first-parent", "--format=%h", f"--since={since}", PIN[repo], "--", path).split()
+    for qid, split, repo, criterion, anchor, name, *decl in B:
+        since, pin = window(repo), PIN[repo]
+        if criterion == "pickaxe":
+            shas = git(repo, "log", "--first-parent", "--format=%h", f"--since={since}", f"-G{name}", pin, "--", anchor).split()
+            listed = git(repo, "log", "--first-parent", "--format=%h", f"--since={since}", pin, "--", anchor).split()
+            text = (f"In {repo}, which merged pull requests since {since} added or removed a line containing `{name}` in any file under `{anchor}`, "
+                    "and when was each merged? Count only commits on the main line up to the pinned head.")
+        else:
+            s0, e0, where = decl
+            shas = [l.split()[1] for l in git(repo, "log", "--first-parent", f"--since={since}", f"-L{s0},{e0}:{anchor}", "-s", "--format=@@C %h", pin).split("\n") if l.startswith("@@C")]
+            listed = git(repo, "log", "--first-parent", "--format=%h", f"--since={since}", pin, "--", anchor).split()
+            text = (f"In {repo}, which merged pull requests since {since} changed the body of `{name}`, the submit handler of {where}, as that function stands at the pinned head, "
+                    "and when was each merged? Count only commits on the main line, and only those whose diff touches that function, not other parts of its file.")
         changes = [change(repo, s) for s in shas]
-        text = f"Which merged pull requests changed `{path}` in {repo} between {since} and the pinned head, and when was each merged?"
+        assert len(changes) >= 4 and len(listed) >= len(changes) + 2, (qid, len(changes), len(listed))
         questions.append({"id": qid, "question": text, "vocab": "code", "split": split, "author": "history-probe", "relation": RELATION["b"],
                           "required": [{"repo": repo, "commit": c["commit"], "pr": c["pr"]} for c in changes]})
-        record.append({"id": qid, "kind": "b", "split": split, "repo": repo, "path": path, "since": since,
-                       "changes": [{k: c[k] for k in ("commit", "subject", "pr", "prUrl", "mergedAt", "commitDate", "ticket")} for c in changes]})
+        rec = {"id": qid, "kind": "b", "split": split, "repo": repo, "criterion": criterion, "since": since, "anchorCommits": len(listed)}
+        rec.update({"dir": anchor, "token": name} if criterion == "pickaxe" else {"path": anchor, "decl": name, "startLine": decl[0], "endLine": decl[1]})
+        rec["changes"] = [{k: c[k] for k in ("commit", "subject", "pr", "prUrl", "mergedAt", "commitDate", "ticket")} for c in changes]
+        record.append(rec)
     questions.sort(key=lambda q: q["id"])
     record.sort(key=lambda r: r["id"])
     impact = json.load(open(os.path.join(ROOT, "tests/eval/datasets/o3-impact.json")))

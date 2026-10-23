@@ -20,7 +20,6 @@
         "openmrs-esm-patient-chart": "45cb44919ca658d571a30355536c03e775552678",
         "openmrs-esm-admin-tools": "3d76809c1766a7d933a08f718b203fa0d37e0511",
         "openmrs-esm-billing-app": "c770afca8921295dd87d8e7c185a8a4fef231376",
-        "openmrs-esm-dispensing-app": "4e8cbeeb72bef9bd22bb77ead5300d422fbef57d",
         "openmrs-esm-form-engine-lib": "8f4fd2677aae1d8a8c522f710059b0f26b22d4bb",
         "openmrs-esm-patient-management": "96a7237f4ef0dea296a9e6b3a8c67b3837a8ad82",
         "openmrs-esm-stock-management-app": "9777f6d4a456e0ea336dfce4b002830475dfa965"
@@ -30,7 +29,7 @@
   "questions": [
     {
       "id": "hist-a-01",
-      "question": "openmrs-core's web.xml now maps a servlet filter that strips a final `/` from request paths before they reach Spring. Why was that needed (what did REST and FHIR clients get back for such URLs in the 3.0 line), and which change and ticket introduced it?",
+      "question": "On the openmrs-core 3.0 line, REST and FHIR calls whose URL ends in a trailing path separator stopped reaching the controller that serves the same URL without it. Why did that happen, how does core now deal with such URLs, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -48,7 +47,7 @@
     },
     {
       "id": "hist-a-02",
-      "question": "openmrs-core now registers a filter that collapses runs of `/` in the request URI, so that `/openmrs//ws/rest/v1/session` is handled like `/openmrs/ws/rest/v1/session`. What error did such requests hit before, and which change and ticket added the filter?",
+      "question": "In openmrs-core 3.0, a call whose URL had two path separators in a row right after the web application's context path got an internal server error instead of being served. Why, how does core now treat such URLs, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "hidden",
       "author": "history-probe",
@@ -66,7 +65,7 @@
     },
     {
       "id": "hist-a-03",
-      "question": "Why does openmrs-core create its JobRunr background job server with `startBackgroundJobServer = false` and start it later from a separate lifecycle class? Which change made that so, and which ticket describes the startup failures it fixes?",
+      "question": "In openmrs-core, background tasks could begin executing while the Spring application context, or the platform itself, was still being set up, which caused failures at startup. Why did that happen, what does core now do to hold the task scheduler back, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -84,7 +83,7 @@
     },
     {
       "id": "hist-a-04",
-      "question": "Why did openmrs-core stop relying on a per-thread counter to decide whether `Context.closeSession()` should unbind and close the current Hibernate session? Errors such as \"Pre-bound JDBC Connection found!\" were one symptom. Which change made the switch, and which ticket explains it?",
+      "question": "In openmrs-core, ending the API session on a thread could unbind and close a Hibernate session that other code had bound to that thread, with errors such as \"Pre-bound JDBC Connection found!\" as one symptom. Why, what does core now check instead of a per-thread counter, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -102,7 +101,7 @@
     },
     {
       "id": "hist-a-05",
-      "question": "Why is the `childLocations` association of openmrs-core's `Location` mapped without orphan removal, so that moving a child location under another parent no longer deletes it? Which change set it that way, and which ticket asked for it?",
+      "question": "In openmrs-core, moving a child location under a different parent location could silently delete the child's database row when the session flushed. Why did that start happening after the persistence mapping was migrated, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "hidden",
       "author": "history-probe",
@@ -120,7 +119,7 @@
     },
     {
       "id": "hist-a-06",
-      "question": "openmrs-core's `HandlerUtil` keeps its handler lookups in a `ConcurrentHashMap` instead of a weak-keyed map. What was going wrong with the old lookup store on save, void, retire and validation calls, and which change and ticket made the switch?",
+      "question": "In openmrs-core, the lookup store for the save, void, retire and validation handlers could be emptied whenever the JVM reclaimed memory, so handlers kept being looked up again. Why was the store exposed to that, what does it use now, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -138,7 +137,7 @@
     },
     {
       "id": "hist-a-07",
-      "question": "Why does openmrs-core's `LoggingAdvice.invoke()` now return straight to the wrapped service method when neither DEBUG nor TRACE output would be logged for it? Which change added that, and which ticket motivated it?",
+      "question": "In openmrs-core, the advice that logs calls into service methods built its debug and trace messages on every call, even when neither level would be written to the log. Why was that worth changing, what does it now check first, and which change and ticket changed it?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -156,7 +155,7 @@
     },
     {
       "id": "hist-a-08",
-      "question": "Why does openmrs-core's `ChainingInterceptor` now override the Hibernate 7 persist and remove callbacks itself instead of only the deprecated save and delete ones? What did database event consumers miss before, and which change and ticket made it?",
+      "question": "On Hibernate 7, openmrs-core's database event publishing sent no event when a new entity was created and none when an entity was removed. Why were those events lost, which interceptor callbacks are now passed on, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "hidden",
       "author": "history-probe",
@@ -174,7 +173,7 @@
     },
     {
       "id": "hist-a-09",
-      "question": "Why does the REST module's `AuthorizationFilter` no longer answer 401 \"Session timed out\" on `/ws/rest/v1/session` when the request carries a cookie for an expired HTTP session? Which change and ticket made that exception?",
+      "question": "In the REST web services module, a client still holding a cookie for an expired HTTP session got a 401 reply from the very service it calls to log in again. Why was that reply wrong there, and which change and ticket stopped it?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -192,7 +191,7 @@
     },
     {
       "id": "hist-a-10",
-      "question": "Why does the REST module's `BaseRestController` now map Spring Security's access-denied exception to 401/403 in the way it already treated the older OpenMRS authentication exception? What were clients getting instead, and which change and ticket fixed it?",
+      "question": "In the REST web services module, once core moved to Spring Security, requests refused for missing authentication or a missing privilege started coming back as HTTP 500 instead of 401 or 403. Why, and which change and ticket restored the expected status codes?",
       "vocab": "natural",
       "split": "hidden",
       "author": "history-probe",
@@ -210,7 +209,7 @@
     },
     {
       "id": "hist-a-11",
-      "question": "Why does the global unhandled-rejection handler in esm-error-handling turn the rejection reason into text before it dispatches a toast? What happened when the reason was an `Error` object, and which change and ticket fixed it?",
+      "question": "In the O3 frontend framework, when a promise was rejected with an error object and nothing handled it, the error notification the app shell tried to show failed to render. Why, what is now done with the rejection reason, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -228,7 +227,7 @@
     },
     {
       "id": "hist-a-12",
-      "question": "Why were the age comparisons in the vitals app's `getMuacColorCode` changed so that all colour cases in an age bracket share one bound? Which patients ended up with no colour at all before, and which change and ticket fixed it?",
+      "question": "In the patient chart's vitals and biometrics app, a patient exactly 5 years old with a healthy mid-upper arm circumference (for example 13 cm) got no colour coding at all. Why, and which change and ticket fixed the age bracket comparisons?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -246,7 +245,7 @@
     },
     {
       "id": "hist-a-13",
-      "question": "Why did the form-entry app's `FeWrapperComponent` change the way it lazily imports Angular's locale data? What had the Angular form engine been falling back to for dates and numbers, and which change and ticket fixed it?",
+      "question": "In the patient chart's form entry app, the Angular form engine formatted dates and numbers with Angular's built-in US English data whatever the user's language. Why was the regional formatting data never registered, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "hidden",
       "author": "history-probe",
@@ -264,7 +263,7 @@
     },
     {
       "id": "hist-a-14",
-      "question": "Why does the patient registration app's form manager now keep identifier values it has already generated across save attempts? What went wrong when a partly completed save was tried again, and which change and ticket addressed it?",
+      "question": "In the patient registration app, a second attempt at saving a patient, after the first had only partly completed, could use up more than one newly issued identifier value. Why, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -282,7 +281,7 @@
     },
     {
       "id": "hist-a-15",
-      "question": "Why were the contents of the React form engine's `hfa_girls_5_above.json` z-score table replaced? What was wrong with the old table for girls aged 5 and over, and which change and ticket fixed it?",
+      "question": "In the React form engine, z-scores of stature against age for female children aged 5 and over were computed against a table whose medians were the World Health Organization values for males. Why, and which change and ticket corrected that table?",
       "vocab": "natural",
       "split": "hidden",
       "author": "history-probe",
@@ -300,7 +299,7 @@
     },
     {
       "id": "hist-a-16",
-      "question": "Why does the billing app's printable invoice now base the outstanding amount it shows on the bill's net amount? What did a fully paid bill with a discount show before, and which change and ticket fixed it?",
+      "question": "In the billing app's printout of a bill, a bill that was fully paid but had a discount applied still showed the discount amount as still owed. Why, and which change and ticket fixed it?",
       "vocab": "natural",
       "split": "dev",
       "author": "history-probe",
@@ -318,7 +317,7 @@
     },
     {
       "id": "hist-b-01",
-      "question": "Which merged pull requests changed `api/src/main/java/org/openmrs/api/db/hibernate/HibernateConceptDAO.java` in openmrs-core between 2026-04-13 and the pinned head, and when was each merged?",
+      "question": "In openmrs-core, which merged pull requests since 2026-04-14 added or removed a line containing `hasPrivilege` in any file under `api/src/main/java/org/openmrs`, and when was each merged? Count only commits on the main line up to the pinned head.",
       "vocab": "code",
       "split": "dev",
       "author": "history-probe",
@@ -326,84 +325,44 @@
       "required": [
         {
           "repo": "openmrs-core",
-          "commit": "4d222c6085bbe13f62be68908ad9c3abbaa75db1",
-          "pr": 6420
+          "commit": "5eb8cba2e30befeaec8ab7892dff14ac7dcc9d87",
+          "pr": 6674
         },
         {
           "repo": "openmrs-core",
-          "commit": "1f6cc621cb7bf97dc4283b0c808f96373d90054f",
-          "pr": 6363
+          "commit": "cb6cda4236b21a84cc4e1765a0dbaa58fdbe2565",
+          "pr": 6668
         },
         {
           "repo": "openmrs-core",
-          "commit": "c21a7cbfa2c9f67c1991372a343217e949e04f44",
-          "pr": 6346
+          "commit": "a69b14a84bf925ff7cdf34e93ca1ffb4f257265f",
+          "pr": 6544
         },
         {
           "repo": "openmrs-core",
-          "commit": "b3a2fa0b2d45c31065f89651f4f9801aa45354b4",
-          "pr": 6079
+          "commit": "07e8ea06f244de96907581535d4eff8dadbd0004",
+          "pr": 6598
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "1b5421a9a8d69030adb91124c3f9cb758dbc58a8",
+          "pr": 6383
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "c4aca3af4154dc99969cb6aed48a1e71c9a70055",
+          "pr": 6233
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "f5c03501860de4372d7e0e12f9c3dbe025a38dc8",
+          "pr": 6186
         }
       ]
     },
     {
       "id": "hist-b-02",
-      "question": "Which merged pull requests changed `api/src/main/java/org/openmrs/Location.java` in openmrs-core between 2026-04-13 and the pinned head, and when was each merged?",
-      "vocab": "code",
-      "split": "hidden",
-      "author": "history-probe",
-      "relation": "history-what-when",
-      "required": [
-        {
-          "repo": "openmrs-core",
-          "commit": "b147e0dcae701feb4670b53a454daf0cfb210ee9",
-          "pr": 6444
-        },
-        {
-          "repo": "openmrs-core",
-          "commit": "05bc4e4dc32c4654aba49cc76b9252def11b06c2",
-          "pr": 6379
-        },
-        {
-          "repo": "openmrs-core",
-          "commit": "11607283d6100942c99bcdbb6713352f62c0b53a",
-          "pr": 6088
-        }
-      ]
-    },
-    {
-      "id": "hist-b-03",
-      "question": "Which merged pull requests changed `api/src/main/java/org/openmrs/api/context/ServiceContext.java` in openmrs-core between 2026-04-13 and the pinned head, and when was each merged?",
-      "vocab": "code",
-      "split": "dev",
-      "author": "history-probe",
-      "relation": "history-what-when",
-      "required": [
-        {
-          "repo": "openmrs-core",
-          "commit": "2c9b2ee0dd005f64fa543ca8228c51f57cb319c7",
-          "pr": 6627
-        },
-        {
-          "repo": "openmrs-core",
-          "commit": "b68355b3dd934c7d5be3708d6637dfae8f845ee5",
-          "pr": 6349
-        },
-        {
-          "repo": "openmrs-core",
-          "commit": "41ec2955656c6d7131c628d122d8c503b09c4cb1",
-          "pr": 6348
-        },
-        {
-          "repo": "openmrs-core",
-          "commit": "eb0a1006c7e188d4408deb298685c98ea1fef321",
-          "pr": 6341
-        }
-      ]
-    },
-    {
-      "id": "hist-b-04",
-      "question": "Which merged pull requests changed `api/src/main/java/org/openmrs/api/cache/RolePrivilegeCache.java` in openmrs-core between 2026-04-13 and the pinned head, and when was each merged?",
+      "question": "In openmrs-core, which merged pull requests since 2026-04-14 added or removed a line containing `ThreadLocal` in any file under `api/src/main/java/org/openmrs/api`, and when was each merged? Count only commits on the main line up to the pinned head.",
       "vocab": "code",
       "split": "hidden",
       "author": "history-probe",
@@ -416,19 +375,89 @@
         },
         {
           "repo": "openmrs-core",
-          "commit": "2c9b2ee0dd005f64fa543ca8228c51f57cb319c7",
-          "pr": 6627
+          "commit": "b64e0729cce60c40dffb75788c4b43937a6fc77e",
+          "pr": 6651
         },
         {
           "repo": "openmrs-core",
-          "commit": "1b5421a9a8d69030adb91124c3f9cb758dbc58a8",
-          "pr": 6383
+          "commit": "07e8ea06f244de96907581535d4eff8dadbd0004",
+          "pr": 6598
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "f10e3fb9a645378ab6682c21d6be478bfdab6199",
+          "pr": 6588
+        }
+      ]
+    },
+    {
+      "id": "hist-b-03",
+      "question": "In openmrs-core, which merged pull requests since 2026-04-14 added or removed a line containing `CriteriaBuilder` in any file under `api/src/main/java/org/openmrs/api/db/hibernate`, and when was each merged? Count only commits on the main line up to the pinned head.",
+      "vocab": "code",
+      "split": "dev",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "07e8ea06f244de96907581535d4eff8dadbd0004",
+          "pr": 6598
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "2ce847744295132bbe5fb97f369fab714f09b309",
+          "pr": 6410
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "9e011e2c09db99fd5cae20821e203fe9cc5f036b",
+          "pr": 6359
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "b3a2fa0b2d45c31065f89651f4f9801aa45354b4",
+          "pr": 6079
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "11607283d6100942c99bcdbb6713352f62c0b53a",
+          "pr": 6088
+        }
+      ]
+    },
+    {
+      "id": "hist-b-04",
+      "question": "In openmrs-core, which merged pull requests since 2026-04-14 added or removed a line containing `doFilterInternal` in any file under `web/src/main/java`, and when was each merged? Count only commits on the main line up to the pinned head.",
+      "vocab": "code",
+      "split": "hidden",
+      "author": "history-probe",
+      "relation": "history-what-when",
+      "required": [
+        {
+          "repo": "openmrs-core",
+          "commit": "2d32d20938e007f2f9bf8e3a3c946758d52d6bfe",
+          "pr": 6680
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "085d24ca28913de746060914ba4c0305680c9321",
+          "pr": 6673
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "a69b14a84bf925ff7cdf34e93ca1ffb4f257265f",
+          "pr": 6544
+        },
+        {
+          "repo": "openmrs-core",
+          "commit": "1d0fb13892759020f6bc0824a097518d546024eb",
+          "pr": 6505
         }
       ]
     },
     {
       "id": "hist-b-05",
-      "question": "Which merged pull requests changed `packages/framework/esm-expression-evaluator/src/extractor.ts` in openmrs-esm-core between 2026-04-10 and the pinned head, and when was each merged?",
+      "question": "In openmrs-esm-core, which merged pull requests since 2026-04-11 added or removed a line containing `getExtensionConfig` in any file under `packages/framework`, and when was each merged? Count only commits on the main line up to the pinned head.",
       "vocab": "code",
       "split": "dev",
       "author": "history-probe",
@@ -436,19 +465,29 @@
       "required": [
         {
           "repo": "openmrs-esm-core",
-          "commit": "cd6cf1fcbdab85d05529d015dfb911dfef885b84",
-          "pr": 1943
+          "commit": "744dd2abdf636d1fc4b3b6b163220e6995378022",
+          "pr": 1934
         },
         {
           "repo": "openmrs-esm-core",
-          "commit": "9ea60732d5e57aa3f13d8f2f29654a2faf3b8996",
-          "pr": 1884
+          "commit": "c1bfbcbb06105e7ffd9b4a69556722469ac13c44",
+          "pr": 1922
+        },
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "2864290a3797a6a581958d2d89cd00be08fe8c2d",
+          "pr": 1870
+        },
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "9042cb6c5010ab2316aeec2dc295bf4c410a66de",
+          "pr": 1856
         }
       ]
     },
     {
       "id": "hist-b-06",
-      "question": "Which merged pull requests changed `packages/apps/esm-login-app/src/login.resource.ts` in openmrs-esm-core between 2026-04-10 and the pinned head, and when was each merged?",
+      "question": "In openmrs-esm-core, which merged pull requests since 2026-04-11 added or removed a line containing `configUrls` in any file under `packages/tooling/openmrs`, and when was each merged? Count only commits on the main line up to the pinned head.",
       "vocab": "code",
       "split": "hidden",
       "author": "history-probe",
@@ -456,19 +495,29 @@
       "required": [
         {
           "repo": "openmrs-esm-core",
-          "commit": "4cc27d388fb4a4fe49316791a20127dbb04e31ae",
-          "pr": 1920
+          "commit": "b439966ee59c5a9d0cc569942c6fb6d98bb28ba4",
+          "pr": 1905
         },
         {
           "repo": "openmrs-esm-core",
-          "commit": "a624af22d5816773b91f0c7768daa69617c73c24",
-          "pr": 1918
+          "commit": "a62f8164991a64135f438cef848fdc751e866d20",
+          "pr": 1894
+        },
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "16a6c01d099267045f174f95ecf3936d3b770fb9",
+          "pr": 1838
+        },
+        {
+          "repo": "openmrs-esm-core",
+          "commit": "1dcccfd421c94ee0f0a8aa6c7c974cadab3d5fb8",
+          "pr": 1743
         }
       ]
     },
     {
       "id": "hist-b-07",
-      "question": "Which merged pull requests changed `packages/esm-patient-notes-app/src/notes/visit-notes.resource.ts` in openmrs-esm-patient-chart between 2026-04-15 and the pinned head, and when was each merged?",
+      "question": "In openmrs-esm-patient-chart, which merged pull requests since 2026-04-16 changed the body of `handleFormSubmission`, the submit handler of the medications app's drug order form, as that function stands at the pinned head, and when was each merged? Count only commits on the main line, and only those whose diff touches that function, not other parts of its file.",
       "vocab": "code",
       "split": "dev",
       "author": "history-probe",
@@ -476,24 +525,29 @@
       "required": [
         {
           "repo": "openmrs-esm-patient-chart",
-          "commit": "d0f4b1bf5be04ad6f9c567635864b36de6ac36c3",
-          "pr": 3621
+          "commit": "f5539ea4c4101357388e5bd00678856073f4b4ae",
+          "pr": 3639
         },
         {
           "repo": "openmrs-esm-patient-chart",
-          "commit": "52ad5642b88661b759f5e130f12e1d73a7fac66a",
-          "pr": 3684
+          "commit": "d623a03ff2839cb4c82bca935d48e5ecb4bcda94",
+          "pr": 3507
         },
         {
           "repo": "openmrs-esm-patient-chart",
-          "commit": "96b812bb0206c034792895cacfad69dd3f37b44a",
-          "pr": 3668
+          "commit": "b8d3fe2ea7a8546c4f4800029bdaec4f6423a8c8",
+          "pr": 2973
+        },
+        {
+          "repo": "openmrs-esm-patient-chart",
+          "commit": "33ae989b8a29fcee7e7fe8bba7ef153a4d583b12",
+          "pr": 3300
         }
       ]
     },
     {
       "id": "hist-b-08",
-      "question": "Which merged pull requests changed `src/utils/common-expression-helpers.ts` in openmrs-esm-form-engine-lib between 2026-04-15 and the pinned head, and when was each merged?",
+      "question": "In openmrs-esm-form-engine-lib, which merged pull requests since 2026-04-16 added or removed a line containing `voidedValue` in any file under `src`, and when was each merged? Count only commits on the main line up to the pinned head.",
       "vocab": "code",
       "split": "dev",
       "author": "history-probe",
@@ -501,29 +555,54 @@
       "required": [
         {
           "repo": "openmrs-esm-form-engine-lib",
-          "commit": "6a5b489b47c58f526f9988624c0bf349ec5b75ad",
-          "pr": 832
+          "commit": "b0d8fd2e9a0c68f2c72b2415b6dbf351b6e92c30",
+          "pr": 842
         },
         {
           "repo": "openmrs-esm-form-engine-lib",
-          "commit": "79f2c23a1a4b3f45103fcd6f63746c87afa6e9fb",
-          "pr": 830
+          "commit": "0e1edc234479890d45bc09e67b2ee25befc1c803",
+          "pr": 826
         },
         {
           "repo": "openmrs-esm-form-engine-lib",
-          "commit": "fcf1b2562d60389dbf88c5383c2d4237d9d1ff8a",
-          "pr": 824
+          "commit": "ebb02b719931d121419669b531b6e05c77f515e9",
+          "pr": 822
+        },
+        {
+          "repo": "openmrs-esm-form-engine-lib",
+          "commit": "ae1b2b294c2e1a7635bb05f9ed803d7a769496f4",
+          "pr": 812
+        },
+        {
+          "repo": "openmrs-esm-form-engine-lib",
+          "commit": "a6f911cf3612608cac9649229396e0ebc92ae8ba",
+          "pr": 787
         }
       ]
     },
     {
       "id": "hist-b-09",
-      "question": "Which merged pull requests changed `src/invoice/printable-invoice/printable-invoice.component.tsx` in openmrs-esm-billing-app between 2026-04-15 and the pinned head, and when was each merged?",
+      "question": "In openmrs-esm-billing-app, which merged pull requests since 2026-04-16 added or removed a line containing `lineItems` in any file under `src`, and when was each merged? Count only commits on the main line up to the pinned head.",
       "vocab": "code",
       "split": "hidden",
       "author": "history-probe",
       "relation": "history-what-when",
       "required": [
+        {
+          "repo": "openmrs-esm-billing-app",
+          "commit": "c770afca8921295dd87d8e7c185a8a4fef231376",
+          "pr": 885
+        },
+        {
+          "repo": "openmrs-esm-billing-app",
+          "commit": "6e4cdcd9db634a947b317df793d5b8170a9768e9",
+          "pr": 831
+        },
+        {
+          "repo": "openmrs-esm-billing-app",
+          "commit": "e8126b39dc10bcdc719250b004afe86f7782f36a",
+          "pr": 738
+        },
         {
           "repo": "openmrs-esm-billing-app",
           "commit": "4aa8e4c993d5fe06147c9561c949a6da36aea47e",
@@ -531,8 +610,13 @@
         },
         {
           "repo": "openmrs-esm-billing-app",
-          "commit": "3ecce2a55223b21d3c53d4905b346455f94f4fd2",
-          "pr": 743
+          "commit": "e5b80768f3166c82b2db7c710e166adf01ce3f70",
+          "pr": 744
+        },
+        {
+          "repo": "openmrs-esm-billing-app",
+          "commit": "8ba8b18ae423df842acd93584f85cafa44577a02",
+          "pr": 733
         },
         {
           "repo": "openmrs-esm-billing-app",
@@ -543,7 +627,7 @@
     },
     {
       "id": "hist-b-10",
-      "question": "Which merged pull requests changed `packages/esm-patient-registration-app/src/patient-registration/field/address/address-field.component.tsx` in openmrs-esm-patient-management between 2026-04-15 and the pinned head, and when was each merged?",
+      "question": "In openmrs-esm-patient-management, which merged pull requests since 2026-04-16 added or removed a line containing `SavePatientTransactionManager` in any file under `packages/esm-patient-registration-app/src`, and when was each merged? Count only commits on the main line up to the pinned head.",
       "vocab": "code",
       "split": "dev",
       "author": "history-probe",
@@ -551,8 +635,13 @@
       "required": [
         {
           "repo": "openmrs-esm-patient-management",
-          "commit": "e7b14cfb17e0871420c4023bb81b19cedcab30b4",
-          "pr": 2761
+          "commit": "1aaae8c003d0ce38c32f07617277398079ccb66a",
+          "pr": 2786
+        },
+        {
+          "repo": "openmrs-esm-patient-management",
+          "commit": "b4b76423feb220db7e78f27e769f3d32ffaf89b7",
+          "pr": 2780
         },
         {
           "repo": "openmrs-esm-patient-management",
@@ -561,39 +650,64 @@
         },
         {
           "repo": "openmrs-esm-patient-management",
-          "commit": "0c8915e87db861cc30fa3a40b494ccc8505d2863",
-          "pr": 2757
+          "commit": "ddd67a6674f8dd70f26bd01b36b2ce5d5098e67f",
+          "pr": 2697
+        },
+        {
+          "repo": "openmrs-esm-patient-management",
+          "commit": "f298c04173e456f92b94fcd90d781c8b89d0e157",
+          "pr": 2694
         }
       ]
     },
     {
       "id": "hist-b-11",
-      "question": "Which merged pull requests changed `src/forms/dispense-form.workspace.tsx` in openmrs-esm-dispensing-app between 2026-04-13 and the pinned head, and when was each merged?",
+      "question": "In openmrs-esm-patient-management, which merged pull requests since 2026-04-16 added or removed a line containing `encounterProviders` in any file under `packages/esm-service-queues-app`, and when was each merged? Count only commits on the main line up to the pinned head.",
       "vocab": "code",
       "split": "hidden",
       "author": "history-probe",
       "relation": "history-what-when",
       "required": [
         {
-          "repo": "openmrs-esm-dispensing-app",
-          "commit": "f95cf7935383e67e6e7b513a4ea91ff609b7f064",
-          "pr": 859
+          "repo": "openmrs-esm-patient-management",
+          "commit": "a7bd67168e3db4b095f8a1c06451549d3ec77b79",
+          "pr": 2824
         },
         {
-          "repo": "openmrs-esm-dispensing-app",
-          "commit": "1e7c82b5db6673d887e2455f5cab400244d70dc4",
-          "pr": 825
+          "repo": "openmrs-esm-patient-management",
+          "commit": "7212897e35ee9efa79192770f019651dcbd66cc1",
+          "pr": 2600
+        },
+        {
+          "repo": "openmrs-esm-patient-management",
+          "commit": "171573ddff7840281d76268628e2684ed3be64d0",
+          "pr": 2583
+        },
+        {
+          "repo": "openmrs-esm-patient-management",
+          "commit": "49a93f006e49b88e2c8a607f2a9946d2ec22e344",
+          "pr": 2541
         }
       ]
     },
     {
       "id": "hist-b-12",
-      "question": "Which merged pull requests changed `src/stock-reports/stock-reports.resource.ts` in openmrs-esm-stock-management-app between 2026-04-13 and the pinned head, and when was each merged?",
+      "question": "In openmrs-esm-stock-management-app, which merged pull requests since 2026-04-14 added or removed a line containing `restBaseUrl` in any file under `src`, and when was each merged? Count only commits on the main line up to the pinned head.",
       "vocab": "code",
       "split": "dev",
       "author": "history-probe",
       "relation": "history-what-when",
       "required": [
+        {
+          "repo": "openmrs-esm-stock-management-app",
+          "commit": "12a145551cda444d3c1a79e62699b7735b8dc892",
+          "pr": 661
+        },
+        {
+          "repo": "openmrs-esm-stock-management-app",
+          "commit": "9556d5a07c6263b485df10dda346f2ec47df5427",
+          "pr": 630
+        },
         {
           "repo": "openmrs-esm-stock-management-app",
           "commit": "390dc57d290de305f41f5af1755fc8c59480407c",
@@ -603,6 +717,16 @@
           "repo": "openmrs-esm-stock-management-app",
           "commit": "c9d7c101c64554474c6b32c734789362166eaf37",
           "pr": 542
+        },
+        {
+          "repo": "openmrs-esm-stock-management-app",
+          "commit": "79953cf66885a70e1b0430f14d82d9fb8b4de86e",
+          "pr": 552
+        },
+        {
+          "repo": "openmrs-esm-stock-management-app",
+          "commit": "c67e47060f34697bd5e9aa63389a35fc5df2eed8",
+          "pr": 541
         }
       ]
     },

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Validates tests/eval/datasets/o3-history.json against D88, D89, D91, D95, D96 and D98 and prints counts and violations.
+// Validates tests/eval/datasets/o3-history.json against D88, D89, D91, D95, D96 and D98, plus the D100 round 1 rewrite
+// rules (kind a: no path or changed-file identifier in the text; kind b: criterion-computed gold of at least 4), and prints counts and violations.
 // Plain node, no dependencies. Usage: node validate.mjs [--live]   (--live re-reads every ticket from the public Jira)
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -58,6 +59,8 @@ const pinOf = (repo) => {
 };
 
 const words = (s) => s.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+const EXT = /\.(java|kt|ts|tsx|js|jsx|mjs|cjs|json|xml|ya?ml|properties|sql|s?css|html|md|gradle)\b/i;
+const CAMEL = /\b(?:[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)+|[A-Z][a-z0-9]+(?:[A-Z][a-z0-9]*)+)\b/g;
 const grams = (ws, n = 4) => new Set(ws.slice(0, Math.max(0, ws.length - n + 1)).map((_, i) => ws.slice(i, i + n).join(" ")));
 const jiraCache = (key) => join(HERE, "cache/jira", `${key}.json`);
 async function ticketResolves(key) {
@@ -100,6 +103,11 @@ for (const q of dataset.questions) {
       if (kind === "a") {
         if (q.question.includes(String(c.pr)) || q.question.toLowerCase().includes(c.commit.slice(0, 7))) bad(q.id, "kind a question leaks the PR number or SHA");
         for (const t of tickets) if (q.question.toUpperCase().includes(t.ticket.toUpperCase())) bad(q.id, "kind a question leaks the ticket key");
+        // Round 1 rewrite (D100): no path-like token and no CamelCase identifier from the change, so the agent must locate the code.
+        if (q.question.includes("/") || EXT.test(q.question)) bad(q.id, "kind a question has a path-like token");
+        const code = git(c.repo, "show", "--format=", c.commit) + git(c.repo, "show", "--format=", "--name-only", c.commit).split("\n").filter(Boolean)
+          .map((p) => { try { return git(c.repo, "show", `${pinOf(c.repo).pin}:${p}`); } catch { return ""; } }).join("\n");
+        for (const id of q.question.match(CAMEL) ?? []) if (new RegExp(`\\b${id}\\b`).test(code)) bad(q.id, `kind a question names identifier ${id} from the changed files`);
       }
       // Every commit at the pin that names the ticket must be gold, so exactly the gold units answer the question.
       for (const t of tickets) {
@@ -109,12 +117,29 @@ for (const q of dataset.questions) {
     }
   }
   if (kind === "b") {
+    // Round 1 rewrite (D100): gold is exactly what the stated criterion selects over the window, at least 4 changes,
+    // and the anchor (directory or file) has more commits than that, so listing the anchor's commits is not the answer.
     const repo = changes[0]?.repo;
-    const listed = repo ? git(repo, "log", "--first-parent", "--format=%H", `--since=${rec.since}`, pinOf(repo).pin, "--", rec.path).split(/\s+/).filter(Boolean) : [];
+    const { pin, start } = pinOf(repo);
+    const base = ["log", "--first-parent", "--format=%H", `--since=${rec.since}`];
+    const lines = (out) => out.split(/\s+/).filter(Boolean);
+    let listed = [], anchor = [];
+    if (rec.criterion === "pickaxe") {
+      listed = lines(git(repo, ...base, `-G${rec.token}`, pin, "--", rec.dir));
+      anchor = lines(git(repo, ...base, pin, "--", rec.dir));
+      if (!q.question.includes(`\`${rec.token}\``) || !q.question.includes(`\`${rec.dir}\``)) bad(q.id, "question does not name its directory and identifier");
+    } else if (rec.criterion === "decl") {
+      listed = git(repo, "log", "--first-parent", `--since=${rec.since}`, `-L${rec.startLine},${rec.endLine}:${rec.path}`, "-s", "--format=@@C %H", pin).split("\n").filter((l) => l.startsWith("@@C ")).map((l) => l.slice(4));
+      anchor = lines(git(repo, ...base, pin, "--", rec.path));
+      if (!git(repo, "show", `${pin}:${rec.path}`).split("\n")[rec.startLine - 1]?.includes(rec.decl)) bad(q.id, `line ${rec.startLine} of ${rec.path} at the pin does not declare ${rec.decl}`);
+      if (!q.question.includes(`\`${rec.decl}\``)) bad(q.id, "question does not name its declaration");
+    } else bad(q.id, `unknown kind b criterion ${rec.criterion}`);
     const gold = new Set(changes.map((c) => c.commit));
-    if (listed.length !== gold.size || !listed.every((h) => gold.has(h))) bad(q.id, `gold is not exactly the changes to ${rec.path} since ${rec.since}`);
-    if (rec.since < pinOf(repo).start.toISOString().slice(0, 10)) bad(q.id, `since ${rec.since} is before the window`);
-    if (!q.question.includes(rec.path) || !q.question.includes(rec.since)) bad(q.id, "question does not name its path and date");
+    if (listed.length !== gold.size || !listed.every((h) => gold.has(h))) bad(q.id, `gold is not exactly the ${rec.criterion} selection since ${rec.since}`);
+    if (gold.size < 4) bad(q.id, `gold has ${gold.size} changes, want at least 4`);
+    if (anchor.length < gold.size + 2) bad(q.id, `anchor has ${anchor.length} commits, want at least gold + 2`);
+    if (new Date(`${rec.since}T00:00:00Z`) < start) bad(q.id, `since ${rec.since} is before the window`);
+    if (!q.question.includes(rec.since)) bad(q.id, "question does not name its date");
   }
   for (const t of tickets) {
     if (!/^(TRUNK|RESTWS|O3)-\d+$/.test(t.ticket)) bad(q.id, `ticket ${t.ticket} is not a TRUNK, RESTWS or O3 key`);

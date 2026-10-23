@@ -1,0 +1,12 @@
+{
+ "number": 2697,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2697",
+ "title": "(fix) O3-5913: Wait for patient data deletions before reporting save success",
+ "mergedAt": "2026-08-24T19:27:06Z",
+ "mergeCommit": "ddd67a6674f8dd70f26bd01b36b2ce5d5098e67f",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [x] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nPatient edits could report success while name, identifier, or person-attribute deletions were still running. The deletion paths discarded their promises, and attribute deletion also caught failures and only logged them. A failed cleanup could therefore leave stale patient data behind after the UI reported a successful save.\r\n\r\nThis change collects and awaits the name and identifier deletion requests. It also moves attribute deletion out of the synchronous patient-payload builder and into the asynchronous save flow. Deletion failures now reject the save through the existing error handling, and the patient update does not begin until the requested deletions complete.\r\n\r\nDeferred-promise tests cover all three deletion types. They verify that the patient save remains pending while deletion is pending and does not run when deletion fails.\r\n\r\n## Screenshots\r\n\r\n## Related Issue\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5913\r\n\r\n## Other\r\n",
+ "files": [
+  "packages/esm-patient-registration-app/src/patient-registration/form-manager.test.ts",
+  "packages/esm-patient-registration-app/src/patient-registration/form-manager.ts"
+ ]
+}

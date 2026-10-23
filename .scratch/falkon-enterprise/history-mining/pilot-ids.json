@@ -1,5 +1,5 @@
 {
-  "note": "D100 pilot: 6 dev questions, 2 per kind, as selected by pilotIds(dataset, 6) for --dataset history.",
+  "note": "D100 pilot, round 1 rewrite: 6 dev questions, 2 per kind, as selected by pilotIds(dataset, 6) for --dataset history (confirmed with pnpm exec tsx -e from tests/eval).",
   "ids": [
     "hist-c-03",
     "hist-a-14",

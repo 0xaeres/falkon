@@ -1,0 +1,19 @@
+{
+ "number": 1922,
+ "url": "https://github.com/openmrs/openmrs-esm-core/pull/1922",
+ "title": "(fix) Minimize churn from config updates when there are many extensions",
+ "mergedAt": "2026-09-30T22:54:22Z",
+ "mergeCommit": "c1bfbcbb06105e7ffd9b4a69556722469ac13c44",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n- [ ] I have updated the esm-framework and storybook mocks ([mock.tsx](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/mock.tsx), [mock-jest.tsx](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/mock-jest.tsx), and [storybook mocks](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/tooling/storybook/mocks/)) to reflect any API changes.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\n\r\nWhen an extension mounts, we update the extension config store. This can force us to recompute configurations even where nothing has changed, leading to some unnecessary render churn. This adds memoization so we only recompute an extensions config if we actually need to.\r\n\r\nSimilarly, when sorting extensions in a slot we were unnecessarily calculating the order using a O(n^2) algorithm. This is now swapped for an O(n) version at the cost of two passes through the list of extension ids.\r\n\r\nBoth of these are pretty minor compared to the previous rework as it mostly affects slots with a large number of extensions, but we are getting an increasing number of those.\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n<!-- https://issues.openmrs.org/browse/O3- -->\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\n",
+ "files": [
+  ".changeset/tame-ads-kick.md",
+  "packages/framework/esm-config/src/module-config/module-config.test.ts",
+  "packages/framework/esm-config/src/module-config/module-config.ts",
+  "packages/framework/esm-extensions/src/extensions.ts",
+  "packages/framework/esm-framework/docs/functions/defineConfigSchema.md",
+  "packages/framework/esm-framework/docs/functions/defineExtensionConfigSchema.md",
+  "packages/framework/esm-framework/docs/functions/getAssignedExtensions.md",
+  "packages/framework/esm-framework/docs/functions/getConfig.md",
+  "packages/framework/esm-framework/docs/functions/provide.md"
+ ]
+}

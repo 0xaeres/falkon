@@ -1,0 +1,13 @@
+{
+ "number": 885,
+ "url": "https://github.com/openmrs/openmrs-esm-billing-app/pull/885",
+ "title": "(feat) O3-6112: Create bill / Add bill items workspace should show which patient is being billed in tablet mode",
+ "mergedAt": "2026-10-15T15:15:44Z",
+ "mergeCommit": "c770afca8921295dd87d8e7c185a8a4fef231376",
+ "body": "\r\n## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [x] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\nThe Billing \"Create bill / Add bill items\" workspace renders only the form with no patient context and on tablet widths it covered the invoice page's own patient banner, so a cashier could not confirm whose bill they were adding items to. This PR adds the compact patient header to the top of the workspace loading the patient via usePatient(patientUuid) and rendering patient-header-slot with hideActionsOverflow: true, per the Dispensing pattern), so the patient's name and identifier are always visible on every screen size\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n\r\n**Before the fix**\r\n\r\nhttps://github.com/user-attachments/assets/82ecb82f-34fb-4e9d-b0c2-a433ee0d37e5\r\n\r\n\r\n**After the fix**\r\n\r\n\r\nhttps://github.com/user-attachments/assets/d97c0623-a155-4847-b76e-8f2eb8aacacc\r\n\r\n\r\n\r\n\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n<!-- https://issues.openmrs.org/browse/O3- -->\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-6112\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\n",
+ "files": [
+  "src/billing-form/billing-form.scss",
+  "src/billing-form/billing-form.test.tsx",
+  "src/billing-form/billing-form.workspace.tsx"
+ ]
+}
