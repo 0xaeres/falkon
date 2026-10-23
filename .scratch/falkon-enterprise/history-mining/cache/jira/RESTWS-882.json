@@ -1,0 +1,9 @@
+{
+ "key": "RESTWS-882",
+ "url": "https://openmrs.atlassian.net/browse/RESTWS-882",
+ "summary": "Test Result Trees Driven by Concept Sets",
+ "status": "Closed",
+ "created": "2022-02-15T23:56:15.000+1100",
+ "resolved": "2023-12-21T09:42:08.000+1100",
+ "description": "https://talk.openmrs.org/t/o3-test-result-trees-driven-by-concept-sets/35828"
+}

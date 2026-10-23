@@ -1,0 +1,9 @@
+{
+ "key": "O3-5410",
+ "url": "https://openmrs.atlassian.net/browse/O3-5410",
+ "summary": "Display Billing Payment Status Without Blocking Access to Clinical Forms",
+ "status": "Done",
+ "created": "2026-02-09T18:00:06.215+1100",
+ "resolved": "2026-05-31T07:18:00.279+1000",
+ "description": "Display overall patient payment status prominently on the patient banner without blocking access to clinical forms or interrupting care delivery.\nUser Story: \nAs a healthcare provider (triage nurse, clinician, lab technician, or pharmacist), I want to see the patient's payment status prominently displayed in the patient chart so I can make informed decisions about care sequencing while maintaining clinical continuity without delays in care delivery.\n\nFunctional Requirements: \nPayment status states:\nPaid: Full payment received \u2192 Green badge\n\nPartially Paid: Some payment pending \u2192 Yellow badge\n\nUnpaid: No payment received \u2192 Red badge\n\n\nNon-blocking behaviour ~ Payment status is informational only\nPayment status is informational only \u2013 does not prevent clinical actions\n\nClinical forms remain fully accessible regardless of payment status\n\nProviders retain full access to: patient records (clinical forms, labs, medications)\n\nNo blocking modal dialogs or pop-ups interrupts clinical workflow"
+}

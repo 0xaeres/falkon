@@ -1,0 +1,11 @@
+{
+ "number": 3657,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3657",
+ "title": "(fix) O3-5976: Fix Angular locale import requesting non-existent .mjs files",
+ "mergedAt": "2026-10-05T13:15:36Z",
+ "mergeCommit": "c7d6eb8dcec4dc4ce60a285798920842d88820d2",
+ "body": "## Requirements\n\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\n- [ ] My work includes tests or is validated by existing tests.\n\n## Summary\n\nThe form engine lazily loads Angular locale data for the user's language, but the dynamic import only matched `.mjs` files. `@angular/common/locales` only ships `.js` files, so the import never found a file and `registerLocaleData()` never ran for any locale.\n\n`LOCALE_ID` is still set to the user's language, so Angular's `date` pipe throws for any locale other than English. For example, with the language set to French, a form with a question that shows a previous value (via `historicalExpression`) fails to render.\n\nThis PR:\n\n- Imports the locale files from `../../../node_modules/@angular/common/locales/${locale}.js`. Importing through the package name doesn't work here: `@angular/common` only exports `./locales/*`, and webpack needs to resolve the `locales` directory itself to build the lazy import.\n- Limits the bundled files with `webpackInclude: /locales[\\/\\\\][a-z]{2}\\.js$/`. This emits one chunk for each of the 133 two-letter base locales and leaves out the `extra/` and `global/` variants. The pattern accepts both `/` and `\\` because webpack matches it against the absolute file path, which uses backslashes on Windows.\n- Logs a warning when the locale data can't be loaded (for example, an unsupported locale or a failed chunk request) instead of leaving an unhandled rejection.\n\n## Screenshots\n\n## Related Issue\n\nhttps://openmrs.atlassian.net/browse/O3-5976\n\n## Other\n",
+ "files": [
+  "packages/esm-form-entry-app/src/app/fe-wrapper/fe-wrapper.component.ts"
+ ]
+}

@@ -1,0 +1,9 @@
+{
+ "key": "O3-5734",
+ "url": "https://openmrs.atlassian.net/browse/O3-5734",
+ "summary": "Allergy workspace crashes when accessed via \"Fill prescription\"",
+ "status": "Done",
+ "created": "2026-06-11T20:37:27.872+1000",
+ "resolved": "2026-06-23T17:17:08.154+1000",
+ "description": "Allergy workspace crashes when accessed via \"Fill prescription\". \nSteps to reproduce\nClick fill prescription\n\nSearch for a patient\n\nClick Add drug order\n\nTry to record a new allergy"
+}

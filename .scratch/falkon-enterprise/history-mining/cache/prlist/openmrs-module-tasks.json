@@ -1,0 +1,29 @@
+[
+ {
+  "number": 9,
+  "url": "https://github.com/openmrs/openmrs-module-tasks/pull/9",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T18:01:44Z",
+  "mergeCommit": "618f453d1c802d8a02cb73454ae6d92bed150878",
+  "body": "Updates tasks so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7, Hibernate 7). It uses fhir2's Platform 3 line (6.x). Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions and build:\n  - Module version is now 3.0.0-SNAPSHOT, on Platform 3.0.0-SNAPSHOT (with `openmrs-bom` imported), fhir2 6.0.0-SNAPSHOT and webservices.rest 5.0.0-SNAPSHOT.\n  - Builds with Java 21 and `-parameters`.\n  - `javax.servlet-api` becomes `jakarta.servlet-api` (provided).\n  - The byte-buddy pin is dropped; it would downgrade what Mockito 5 needs.\n  - `openmrsPlatformToolsVersion` is pinned to 2.8.0, so spotless doesn't reformat untouched code.\n- `config.xml` now sets `require_version` to 3.0.0.\n- Entities and `TasksDao`: `javax.persistence` becomes `jakarta.persistence`, and `saveOrUpdate`/`delete` become `HibernateUtil.saveOrUpdate`/`remove`.\n- `moduleApplicationContext.xml`: the no-op `cacheInterceptor` bean that was added for fhir2 2.x is removed. On core 3.0 it shadows the `CacheInterceptor` from `@EnableCaching`, and fhir2 6.x's `createFhirCacheAdvisor` then fails the context.\n- Test context: `TestingApplicationContext.xml` and its stubs are removed. fhir2 6.x and core 3.0 provide the real beans, and the stubs caused duplicate-bean failures.\n- Tests are migrated to JUnit 5. The `CarePlanMapper*` tests use lenient Mockito strictness, which matches their old JUnit 4 behaviour.\n- README now says Java 21+.\n\n## Verification\n- `mvn clean install` passes: 187 api, 10 omod tests.\n- I deployed the omod on openmrs-core master (`mvn jetty:run`, MySQL 8) with legacyui, webservices.rest 5.0.0-SNAPSHOT, fhir2 6.0.0-SNAPSHOT, calculation and initializer:\n  - All modules started, and the server log has no errors from this module.\n  - Logging in through the UI works.\n  - `GET /ws/rest/v1/tasks/careplan` returns a FHIR Bundle (200).\n- It also starts in the full set of 26 upgraded modules with openmrs/openmrs-core#6631 and #6633, where `/ws/fhir2/R4/CarePlan` returns 200.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Fp7T1pGYEMrMVp1M7AW9Fg\n"
+ },
+ {
+  "number": 8,
+  "url": "https://github.com/openmrs/openmrs-module-tasks/pull/8",
+  "title": "Add GPG keys to release workflow secrets",
+  "branch": "gpg",
+  "mergedAt": "2026-06-04T08:40:30Z",
+  "mergeCommit": "b35270e249ea9483dea99340a7bbea149fe1d347",
+  "body": ""
+ },
+ {
+  "number": 7,
+  "url": "https://github.com/openmrs/openmrs-module-tasks/pull/7",
+  "title": "Ready this module for production",
+  "branch": "ib-fixes",
+  "mergedAt": "2026-05-08T18:24:24Z",
+  "mergeCommit": "0e83fafa73bf7188fb96f3ad88a291553eed7c96",
+  "body": "This PR combines a large number of changes that are mostly not breaking and aimed at backwards compatibility while adding a number of tests to ensure correctness. There are, however, a number of changes that consumers should be aware of:\r\n\r\n* `CANCELLED` tasks: The module previously treated `CANCELLED` tasks as voided and treated these identically. This is, I think, a semantic mismatch, mostly because as a user I may still want to see prior tasks that are cancelled. This PR breaks this linkage. However, we still exclude `CANCELLED` tasks from the default returns for the REST API.\r\n* The `rationale` for a task was populated in `CarePlan.description`. This has been moved to `CarePlan.activity.detail.reasonCode`, which is a more correct place to put a rationale. The frontend code will need to be updated for this change.\r\n\r\nOtherwise, the changes here adopt our newly revived parent, add tests, fix existing tests so they can be run and do various other kinds of clean-up."
+ }
+]

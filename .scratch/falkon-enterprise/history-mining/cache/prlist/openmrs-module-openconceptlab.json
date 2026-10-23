@@ -1,0 +1,101 @@
+[
+ {
+  "number": 135,
+  "url": "https://github.com/openmrs/openmrs-module-openconceptlab/pull/135",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T18:00:26Z",
+  "mergeCommit": "cf998b97d866a379cd12791031f99e6f6f802a7d",
+  "body": "Updates openconceptlab so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7, Hibernate 7). Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions and build:\n  - Module version is now 5.0.0-SNAPSHOT, on Platform 3.0.0-SNAPSHOT (`openmrs-bom` imported), legacyui 3.0.0-SNAPSHOT and webservices.rest 5.0.0-SNAPSHOT.\n  - Builds with Java 21 and `-parameters`.\n  - The byte-buddy pin and the javax servlet/jsp dependencies are removed.\n- `require_version` still follows `${openmrsVersion}`, so the module now requires Platform 3.0. CI (release workflow and Bamboo) uses JDK 21.\n- `javax.persistence`/`servlet` become `jakarta.*`, and commons-lang becomes lang3.\n- Jackson 1 becomes Jackson 2. The streaming importer uses `getFactory().createParser(...)` and `setDateFormat(...)`.\n- Hibernate 7:\n  - The Criteria queries in `ImportServiceImpl` are now typed HQL, with the same filters and ordering.\n  - DML uses `createMutationQuery`.\n  - Saves use `persist`, or `HibernateUtil.saveOrUpdate`/merge for detached `Import`s.\n  - The DAO code uses the Hibernate `Session` from `dbSessionFactory.getHibernateSessionFactory()`.\n  - `Item`/`Import` ids use `IDENTITY`, and `Item.type` gets `@JdbcTypeCode(SqlTypes.VARCHAR)`.\n- Spring: `<task:scheduler id=\"openconceptlab.scheduler\">` is now an explicit `ThreadPoolTaskScheduler` with `autowire-candidate=\"false\"`. Otherwise core's `StreamDataService`, which autowires a `TaskExecutor` by type, sees two candidates and the context fails to start.\n- REST: every `@Resource` and `SearchConfig` range widens from `1.8.* - 2.*` to `1.8.* - 9.*`.\n- Tests are migrated to JUnit 5. `ImporterTest` uses lenient Mockito strictness, matching the old JUnit 4 base.\n\n## Depends on\n- openmrs/openmrs-core#6631. The module's `TransactionProxyFactoryBean` targets reference `adminService` and `conceptService`. On current core master that leaves those services without transaction, authorization and required-data advice (openmrs/openmrs-core#6630). Until #6631 is merged, 5 api tests fail (1 `ImportServiceTest`, 4 `SaverTest`), and startup can fail.\n\n## Verification\n- Built and tested against core master with #6631: `mvn clean install` passes, including the OWA build: api 152 tests (8 already `@Ignore`d), omod 44.\n- On openmrs-core master with openmrs/openmrs-core#6631 (`mvn jetty:run`, MySQL 8), with legacyui, webservices.rest, fhir2 and calculation:\n  - All modules start, and the server log has no errors from this module.\n  - Logging in through the UI works.\n  - `openconceptlab/import` and `openconceptlab/subscription` return 200.\n- With all 31 O3 reference application modules upgraded to Platform 3, on openmrs-core master plus the core fixes openmrs/openmrs-core#6629, #6631, #6633, #6635, #6637 and #6639 (`mvn jetty:run`, MySQL 8): every module starts, logging in through the UI works, and core message codes resolve.\n  - In that run, `openconceptlab/import` returns 200.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Fp7T1pGYEMrMVp1M7AW9Fg\n"
+ },
+ {
+  "number": 134,
+  "url": "https://github.com/openmrs/openmrs-module-openconceptlab/pull/134",
+  "title": "Use async search indexing during OCL imports",
+  "branch": "sync",
+  "mergedAt": "2026-09-25T16:10:30Z",
+  "mergeCommit": "2b16d039e20af0921cb86cfe0f32f8aee223ced1",
+  "body": "Importer switches its Hibernate Search session to async indexing for the length of an import"
+ },
+ {
+  "number": 133,
+  "url": "https://github.com/openmrs/openmrs-module-openconceptlab/pull/133",
+  "title": "O3-5939: Remove the OWA-based admin UI and OWA module from openconceptlab",
+  "branch": "O3-5939-module-u-is-bundled-as-ow-as-are-unreachable-on-o-3-distro-servers-owa-module-is-not-installed",
+  "mergedAt": "2026-10-19T09:09:12Z",
+  "mergeCommit": "ee12aafba28cabc12641eac2651c4bbc60ba84d9",
+  "body": "https://openmrs.atlassian.net/browse/O3-5939\r\n\r\nThe module bundled its management UI as an Open Web App and registered admin links to /openmrs/owa/openconceptlab/index.html#/... via AdminList, an App Framework app descriptor, and the OWA bundling in omod. On distributions that do not install the OWA module (e.g. the O3 reference application) those links 404 and the bundled .owa is never served. The native GSP pages the README still referenced were removed years ago, so there is no working fallback.\r\n\r\nRemove the OWA-based admin UI and OWA module, keeping the module's REST API and the one legacyui hook that has nothing to do with OWA:\r\n- Delete the owa/ Maven submodule and its parent pom entry\r\n- Delete AdminList and its org.openmrs.admin.list extension\r\n-Drop the legacyui-api / legacyui-omod Maven dependency (HighlightSubscribedConcept, the one legacyui extension the module keeps, only needs core's org.openmrs.module.Extension to compile).\r\n- Delete the openConceptLabClient_app.json App Framework descriptor\r\n- Drop aware_of_module for owa and legacyui from config.xml\r\n- Remove the openconceptlab-owa zip dependency, the include-owa bundling step and the now-unused legacyui-omod and compass dependencies from omod\r\n- Remove the dead admin-link message keys\r\n- Update the README: configuration is done through global properties and REST"
+ },
+ {
+  "number": 132,
+  "url": "https://github.com/openmrs/openmrs-module-openconceptlab/pull/132",
+  "title": "(docs) Point the README CI badge at build.yml and drop the Codacy badges",
+  "branch": "fix-readme-ci-badge",
+  "mergedAt": "2026-09-08T20:00:19Z",
+  "mergeCommit": "2240921ac518e6f8b5d02f24a8c8922e740d02c9",
+  "body": "The CI badge and its link still reference maven.yml, which was renamed to build.yml when the workflow moved to the reusable OpenMRS action. GitHub keys badge URLs by file name, so the old URL 404s and the badge renders blank. The two Codacy badges also 404 (the project token no longer resolves), so I've removed them rather than leave broken images.\n\nThe build.yml badge will show red right now: the latest master run failed on the OWASP dependency check job on 2026-09-03."
+ },
+ {
+  "number": 130,
+  "url": "https://github.com/openmrs/openmrs-module-openconceptlab/pull/130",
+  "title": "OCLOMRS-1127: Correctly follow slash links",
+  "branch": "OCLOMRS-1127",
+  "mergedAt": "2026-07-23T20:09:29Z",
+  "mergeCommit": "c4aa5d33c9f97512d7193885774d733845353d46",
+  "body": "OCL `/export` links now redirect to `/export/`. Unfortunately, we weren't properly retaining the host on these redirects leading to failures. This updates things to keep working with this (very old) version of the HTTPClient."
+ },
+ {
+  "number": 129,
+  "url": "https://github.com/openmrs/openmrs-module-openconceptlab/pull/129",
+  "title": "OCLOMRS-1126: Propagate `retired` and `retire_reason` from OCL when importing concepts and mappings",
+  "branch": "OCLOMRS-1126",
+  "mergedAt": "2026-07-23T19:17:22Z",
+  "mergeCommit": "f5e6510d1a8f87252c2dc94313dd52c371108901",
+  "body": "**Description of what I fixed**\r\nThe fix on this PR ensures that when importing concepts and mappings from OCL their retirement status and reasons are correctly synchronized with OpenMRS by reading the OCL retired and retire_reason fields. Specifically, I updated the Saver class to apply these fields to concepts, concept names and reference-term mappings, while retired concept descriptions  correctly removed to align with OpenMRS semantics. The implementation supports reactivation by unretiring/unvoiding objects and clearing reasons when OCL's status changes to active, and it maintains backwards compatibility by defaulting missing reason fields to \"Retired in OCL.\"\r\n\r\n**Issue worked on:**\r\nhttps://openmrs.atlassian.net/browse/OCLOMRS-1126"
+ },
+ {
+  "number": 127,
+  "url": "https://github.com/openmrs/openmrs-module-openconceptlab/pull/127",
+  "title": "OCLOMRS-1125: Make advanceToListOf more lenient about JSON format",
+  "branch": "importer-advance-to-list-of",
+  "mergedAt": "2026-05-19T19:30:41Z",
+  "mergeCommit": "ced0e09342f9cf8df1fd172394820391a99a2a9e",
+  "body": "This was uncovered in tests with faked OCL import data. Ultimately, this should make the parser more robust."
+ },
+ {
+  "number": 126,
+  "url": "https://github.com/openmrs/openmrs-module-openconceptlab/pull/126",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:33:09Z",
+  "mergeCommit": "66e9c2d0b0cc30cdf76982065d9fb5e07472167a",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ },
+ {
+  "number": 125,
+  "url": "https://github.com/openmrs/openmrs-module-openconceptlab/pull/125",
+  "title": "OCLOMRS-1124: Use v5 UUIDs for ConceptClasses in OCL imports",
+  "branch": "fix/OCLOMRS",
+  "mergedAt": "2026-04-14T13:02:47Z",
+  "mergeCommit": "c2d7ab6adf9bf21f92c844240cabc35bb7a22c0a",
+  "body": "### Issue\r\nWhen the OCL module creates a new ConceptClass during import , the UUID is randomly generated. This means different OpenMRS instances importing the same OCL source end up with different UUIDs for the same concept class, breaking data synchronization (dbsync, Initializer) and making portable configuration impossible.\r\n\r\n### Fix\r\nGenerate a deterministic version 5 (name-based) UUID for newly created ConceptClass entities using:\r\n\r\n`conceptClass.setUuid(version5Uuid(\"conceptClass/\" + name).toString());`\r\n\r\n\r\nChanges:\r\n\r\nSaver.java \u2014 Added setUuid(...) call when creating a new ConceptClass\r\nSaverTest.java \u2014 Enhanced existing test to verify UUID is deterministic; added new test using \"Drug route\" as the class name to confirm consistent UUID generation\r\nExisting concept classes already in the database are not affected."
+ },
+ {
+  "number": 124,
+  "url": "https://github.com/openmrs/openmrs-module-openconceptlab/pull/124",
+  "title": "OCLOMRS-1122: Decode any HTML-encoding of the key",
+  "branch": "OCLOMRS-1122",
+  "mergedAt": "2026-04-02T22:06:35Z",
+  "mergeCommit": "69124862a246e2cbeab7e64287cc934c2b9fb18b",
+  "body": "Recently, it's been reported that some users are experiencing issues with the OCL subscription workflow that result in getting a 401 response even when everything looks correct. I suspect the issue relates to some of the XSS work we did last year, so this undoes that. I have not, however, done any rigorous attempt to prove that is the issue. In either case, this is pretty harmless."
+ },
+ {
+  "number": 119,
+  "url": "https://github.com/openmrs/openmrs-module-openconceptlab/pull/119",
+  "title": "Optimize large OCL zip file import performance",
+  "branch": "optimize-large-zip-import",
+  "mergedAt": "2026-05-15T19:38:26Z",
+  "mergeCommit": "531b1495bb7c297d40e1bc44464f023db00e8fbf",
+  "body": "## Summary\n\nOptimizes the OCL zip file import pipeline for large files (e.g., DiagnosesStarterKit with ~5000 concepts and ~10000 mappings). The main bottleneck was excessive per-item database queries during import.\n\n## Changes\n\n### 1. Item URL Cache in CacheService (biggest win)\n- Added in-memory `HashMap` cache for `getLastSuccessfulItemByUrl()` results (including null/not-found)\n- Cache persists across `clearCache()` calls since items are used for metadata only (uuid, versionUrl, state)\n- Items created during concept phase are cached for instant lookup during mapping phase\n- **Eliminates ~35,000+ redundant DB queries** for a typical large import\n\n### 2. Skip DB Item Lookups for First-Time Imports\n- Detects first-ever import (`getImportsInOrder` returns \u22641 result)\n- Sets `skipDbItemLookups` flag on CacheService to skip `getLastSuccessfulItemByUrl()` DB queries\n- For first imports, no previous items exist so DB queries always return null\n- Flag is scoped only to Item URL lookups \u2014 ConceptMap and other entity lookups always query the DB on cache miss, since those entities may exist from non-OCL sources\n- **Eliminates ~15,000+ guaranteed-null DB queries** on initial import\n\n### 3. ConceptMap Cache in CacheService\n- Routes `getConceptMapByUuid()` through CacheService instead of direct ImportService call\n- Caches results to avoid repeated lookups for the same UUID within and across batches\n- **Reduces redundant ConceptMap DB queries** during mapping phase\n\n### 4. Validation Type Determined Once Per Import\n- Determines `ValidationType` once at the start of `processInput()` and passes it through to `saveConcept()`\n- Defaults to `FULL`; only overridden if a subscription exists and has an explicit `validationType` set\n- The 3-arg `saveConcept()` overload (used by tests/other callers) retains the original per-call `getSubscription()` fallback for backward compatibility\n- **Eliminates ~5,000 redundant `getSubscription()` calls** during the import path\n\n### 5. Subscription Lookup Consolidation\n- Looks up subscription once at the start of `processInput()` instead of 3 separate calls\n- Minor optimization but eliminates redundant DB queries per import\n\n### 6. Increased Batch Size (256 \u2192 512)\n- Reduces the number of flush/clear/reload cycles during import\n- Fewer cache rebuilds and session management overhead\n- Conservative increase (not 1024) to balance performance with Hibernate session memory usage, since each concept carries names, descriptions, mappings, etc. and OpenMRS deployments vary widely in available memory\n\n### 7. Reduced Logging Overhead\n- Changed per-item `log.info()` to `log.debug()` for concept/mapping import messages\n- Keeps error logging at ERROR level\n- **Eliminates ~15,000 log entries** with full object `toString()` calls\n\n## Estimated Performance Improvement\n\nFor a large zip file with ~5000 concepts and ~10000 mappings:\n- **~60-70% reduction in total database queries** (from ~100,000+ to ~30,000-40,000)\n- **~45-55% total wall-clock time improvement** (DB queries are the dominant cost)\n\n## Testing\n\nAll 87 existing tests pass (0 failures, 0 errors, 8 skipped - pre-existing)."
+ }
+]

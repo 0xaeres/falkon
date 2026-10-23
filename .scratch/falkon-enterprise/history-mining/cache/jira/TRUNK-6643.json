@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6643",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6643",
+ "summary": "Initial setup with MariaDB Driver does not work",
+ "status": "Closed",
+ "created": "2026-05-27T22:45:26.653+1000",
+ "resolved": "2026-06-03T20:06:07.438+1000",
+ "description": "When running through the installation wizard, if the JDBC URL uses jdbc:mariadb instead of jdbc:mysql and a database user need to be created, the setup will fail. This is likely a oversight in the initial setup wizard for support for the MariaDB driver."
+}

@@ -1,0 +1,11 @@
+{
+ "number": 3412,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3412",
+ "title": "(fix) Update Default Procedure Status Concept",
+ "mergedAt": "2026-06-23T11:52:30Z",
+ "mergeCommit": "6e8da1b1b5a459933ca78eaabf87713592f5ab61",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [ ] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\nThis PR updates the default Procedure Status Concept UUID the newly added [Procedure Status Concept](https://app.openconceptlab.org/#/orgs/CIEL/sources/CIEL/concepts/170800/). \r\nhttps://github.com/openmrs/openmrs-content-referenceapplication-demo/pull/77\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n<img width=\"604\" height=\"1034\" alt=\"image\" src=\"https://github.com/user-attachments/assets/0ef54c1e-d4ab-4964-ad81-d814f559b33e\" />\r\n\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n<!-- https://issues.openmrs.org/browse/O3- -->\r\nA sub task of:\r\nhttps://openmrs.atlassian.net/browse/O3-5652\r\n## Other\r\n<!-- Anything not covered above -->\r\n",
+ "files": [
+  "packages/esm-patient-procedures-app/src/config-schema.ts"
+ ]
+}

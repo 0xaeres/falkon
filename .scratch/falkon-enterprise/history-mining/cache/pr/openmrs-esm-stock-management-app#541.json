@@ -1,0 +1,13 @@
+{
+ "number": 541,
+ "url": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/541",
+ "title": "(fix) O3-5647: Fix User Role Scope Save Functionality",
+ "mergedAt": "2026-05-05T06:15:40Z",
+ "mergeCommit": "c67e47060f34697bd5e9aa63389a35fc5df2eed8",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [ ] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\nThe User Role Scope form fails to save changes when the \"Save\" button is clicked. No API request is triggered, and no feedback is provided to the user.\r\nRoot cause analysis revealed that the form is missing an onSubmit handler, preventing submission logic from executing.\r\nThis results in role scope configurations not being persisted, blocking user access control setup.\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\nhttps://openmrs.atlassian.net/browse/O3-5562\r\n<!-- https://issues.openmrs.org/browse/O3- -->\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n\n## Summary by CodeRabbit\n\n* **New Features**\n  * Added validation requiring user and role to be selected before form submission, with error notifications for missing required fields.\n\n* **Bug Fixes**\n  * Enhanced error handling to display detailed error messages when form submission fails.\n\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->",
+ "files": [
+  "src/stock-user-role-scopes/add-stock-user-scope/add-stock-user-role-scope.workspace.tsx",
+  "src/stock-user-role-scopes/stock-user-role-scopes.resource.ts",
+  "translations/en.json"
+ ]
+}

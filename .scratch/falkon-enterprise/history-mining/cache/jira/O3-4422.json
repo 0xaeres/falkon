@@ -1,0 +1,9 @@
+{
+ "key": "O3-4422",
+ "url": "https://openmrs.atlassian.net/browse/O3-4422",
+ "summary": "Order basket triggers infinite re-renders of patient chart",
+ "status": "Cancelled",
+ "created": "2025-01-31T05:58:45.335+1100",
+ "resolved": "2025-01-31T06:04:44.417+1100",
+ "description": "This should be a purely performance issue. See Video. The highlights around each component is a heatmap of re-renderings."
+}

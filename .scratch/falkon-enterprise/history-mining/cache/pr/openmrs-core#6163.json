@@ -1,0 +1,12 @@
+{
+ "number": 6163,
+ "url": "https://github.com/openmrs/openmrs-core/pull/6163",
+ "title": "TRUNK-6558 Return null from getTaskByName when the task does not exist",
+ "mergedAt": "2026-06-08T06:34:16Z",
+ "mergeCommit": "3f5c8a66c9f3e132036cfa362aee752a8f71b263",
+ "body": "## Description\n\n`JobRunrSchedulerService.getTaskByName` propagates the DAO's `ObjectRetrievalFailureException` when no task matches the given name, breaking the long-standing `SchedulerService` contract: the pre-JobRunr `TimerSchedulerServiceImpl` caught the exception and returned `null`.\n\nModules that probe for their task before registering it \u2014 the common activator pattern:\n\n```java\nTaskDefinition existing = schedulerService.getTaskByName(TASK_NAME);\nif (existing == null) {\n    // register the task\n}\n```\n\nnow fail to start on any fresh database, because the exception thrown during `Activator.started()` cancels the Spring context refresh and unloads all modules.\n\nThis restores the historical behavior: catch `ObjectRetrievalFailureException`, log a warning, and return `null` \u2014 matching the removed `TimerSchedulerServiceImpl` implementation.\n\nMaster equivalent of #6162 (same fix against the 2.9.x branch).\n\n## Testing\n\n- Added `SchedulerServiceIT.getTaskByName_shouldReturnNullWhenTaskDoesNotExist` (fails with `ObjectRetrievalFailureException` before the fix, passes after).\n- Full `SchedulerServiceIT` suite passes (22 tests).\n- Verified end-to-end on a Reference Application 3.7.0-SNAPSHOT standalone with a fresh demo database: module activators that call `getTaskByName` for a not-yet-registered task now start cleanly.\n\n## Related Issue\n\nFollow-up to TRUNK-6558 (SchedulerService JobRunr upgrade).\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)",
+ "files": [
+  "api/src/main/java/org/openmrs/scheduler/jobrunr/JobRunrSchedulerService.java",
+  "api/src/test/java/org/openmrs/scheduler/SchedulerServiceIT.java"
+ ]
+}

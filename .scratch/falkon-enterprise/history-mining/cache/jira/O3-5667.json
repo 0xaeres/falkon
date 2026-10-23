@@ -1,0 +1,9 @@
+{
+ "key": "O3-5667",
+ "url": "https://openmrs.atlassian.net/browse/O3-5667",
+ "summary": "Patient Visit Summary Printing",
+ "status": "Done",
+ "created": "2026-05-13T13:18:07.109+1000",
+ "resolved": null,
+ "description": "Add a configurable, pluggable visit summary PDF export to openmrs-module-patientdocuments. When a patient moves between facilities or visits a community health worker, clinicians can print a one-page structured summary of the visit.\nEach section (vitals, diagnoses, allergies, etc.) activates based on an Initializer config key. Any external module can contribute its own section by implementing the VisitSummarySection interface, with no changes required to patientdocuments core.\nSections included:\nFacility header + patient info\n\nVitals (configurable concept UUIDs)\n\nDiagnoses, Conditions, Allergies\n\nMedications, Lab Results, Visit Notes\n\nFrontend print button in the O3 patient chart"
+}

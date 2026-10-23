@@ -1,0 +1,14 @@
+{
+ "number": 2780,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2780",
+ "title": "(fix) O3-5916: Reuse generated identifiers when retrying a patient save",
+ "mergedAt": "2026-09-28T13:06:21Z",
+ "mergeCommit": "b4b76423feb220db7e78f27e769f3d32ffaf89b7",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nRetrying a patient save after a partial failure repeats identifier work that already succeeded. Every retry asks the identifier source for a new value, so a new patient uses up an extra identifier on each attempt. When editing an existing patient, the retry adds identifiers that are already attached. For unique identifier types that addition fails with a 400, so the save can't succeed until the page is reloaded.\r\n\r\nRecord generated identifier values and completed identifier additions on the save transaction manager, keyed by identifier field name. Reuse a generated value on retry unless the identifier's source changed, and skip additions that already succeeded, so a retry only repeats the work that failed.\r\n\r\nTested against a local backend by failing a save and retrying. A new patient keeps the OpenMRS ID generated on the first attempt, whether the create call or a later step like saving a relationship failed, and an existing patient's retry saves without adding the new ID Card twice.\r\n\r\n## Screenshots\r\n\r\nhttps://github.com/user-attachments/assets/55754117-eb8a-4d12-ab7f-aa3dd17677be\r\n\r\n## Related Issue\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5916\r\n\r\n## Other\r\n\r\nEditing the form between a failed save and the retry isn't covered. Switching an existing patient's identifier to another source adds a second identifier, and removing an identifier the failed attempt already added leaves it attached. Both behave the same as on main.\r\n",
+ "files": [
+  "packages/esm-patient-registration-app/src/patient-registration/form-manager.test.ts",
+  "packages/esm-patient-registration-app/src/patient-registration/form-manager.ts",
+  "packages/esm-patient-registration-app/src/patient-registration/patient-registration.component.tsx",
+  "packages/esm-patient-registration-app/src/patient-registration/patient-registration.test.tsx"
+ ]
+}

@@ -1,0 +1,31 @@
+{
+ "number": 6674,
+ "url": "https://github.com/openmrs/openmrs-core/pull/6674",
+ "title": "TRUNK-6823: Deny with APIAuthenticationException again, as an AuthorizationDeniedException",
+ "mergedAt": "2026-10-13T14:37:19Z",
+ "mergeCommit": "5eb8cba2e30befeaec8ab7892dff14ac7dcc9d87",
+ "body": "## Description of what I changed\n\nSince TRUNK-6799, `AuthorizationAdvice` and core's explicit privilege checks deny with Spring Security's `AccessDeniedException` instead of `APIAuthenticationException`. Code that catches the old type no longer sees these denials. webservices.rest maps only that type, so REST now answers 500 where it answered 401 or 403.\n\nThis keeps `AccessDeniedException` as the type a denial is. It only makes the deprecated exception a subtype of it:\n\n- `APIAuthenticationException` now extends `AuthorizationDeniedException`. Its constructors keep their messages and causes, and it gains one that takes an `AuthorizationResult`. It stays `@Deprecated`, pointing new code at `AccessDeniedException`.\n- `@Authorized` denies with it again (`AuthorizationAdvice`'s three throw sites), and so do the checks #6544 had switched to `AccessDeniedException`: `Daemon.runInNewDaemonThread`/`runNewDaemonTask`, `UserContext.becomeUser`, `AlertServiceImpl.getAlerts` and `TestInstallUtil.getResourceInputStream`.\n- `PrivilegeNamingAuthorizationManager` returns it as the result when a `@PreAuthorize`/`@PostAuthorize` check names the missing privilege, and when `isAuthenticated()` denies a caller who is not logged in. The second case carries \"Basic authentication required\", as `@Authorized()` does. Spring's default handler throws that result, so converting a method by the guide's translation table keeps what its callers catch. Only an expression that names neither, such as `denyAll()`, still denies with a plain `AuthorizationDeniedException`. URL rules are unchanged.\n- `doc/AUTHORIZATION_MIGRATION.md`, `ExceptionUtil` and the exception's javadoc say so. The guide has a Pitfalls row for the `VerifyError` below.\n\nwebservices.rest still needs RESTWS-1056 (openmrs/openmrs-module-webservices.rest#767) for denials that are not an `APIAuthenticationException`.\n\n**Compatibility.** `APIAuthenticationException` is no longer an `APIException`.\n\n- **Compiled bytecode that treats it as one fails JVM verification.** A module built against an earlier core breaks until it is rebuilt.\n- **Example: patientdocuments.** It has `catch (APIAuthenticationException | ContextAuthenticationException e)` in two controllers, which javac types as `APIException`. Its omod as built today, against core master, stops this branch's OpenMRS from starting: `VerifyError` while Spring maps `VisitSummaryPreviewController`. Rebuilt against this branch with no source change, it starts and works.\n- **After this merges,** patientdocuments' 3.0 SNAPSHOT needs a rebuild before a server running it will start, as does any other module whose bytecode has that shape.\n- **Scan of the RefApp 3.0 module builds:** 19 classes in the 29 module builds reference the exception. Only those two handlers have this bytecode shape, though other shapes are possible.\n- **Source compatibility:** code that assigns it to an `APIException` stops compiling. `catch (APIException e)` no longer catches a denial core throws, which is already the case on master. After this change it also misses an `APIAuthenticationException` a module throws itself. 6 of the 29 RefApp 3.0 module builds throw one, and none of their catches relies on catching it as an `APIException`.\n- **A catch naming both types stops compiling.** That covers `catch (AccessDeniedException | APIAuthenticationException e)`, and `catch (AccessDeniedException)` followed by `catch (APIAuthenticationException)`. Catch `AccessDeniedException` alone, which covers both before and after this change. openmrs/openmrs-module-legacyui#272 has four such catches, and openmrs/openmrs-module-legacyui#274 has two in `DWRAdministrationServiceTest`.\n\nVerified on core 3.0.0-SNAPSHOT with the RefApp 3.0 modules and the published webservices.rest 5.0.0-SNAPSHOT, using `GET /ws/rest/v1/patient?q=Anderson&v=default`:\n\n| Caller | build 435 (master) | this branch |\n|---|---|---|\n| No credentials | 500 `AuthorizationDeniedException` | 401 \"User is not logged in [Privile",
+ "files": [
+  "api/src/main/java/org/openmrs/aop/AuthorizationAdvice.java",
+  "api/src/main/java/org/openmrs/api/APIAuthenticationException.java",
+  "api/src/main/java/org/openmrs/api/context/Daemon.java",
+  "api/src/main/java/org/openmrs/api/context/UserContext.java",
+  "api/src/main/java/org/openmrs/notification/impl/AlertServiceImpl.java",
+  "api/src/main/java/org/openmrs/security/MissingPrivilegeRecorder.java",
+  "api/src/main/java/org/openmrs/security/OpenmrsAuthorizationManagerFactory.java",
+  "api/src/main/java/org/openmrs/security/PrivilegeNamingAuthorizationManager.java",
+  "api/src/main/java/org/openmrs/util/ExceptionUtil.java",
+  "api/src/test/java/org/openmrs/aop/AuthorizationAdviceTest.java",
+  "api/src/test/java/org/openmrs/api/APIAuthenticationExceptionTest.java",
+  "api/src/test/java/org/openmrs/api/context/DaemonTest.java",
+  "api/src/test/java/org/openmrs/api/context/UserContextTest.java",
+  "api/src/test/java/org/openmrs/notification/AlertServiceTest.java",
+  "api/src/test/java/org/openmrs/security/OpenmrsMethodSecurityConfigTest.java",
+  "api/src/test/java/org/openmrs/security/OpenmrsPermissionEvaluatorTest.java",
+  "api/src/test/java/org/openmrs/security/PreAuthorizeConversionEquivalenceTest.java",
+  "api/src/test/java/org/openmrs/util/ExceptionUtilTest.java",
+  "doc/AUTHORIZATION_MIGRATION.md",
+  "web/src/main/java/org/openmrs/web/filter/initialization/TestInstallUtil.java",
+  "web/src/test/java/org/openmrs/web/filter/initialization/TestInstallUtilTest.java"
+ ]
+}

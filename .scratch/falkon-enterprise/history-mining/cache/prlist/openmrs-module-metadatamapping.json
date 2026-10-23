@@ -1,0 +1,38 @@
+[
+ {
+  "number": 71,
+  "url": "https://github.com/openmrs/openmrs-module-metadatamapping/pull/71",
+  "title": "Remove a duplicate dependency declaration so the build passes on Maven 3.10",
+  "branch": "fix-duplicate-dependency",
+  "mergedAt": "2026-10-10T20:55:42Z",
+  "mergeCommit": "758365f1062826eadad53ae518c432083c11ea57",
+  "body": "org.openmrs.module:webservices.rest-omod-common:tests is declared twice in dependencyManagement, the second time without a version. Maven 3.9 accepted it with a warning; Maven 3.10, now on the GitHub runner image, rejects it and the build fails before it starts. The resolved dependencies are unchanged. \n\n- `mvn validate` with Maven 3.10.0: fails before this change, passes after.\n- `mvn dependency:list` with Maven 3.9.10: the resolved dependencies of every module are identical before and after.\n\ncore-3.x already does the same.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01ASZcAmLun5HaBwCZ4kjEjx"
+ },
+ {
+  "number": 70,
+  "url": "https://github.com/openmrs/openmrs-module-metadatamapping/pull/70",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T18:00:10Z",
+  "mergeCommit": "7082522def2e9334b707f8dc8313b3f2f831e02f",
+  "body": "Updates metadatamapping so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7, Hibernate 7). It is needed by the emrapi Platform 3 upgrade. Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions and build:\n  - Module version is now 3.0.0-SNAPSHOT in all poms. It now uses Platform 3.0.0-SNAPSHOT (`openmrs-bom` imported), REST 5.0.0-SNAPSHOT and legacyui 3.0.0-SNAPSHOT.\n  - Builds with Java 21 and `-parameters`.\n  - Surefire 3.5.4 so JUnit 5 runs.\n  - The javax servlet and PowerMock bits are dropped.\n  - The duplicate `webservices.rest-omod-common` tests entry is dropped from `dependencyManagement`. Maven 3.10.0, which GitHub's ubuntu-24.04 runner image now ships, rejects the POM with it.\n- `config.xml` now sets `require_version` to 3.0.0.\n- `HibernateMetadataMappingDAO` moves from the removed Hibernate Criteria API to HQL, with the same filters and ordering and the metadata-set item subquery kept. It now uses the plain `SessionFactory`:\n  - Saves go through `HibernateUtil.saveOrUpdate`. That merges a detached entity into a new managed instance, so the batch saves return the instances it hands back.\n  - Lookups by id use `Session.find`, since `Session.get` is deprecated for removal in Hibernate 7. Lookups by uuid use `HibernateUtil.getUniqueEntityByUUID`.\n- `LocalMappingHibernateInterceptor` implements `Interceptor`, since `EmptyInterceptor` is gone. Ids are now `Object`.\n- commons-lang becomes lang3, and `javax.servlet`/`javax.annotation` become `jakarta.*`.\n- Tests move to JUnit 5. The REST operation tests' URIs lose a leading slash, because `/rest/v1//metadatamapping/...` is rejected by Spring 7's path matching.\n- CI (release workflow and Bamboo) uses JDK 21.\n\n## Depends on\n- openmrs/openmrs-core#6631, merged on 2026-10-06. The `metadatamapping.MetadataMappingService` `TransactionProxyFactoryBean` references core services, which before #6631 left them without core's advisors (openmrs/openmrs-core#6630). Against a core snapshot from before it, `LocalMappingHibernateInterceptorTest` fails and the server can fail to start.\n\n## Verification\n- The api and omod tests pass on JDK 21 and 25, with Maven 3.9 and 3.10, against the published core 3.0.0-SNAPSHOT, which includes #6631: api 87 tests, omod 47, with one test skipped in each, both already `@Ignore` upstream.\n- On the first commit, with all 31 O3 reference application modules upgraded to Platform 3, on openmrs-core master plus the core fixes openmrs/openmrs-core#6629, #6631, #6633, #6635, #6637 and #6639 (`mvn jetty:run`, MySQL 8): every module starts, logging in through the UI works, and core message codes resolve.\n- There, `GET /ws/rest/v1/metadatamapping/source` returns 200, and anonymous calls to core services are rejected with 401, so core's authorization advice is intact.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Fp7T1pGYEMrMVp1M7AW9Fg\n"
+ },
+ {
+  "number": 69,
+  "url": "https://github.com/openmrs/openmrs-module-metadatamapping/pull/69",
+  "title": "(docs) Replace the dead Travis badge with the GitHub Actions one",
+  "branch": "fix-readme-ci-badge",
+  "mergedAt": "2026-09-08T10:04:00Z",
+  "mergeCommit": "9be83d69b64146982c6a00ec4a996fd6f8a3e5c7",
+  "body": "The README badge still points at travis-ci.org, which shut down and now redirects to a 404, so the badge renders blank. This module builds on GitHub Actions via build.yml, so this points the badge and its link there.\n\nHeads up that the badge will show red right now: the latest build.yml run on master failed on 2026-09-03 on the OWASP dependency check job, not the Maven build."
+ },
+ {
+  "number": 68,
+  "url": "https://github.com/openmrs/openmrs-module-metadatamapping/pull/68",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:30:33Z",
+  "mergeCommit": "1a1fe505ed84f71a83fdcefef0175fef01a77a17",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ }
+]

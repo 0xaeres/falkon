@@ -1,0 +1,14 @@
+{
+ "number": 2583,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2583",
+ "title": "(fix) O3-5693: Trim queue entry representation to what the table renders",
+ "mergedAt": "2026-07-29T10:47:11Z",
+ "mergeCommit": "171573ddff7840281d76268628e2684ed3be64d0",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\n`useQueueEntries` requested the full visit \u2192 encounters \u2192 obs/diagnoses/providers graph, deep `queue`/`status`/`priority` concept reps, and the full `person` \u2014 ~95% of which the queue table never displays. Because these are lazy associations, requesting them forces them to load on the server.\r\n\r\nThis trims the representation to only the fields the table and its actions/modals actually read, cutting both the payload and the server-side lazy-load cascade.\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n[O3-5693](https://openmrs.atlassian.net/browse/O3-5693)\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\nRelate PRs' [here](https://github.com/openmrs/openmrs-module-queue/pull/114) and [here](https://github.com/openmrs/openmrs-module-queue/pull/117)\r\n\r\n[O3-5693]: https://openmrs.atlassian.net/browse/O3-5693?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ",
+ "files": [
+  "packages/esm-service-queues-app/src/hooks/useQueueEntries.rep.test.tsx",
+  "packages/esm-service-queues-app/src/hooks/useQueueEntries.ts",
+  "packages/esm-service-queues-app/src/modals/call-modal/call-queue-entry.modal.tsx",
+  "packages/esm-service-queues-app/src/types/index.ts"
+ ]
+}

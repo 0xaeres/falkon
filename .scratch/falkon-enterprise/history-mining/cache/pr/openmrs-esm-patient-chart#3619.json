@@ -1,0 +1,16 @@
+{
+ "number": 3619,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3619",
+ "title": "(fix) O3-5953: Use the active or selected visit when renewing medication orders",
+ "mergedAt": "2026-09-25T20:10:58Z",
+ "mergeCommit": "56018720c24c7ac7c565c9f51c8a97c6c7f3cece",
+ "body": "## Requirements\n\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\n- [x] My work includes tests or is validated by existing tests.\n\n## Summary\nRenew opened the order basket with the original order's visit as the workspace's visit context. When that visit was closed, the renewal encounter was created inside it and dated into its window, so a renewal made today was filed under a visit from months ago. Dispensing filters Active prescriptions by encounter date, so those renewals didn't show up there once the original visit was older than the expiry window.\n\nRenew now goes through `useStartVisitIfNeeded`, like Add, and opens the basket without the medication's group props, so the basket uses the chart's active or selected visit. The renewal is only added once a visit is available, and it's appended to whatever the basket holds by then. Cancelling the prompt leaves the basket as it was.\n\nTo support that, the start visit dialog now reports cancellation. Its Cancel and close buttons call a new `onCancel` prop, which `useStartVisitIfNeeded` resolves as false.\n\nModify and Discontinue are unchanged, and still use the order's own encounter and visit.\n\n## Screenshots\nhttps://github.com/user-attachments/assets/21e25a20-ffe8-427c-930f-b555771009f2\n\n## Related Issue\nhttps://issues.openmrs.org/browse/O3-5953\n\n## Other\n\n",
+ "files": [
+  "packages/esm-patient-chart-app/src/visit/visit-prompt/start-visit-dialog.modal.tsx",
+  "packages/esm-patient-chart-app/src/visit/visit-prompt/start-visit-dialog.test.tsx",
+  "packages/esm-patient-common-lib/src/workspaces.test.ts",
+  "packages/esm-patient-common-lib/src/workspaces.ts",
+  "packages/esm-patient-medications-app/src/components/medications-details-table.component.tsx",
+  "packages/esm-patient-medications-app/src/components/medications-details-table.test.tsx"
+ ]
+}

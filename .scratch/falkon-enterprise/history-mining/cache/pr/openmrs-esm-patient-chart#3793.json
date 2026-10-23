@@ -1,0 +1,12 @@
+{
+ "number": 3793,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3793",
+ "title": "(fix) O3-6097: Fix inverted labels on the free text dosage toggle",
+ "mergedAt": "2026-10-12T17:54:09Z",
+ "mergeCommit": "1c19126f11ca5bb93891bd18d89910d20f41ee84",
+ "body": "## Requirements\n\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\n- [x] My work includes tests or is validated by existing tests.\n\n## Summary\n\nThe \"Free text dosage\" toggle in the drug order form was showing the opposite of its actual state. It read \"On\" while switched off (structured Dose / Route / Frequency fields showing) and \"Off\" once switched on (free-text box showing). The same thing happened in other languages, e.g. French showed \"Activ\u00e9\" while the toggle was off.\n\nThis could lead a clinician to believe structured dosing was selected while they were actually typing into the free-text box, which is how orders with no dose, route, frequency or duration were ending up saved and stuck in Active Medications.\n\nThe cause was the labels passed to Carbon's `Toggle` in `drug-order-form.component.tsx`. Carbon shows `labelA` when unchecked and `labelB` when checked, and we had them the other way round. I swapped them so the label now matches the toggle state, and added a test that checks the label text in both states. No translation changes are needed since the `on` / `off` keys already exist.\n\n## Screenshots\n\nFree text dosage switched on, label now reads \"On\":\n\n<img width=\"636\" height=\"972\" alt=\"Fix\" src=\"https://github.com/user-attachments/assets/1a6090c8-7d65-4804-8c11-c9dacac6cc2a\" />\n\n## Related Issue\n\nhttps://issues.openmrs.org/browse/O3-6097\n\n## Other\n\nN/A\n",
+ "files": [
+  "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.component.tsx",
+  "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.test.tsx"
+ ]
+}

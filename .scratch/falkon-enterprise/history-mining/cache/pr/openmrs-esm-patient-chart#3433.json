@@ -1,0 +1,11 @@
+{
+ "number": 3433,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3433",
+ "title": "(fix) O3-5781: Patch OWASP-reported minimatch vulnerabilities",
+ "mergedAt": "2026-06-30T02:56:54Z",
+ "mergeCommit": "5ba5b70a72d0a60d3dfa6136efe8237ce118d80b",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [ ] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\nPatches 9 High-severity OWASP-flagged CVEs in **minimatch** by bumping each affected version branch to its latest patched release within the same major version.\r\n\r\n### Vulnerabilities fixed\r\n\r\n| Branch | Before | After | GHSAs | CVEs |\r\n|--------|--------|-------|-------|------|\r\n| minimatch ^3.x | 3.1.2 | 3.1.5 | GHSA-23c5-xmqv-rm74, GHSA-3ppc-4f35-3m26, GHSA-7r86-cg39-jmmj | 3 |\r\n| minimatch ^5.x | 5.1.0 | 5.1.9 | same 3 GHSAs | 3 |\r\n| minimatch ^9.x | 9.0.5 | 9.0.9 | same 3 GHSAs | 3 |\r\n\r\n**Total: 9 CVEs eliminated, all High severity.** minimatch 10.x (already at 10.2.5) was unaffected.\r\n\r\n\r\nRemoved the stale `yarn.lock` entries for the three affected minimatch versions so `yarn install` re-resolved each range to the latest patched release within that major version. Each bump is patch-level, so all dependents remain API-compatible.\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n<!-- https://issues.openmrs.org/browse/O3- -->\r\nhttps://openmrs.atlassian.net/browse/O3-5781\r\n## Other\r\n<!-- Anything not covered above -->\r\n",
+ "files": [
+  "yarn.lock"
+ ]
+}

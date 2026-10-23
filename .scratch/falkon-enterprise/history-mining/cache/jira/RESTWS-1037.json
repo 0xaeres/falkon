@@ -1,0 +1,9 @@
+{
+ "key": "RESTWS-1037",
+ "url": "https://openmrs.atlassian.net/browse/RESTWS-1037",
+ "summary": "PRIVILEGE_DENIED sentinel leaks into serialized lists, causing HTTP 500",
+ "status": "Code Review (Post-Commit)",
+ "created": "2026-05-27T22:46:50.030+1000",
+ "resolved": null,
+ "description": "Affected: Any version with RESTWS-1024\n  Repro\nUser has Get Visits but not Get Encounters.\n\nVisit has \u2265 1 encounter.\n\nGET /ws/rest/v1/visit/{uuid} \u2192 HTTP 500, No serializer found for class java.lang.Object (SimpleObject[\"encounters\"]->ArrayList[0]).\n\n  Cause\n  PRIVILEGE_DENIED is a raw Object returned for denied child resources. The top-level filter drops it, but per-element loops in ConversionUtil and DelegatingResourceDescription.Property.evaluate doesn't,  the raw Object lands in the list, and Jackson fails."
+}

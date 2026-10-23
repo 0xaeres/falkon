@@ -1,0 +1,12 @@
+{
+ "number": 3403,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3403",
+ "title": "(fix) Filter conditions query to problem-list-item category",
+ "mergedAt": "2026-06-19T13:21:12Z",
+ "mergeCommit": "64d3c9902168b1a43b08d5da09558e7da6288a0d",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nThe conditions widget fetched all FHIR `Condition` resources for a patient regardless of category, which surfaced non\u2013problem-list entries (e.g. encounter-diagnosis conditions) in the conditons list.\r\n\r\nThis PR adds a `category` filter to the `useConditions` FHIR query so it only returns problem-list-item conditions, so that encounter-diagnoses (diagnoses added from the visit note form) do not appear in the conditions table:\r\n\r\n```\r\n${fhirBaseUrl}/Condition?patient=${patientUuid}&category=http://terminology.hl7.org/CodeSystem/condition-category|problem-list-item&_count=100\r\n```\r\n\r\nThese changes do not affect the search for conditions when trying to record a condition for a patient.\r\n\r\n## Screenshots\r\n\r\nBefore - \r\n\r\nhttps://github.com/user-attachments/assets/0cc1ebb2-f88e-47b0-8011-7e4f558cf23f\r\n\r\n\r\n\r\nAfter - \r\n\r\nhttps://github.com/user-attachments/assets/5bbba769-9a6f-4636-9945-76d26017841d\r\n\r\n\r\n## Related Issue\r\n\r\n<!-- No Jira ticket. -->\r\n\r\n## Other\r\n\r\nhttps://talk.openmrs.org/t/why-do-we-display-diagnoses-in-the-conditions-list/49608/4",
+ "files": [
+  "packages/esm-patient-conditions-app/src/conditions/conditions.resource.ts",
+  "packages/esm-patient-conditions-app/src/routes.json"
+ ]
+}

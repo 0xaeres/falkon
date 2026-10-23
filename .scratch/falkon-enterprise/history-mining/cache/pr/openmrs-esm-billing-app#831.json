@@ -1,0 +1,17 @@
+{
+ "number": 831,
+ "url": "https://github.com/openmrs/openmrs-esm-billing-app/pull/831",
+ "title": "(feat) Add date range filter to bills table",
+ "mergedAt": "2026-09-17T15:13:13Z",
+ "mergeCommit": "6e4cdcd9db634a947b317df793d5b8170a9768e9",
+ "body": "## Requirements\n\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\n- [x] My work includes tests or is validated by existing tests.\n\n## Summary\n<!-- Please describe what problems your PR addresses. -->\n\nAdds From and To date pickers to the bills table on the Billing home page so cashiers can narrow the list to bills created in a given period. The dates are sent as the `startDate` and `endDate` search parameters on `GET /billing/bill`, which the billing backend added in openmrs/openmrs-module-billing#193.\n\n- `usePaginatedBills` appends `startDate` (start of day) and `endDate` (end of day) to the URL when set.\n- The From picker is capped by the To date and the To picker floored by the From date. When a typed range is inverted, `usePaginatedBills` passes a `null` URL so no request is made (the backend would return a 400); the To picker shows an invalid message and the table shows the \"No matching bills\" state.\n- A Clear dates button appears once a date is set and resets both dates.\n- The `billing` backend dependency floor in `routes.json` is raised to `>=2.5.0-0`, the first version with the new search parameters.\n\n## Screenshots\n<!-- Required if you are making UI changes. -->\n\nhttps://github.com/user-attachments/assets/6822335b-af02-4bcb-a0f8-03dde54c33cb\n\n\n\n## Related Issue\n<!-- Paste the link to the Jira ticket here if one exists. -->\n<!-- https://issues.openmrs.org/browse/O3- -->\n\n## Other\n<!-- Anything not covered above -->\n\nTwo standalone `OpenmrsDatePicker`s are used rather than `OpenmrsDateRangePicker` because the filter needs to support open-ended ranges (only a From date, or only a To date). The range picker only emits a value once both ends are set.\n\n",
+ "files": [
+  "src/billing.resource.test.ts",
+  "src/billing.resource.ts",
+  "src/bills-table/bills-table.component.tsx",
+  "src/bills-table/bills-table.scss",
+  "src/bills-table/bills-table.test.tsx",
+  "src/routes.json",
+  "translations/en.json"
+ ]
+}

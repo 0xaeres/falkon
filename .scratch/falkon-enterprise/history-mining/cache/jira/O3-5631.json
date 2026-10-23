@@ -1,0 +1,9 @@
+{
+ "key": "O3-5631",
+ "url": "https://openmrs.atlassian.net/browse/O3-5631",
+ "summary": "guard null on data.data before accessing results in patient-registration-hooks",
+ "status": "Cancelled",
+ "created": "2026-04-25T01:09:04.572+1000",
+ "resolved": "2026-04-27T18:04:18.655+1000",
+ "description": "data?.data.results on line 318 of patient-registration-hooks.ts only null-guards data, not data.data. If the API returns a malformed or empty response, accessing .results on undefined throws a TypeError, crashing the patient edit form."
+}

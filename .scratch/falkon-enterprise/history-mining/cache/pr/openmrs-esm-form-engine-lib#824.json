@@ -1,0 +1,25 @@
+{
+ "number": 824,
+ "url": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/824",
+ "title": "(fix) O3-6025: Load z-score tables only when a form needs them",
+ "mergedAt": "2026-10-05T12:02:06Z",
+ "mergeCommit": "fcf1b2562d60389dbf88c5383c2d4237d9d1ff8a",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nThe WHO reference tables behind the z-score helpers are about 1.3 MB of JSON, and `zscore-service` imported all eight of them statically. Because the form engine app imports `registerExpressionHelper` from the library's entry at startup, the tables ended up in its startup chunk, so every form open downloaded and parsed them. As far as I can tell, no form in the reference application, UgandaEMR's content pack or the OpenMRS HIV content calls these helpers. AMPATH's forms do, but AMPATH runs them on the Angular form engine.\r\n\r\nThis PR:\r\n\r\n- Loads each table with a dynamic `import()`. `useProcessorDependencies` loads the tables for the z-score helpers a form's schema mentions (anywhere in the schema, not just in calculate expressions), alongside the processor's own dependencies, so they're in place before initial values or any expression is evaluated.\r\n- Keeps the helpers synchronous. The expression evaluator doesn't await a helper's result before applying an operator to it, so an async helper would break something like `calcBMIForAgeZscore(height, weight) < -2`, even in a calculate expression.\r\n- Splits `getZRefByGenderAndAge` into one function per reference, so each helper only reads the tables it needs.\r\n- Makes `useProcessorDependencies` report loading from the first render. Once a form has opened, its field adapters and concepts are cached, so initial values could otherwise be computed before the dependencies had started loading. That applies to the previous encounter the encounter processor loads, too.\r\n- If required data fails to load, the form shows an error with a Retry button. Initial values, expressions and submission stay blocked until the data loads, including submission triggered by an embedded form\u2019s external action.\r\n- Subforms show the loader while their dependencies load, the same as top-level forms.\r\n\r\nI built `esm-form-engine-app` against this branch and against `main` to measure it:\r\n\r\n| `./start` chunks | Raw | gzip -9 | brotli 11 |\r\n| --- | --- | --- | --- |\r\n| `main` | 1,189 KiB | 301 KiB | 188 KiB |\r\n| This PR | 382 KiB | 114 KiB | 100 KiB |\r\n\r\nThe tables are now eight chunks of 28 to 259 KiB that only load for forms that use them.\r\n\r\nOn tests:\r\n\r\n- I captured all three helpers' results on `main` for both sexes and each age band, including out-of-range and missing inputs (777 cases), and this branch returns the same for every one of them. 87 of those are now unit tests.\r\n- Compound expressions (`<`, `Number()`, a ternary) give the same result synchronously and asynchronously.\r\n- Form-level tests cover z-scores calculated from default values as the form opens, from values the user types, and in a repeated group.\r\n- The service tests cover which tables load, helpers referenced outside calculate expressions, and a failed load. The hook tests cover loading from the first render, re-renders with an equal schema, and retry after failure. Form-level tests cover keeping entered values when the form re-renders with an equal schema, and blocking fields and external submission until retry succeeds.\r\n- After these changes, the full suite passes: 790 tests passed and 17 existing tests skipped. TypeScript, lint on the changed files and the library build also pass.\r\n\r\n## Screenshots\r\n\r\n## Related Issue\r\n\r\nhttps://issues.openmrs.org/browse/O3-6025\r\n\r\n## Other\r\n\r\n- The three existing suites in `src/zscore-tests` are `describe.skip`, and they fail on `main` too:",
+ "files": [
+  "__mocks__/forms/rfe-forms/index.ts",
+  "__mocks__/forms/rfe-forms/zscore-loading-form.json",
+  "src/components/processor-factory/form-processor-factory.component.tsx",
+  "src/components/renderer/form/form-renderer.component.tsx",
+  "src/form-engine.component.tsx",
+  "src/hooks/useProcessorDependencies.test.ts",
+  "src/hooks/useProcessorDependencies.ts",
+  "src/provider/form-factory-provider.tsx",
+  "src/subform-loading.test.tsx",
+  "src/utils/common-expression-helpers.test.ts",
+  "src/utils/common-expression-helpers.ts",
+  "src/utils/expression-runner.test.ts",
+  "src/utils/zscore-service.test.ts",
+  "src/utils/zscore-service.ts",
+  "src/zscore-tests/zscore-loading.test.tsx"
+ ]
+}

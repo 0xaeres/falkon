@@ -1,0 +1,12 @@
+{
+ "number": 2758,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2758",
+ "title": "(fix) O3-5991: Allow post-registration redirects to non-SPA URLs",
+ "mergedAt": "2026-09-21T18:53:23Z",
+ "mergeCommit": "c14590b98846c7153360116d9823317bdaa22277",
+ "body": "## Requirements\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [x] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\n`BeforeSavePrompt` unconditionally stripped the SPA base from its target URL before navigating:\r\n\r\n    navigate({ to: `\\${openmrsSpaBase}/${getUrlWithoutPrefix(target)}` });\r\n\r\n`getUrlWithoutPrefix` splits on `getOpenmrsSpaBase()` and returns index [1], so a URL that does not live under the SPA base yields `undefined`, which the template literal stringifies. Any such target navigated to `/openmrs/spa/undefined`.\r\n\r\nThis affects implementations that bridge O3 to legacy OpenMRS pages: a `links.submitButton` such as\r\n`${openmrsBase}/patientDashboard.form?patientId=${patientUuid}` was unusable, as was the `afterUrl` query parameter, which shares the path. Navigating away from a dirty registration form to a non-SPA page failed the same way.\r\n\r\nThe stripping is only needed for the `cancelNavigation` caller, where `target` comes from single-spa's `evt.detail.newUrl` and includes the origin. When there is no SPA-relative portion to extract, pass the URL through unchanged; `navigate` already routes non-SPA paths to `window.location.assign`, so no change is needed in esm-core.\r\n\r\n## Screenshots\r\nScreenshot 2026-09-18 at 4.24.12\u202fPM\r\n\r\n## Related Issue\r\nnone\r\n## Other\r\n\r\n",
+ "files": [
+  "packages/esm-patient-registration-app/src/patient-registration/before-save-prompt.component.tsx",
+  "packages/esm-patient-registration-app/src/patient-registration/before-save-prompt.test.tsx"
+ ]
+}

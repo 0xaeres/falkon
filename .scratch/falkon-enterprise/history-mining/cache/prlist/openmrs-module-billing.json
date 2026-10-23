@@ -1,0 +1,245 @@
+[
+ {
+  "number": 196,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/196",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T17:59:26Z",
+  "mergeCommit": "2edb4e7026ae87238e8db4b0664c279347e2655f",
+  "body": "Updates billing so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7, Hibernate 7). It depends on openmrs/openmrs-core#6637 and on the Platform 3 upgrades of fhir2 (6.x), idgen (openmrs/openmrs-module-idgen#140) and stockmanagement (openmrs/openmrs-module-stockmanagement#49). Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions and build:\n  - Module version is now 3.0.0-SNAPSHOT, on Platform 3.0.0-SNAPSHOT (with `openmrs-bom` imported).\n  - It uses fhir2 6.0.0-SNAPSHOT (the `fhir2-api-2.x` artifacts are gone), idgen 7.0.0-SNAPSHOT, stockmanagement 4.0.0-SNAPSHOT and webservices.rest 5.0.0-SNAPSHOT.\n  - Builds with Java 21 and `-parameters`.\n  - `mockito-inline` is replaced by the BOM's `mockito-core`, and reflections now comes from core (`provided`).\n  - Bamboo and the release workflow use JDK 21.\n- Orders are billed from core's entity events instead of the event module, which has no Platform 3 build (openmrs/openmrs-module-event#33 was closed).\n  - `OrderBillingEventListener` listens for core's `SaveDbEvent` once the saving transaction commits, and ignores updates the way the old `CREATED` subscription did.\n  - Core only raises that event for a new order with openmrs/openmrs-core#6637.\n  - The event-api dependency and the event `require_module` are gone.\n- `openmrsPlatformToolsVersion` is pinned to 2.7.8. Otherwise spotless picks up the 3.0 formatter and reformats every file.\n- uiframework, appframework and providermanagement were only referenced in comments, so their jars are removed from the poms. The `aware_of_module` entries stay, so those modules remain optional.\n- The generic entity/DAO framework was built on `org.hibernate.Criteria`.\n  - It now uses a small JPA-criteria replacement, `EntityCriteria`, with the same restrictions, ordering, paging, lock mode and row count.\n  - `CriteriaImplWrapper` is deleted, and saves use `HibernateUtil.saveOrUpdate`.\n  - `CustomizedOrderBy` and the `Base*TemplateSearch` classes, which nothing used, are deleted rather than ported.\n- `HibernateBillDAO.saveBill` keeps `BillLineItem.lineItemOrder` in step with the list position. Hibernate 7 no longer writes the inverse list index when the element maps that column itself.\n- Hibernate 7 mappings and API:\n  - In hbm, `native` becomes `identity` and `org.hibernate.type.EnumType` becomes core's `StringEnumType`.\n  - `@Enumerated(STRING)` gets `@JdbcTypeCode(VARCHAR)`.\n  - `saveOrUpdate`/`delete` become `HibernateUtil.saveOrUpdate`/`remove`.\n- javax becomes jakarta (servlet, persistence, annotations), commons-lang becomes lang3, and Jackson 1 becomes Jackson 2.\n- `Daemon.runInDaemonThread` becomes `runInDaemonThreadWithoutResult`.\n- REST `supportedOpenmrsVersions` widens from `\"2.0 - 2.*\"` to `\"2.0 - 9.*\"`. The service `TransactionProxyFactoryBean`s are unchanged.\n- Tests are migrated to JUnit 5. `OrderBillingOnCommitTest` saves orders through `OrderService` and checks that they are billed after the commit.\n\n## Verification\n- `mvn clean install` passes on JDK 21 and 25: api 513, fhir 6, omod 54. That is against openmrs-core master with #6637 merged in, plus local builds of idgen#140 and stockmanagement#49. On core master without #6637, all three `OrderBillingOnCommitTest` tests fail, because no event is raised for a new order.\n- On d8d665f, before the event module came out, on openmrs-core master with openmrs/openmrs-core#6631 and #6633 (`mvn jetty:run`, MySQL 8), in the full set of 26 upgraded O3 modules:\n  - All modules start, and logging in through the UI works.\n  - `billing/billableService`, `billing/cashPoint` and `billing/paymentMode` return 200.\n- billing maps its enums with core's `StringEnumType`, so it needs #6633 to start on core master.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Fp7T1pGYEMrMVp1M7AW9Fg\n"
+ },
+ {
+  "number": 195,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/195",
+  "title": "Change BillableService id from int to Integer",
+  "branch": "bill-service-id",
+  "mergedAt": "2026-09-22T17:21:23Z",
+  "mergeCommit": "5547ac928ad06bb41130aa00826bfa2bb59b6acf",
+  "body": " Change BillableService.billableServiceId from primitive int to Integer so getId() returns null for unsaved instances. Also, cleanup the  handwritten getters and setters with Lombok\r\n\r\n Removed addServicePrice as it is not getting used anywhere."
+ },
+ {
+  "number": 193,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/193",
+  "title": "Add locationUuid, startDate and endDate filters to GET /bill",
+  "branch": "filter",
+  "mergedAt": "2026-09-03T08:36:52Z",
+  "mergeCommit": "c47f6d87e0352dcfa5a51b5a743016e0a8c40be9",
+  "body": "- Filter by location through the bill's cash point location\r\n-  Apply startDate and endDate as inclusive bounds on dateCreated"
+ },
+ {
+  "number": 191,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/191",
+  "title": "Document content package configuration in the README",
+  "branch": "docs/billing-content-package-setup",
+  "mergedAt": "2026-08-12T10:30:48Z",
+  "mergeCommit": "dc7d24615afc5c4adc62dcc9110bdff7dcc7c7cf",
+  "body": "Replaces the Installation and Configuration sections with content package setup, covering the `globalproperties`, `billableservices`, `paymentmodes`, `cashpoints` and `cashieritemprices` Initializer domains with example files for each. Also corrects the requirements list \u2014 fhir2 and event are required modules rather than optional \u2014 adds the undocumented `billing.currencySymbol` property, and fixes the declared default for `billing.patientDashboard2BillCount`."
+ },
+ {
+  "number": 190,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/190",
+  "title": "O3-5835: Fix duplicate receipt numbers by reserving sequence blocks wth row locking",
+  "branch": "O3-5835",
+  "mergedAt": "2026-07-30T09:14:03Z",
+  "mergeCommit": "8e25ae7ee9b0d2466f5a8b7aa2b530302d6504b9",
+  "body": "Add reserveSequenceBlock(): locks the sequence row (SELECT ... FOR UPDATE) and reserves 100 numbers in an immediately-committed REQUIRES_NEWtransaction\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5835"
+ },
+ {
+  "number": 188,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/188",
+  "title": "Add Codecov job",
+  "branch": "add-new-code-cov-workflow",
+  "mergedAt": "2026-07-15T21:38:21Z",
+  "mergeCommit": "1eaa8f1f57dcdf3d3d03ee216ecca475016f5bd3",
+  "body": "This is intended to make codecov continue working after openmrs-contrib-gha-workflows#47 is merged"
+ },
+ {
+  "number": 184,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/184",
+  "title": "Update GitHub Actions secrets in release.yml",
+  "branch": "secrets",
+  "mergedAt": "2026-06-04T10:30:25Z",
+  "mergeCommit": "a65f5e7ed867e15c1333a8e00e57c8e5f8d2a24b",
+  "body": "Replaced BOT_PAT secret with OMRS_BOT_GH_TOKEN and added GPG keys."
+ },
+ {
+  "number": 183,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/183",
+  "title": "Update README.md",
+  "branch": "doc-update",
+  "mergedAt": "2026-05-28T16:24:49Z",
+  "mergeCommit": "026c3f2aae45121810b0a36a50467ca29a4254c4",
+  "body": ""
+ },
+ {
+  "number": 182,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/182",
+  "title": "Fix patient payment status returning PAID when no active bills exist",
+  "branch": "fix/patient-payment-status-no-bills",
+  "mergedAt": "2026-05-28T09:42:21Z",
+  "mergeCommit": "62a6f16b01904f153f1395b02a5c0dd4ae5e1f60",
+  "body": "Patients with no bills used to return `PAID`, while this was technically the intended behaviour, it's confusing to see the `PAID` tag on a patient when they have no bills at all. This changes that to instead return unknown if a patient has no bills.\r\n"
+ },
+ {
+  "number": 181,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/181",
+  "title": "Fix orphaned payment_status column on cashier_bill_line_item",
+  "branch": "liquibase-error",
+  "mergedAt": "2026-05-27T13:51:04Z",
+  "mergeCommit": "d384c1afe4b4df95549694ecef78d855a98df743",
+  "body": "On DBs where both payment_status and status ended up on cashier_bill_line_item after a partial migration, every line-item insert failed with Field 'payment_status' doesn't have a default value\r\n\r\n  - Tighten changeset 009 precondition so the rename only runs when status does not already exist\r\n  - Add changeset 009b to backfill from payment_status and drop it when both columns exist\r\n  - Pin <validCheckSum> on 009 so already-migrated DBs accept the precondition change"
+ },
+ {
+  "number": 180,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/180",
+  "title": "Show discounts and refunds on bill receipts",
+  "branch": "O3-5705",
+  "mergedAt": "2026-06-02T07:07:02Z",
+  "mergeCommit": "15e5e4cf71392d4d2235191f24bd4a5a264f0dae",
+  "body": "- Receipt now shows line-scoped discounts under each line item, plus Subtotal / Total Discount / Total in the totals block\r\n- New Refund section lists completed refunds with their reason\r\n- Due-amount math accounts for refunds\r\n- Fix NPE in Bill.synchronizeBillStatus() when payments is null\r\n- Add Liquibase 009b to drop orphaned payment_status column when both columns exist\r\n\r\n<img width=\"856\" height=\"1923\" alt=\"image\" src=\"https://github.com/user-attachments/assets/d39b1848-e85f-432d-89bb-fd571c95ee36\" />\r\n"
+ },
+ {
+  "number": 178,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/178",
+  "title": "Add refundStatus filter to GET /bill and expose refunds in bill representation",
+  "branch": "feat/refund-status-filter",
+  "mergedAt": "2026-05-27T12:27:00Z",
+  "mergeCommit": "745c5878a82138cf6208239973c18f71fc05f1c2",
+  "body": "## Summary\n\n- Adds a `refundStatus` query parameter to `GET /rest/v1/billing/bill` so callers can filter bills by the status of their associated refunds (e.g. `?refundStatus=REQUESTED` or `?refundStatus=REQUESTED,COMPLETED`)\n- Validates that only known `RefundStatus` enum values are accepted; throws `InvalidSearchException` if the parameter is present but resolves to no valid values\n- Exposes `refunds` in both the DEFAULT and FULL `BillResource` representations so clients receive refund data without needing a separate request\n\n## Changes\n\n- `BillResource`: parse and validate `refundStatus` param; add `refunds` to DEFAULT/FULL rep descriptions\n- `HibernateBillDAOTest`: additional assertions covering bills with no refund rows and multi-status deduplication with voided refunds\n- `BillRefundStatusFilterTest.xml`: new bill 2006 fixture (no refund rows) to verify the EXISTS predicate correctly excludes it\n- `BillResourceTest`: representation description test asserting `refunds` is present in DEFAULT and FULL reps"
+ },
+ {
+  "number": 177,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/177",
+  "title": "Update itextPdf to 8.0.5",
+  "branch": "itext",
+  "mergedAt": "2026-05-21T13:31:46Z",
+  "mergeCommit": "dda906cbe46b2a75b0fa163b71b9e0f027d3de4c",
+  "body": "This resolves `barcodes-8.0.2.jar (pkg:maven/com.itextpdf/barcodes@8.0.2, cpe:2.3:a:itextpdf:itext:8.0.2:*:*:*:*:*:*:*): CVE-2023-6298(6.5)`"
+ },
+ {
+  "number": 174,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/174",
+  "title": "Delete bill discounts and refunds when purging bill",
+  "branch": "chore/support-purge",
+  "mergedAt": "2026-05-21T09:02:44Z",
+  "mergeCommit": "59204a940f65cf2f6741556fc43ed0e1d375c55a",
+  "body": "This PR adds a liquibase changeset to cascade discounts and refunds when a bill is purged. Currently, if you try to purge a bill, you\u2019d get a foreign key constraint exception."
+ },
+ {
+  "number": 173,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/173",
+  "title": "O3-5410: Display Billing Payment Status Without Blocking Access to Clinical Forms",
+  "branch": "O3-5410",
+  "mergedAt": "2026-05-19T11:11:39Z",
+  "mergeCommit": "49d6600c9d5a33b8bbac2b1c430c3c9725af0453",
+  "body": "Adds a new REST endpoint to determine whether a patient has any outstanding bills.\r\n\r\n- GET /rest/v1/billing/patientPaymentStatus/{patientUuid} returns { status: PAID | UNPAID, reason }\r\n- Default resolver derives status from Bill records: PENDING or POSTED (and non-voided) \u2192 UNPAID, everything else \u2192 PAID\r\n- Pluggable via the billing.patientPaymentStatusResolver global property: set to the fully qualified class name of a Spring-registered\r\n  PatientPaymentStatusResolver bean to override\r\n- Returns 400 for blank UUIDs, 404 for unknown patients, 500 (logged) for resolver/config errors\r\n- \r\nTicket: https://openmrs.atlassian.net/browse/O3-5410"
+ },
+ {
+  "number": 172,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/172",
+  "title": "O3-5421: Associate bills with patient visits",
+  "branch": "feat/bill-visit-association",
+  "mergedAt": "2026-05-19T11:58:06Z",
+  "mergeCommit": "1dee616c219772026e79dddd7a80e57e6ea35c2d",
+  "body": "## Summary\r\n\r\nAdds an optional `visit` association to `Bill` so bills can be linked to the visit they were generated during. The visit can be supplied explicitly via the REST API, is auto-populated from a patient's single active visit on create, and is auto-set from an order's encounter when a bill is generated from orders. Bills can also be filtered by `visitUuid`.\r\n\r\n## Changes\r\n\r\n- Schema: add `visit_id` column to `cashier_bill` with `ON DELETE SET NULL` / `ON UPDATE CASCADE`\r\n- Entity: `Bill.visit` field with Hibernate mapping\r\n- REST: expose `visit` on `BillResource` (DEFAULT/FULL reps + creatable property); accept `visitUuid` query param on bill search\r\n- Search: `BillSearch.visitUuid` filter wired through criteria\r\n- Auto-population: when creating a bill without a visit, use the patient's single active visit (skip if multiple)\r\n- Order-driven: when generating a bill from orders, set the visit from the order's encounter\r\n"
+ },
+ {
+  "number": 171,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/171",
+  "title": " Enable refund and discount features by default",
+  "branch": "chore/enable-refund-discount-default",
+  "mergedAt": "2026-05-15T06:05:53Z",
+  "mergeCommit": "6110623e19edf474dd80432fcc60e2acd7a14663",
+  "body": "Flip the default values of the `billing.discountEnabled` and `billing.refundEnabled` global properties from `false` to `true` so the discount and refund workflows shipped in O3-5417 and O3-5413 are active out of the box.\r\n\r\n"
+ },
+ {
+  "number": 170,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/170",
+  "title": "O3-5422: Introduce a dedicated `BillLineItemStatus`",
+  "branch": "O3-5422",
+  "mergedAt": "2026-05-15T14:36:18Z",
+  "mergeCommit": "e54193f25d8b3064aa9d6e407f456f9a10909551",
+  "body": "Introduce a dedicated `BillLineItemStatus` enum for `BillLineItem`, replacing the shared `BillStatus`. Drops the bill-only `POSTED` value and adds  `REFUND_REQUESTED`, `PARTIALLY_REFUNDED`, `REFUNDED` so line items reflect the state of line-scoped refunds.\r\n\r\n- New `BillLineItemStatus` enum; `BillLineItem.paymentStatus` \u2192 `status` (field, column, REST JSON property).\r\n- `BillRefundServiceImpl` reconciles line-item status on every line-scoped refund save, mirroring the existing bill-level rollup.\r\n- `Bill.synchronizeBillStatus()` no longer overwrites a refund-state line item.\r\n- Liquibase: migrate legacy `POSTED` line items \u2192 `PENDING`, widen + rename `payment_status` \u2192 `status`, widen `cashier_bill.status`.\r\n- REST: `lineItem.paymentStatus` \u2192 `lineItem.status`. Frontend / ESM consumers must update.\r\n\r\nTicket: https://openmrs.atlassian.net/browse/O3-5422"
+ },
+ {
+  "number": 169,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/169",
+  "title": "Bump maven-parent-openmrs-module to 2.2.0",
+  "branch": "parent-2.2.0",
+  "mergedAt": "2026-05-12T15:19:11Z",
+  "mergeCommit": "651dce6eabcec15fd7e7eab909b11fc7039ae7f7",
+  "body": "- Upgraded parent POM version from 2.1.0 to 2.2.0 in `pom.xml`."
+ },
+ {
+  "number": 168,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/168",
+  "title": "O3-5417: Filter bills by discount status",
+  "branch": "feat/bill-discount-status-filter",
+  "mergedAt": "2026-05-14T11:20:24Z",
+  "mergeCommit": "f18f721e6da5184c98a600c70354414f1b0e0b8b",
+  "body": "## Summary\n\nAdds a `discountStatus` query parameter to `GET /ws/rest/v1/cashier/bill` so callers can filter bills by the status of their (non-voided) discounts. Supports comma-separated values mapping to the `DiscountStatus` enum.\n\n- `BillSearch` gains a `discountStatuses` list.\n- `HibernateBillDAO` filters via an `EXISTS` subquery on non-voided `BillDiscount` rows \u2014 avoids the row multiplication / `DISTINCT` workaround that an inner join would require.\n- `BillResource` parses the param and rejects unknown values with `InvalidSearchException` (400) instead of leaking the enum's `IllegalArgumentException` as a 500.\n\n## Related Issue\n\nhttps://openmrs.atlassian.net/browse/O3-5417\n\n## Test Plan\n\n- [x] Unit tests in `BillSearchTest`, `HibernateBillDAOTest`, `BillResourceTest` cover: single status, multiple statuses, voided discount exclusion, invalid value rejection, and absence of the param.\n- [x] Full mvn test (api + omod): 411 tests, 0 failures."
+ },
+ {
+  "number": 167,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/167",
+  "title": "O3-5413: Enable Refund Requests and Approval for Paid Bills",
+  "branch": "O3-5413",
+  "mergedAt": "2026-05-12T15:14:11Z",
+  "mergeCommit": "71fc613004aa8313e0d01db46c298916d8a90d48",
+  "body": "  - New bill_refund table + JPA-mapped BillRefund entity (FK to bill, optional line item, audit fields)\r\n  - RefundStatus enum: REQUESTED \u2192 APPROVED \u2192 COMPLETED (or \u2192 REJECTED)\r\n  - BillRefundService / DAO / BillRefundValidator / REST resource at /billing/billRefund\r\n  - New BillStatus values: REFUND_REQUESTED, REFUNDED, PARTIALLY_REFUNDED\r\n  - 4 privileges: Request / Approve / Complete / View Bill Refunds\r\n  - billing.refundEnabled feature flag\r\n\r\nTicket: https://openmrs.atlassian.net/browse/O3-5413"
+ },
+ {
+  "number": 163,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/163",
+  "title": "Migrate build to maven-parent-openmrs-module 2.1.0",
+  "branch": "migrate-to-parent",
+  "mergedAt": "2026-05-04T03:36:29Z",
+  "mergeCommit": "56878333a0b52e16d532a2db7e2e9ba4d074a802",
+  "body": "Inherits from the OpenMRS contrib maven parent so the module picks up the standard plugin versions, license/spotless wiring, and CI release profiles.\r\n\r\n* Drop redundant pluginManagement for compiler, surefire, release, jar, openmrs-plugin, dependency-plugin, formatter-maven-plugin, and the m2e lifecycle-mapping. Drop the legacy `release` and `openmrs-2.0` profiles.\r\n* Rename `openMRSVersion` -> `openmrsPlatformVersion` (the parent's dependencyManagement for openmrs-api/web/test is keyed off this name). Update omod/config.xml `<require_version>` to match.\r\n* Switch maven.compiler.source/target from `1.8` to `8` and set as properties; the parent's enforcer regex `^([89]|[1-9]\\d+)$` rejects `1.8`.\r\n* Re-declare distributionManagement pointing at mavenrepo.openmrs.org in the child pom; the contrib GHA `infer_backend_params.py` reads it from the child only and does not follow parent inheritance.\r\n* Re-declare repositories/pluginRepositories at mavenrepo.openmrs.org /public so Maven can resolve the parent POM itself.\r\n* Configure javadoc with `<doclint>none</doclint>` and `<failOnError>false</failOnError>` so the parent's `ci`-profile javadoc step doesn't choke on legacy comments.\r\n* In api/omod/fhir submodule poms, switch openmrs-api `<type>test-jar</type>` to `<classifier>tests</classifier>` to match the parent's dependencyManagement key. Drop formatter-maven-plugin references (the parent uses spotless instead)."
+ },
+ {
+  "number": 162,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/162",
+  "title": "Apply standard OpenMRS MPL license headers",
+  "branch": "add-license-headers",
+  "mergedAt": "2026-04-28T09:43:10Z",
+  "mergeCommit": "b741725ef3dcd816960b8bfa8859e1a72b5c68ca",
+  "body": "Auto-generated by maven-parent-openmrs-module's license-maven-plugin (license:format on process-sources). Lands the headers ahead of the parent-pom migration so that PR's diff stays focused on the build config."
+ },
+ {
+  "number": 161,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/161",
+  "title": "Add permissions for GitHub Actions workflow",
+  "branch": "wikumChamith-patch-1",
+  "mergedAt": "2026-04-28T05:36:09Z",
+  "mergeCommit": "62557825f005a3c4430519d6fa69317df9111161",
+  "body": ""
+ },
+ {
+  "number": 160,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/160",
+  "title": "O3 5417: Bill Discount Management with Audit Trail",
+  "branch": "O3-5417",
+  "mergedAt": "2026-05-07T14:07:07Z",
+  "mergeCommit": "da2f5958f52b2e0b8999f37ed3a5a86797a80137",
+  "body": "  - New `BillDiscount` entity + `bill_discount` table with full audit fields (initiator, approver, value, amount, justification, timestamp)\r\n  - `Bill.getAmountAfterDiscount()` and `synchronizeBillStatus()` now reconcile against the discounted total, so a 10% discount lets the patient pay \r\n  90% and auto-flip to `PAID`                          \r\n  - `BillDiscountService` / DAO / REST resource at `/ws/rest/v1/cashier/billDiscount`, guarded by new `Manage Bill Discounts` / `View Bill Discounts`\r\n   privileges                                                                                                                                        \r\n  - Validator enforces: feature enabled (`billing.discountEnabled` global property, default `false`), bill status in {`PENDING`, `POSTED`}, positive\r\n  value, amount \u2264 bill total, mandatory justification, one active discount per bill (voided rows can be replaced)                                    \r\n  - `BillResource` exposes `discount`, `totalAmount`, `amountAfterDiscount` for invoice/receipt display                                              \r\n  - 18 tests (7 DAO + 11 service) covering happy paths, rejections, and void-and-reapply\r\n                                                                                                                                                     \r\n  Ticket: https://openmrs.atlassian.net/browse/O3-5417     "
+ },
+ {
+  "number": 159,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/159",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:26:53Z",
+  "mergeCommit": "a5e55249986519b18a851e28443928473ed0ffda",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ },
+ {
+  "number": 156,
+  "url": "https://github.com/openmrs/openmrs-module-billing/pull/156",
+  "title": "O3-5370: Auto-Generate Billable Items from Medication Orders",
+  "branch": "O3-5370",
+  "mergedAt": "2026-04-17T13:58:38Z",
+  "mergeCommit": "e112d46bb9fa4b92d008b07f107528f1bcc3a315",
+  "body": "  - Replace broken AOP interceptors (GenerateBillFromOrderAdvice, OrderCreationMethodBeforeAdvice) with OpenMRS Events module for order billing\r\n  - Subscribe to Order.CREATED events to auto-generate bills when orders are saved\r\n  - Implement Strategy pattern (OrderBillingStrategy) for per-order-type billing rules\r\n  - Handle NEW, REVISE (void old + create new), and DISCONTINUE (void old) order actions\r\n  - Add BillingEventListener interface for auto-discovery new listeners only need a Spring bean, no activator changes\r\n  - Fix BillLineItem.order HBM mapping so order-to-line-item link actually persists\r\n  - Add getBillLineItemByOrder() to DAO/service layer for looking up line items by order\r\n\r\nTicket: https://openmrs.atlassian.net/browse/O3-5372"
+ }
+]

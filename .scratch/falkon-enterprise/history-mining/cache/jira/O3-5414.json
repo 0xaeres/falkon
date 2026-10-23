@@ -1,0 +1,9 @@
+{
+ "key": "O3-5414",
+ "url": "https://openmrs.atlassian.net/browse/O3-5414",
+ "summary": "Enable Bill Voiding for Abandoned Visits",
+ "status": "Done",
+ "created": "2026-02-09T23:54:04.990+1100",
+ "resolved": "2026-05-04T21:44:29.136+1000",
+ "description": "Allow administrators to void unpaid bills for abandoned visits to maintain accurate billing records and reporting.\nUser Story:\nAs an administrator, I want to be able to void bills for abandoned visits, so that unpaid bills from incomplete visits don't clutter the billing system.\n\nFunctional Requirements:\nVoid Eligibility: \nVOID action is only available for bills with zero payments recorded\n\nBills with any payment amount (partial or full) cannot be voided\n\nOnly users with the Administrator role can void bills\n\n\nVoid Workflow:\nUser selects the VOID action on the eligible bill\n\nSystem prompts for a mandatory reason for voiding, for example, Patient abandoned visit, Patient refused service before paying, Billing error, Other reasons\n\nUser enters reason\n\nSystem confirms void action\n\nUpon confirmation:\nBill status updates from PENDING to CANCELLED\n\nVoid reason and timestamp recorded\n\n\n\nBill Status Updates:\nPENDING \u2192 After Void: CANCELLED\n\nCancelled bills remain in the system for audit purposes\n\nCancelled bills are excluded from outstanding payment reports"
+}

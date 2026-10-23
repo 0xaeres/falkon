@@ -1,0 +1,9 @@
+{
+ "key": "RESTWS-1053",
+ "url": "https://openmrs.atlassian.net/browse/RESTWS-1053",
+ "summary": "Don't return 401 \"Session timed out\" from the session endpoint for stale session cookies",
+ "status": "Closed",
+ "created": "2026-09-30T02:56:42.755+1000",
+ "resolved": "2026-09-30T03:29:01.754+1000",
+ "description": "Background\nWhen a request arrives with a session cookie for an HTTP session that has expired or been invalidated, AuthorizationFilter responds with 401 Session timed out before any other processing. This also applies to /ws/rest/v1/session, the endpoint clients use to find out their session has expired and to log in again. As a result, a client holding an old cookie gets a 401 from the session endpoint. That includes a login request with valid Basic credentials, which authenticates successfully and creates a new session but still returns 401 to the client. The same happens behind other filters, such as the authentication module's, which explicitly allow the session endpoint for unauthenticated users.\nRequested change\nRequests to /ws/rest/v1/session should not be rejected because the requested session ID is invalid. They should continue through the filter chain as normal, so GET reports authenticated: false and Basic-auth logins succeed. All other REST endpoints keep the existing 401 Session timed out behavior. The fix should be applied to master, 4.x, and 3.x.\nAcceptance criteria\nA request to /ws/rest/v1/session with an invalid requested session ID is not rejected with 401 by AuthorizationFilter, with or without a context path.\n\nA request to any other REST endpoint with an invalid requested session ID still returns 401 Session timed out.\n\nAutomated tests in omod-common/src/test/ cover a stale session on the session endpoint (with and without a context path) and a stale session on a non-session endpoint (regression)."
+}

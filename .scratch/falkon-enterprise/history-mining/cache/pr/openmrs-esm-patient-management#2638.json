@@ -1,0 +1,11 @@
+{
+ "number": 2638,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2638",
+ "title": "(fix) Patient search should bypass service worker caching",
+ "mergedAt": "2026-07-24T23:54:05Z",
+ "mergeCommit": "e4aacbd5a6242821c4f956230535f598cdeac835",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [x] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\n\r\nI opened O3-5832, but we also need a quick fix for this specific case, so here it is. For patient searching, this bypasses an expensive per-request Dexie lookup that was unnecessarily slowing things down.\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n<!-- https://issues.openmrs.org/browse/O3- -->\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\n",
+ "files": [
+  "packages/esm-patient-search-app/src/patient-search.resource.tsx"
+ ]
+}

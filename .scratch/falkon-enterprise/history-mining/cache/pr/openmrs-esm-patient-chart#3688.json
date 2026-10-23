@@ -1,0 +1,18 @@
+{
+ "number": 3688,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3688",
+ "title": "(fix) O3-5998: Continue to the requested workspace after starting or selecting a visit",
+ "mergedAt": "2026-09-24T20:50:02Z",
+ "mergeCommit": "108c48985b5e33905d025cb936a5657f45bb7a7a",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\nWhen a chart action needs a visit and the patient has none, `useStartVisitIfNeeded` shows a visit prompt and waits for the user to start or pick a visit. Neither path continued to the workspace the user asked for, so they had to click the action again. This PR makes both paths continue.\r\n\r\n- With RDE off, the start visit dialog passes `onVisitStarted` into the `start-visit-workspace-form` workspace, but the chart's wrapper never read it, so the promise never resolved. The wrapper now accepts `onVisitStarted` and calls it after it sets the visit context.\r\n- With RDE on, selecting a visit resolved the promise straight away. Setting a new visit context makes the patient chart relaunch its workspace group once the visit is refetched, and `launchWorkspaceGroup2` closes every open window when the group props change. So the resumed workspace was closed before it rendered. The RDE-off path hits the same thing once the callback is wired up.\r\n\r\nTo fix the second part, the patient chart store records which visit the workspace group was last launched with, and the chart sets it after each successful relaunch. `useStartVisitIfNeeded` resolves true only once that matches the new visit context. Under RDE, closing the switcher after a selection no longer resolves false first.\r\n\r\nThe new store field is optional and its setter is a plain exported function, so the existing `usePatientChartStore` mocks in the other apps don't need to change.\r\n\r\n## Screenshots\r\n\r\n### Before\r\n\r\nhttps://github.com/user-attachments/assets/59c47c95-f90f-4020-b47f-8b55c0afab76\r\n\r\n### After\r\n\r\nhttps://github.com/user-attachments/assets/0850d61e-c25a-42f6-9e64-e7cbfad1ed17\r\n\r\n## Related Issue\r\nhttps://issues.openmrs.org/browse/O3-5998\r\n\r\n## Other\r\nThis touches the same block in `useStartVisitIfNeeded` as #3619, so whichever lands second needs a small rebase. Renew in #3619 continues after the prompt once both are in.\r\n\r\nWith RDE off, cancelling the prompt or discarding the visit form still leaves the promise pending. The ticket explains why that's out of scope.\r\n",
+ "files": [
+  "e2e/specs/start-and-end-visit.spec.ts",
+  "packages/esm-patient-chart-app/src/patient-chart/patient-chart.resources.test.ts",
+  "packages/esm-patient-chart-app/src/patient-chart/patient-chart.resources.ts",
+  "packages/esm-patient-chart-app/src/visit/visit-form/visit-form.test.tsx",
+  "packages/esm-patient-chart-app/src/visit/visit-form/visit-form.workspace.tsx",
+  "packages/esm-patient-common-lib/src/store/patient-chart-store.ts",
+  "packages/esm-patient-common-lib/src/workspaces.test.ts",
+  "packages/esm-patient-common-lib/src/workspaces.ts"
+ ]
+}

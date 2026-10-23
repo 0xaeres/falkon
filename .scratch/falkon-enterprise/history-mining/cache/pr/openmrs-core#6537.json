@@ -1,0 +1,12 @@
+{
+ "number": 6537,
+ "url": "https://github.com/openmrs/openmrs-core/pull/6537",
+ "title": "TRUNK-6796: Fix NPE whe death date is null when merging patients",
+ "mergedAt": "2026-10-07T14:07:38Z",
+ "mergeCommit": "21ea98bdb1d1ca38a2986de62de17b8e3f7bd8a3",
+ "body": "## Changes\r\nFixes the incorrect null check for priorDateOfDeath.\r\nAdds a test to make sure computeHashValue() does not throw an exception when priorDateOfDeath is null.\r\n\r\n## Issue I worked on\r\nSee : https://openmrs.atlassian.net/browse/TRUNK-6796\r\n\r\n## Checklist: I completed these to help reviewers :)\r\n\r\n- [x] My IDE is configured to follow the **code style** of this project.\r\n- [x] I have added tests to cover my changes. *(These are minor code quality fixes that do not require new tests.)*\r\n- [x] I ran `./mvnw clean package` right before creating this pull request and added all formatting changes to my commit.\r\n- [x] **All new and existing tests passed.**\r\n- [x] My pull request is **based on the latest changes of the master branch.**",
+ "files": [
+  "api/src/main/java/org/openmrs/person/PersonMergeLogData.java",
+  "api/src/test/java/org/openmrs/person/PersonMergeLogDataTest.java"
+ ]
+}

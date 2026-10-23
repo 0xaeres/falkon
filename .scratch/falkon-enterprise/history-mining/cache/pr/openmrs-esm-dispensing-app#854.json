@@ -1,0 +1,12 @@
+{
+ "number": 854,
+ "url": "https://github.com/openmrs/openmrs-esm-dispensing-app/pull/854",
+ "title": "(fix) O3-5734: Allow recording allergies from the fill prescription order basket",
+ "mergedAt": "2026-06-11T12:24:34Z",
+ "mergeCommit": "120d22e968d57a1ce47a5a908e50e79f485cfcb1",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nThe \"Add allergy\" (+) control in the order basket's drug search falls back to launching the patient chart's allergy form workspace when the host doesn't provide a launcher. The fill prescription workflow renders the order basket outside the patient chart, so that fallback opened the `patient-chart` workspace group with null group props and crashed every action button registered to it with `Cannot read properties of null (reading 'patientUuid')`.\r\n\r\nThis registers the exported allergy form workspace (added in openmrs/openmrs-esm-patient-chart#3353) into the `fill-prescription-window` and passes its name as `allergyFormWorkspaceName` in the order basket window props, so the form opens as a child of the dispensing app's own workspace window. This is the same wiring the ward app added in openmrs/openmrs-esm-patient-management#2561.\r\n\r\nNote: this requires the patient chart release that ships `exportedAllergyFormWorkspace` (v12.2.0 or higher).\r\n\r\n## Screenshots\r\n\r\nhttps://github.com/user-attachments/assets/c25747d4-3f81-484a-87e2-7c4c9c1c396a\r\n\r\n## Related Issue\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5734\r\n\r\n## Other\r\n",
+ "files": [
+  "src/fill-prescription/fill-prescription-button.component.tsx",
+  "src/routes.json"
+ ]
+}

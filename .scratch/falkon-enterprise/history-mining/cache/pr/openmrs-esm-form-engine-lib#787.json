@@ -1,0 +1,26 @@
+{
+ "number": 787,
+ "url": "https://github.com/openmrs/openmrs-esm-form-engine-lib/pull/787",
+ "title": "(test) Add \"golden schemas\" for encounter payloads",
+ "mergedAt": "2026-08-20T19:59:33Z",
+ "mergeCommit": "a6f911cf3612608cac9649229396e0ebc92ae8ba",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\n\r\nAdds some basic missing tests and golden snapshots of existing encounter payload transformations.\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n<!-- https://issues.openmrs.org/browse/O3- -->\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\n",
+ "files": [
+  "src/api/api.test.ts",
+  "src/processors/encounter/__snapshots__/encounter-payloads/edit-encounter-deleted-fields.json",
+  "src/processors/encounter/__snapshots__/encounter-payloads/edit-encounter-hidden-voiding.json",
+  "src/processors/encounter/__snapshots__/encounter-payloads/edit-encounter-nested-obs-groups.json",
+  "src/processors/encounter/__snapshots__/encounter-payloads/edit-encounter-obs-changes.json",
+  "src/processors/encounter/__snapshots__/encounter-payloads/edit-encounter-orders-and-diagnoses.json",
+  "src/processors/encounter/__snapshots__/encounter-payloads/edit-encounter-provider-merge.json",
+  "src/processors/encounter/__snapshots__/encounter-payloads/new-encounter-attachments.json",
+  "src/processors/encounter/__snapshots__/encounter-payloads/new-encounter-hidden-and-transient.json",
+  "src/processors/encounter/__snapshots__/encounter-payloads/new-encounter-obs-groups.json",
+  "src/processors/encounter/__snapshots__/encounter-payloads/new-encounter-orders-and-diagnoses.json",
+  "src/processors/encounter/__snapshots__/encounter-payloads/new-encounter-rendering-types.json",
+  "src/processors/encounter/encounter-payloads.golden.test.ts",
+  "src/processors/encounter/encounter-processor-helper.test.ts",
+  "src/test-support/builders.ts",
+  "src/test-support/test-support.test.tsx"
+ ]
+}

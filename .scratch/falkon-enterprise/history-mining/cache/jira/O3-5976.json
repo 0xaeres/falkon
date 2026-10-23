@@ -1,0 +1,9 @@
+{
+ "key": "O3-5976",
+ "url": "https://openmrs.atlassian.net/browse/O3-5976",
+ "summary": "Form engine never loads Angular locale data: the locale import requests .mjs files that do not exist",
+ "status": "Done",
+ "created": "2026-09-15T03:56:56.305+1000",
+ "resolved": null,
+ "description": "Background\nFeWrapperComponent in @openmrs/esm-form-entry-app lazily imports Angular locale data through a webpack context restricted to .mjs. @angular/common/locales/ ships only .js files, so the context is empty, dist/assets/l10n/locales/ is never emitted, and the import rejects on every form launch with Cannot find module './en.mjs'.\nregisterLocaleData() has therefore never run. The engine falls back to Angular's built-in en-US data, so dates and numbers in every form are formatted as US English regardless of the user's locale.\nRequested change\nPoint both the webpackInclude and the request at .js, and narrow the include so it matches only what can actually be requested \u2014 the code always uses the two-letter base language (language.substring(0, 2)).\nA bare /\\\\.js$/ matches all 1,731 files in that directory and emits roughly 2.6 MB of lazy chunks to serve at most thirty locales; anchoring on the path separator is both smaller and closer to the intent. Note that webpackInclude is tested against the resolved path rather than the request, so a ^\\\\./ anchor will silently match nothing.\nAcceptance criteria\nLaunching a form under a non-English supported locale registers that locale's data, and dates and numbers render using it.\n\nNo Cannot find module rejection is logged on form launch in any supported locale.\n\nThe build emits only locale chunks that can be requested, not the full CLDR set.\n\nAutomated tests cover that the locale import resolves for a supported non-English locale, that the rejection path is not hit, and that an unsupported locale degrades without throwing."
+}

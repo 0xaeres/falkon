@@ -1,0 +1,9 @@
+{
+ "key": "O3-5750",
+ "url": "https://openmrs.atlassian.net/browse/O3-5750",
+ "summary": "Migrate test framework from Jest to Vitest",
+ "status": "Done",
+ "created": "2026-06-18T20:39:39.572+1000",
+ "resolved": "2026-06-21T18:15:51.024+1000",
+ "description": "The Growth Chart module currently uses Jest for unit testing. To align with the testing approach used across OpenMRS frontend modules, this module should be migrated to Vitest.Reference\nPatient Chart migration:"
+}

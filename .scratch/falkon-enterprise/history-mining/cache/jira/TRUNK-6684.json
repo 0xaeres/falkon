@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6684",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6684",
+ "summary": "Location.childLocations gained unintended orphanRemoval=true in the JPA migration",
+ "status": "Code Review (Post-Commit)",
+ "created": "2026-07-16T01:54:32.753+1000",
+ "resolved": null,
+ "description": "Background\nThe 2.6.x Location.hbm.xml mapped childLocations with cascade=\"all\" \u2014 removing a child from the in-memory collection did not delete the row. The migrated annotation in Location.java adds orphanRemoval = true, so any code that removes an entry from childLocations (e.g. re-parenting a location) now silently issues a DELETE of that location row on flush. This is a behavior change with both a data-loss risk and unplanned write/lock cost, and it was not part of any intentional feature.\nRequested change\nRemove orphanRemoval = true from Location.childLocations to restore the 2.6.x cascade semantics.\nAcceptance criteria\nRemoving a location from a parent's childLocations collection and saving no longer deletes the child row; re-parenting works as it did in 2.6.x.\n\nA unit test covers the re-parenting scenario to prevent the delete behavior from returning."
+}

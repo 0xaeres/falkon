@@ -1,0 +1,74 @@
+[
+ {
+  "number": 32,
+  "url": "https://github.com/openmrs/openmrs-module-event/pull/32",
+  "title": "(docs) Replace the dead Travis badge with the GitHub Actions one",
+  "branch": "fix-readme-ci-badge",
+  "mergedAt": "2026-09-08T10:25:57Z",
+  "mergeCommit": "f02b8fb26ffa1d7bb4735b2b5abb72d105602bd2",
+  "body": "The README badge still points at travis-ci.org, which shut down and now redirects to a 404, so the badge renders blank. This module builds on GitHub Actions via build.yml, so this points the badge and its link there.\n\nHeads up that the badge will show red right now: the latest build.yml run on master failed on 2026-09-03 on the OWASP dependency check job, not the Maven build."
+ },
+ {
+  "number": 31,
+  "url": "https://github.com/openmrs/openmrs-module-event/pull/31",
+  "title": "Update license headers to Mozilla Public License 2.0 across project files",
+  "branch": "licence-header",
+  "mergedAt": "2026-06-11T13:20:28Z",
+  "mergeCommit": "2904e93edef6f7ea77c7e0d6acf3c4ddda72492f",
+  "body": ""
+ },
+ {
+  "number": 30,
+  "url": "https://github.com/openmrs/openmrs-module-event/pull/30",
+  "title": "Update build.yml to simplify Java version settings",
+  "branch": "gha",
+  "mergedAt": "2026-06-11T11:47:21Z",
+  "mergeCommit": "5a9f41e40301d548551a7f549350bf40572f276e",
+  "body": "Removed Java version specifications from build job."
+ },
+ {
+  "number": 29,
+  "url": "https://github.com/openmrs/openmrs-module-event/pull/29",
+  "title": "Apply Spotless formatting",
+  "branch": "spotless-formatting",
+  "mergedAt": "2026-06-11T11:53:42Z",
+  "mergeCommit": "1b6dd93b93e36eeaff4ac11738cbbacf48beab39",
+  "body": ""
+ },
+ {
+  "number": 26,
+  "url": "https://github.com/openmrs/openmrs-module-event/pull/26",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:51:53Z",
+  "mergeCommit": "36952b98a012c90441d4bfe868979f259cceb9a6",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ },
+ {
+  "number": 24,
+  "url": "https://github.com/openmrs/openmrs-module-event/pull/24",
+  "title": "EVNT-49 - Add base TransactionEventListener and handle all post-trans\u2026",
+  "branch": "EVNT-49",
+  "mergedAt": "2026-03-25T19:20:29Z",
+  "mergeCommit": "afc3a277601e3b92e356b3951da085180d591ea5",
+  "body": "\u2026action events in Daemon threads"
+ },
+ {
+  "number": 23,
+  "url": "https://github.com/openmrs/openmrs-module-event/pull/23",
+  "title": "O3-5519: Add BOT_GH_TOKEN to build workflow secrets",
+  "branch": "fix/O3-5519-add-bot-gh-token-to-build-workflow-secrets",
+  "mergedAt": "2026-03-23T08:25:44Z",
+  "mergeCommit": "a94ceead0079bc32559175b36083d1de8197c1f5",
+  "body": "## Description\r\nTicket Link - https://openmrs.atlassian.net/browse/O3-5519\r\nTicket ID - O3-5519\r\n\r\n## Summary\r\nThe shared OWASP Dependency Check workflow (openmrs-contrib-gha-workflows) has been updated to automatically push generated vulnerability reports to the central dashboard repository (openmrs-contrib-dependency-vulnerability-dashboard). To support this, the reusable workflow now requires the GH_BOT_TOKEN secret to be passed by calling repositories. Without it, the workflow cannot push reports to the dashboard.\r\n\r\n## Change\r\nAdded `BOT_GH_TOKEN: ${{ secrets.OMRS_BOT_GH_TOKEN }}` to the secrets block in `.github/workflows/build.yml`."
+ },
+ {
+  "number": 22,
+  "url": "https://github.com/openmrs/openmrs-module-event/pull/22",
+  "title": "Migrate to Reusable GitHub Action",
+  "branch": "gh-action",
+  "mergedAt": "2026-03-13T10:29:30Z",
+  "mergeCommit": "87feb1166b670d91729dc5942368b910c281e272",
+  "body": ""
+ }
+]

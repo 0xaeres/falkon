@@ -1,0 +1,9 @@
+{
+ "key": "O3-5912",
+ "url": "https://openmrs.atlassian.net/browse/O3-5912",
+ "summary": "Regression: Address hierarchy does not clear dependent fields",
+ "status": "Done",
+ "created": "2026-08-21T20:27:30.273+1000",
+ "resolved": null,
+ "description": "Problem\nWhen searchAddressByLevel is enabled, changing a parent address field can leave child values from the previous selection. This can produce inconsistent addresses, such as Uganda with Nairobi as the province.\nThis is a regression of O3-1754, which is marked Done.\nAffected code\nAddress component container\n\nAddress hierarchy field reset\n\nRoot cause\nThe address container creates a nested patient-registration context with a setFieldValue function that does nothing. The address hierarchy uses this function when attempting to clear dependent fields.\nHow to reproduce\nEnable searchAddressByLevel.\n\nSelect Kenya as the country.\n\nSelect Nairobi as the state or province.\n\nChange the country to Uganda.\n\nNairobi remains selected.\n\nExpected behaviour\nChanging a parent address field should clear every dependent child field.\nImplementation notes\nAllow the address hierarchy to use the real form setFieldValue function instead of the no-op function from the nested context.\nAcceptance criteria\nChanging the country clears all dependent address fields.\n\nChanging another parent level clears the levels below it.\n\nThe selected parent value is preserved.\n\nTests use the real hierarchy interaction and verify the resulting form values.\n\nBehaviour without searchAddressByLevel remains unchanged.\n\nVerified against openmrs-esm-patient-management commit c64fb3366119833e9e09a0eb31d580c9e1558d8b."
+}

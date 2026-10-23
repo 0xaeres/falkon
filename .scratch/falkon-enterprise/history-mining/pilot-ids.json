@@ -1,0 +1,11 @@
+{
+  "note": "D100 pilot, round 2 rewrite (kind a retargeted): 6 dev questions, 2 per kind, as selected by pilotIds(dataset, 6) for --dataset history (confirmed with pnpm exec tsx -e from tests/eval). Ids and relations are unchanged, so the selection is the same ids as rounds 0 and 1; hist-a-03 and hist-a-14 now carry round 2 targets.",
+  "ids": [
+    "hist-c-03",
+    "hist-a-14",
+    "hist-b-08",
+    "hist-c-06",
+    "hist-a-03",
+    "hist-b-01"
+  ]
+}

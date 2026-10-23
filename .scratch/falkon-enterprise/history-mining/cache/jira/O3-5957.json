@@ -1,0 +1,9 @@
+{
+ "key": "O3-5957",
+ "url": "https://openmrs.atlassian.net/browse/O3-5957",
+ "summary": "MUAC color code not set for patients aged exactly 5, 10, or 18",
+ "status": "Done",
+ "created": "2026-09-06T19:54:59.920+1000",
+ "resolved": null,
+ "description": "In getMuacColorCode (packages/esm-patient-vitals-app/src/vitals-biometrics-form/vitals-biometrics-form.utils.ts), the age-bracket boundary conditions are inconsistent between color cases within the same bracket.\nFor example, in the 0-5 age bracket, the \"red\" case uses age <= 5, but the \"yellow\" and \"green\" cases use age < 5. This means a patient exactly 5 years old with a healthy MUAC value (e.g. 13cm) gets no color code at all.\nMore critically, patients exactly 10 or 18 years old get NO color code set for ANY MUAC value, because:\nThe \"5-10\" bracket uses age > 5 && age < 10 (excludes 10)\n\nThe \"10-18\" bracket uses age > 10 && age < 18 (excludes both 10 and 18)\n\nThe \"18+\" bracket uses age > 18 (excludes 18)\n\nVerified via unit test: calling getMuacColorCode(10, 20, callback) or getMuacColorCode(18, 20, callback) never invokes the callback, regardless of MUAC value.\nFix: make all brackets consistently inclusive on the lower bound (age <= 5, age > 5 && age <= 10, age > 10 && age <= 18, age > 18), so there's no gap at the boundary ages. Fix + regression tests ready; full esm-patient-vitals-app test suite (72 tests) passes."
+}

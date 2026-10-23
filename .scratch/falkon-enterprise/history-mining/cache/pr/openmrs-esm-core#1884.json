@@ -1,0 +1,17 @@
+{
+ "number": 1884,
+ "url": "https://github.com/openmrs/openmrs-esm-core/pull/1884",
+ "title": "(feat) Improvements to the expression evaluator",
+ "mergedAt": "2026-09-16T20:53:13Z",
+ "mergeCommit": "9ea60732d5e57aa3f13d8f2f29654a2faf3b8996",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n- [ ] I have updated the esm-framework and storybook mocks ([mock.tsx](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/mock.tsx), [mock-jest.tsx](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/mock-jest.tsx), and [storybook mocks](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/tooling/storybook/mocks/)) to reflect any API changes.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\n\r\n* Support for nullish-coalescing operator\r\n* Real short-circuiting for boolean operations\r\n* Address some issues with array-style property access (e.g., obj[prop]- style expressions)\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n<!-- https://issues.openmrs.org/browse/O3- -->\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\n",
+ "files": [
+  ".changeset/great-moments-fix.md",
+  "packages/framework/esm-expression-evaluator/README.md",
+  "packages/framework/esm-expression-evaluator/src/evaluator.test.ts",
+  "packages/framework/esm-expression-evaluator/src/evaluator.ts",
+  "packages/framework/esm-expression-evaluator/src/extractor.test.ts",
+  "packages/framework/esm-expression-evaluator/src/extractor.ts",
+  "packages/framework/esm-framework/src/integration-tests/extension-config-expressions.test.tsx"
+ ]
+}

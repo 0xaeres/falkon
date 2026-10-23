@@ -1,0 +1,12 @@
+{
+ "number": 2541,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2541",
+ "title": "(fix) O3-5679: De-duplicate patient notes in previous visit tab",
+ "mergedAt": "2026-06-08T09:58:03Z",
+ "mergeCommit": "49a93f006e49b88e2c8a607f2a9946d2ec22e344",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\nFixes patient notes appeared twice in the Service Queues \u2192 Previous visit \u2192 Notes sub-tab.\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n### Before\r\n<img width=\"1512\" height=\"982\" alt=\"image\" src=\"https://github.com/user-attachments/assets/cdcdd18f-8b40-4c24-ad71-295015e92c16\" />\r\n\r\n### After \r\n<img width=\"1512\" height=\"982\" alt=\"image\" src=\"https://github.com/user-attachments/assets/57eef3f0-5e83-4550-a4b8-5eba94ad83d2\" />\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n<!-- https://issues.openmrs.org/browse/O3- -->\r\n[O3-5679](https://openmrs.atlassian.net/browse/O3-5679)\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\n\n\n[O3-5679]: https://openmrs.atlassian.net/browse/O3-5679?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ",
+ "files": [
+  "packages/esm-service-queues-app/src/past-visit/past-visit-details/past-visit-summary.component.tsx",
+  "packages/esm-service-queues-app/src/past-visit/past-visit.test.tsx"
+ ]
+}

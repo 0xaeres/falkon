@@ -1,0 +1,56 @@
+[
+ {
+  "number": 13,
+  "url": "https://github.com/openmrs/openmrs-module-o3forms/pull/13",
+  "title": "Give core-3.x its own version, 4.0.0-SNAPSHOT, and deploy it",
+  "branch": "core-3.x-deploy",
+  "mergedAt": "2026-10-13T10:53:35Z",
+  "mergeCommit": "42648649373ac9aaa45cc7fe150a9e19d0649390",
+  "body": "`core-3.x` (the Platform 3.0 line from #12) builds the same version as main, 3.0.0-SNAPSHOT, and doesn't deploy. The shared workflow deploys only `main`, `master` and `N.x` branches unless `deploy_branch` is set, so run 38076413983 skipped its deploy job, and deploying would have overwritten main's SNAPSHOT anyway. The o3forms-omod 3.0.0-SNAPSHOT on mavenrepo is therefore main's Platform 2.7.7 build (published on 2026-09-03). A module built for Platform 3.0 can't use it, yet openmrs-module-patientdocuments' `core-3.x` pins `o3FormsVersion` to 3.0.0-SNAPSHOT and resolves exactly that build.\n\nThis gives `core-3.x` the next major, 4.0.0-SNAPSHOT, and adds it to `deploy_branch`. Main keeps 3.0.0-SNAPSHOT, which #6 gave it for Platform 2.7.x and Java 21 and which hasn't been released; the highest release is 2.3.0 and the 2.x branch is on 2.4.0-SNAPSHOT. `main` stays in the list so it keeps deploying.\n\n- With this input, the shared `resolve-maven-deploy-params` step (run locally from openmrs-contrib-gha-workflows main) resolves `[\"main\", \"core-3.x\"]` for a push to `core-3.x`. Without it, it resolves `[\"main\", \"master\"]`.\n- `mvn -U clean verify` passes on JDK 21 against the published core 3.0.0-SNAPSHOT (build 438) with a clean local repository, with 22 omod tests (the api module has none). The omod's config.xml says 4.0.0-SNAPSHOT.\n- `bamboo-specs/bamboo.yml` still carries `maven.release.version: 3.0.0` / `maven.development.version: 3.1.0-SNAPSHOT`; it isn't touched here, since releases go through `release.yml`.\n\nModules that need o3forms' Platform 3.0 build move to 4.0.0-SNAPSHOT once this deploys, openmrs-module-patientdocuments' `core-3.x` among them.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n"
+ },
+ {
+  "number": 12,
+  "url": "https://github.com/openmrs/openmrs-module-o3forms/pull/12",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T18:00:18Z",
+  "mergeCommit": "e8646157c839243775e90f76dafc418a10512112",
+  "body": "Updates o3forms so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7). The module version stays at main's 3.0.0-SNAPSHOT. Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions:\n  - `openmrsPlatformVersion` is now 3.0.0-SNAPSHOT and `webserviceRestVersion` is 5.0.0-SNAPSHOT.\n  - `openmrs-bom` is imported, and the explicit commons-io version is dropped because the BOM manages it.\n- Build:\n  - Java 21 (`maven.compiler.release`).\n  - `maven.compiler.parameters=true`, so that the controller's unnamed `@RequestParam` resolves on Spring 6+.\n  - impsort is 1.13.0, since 1.6.2 fails on Java 21, and its groups include `jakarta`.\n  - The formatter keeps its 2.7.7 tools config, so untouched code isn't reformatted.\n- `O3FormsResourceController` uses `jakarta.servlet`. The explicit `javax.servlet-api` dependencies and the obsolete powermock/mockito-all/hamcrest-all exclusions are removed.\n- CI: `release.yml` and the Bamboo jobs/images use JDK 21.\n- Test fixture: `root-form-compiled.json` now expects `resourceVersion` inside `encounterType`. Since REST 3.1.0 (RESTWS-1012), custom representations include it.\n\n## Verification\n- `mvn clean install` passes (18 tests).\n- I deployed the omod on openmrs-core master (`mvn jetty:run`, MySQL 8) with legacyui, webservices.rest 5.0.0-SNAPSHOT, fhir2 6.0.0-SNAPSHOT and calculation:\n  - All modules started, and the server log has no errors from this module.\n  - Logging in through the UI works.\n  - `GET /ws/rest/v1/o3/forms/{uuid}` is served by the module's controller. For a form with no resources it returns the module's own \"does not have any resources\" response.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Fp7T1pGYEMrMVp1M7AW9Fg\n"
+ },
+ {
+  "number": 11,
+  "url": "https://github.com/openmrs/openmrs-module-o3forms/pull/11",
+  "title": "Add Codecov job",
+  "branch": "add-new-code-cov-workflow",
+  "mergedAt": "2026-07-15T21:39:04Z",
+  "mergeCommit": "a60eb63ec1bf70800690b014ae6e8cfbdf9632b9",
+  "body": "<!--- Add a pull request title above in this format -->\r\n<!--- real example: 'FM2-8: Implement the Person Resource' -->\r\n<!--- 'FM2-JiraIssueNumber: JiraIssueTitle' -->\r\n## Description of what I changed\r\n<!--- Describe your changes in detail -->\r\n<!--- It can simply be your commit message, which you must have -->\r\n\r\nThis is intended to make codecov continue working after openmrs-contrib-gha-workflows#47 is merged\r\n\r\n## Issue I worked on\r\n<!--- This project only accepts pull requests related to open issues -->\r\n<!--- Want a new feature or change? Discuss it in an issue first -->\r\n<!--- Found a bug? Point us to the issue/or create one so we can reproduce it -->\r\n<!--- Just add the issue number at the end: -->\r\nsee https://issues.openmrs.org/browse/\r\n\r\n## Checklist: I completed these to help reviewers :)\r\n<!--- Put an `x` in the box if you did the task -->\r\n<!--- If you forgot a task please follow the instructions below -->\r\n- [ ] My IDE is configured to follow the [**code style**](https://wiki.openmrs.org/display/docs/Java+Conventions) of this project.\r\n\r\n  No? Unsure? -> [configure your IDE](https://wiki.openmrs.org/display/docs/How-To+Setup+And+Use+Your+IDE), format the code and add the changes with `git add . && git commit --amend`\r\n\r\n- [ ] I have **added tests** to cover my changes. (If you refactored\r\n  existing code that was well tested you do not have to add tests)\r\n\r\n  No? -> write tests and add them to this commit `git add . && git commit --amend`\r\n\r\n- [ ] I ran `mvn clean package` right before creating this pull request and\r\n  added all formatting changes to my commit.\r\n\r\n  No? -> execute above command\r\n\r\n- [ ] All new and existing **tests passed**.\r\n\r\n  No? -> figure out why and add the fix to your commit. It is your responsibility to make sure your code works.\r\n\r\n- [ ] My pull request is **based on the latest changes** of the master branch.\r\n\r\n  No? Unsure? -> execute command `git pull --rebase upstream master`\r\n"
+ },
+ {
+  "number": 9,
+  "url": "https://github.com/openmrs/openmrs-module-o3forms/pull/9",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:31:08Z",
+  "mergeCommit": "876dcb06e50e0efb43b618b7a8878f85ae6fa829",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ },
+ {
+  "number": 8,
+  "url": "https://github.com/openmrs/openmrs-module-o3forms/pull/8",
+  "title": "O3-5519: Add BOT_GH_TOKEN to build workflow secrets",
+  "branch": "fix/O3-5519-add-bot-gh-token-to-build-workflow-secrets",
+  "mergedAt": "2026-03-23T08:19:13Z",
+  "mergeCommit": "a57cdc009e0895aab88ae81b4eee8b1d949c182f",
+  "body": "## Description\r\nTicket Link - https://openmrs.atlassian.net/browse/O3-5519\r\nTicket ID - O3-5519\r\n\r\n## Summary\r\nThe shared OWASP Dependency Check workflow (openmrs-contrib-gha-workflows) has been updated to automatically push generated vulnerability reports to the central dashboard repository (openmrs-contrib-dependency-vulnerability-dashboard). To support this, the reusable workflow now requires the GH_BOT_TOKEN secret to be passed by calling repositories. Without it, the workflow cannot push reports to the dashboard.\r\n\r\n## Change\r\nAdded `BOT_GH_TOKEN: ${{ secrets.OMRS_BOT_GH_TOKEN }}` to the secrets block in `.github/workflows/build.yml`."
+ },
+ {
+  "number": 7,
+  "url": "https://github.com/openmrs/openmrs-module-o3forms/pull/7",
+  "title": "Migrate to Reusable GitHub Action",
+  "branch": "gh-action",
+  "mergedAt": "2026-03-13T06:49:33Z",
+  "mergeCommit": "c8511ba71d1bb960e983bb64998f12844b6ff246",
+  "body": "<!--- Add a pull request title above in this format -->\r\n<!--- real example: 'FM2-8: Implement the Person Resource' -->\r\n<!--- 'FM2-JiraIssueNumber: JiraIssueTitle' -->\r\n## Description of what I changed\r\n<!--- Describe your changes in detail -->\r\n<!--- It can simply be your commit message, which you must have -->\r\n\r\n## Issue I worked on\r\n<!--- This project only accepts pull requests related to open issues -->\r\n<!--- Want a new feature or change? Discuss it in an issue first -->\r\n<!--- Found a bug? Point us to the issue/or create one so we can reproduce it -->\r\n<!--- Just add the issue number at the end: -->\r\nsee https://issues.openmrs.org/browse/\r\n\r\n## Checklist: I completed these to help reviewers :)\r\n<!--- Put an `x` in the box if you did the task -->\r\n<!--- If you forgot a task please follow the instructions below -->\r\n- [ ] My IDE is configured to follow the [**code style**](https://wiki.openmrs.org/display/docs/Java+Conventions) of this project.\r\n\r\n  No? Unsure? -> [configure your IDE](https://wiki.openmrs.org/display/docs/How-To+Setup+And+Use+Your+IDE), format the code and add the changes with `git add . && git commit --amend`\r\n\r\n- [ ] I have **added tests** to cover my changes. (If you refactored\r\n  existing code that was well tested you do not have to add tests)\r\n\r\n  No? -> write tests and add them to this commit `git add . && git commit --amend`\r\n\r\n- [ ] I ran `mvn clean package` right before creating this pull request and\r\n  added all formatting changes to my commit.\r\n\r\n  No? -> execute above command\r\n\r\n- [ ] All new and existing **tests passed**.\r\n\r\n  No? -> figure out why and add the fix to your commit. It is your responsibility to make sure your code works.\r\n\r\n- [ ] My pull request is **based on the latest changes** of the master branch.\r\n\r\n  No? Unsure? -> execute command `git pull --rebase upstream master`\r\n"
+ }
+]

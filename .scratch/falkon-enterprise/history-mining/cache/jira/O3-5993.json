@@ -1,0 +1,9 @@
+{
+ "key": "O3-5993",
+ "url": "https://openmrs.atlassian.net/browse/O3-5993",
+ "summary": "Reports app shows literal {parameters} instead of the missing parameter names",
+ "status": "Done",
+ "created": "2026-09-21T20:37:14.153+1000",
+ "resolved": null,
+ "description": "Running a report without filling a required parameter shows:Please provide the following parameters: {parameters}. The placeholder is printed literally, so the user is never told which parameter is missing."
+}

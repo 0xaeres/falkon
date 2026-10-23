@@ -1,0 +1,25 @@
+{
+ "number": 2786,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2786",
+ "title": "(feat) O3-1830: Allow selecting the preferred patient identifier during registration",
+ "mergedAt": "2026-10-05T12:48:58Z",
+ "mergeCommit": "1aaae8c003d0ce38c32f07617277398079ccb66a",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [x] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\nIf a patient has multiple identifiers, e.g. ARV program identifier, National Identifier, Chronic Care, etc.. it allows the user to select during the registration which one is the preferred identifier for this specific patient. \r\n\r\n## Screenshots\r\n<img width=\"914\" height=\"955\" alt=\"Screenshot 2026-09-29 at 9 32 38\u202fAM\" src=\"https://github.com/user-attachments/assets/74cad27b-715a-4ce3-aab0-8797f9d452a3\" />\r\n\r\n\r\n## Related Issue\r\nhttps://openmrs.atlassian.net/browse/O3-1830\r\n\r\n## Other\r\n\r\n",
+ "files": [
+  "packages/esm-patient-registration-app/src/config-schema.ts",
+  "packages/esm-patient-registration-app/src/patient-registration/field/field.test.tsx",
+  "packages/esm-patient-registration-app/src/patient-registration/field/id/id-field.component.tsx",
+  "packages/esm-patient-registration-app/src/patient-registration/form-manager.test.ts",
+  "packages/esm-patient-registration-app/src/patient-registration/form-manager.ts",
+  "packages/esm-patient-registration-app/src/patient-registration/input/basic-input/input/input.component.tsx",
+  "packages/esm-patient-registration-app/src/patient-registration/input/basic-input/input/input.test.tsx",
+  "packages/esm-patient-registration-app/src/patient-registration/input/custom-input/identifier/identifier-input.component.tsx",
+  "packages/esm-patient-registration-app/src/patient-registration/input/custom-input/identifier/identifier-input.test.tsx",
+  "packages/esm-patient-registration-app/src/patient-registration/input/input.scss",
+  "packages/esm-patient-registration-app/src/patient-registration/patient-registration.resource.ts",
+  "packages/esm-patient-registration-app/src/patient-registration/patient-registration.test.tsx",
+  "packages/esm-patient-registration-app/src/patient-registration/validation/patient-registration-validation.test.ts",
+  "packages/esm-patient-registration-app/src/patient-registration/validation/patient-registration-validation.ts",
+  "packages/esm-patient-registration-app/translations/en.json"
+ ]
+}

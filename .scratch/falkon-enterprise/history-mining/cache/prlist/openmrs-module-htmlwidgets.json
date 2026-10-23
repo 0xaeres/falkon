@@ -1,0 +1,29 @@
+[
+ {
+  "number": 18,
+  "url": "https://github.com/openmrs/openmrs-module-htmlwidgets/pull/18",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-05T11:11:00Z",
+  "mergeCommit": "9531daebc709c644c284458c3d32728429f0a80d",
+  "body": "Updates htmlwidgets so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7, Hibernate 7). It follows the same approach as the already-merged platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19) and legacyui.\n\n## Changes\n- Module version is now 3.0.0-SNAPSHOT, `openMRSVersion` is 3.0.0-SNAPSHOT, and the `openmrs-bom` is imported. `config.xml` now sets `require_version` to 3.0.0.\n- Builds with Java 21 (`release 21`, `-parameters`). Surefire is bumped so it can run JUnit Jupiter. The PowerMock exclusions are gone.\n- `openmrs-web` moved from the parent pom to the omod. On the api test classpath, core's `WebConfig` (`@EnableWebMvc`) was being picked up and failing the context test with \"No ServletContext set\".\n- `HibernateHtmlWidgetsDAO`:\n  - The Criteria / `Expression` / `Order` queries, which Hibernate 7 removed, are now equivalent HQL with the same retired/voided filters and name ordering.\n  - It uses `jakarta.persistence.Query` and a typed `NativeQuery<Integer>` in place of the removed `org.hibernate.Query` / `SQLQuery`.\n- `javax.servlet(.jsp)` imports are now `jakarta.servlet(.jsp)`.\n- commons-lang is now commons-lang3, and `escapeHtml` is now `escapeHtml4`.\n- `HtmlWidgetsServiceTest` is migrated to JUnit 5 with core's `org.openmrs.test.jupiter` base class.\n- legacyui-omod (provided) moved to 3.0.0-SNAPSHOT.\n- CI: release workflow and Bamboo use JDK 21. The JDK 8/11/17 jobs are dropped because they can't build `release 21`.\n\n## Verification\n- `mvn clean install` passes.\n- I deployed the omod on openmrs-core master (`mvn jetty:run`) together with legacyui 3.0.0-SNAPSHOT, webservices.rest 5.0.0-SNAPSHOT, calculation 3.0.0-SNAPSHOT and fhir2 6.0.0-SNAPSHOT:\n  - All modules started, and the server log has no errors from this module.\n  - Logging in through the UI works.\n  - `/module/htmlwidgets/demonstration.form` renders.\n\n## Notes for reviewers\n- `getPersonNamesById` with a non-empty query references `u.username` without a `User u` in its `from` clause, so Hibernate rejects it. That bug predates this change, and nothing in the omod calls it, so I left it alone.\n- The demo page logs a browser-side `Cannot read properties of undefined (reading 'regional')` from the jQuery UI datepicker localisation. It doesn't affect startup.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Fp7T1pGYEMrMVp1M7AW9Fg\n"
+ },
+ {
+  "number": 17,
+  "url": "https://github.com/openmrs/openmrs-module-htmlwidgets/pull/17",
+  "title": "(docs) Replace the dead Travis badge with the GitHub Actions one",
+  "branch": "fix-readme-ci-badge",
+  "mergedAt": "2026-09-09T16:54:30Z",
+  "mergeCommit": "efe424769af0dc8528fe597b9403d61c95df485d",
+  "body": "The README badge still points at travis-ci.org, which shut down and now redirects to a 404, so the badge renders blank. This module builds on GitHub Actions via build.yml, so this points the badge and its link there.\n\nHeads up that the badge will show red right now: the latest build.yml run on master failed on 2026-09-03 on the OWASP dependency check job, not the Maven build."
+ },
+ {
+  "number": 15,
+  "url": "https://github.com/openmrs/openmrs-module-htmlwidgets/pull/15",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:29:46Z",
+  "mergeCommit": "800c15c0fbfd07763cb48dd17af2b3dfe793b64a",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ }
+]

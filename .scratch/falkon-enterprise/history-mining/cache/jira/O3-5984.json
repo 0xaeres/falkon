@@ -1,0 +1,9 @@
+{
+ "key": "O3-5984",
+ "url": "https://openmrs.atlassian.net/browse/O3-5984",
+ "summary": "Queues: In Service vs Attending language",
+ "status": "Done",
+ "created": "2026-09-17T00:19:25.374+1000",
+ "resolved": null,
+ "description": "The naming is inconsistent for the In Service/Attending queue status. The metrics show In service but the card list shows Attending. I think we should change the Attending label to In Service to align with the status and the metrics. It previously showed In Service which seemed to be well received by the users."
+}

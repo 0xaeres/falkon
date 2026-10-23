@@ -1,0 +1,9 @@
+{
+ "key": "O3-5562",
+ "url": "https://openmrs.atlassian.net/browse/O3-5562",
+ "summary": "Stock Management: Edit Items panel fields don't update when selecting a different stock item ",
+ "status": "Done",
+ "created": "2026-03-27T22:52:44.016+1100",
+ "resolved": "2026-05-18T16:17:01.013+1000",
+ "description": "When a stock item is selected from the list and the edit side panel is open, selecting a different stock item only updates the item name at the top of the panel. All other fields retain the values from the previously selected item.\n  Steps to Reproduce:\nNavigate to Stock Management \u2192 Items (/openmrs/spa/stock-management/items)\n\nSelect a stock item from the list to open the edit side panel\n\nWhile the panel is still open, select a different stock item from the list\n\n  Expected Behavior:  All fields in the edit side panel should update to reflect the newly selected stock item.\n  Actual Behavior:  Only the item name at the top of the panel updates. All other fields (e.g., category, dispensing unit,  etc.) remain populated with the previously selected item's data.\n\n\ncc:"
+}

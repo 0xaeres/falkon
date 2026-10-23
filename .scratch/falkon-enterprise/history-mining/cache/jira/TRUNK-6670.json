@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6670",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6670",
+ "summary": "Fix OWASP dependency check CI failure on fork PRs without NVD_API_KEY",
+ "status": "Code Review (Post-Commit)",
+ "created": "2026-06-19T23:45:05.642+1000",
+ "resolved": null,
+ "description": "The ` --nvdApiKey ${{ secrets.NVD_API_KEY }}` argument causes the OWASP dependency check to crash on fork PRs because forks cannot access the `NVD_API_KEY` secret, leaving it empty and triggering a CLI argument error.\nThis makes `--nvdApiKey` conditional on the secret being present, so the scan falls back to rate-limited NVD access when the key is unavailable instead of failing entirely."
+}

@@ -1,0 +1,14 @@
+{
+ "number": 2750,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-management/pull/2750",
+ "title": "(fix) O3-5984: Label in-service patients with the configured status name",
+ "mergedAt": "2026-09-17T16:42:04Z",
+ "mergeCommit": "d9cbd2742a8d8842f6c7ae4d243254f195c06bd7",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [x] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nOn the queue page, the metric tile for the in-service status reads \"In Service\" because it renders the status concept's display name, but the card list above the tables had a hardcoded \"Attending\" heading. The two labels came from different sources.\r\n\r\nThis PR derives the card list heading (and its error state title) from the configured `defaultTransitionStatus` concept via the existing `useConcept` hook, so it always matches the metric tile regardless of what the status concept is named or which locale is active. The clinic overview's \"Attending\" column header and totals card use the same label. While the concept is loading, the label falls back to \"In Service\".\r\n\r\nThe `attending` translation key is replaced by `inService`.\r\n\r\n## Screenshots\r\n\r\nBefore (from the ticket):\r\n\r\n![before](https://openmrs.atlassian.net/rest/api/2/attachment/content/40750)\r\n\r\nAfter:\r\n<img width=\"1920\" height=\"1065\" alt=\"Screenshot 2026-09-16 at 9 25 55\u202fPM\" src=\"https://github.com/user-attachments/assets/e3102735-f842-4883-b6df-ea2975a02655\" />\r\n<img width=\"1920\" height=\"1065\" alt=\"Screenshot 2026-09-16 at 9 26 05\u202fPM\" src=\"https://github.com/user-attachments/assets/364d5b47-1cfe-49db-a758-6b09a053b808\" />\r\n\r\n\r\n## Related Issue\r\nhttps://openmrs.atlassian.net/browse/O3-5984\r\n\r\n## Other\r\n\r\n",
+ "files": [
+  "packages/esm-service-queues-app/src/attending-patients/attending-patients.component.tsx",
+  "packages/esm-service-queues-app/src/attending-patients/attending-patients.test.tsx",
+  "packages/esm-service-queues-app/src/clinic-administrator/clinic-overview.component.tsx",
+  "packages/esm-service-queues-app/translations/en.json"
+ ]
+}

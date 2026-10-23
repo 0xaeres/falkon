@@ -1,0 +1,74 @@
+[
+ {
+  "number": 296,
+  "url": "https://github.com/openmrs/openmrs-module-emrapi/pull/296",
+  "title": "Format with the openmrs-tools formatter the code base uses",
+  "branch": "core-3.x-plugin-snapshots",
+  "mergedAt": "2026-10-10T19:40:20Z",
+  "mergeCommit": "af16a303e105c83712b10dcf0179683cdddfde82",
+  "body": "On core-3.x, `spotless:check` failed with `Could not find artifact org.openmrs.tools:openmrs-tools:jar:3.0.0-SNAPSHOT`. The parent pom takes the formatter from openmrs-tools at `${openmrsPlatformVersion}`, and plugin SNAPSHOTs are disabled. Enabling them isn't enough: the 3.0 formatter differs from 2.8.0's and would rewrite every `catch` block in 52 files, so every master \u2192 core-3.x merge would conflict.\n\nThis pins `openmrsPlatformToolsVersion` to 2.8.0, the version master formats with, and runs `spotless:apply`. That reformats 19 files, all of them touched by #295, with line wrapping and whitespace only. `mvn spotless:check` passes locally on Java 21.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01ASZcAmLun5HaBwCZ4kjEjx"
+ },
+ {
+  "number": 295,
+  "url": "https://github.com/openmrs/openmrs-module-emrapi/pull/295",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T17:59:45Z",
+  "mergeCommit": "13294efda4486ba4e9a1d3d5deb4072328caff87",
+  "body": "Updates emrapi so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7, Hibernate 7). Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Versions and build:\n  - Module version is now 4.0.0-SNAPSHOT, on Platform 3.0.0-SNAPSHOT (with `openmrs-bom` imported).\n  - It uses metadatamapping 3.0.0-SNAPSHOT, webservices.rest 5.0.0-SNAPSHOT (`omod-common` + `omod` replace the per-version `omod-1.8`\u2026`2.2` artifacts), legacyui, reporting and calculation 3.0.0-SNAPSHOT, and serialization.xstream 1.0.0-SNAPSHOT.\n  - Builds with Java 21, `-parameters` and `-proc:full`. javac 23 and later no longer run Lombok from the classpath, and CI also builds on Java 25.\n  - Removed: the event module (see below), javax servlet, geronimo javax.jms, codehaus Jackson, mockito-inline/byte-buddy, and the unused reportingcompatibility dependency.\n  - joda-time is now `provided`, since core ships it.\n  - CI uses JDK 21.\n- DAOs: all Hibernate Criteria code in HibernateEmrConceptDAO, HibernateEmrEncounterDAO, HibernateEmrPatientDAO and HibernateSingleClassDAO is now HQL, with the same semantics. `org.hibernate.Query` becomes `org.hibernate.query.Query`.\n- `EmrPatientService.findPatients` is removed, as EA-221 suggested. It has thrown since EA-219, and its only caller, coreapps' `FindPatientFragmentController`, isn't in the O3 distro.\n- HQL resources:\n  - `voided = 0` becomes `= false`.\n  - `visits_awaiting_admission.hql` stops using `:list is null or x in :list`, which Hibernate 7 rejects.\n  - `inpatient_requests.hql` uses `left join Obs \u2026 on \u2026` instead of scalar entity subqueries.\n- **The event module is gone.** It goes away for Platform 3 (openmrs/openmrs-module-event#33), so `ApplicationEventService.patientViewed` now publishes a `PatientViewedEvent` through core's `EventPublisher`. `PatientViewedEventListener` is a Spring listener that updates the last viewed patients in a daemon thread, with the token the activator hands it in `contextRefreshed()`. `ApplicationEventService` itself is unchanged for its callers (coreapps, registrationapp, radiologyapp), and the JMS topic constants are deprecated.\n- **REST controllers map both `/rest/\" + RestConstants.VERSION_1 + \"/emrapi/...` and `/rest/emrapi/...`.** Spring 6+ rejects `/rest/**/emrapi/...`, which EA-194 introduced so that both forms work; pihcore and bahmniapps still call the unversioned one. A `/rest/*/emrapi/...` wildcard would be outranked by webservices.rest's own `/rest/v1/{resource}/{uuid}` mapping, so every emrapi endpoint would answer \"Unknown resource\".\n- commons-lang becomes lang3, javax.persistence/servlet/jms become jakarta, and Jackson 1 becomes Jackson 2.\n  - Visible changes, because Spring MVC ignored the codehaus annotations before:\n    - `CustomJsonDateSerializer` now really applies to `EncounterTransaction` / `EncounterSearchParameters`, so their dates are strings like `2008-08-01T03:00:00.000+0300` instead of epoch milliseconds.\n    - The `@JsonIgnore` on `getConceptUuid()` now applies, so observations and orders in `EncounterTransaction` JSON no longer include `conceptUuid`.\n    - A concept's `units` is left out when it is null.\n  - `EncounterSearchParameters` drops its two `@JsonDeserialize(using = CustomJsonDateDeserializer.class)` annotations instead of moving them, so request dates keep Jackson's default parsing (`EncounterSearchParametersTest`). That deserializer would drop the offset Bahmni sends and reject epoch milliseconds.\n- `Daemon.runInDaemonThread` becomes `runInDaemonThreadWithoutResult`.\n- metadatasharing stays optional (`aware_of`). It is kept off the test classpath, because its 1.9.0 context needs the removed `serializationServiceTarget`.\n- Tests:\n  - Migrated to JUnit 5.\n  - The custom-representation size checks include `resourceVersion` (REST 3.1+).\n  - `EmrApiRequestMappingTest` checks that every endpoint resolves to the same "
+ },
+ {
+  "number": 294,
+  "url": "https://github.com/openmrs/openmrs-module-emrapi/pull/294",
+  "title": "(docs) Replace the dead Travis badge with the GitHub Actions one",
+  "branch": "fix-readme-ci-badge",
+  "mergedAt": "2026-09-08T21:27:20Z",
+  "mergeCommit": "5e34539b9ab6058024c9b27c8da819af16105615",
+  "body": "The README badge still points at travis-ci.org, which shut down and now redirects to a 404, so the badge renders blank. This module builds on GitHub Actions via build.yml, so this points the badge and its link there.\n\nHeads up that the badge will show red right now: the latest build.yml run on master failed on 2026-09-03 on the OWASP dependency check job, not the Maven build."
+ },
+ {
+  "number": 293,
+  "url": "https://github.com/openmrs/openmrs-module-emrapi/pull/293",
+  "title": "EA-233: Create controller to return dose forms, dose form groups and routes of administration",
+  "branch": "EA-233",
+  "mergedAt": "2026-08-25T15:50:44Z",
+  "mergeCommit": "034d5426b7d91e24c9fdfab0a4f4943f8daf5135",
+  "body": "See: https://openmrs.atlassian.net/browse/EA-233 and [talk thread](https://talk.openmrs.org/t/proposal-for-linking-dosage-forms-to-routes-of-administration/49252).\r\n\r\nNow that we have the relations mappings between dose form, dose form groups and routes of administration in CIEL, the PR implements a controller to return those relationships.\r\n\r\nTested by going to the route (`/openmrs/ws/rest/v1/emrapi/doseFormGroups`) and also by adding different representations (`?v=custom:(doseForms:(doseForm:ref,doseFormGroup:ref)`).\r\n\r\nNote:\r\n- I can't find a function in `ConceptService` to return a concept by reference term (`CIEL:123`) AND mapping type (`SAME-AS`), and had to make my own `getConceptBySameAsMapping()` function. Calling `ConceptService.getConceptByMapping(term)` fails because, for some dose form groups, we have multiple mappings for the same term (\"SAME-AS\" and \"Route of administration\")\r\n- Other than the representation param (`?v=`), the controller takes no input. Not implemented, but we can technically speed up this controller via caching,\r\n- We use \"drug form\" / \"dose form\" (and \"drug form group\" / \"dose form group\") somewhat interchangeably. I defaulted to \"dose\" throughout this PR, but don't have a strong preference."
+ },
+ {
+  "number": 292,
+  "url": "https://github.com/openmrs/openmrs-module-emrapi/pull/292",
+  "title": "EA-232: Prevent the EmrApiVisitAssignmentHandler from creating a new \u2026",
+  "branch": "EA-232",
+  "mergedAt": "2026-05-22T19:31:43Z",
+  "mergeCommit": "f644b9cbeb0a365b737b098bab398a27cee9674e",
+  "body": "\u2026visit for a patient who already has an active visit at another location on the same date"
+ },
+ {
+  "number": 290,
+  "url": "https://github.com/openmrs/openmrs-module-emrapi/pull/290",
+  "title": "EA-231: getActiveVisitHelper only needs to fetch active visits for a \u2026",
+  "branch": "EA-231-2",
+  "mergedAt": "2026-05-12T16:10:52Z",
+  "mergeCommit": "3c0c14c09055a3dcb1a92b781377f6be3ea78972",
+  "body": "\u2026patient"
+ },
+ {
+  "number": 289,
+  "url": "https://github.com/openmrs/openmrs-module-emrapi/pull/289",
+  "title": "Migrate build to openmrs-contrib-maven-parent-module 2.1.0",
+  "branch": "maven-parent",
+  "mergedAt": "2026-05-12T09:01:40Z",
+  "mergeCommit": "64474e0b640c545193524e977425537553a5d769",
+  "body": "- Inherit from org.openmrs.maven.parents:maven-parent-openmrs-module:2.1.0\r\n\r\n- Run license:format and spotless:apply"
+ },
+ {
+  "number": 287,
+  "url": "https://github.com/openmrs/openmrs-module-emrapi/pull/287",
+  "title": "Update `@since` references to version 3.4.0 across Procedure module classes",
+  "branch": "Fix-since",
+  "mergedAt": "2026-05-08T08:34:39Z",
+  "mergeCommit": "6de18d9d161780bf11230661b2c1045056883c22",
+  "body": ""
+ }
+]

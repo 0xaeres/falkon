@@ -1,0 +1,11 @@
+{
+ "number": 567,
+ "url": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/567",
+ "title": "(fix) O3-4518: Stock management ESM: Unable to add user role scope on systems with many users",
+ "mergedAt": "2026-07-06T15:26:40Z",
+ "mergeCommit": "3c071999ea6f2b75706d5ba602caeba07ec55a02",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [ ] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\nThis PR fixes the inability to find and assign user role scopes on systems with many users.\r\n\r\n## Screenshots\r\n<img width=\"800\" height=\"450\" alt=\"Project1-ezgif com-video-to-gif-converter\" src=\"https://github.com/user-attachments/assets/f8ba6c8f-efb4-4741-9c66-6d51b6b032b0\" />\r\n\r\n## Related Issue\r\nhttps://openmrs.atlassian.net/browse/O3-4518\r\n\r\n### Notes\r\n- This follows the exact same pattern already used in the `UsersSelector` component (`src/stock-operations/stock-operations-forms/input-components/users-selector.component.tsx`)\r\n- All 112 existing tests pass\r\n- Build compiles successfully\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\n",
+ "files": [
+  "src/stock-user-role-scopes/add-stock-user-scope/add-stock-user-role-scope.workspace.tsx"
+ ]
+}

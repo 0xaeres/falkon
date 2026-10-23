@@ -1,0 +1,20 @@
+{
+ "number": 3507,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3507",
+ "title": "(feat) Order basket should try to rely on server-side dates",
+ "mergedAt": "2026-07-24T20:40:56Z",
+ "mergeCommit": "d623a03ff2839cb4c82bca935d48e5ecb4bcda94",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n<!-- Please describe what problems your PR addresses. -->\r\n\r\nThis PR attempts to address an issue where it still possible for the order basket to attempt to create an order encounter dated to a time which is in the future from the server's perspective. Future-dated encounters are rejected by the backend.\r\n\r\nWhen an order is enqueued, we effectively use the client's date / time as the `startDate` field for the order. Then, when submitting the order we calculate the Encounter date time as the earliest of: the `scheduledDate` of any order, the `startDate` of any order, or the current date. All of these datetimes are client-local. In most circumstances, network delays and processing times means that as long as the client and server are synced to the same NTP server, this is largely unproblematic (NTP drift is normally well < 100ms), but if they are not synced, it possible for the client to be in the future by a small lead from server (a few seconds), which isn't made up form during request submission and processing, resulting in the server rejecting the request.\r\n\r\nThis tries to work around this problem by inferring, at the time of entry, whether an order is being back-dated or forward-dated (\"user-selected date\") or just relying on the default (i.e., the order date is the today). If the order date is today, we submit an order (and encounter) with no datetime, allowing the server side to fill in these datetime fields. Because they use the server timestamps, these timestamps should always be earlier or equal to the moment the encounter validation fires.\r\n\r\n## Screenshots\r\n<!-- Required if you are making UI changes. -->\r\n\r\n## Related Issue\r\n<!-- Paste the link to the Jira ticket here if one exists. -->\r\n<!-- https://issues.openmrs.org/browse/O3- -->\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\n",
+ "files": [
+  "packages/esm-patient-common-lib/src/orders/postOrders.test.ts",
+  "packages/esm-patient-common-lib/src/orders/postOrders.ts",
+  "packages/esm-patient-medications-app/src/add-drug-order/add-drug-order.test.tsx",
+  "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.component.tsx",
+  "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.test.tsx",
+  "packages/esm-patient-medications-app/src/add-drug-order/drug-search/drug-search.resource.tsx",
+  "packages/esm-patient-orders-app/src/order-basket/order-basket.component.tsx",
+  "packages/esm-patient-orders-app/src/order-basket/order-basket.utils.test.ts",
+  "packages/esm-patient-orders-app/src/order-basket/order-basket.utils.ts",
+  "packages/esm-patient-orders-app/src/order-favorites/helpers.ts"
+ ]
+}

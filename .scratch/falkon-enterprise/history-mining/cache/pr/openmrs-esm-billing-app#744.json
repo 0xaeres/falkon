@@ -1,0 +1,14 @@
+{
+ "number": 744,
+ "url": "https://github.com/openmrs/openmrs-esm-billing-app/pull/744",
+ "title": "(fix) O3-5708: Keep discount review modal open after approve/reject/delete actions",
+ "mergedAt": "2026-05-25T19:36:06Z",
+ "mergeCommit": "e5b80768f3166c82b2db7c710e166adf01ce3f70",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for existing PR conventions.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nPreviously, approving, rejecting, or deleting a discount closed the modal immediately, discarding context and requiring the admin to reopen it to verify the outcome. This PR keeps the modal open after each action so admins can review multiple discounts in one session.\r\n\r\n- **Keep modal open after actions**: removed `closeModal()` calls from the approve/reject/delete success paths; the modal now stays open and refreshes in place via `useBill` + SWR mutate\r\n- **Add `mapProperties` param to `useBill`**: extended the hook with an overloaded signature so the modal can fetch the raw `PatientInvoice` (needed for `useReviewBillModel`) without triggering property mapping\r\n- **Disable all action buttons while busy**: changed `disabled={busy === d.uuid}` to `disabled={!!busy}` across all discount card action buttons so no concurrent actions can be triggered while one is in flight\r\n- **Show progress bar during loading/validating/busy**: the modal body is replaced with a `ProgressBar` while `isLoading`, `isValidating`, or `busy` is truthy, preventing stale data from rendering between an action completing and the revalidation settling (`localMutate` is awaited to keep `busy` truthy for the full round-trip)\r\n\r\n## Screenshots\r\n\r\n\r\nhttps://github.com/user-attachments/assets/e2dfc4ed-f36f-4237-a0a4-159ee115769d\r\n\r\n\r\n## Related Issue\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5708\r\n\r\n## Other\r\n\r\n<!-- Anything not covered above -->",
+ "files": [
+  "src/billing.resource.ts",
+  "src/discounts/admin/review-bill-discounts/discount-card/discount-card.component.tsx",
+  "src/discounts/admin/review-bill-discounts/review-bill-discounts.modal.test.tsx",
+  "src/discounts/admin/review-bill-discounts/review-bill-discounts.modal.tsx"
+ ]
+}

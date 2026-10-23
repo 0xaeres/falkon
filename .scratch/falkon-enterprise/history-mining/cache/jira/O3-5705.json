@@ -1,0 +1,9 @@
+{
+ "key": "O3-5705",
+ "url": "https://openmrs.atlassian.net/browse/O3-5705",
+ "summary": "Receipt shows discount as outstanding balance on fully paid bills",
+ "status": "Done",
+ "created": "2026-05-25T16:00:59.452+1000",
+ "resolved": "2026-06-02T22:13:28.507+1000",
+ "description": "On a fully paid bill with a discount applied, the Amount balance in the header and the Balance below Total tendered should both read zero, not the discount amount."
+}

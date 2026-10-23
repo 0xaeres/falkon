@@ -1,0 +1,9 @@
+{
+ "key": "O3-5112",
+ "url": "https://openmrs.atlassian.net/browse/O3-5112",
+ "summary": "Add Date Range Filters to Billing List",
+ "status": "Done",
+ "created": "2025-10-10T20:50:26.747+1100",
+ "resolved": "2026-09-28T14:30:37.515+1000",
+ "description": "Currently, the billing list can only be filtered by status, such as pending or paid, without the option to filter records by specific date ranges. Introducing the ability to set custom date filters would allow users to select both a start and end date, enabling focused searches within the billing list. As the user adjusts the date range, the list should update dynamically to show only the relevant bills that fall within the chosen period. This date filter should function alongside existing status filters (e.g., Pending, Paid), offering users more flexibility and precision when searching or analyzing billing records."
+}

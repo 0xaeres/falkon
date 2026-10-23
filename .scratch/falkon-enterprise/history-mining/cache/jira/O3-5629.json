@@ -1,0 +1,9 @@
+{
+ "key": "O3-5629",
+ "url": "https://openmrs.atlassian.net/browse/O3-5629",
+ "summary": "Add regression tests for 401 + Location-header redirect path in openmrsFetch",
+ "status": "Done",
+ "created": "2026-04-23T08:36:00.535+1000",
+ "resolved": "2026-05-24T02:56:02.354+1000",
+ "description": "Two regression tests for two paths within the openmrsFetch function:\n401 error code + Location header => navigate to Location URL.\n\n401 error code without Location header => navigate to the redirectAuthFailure URL.Discussed as missing test coverage during the OpenMRS Talk GSoC 2026 frontend architecture."
+}

@@ -1,0 +1,9 @@
+{
+ "key": "O3-5958",
+ "url": "https://openmrs.atlassian.net/browse/O3-5958",
+ "summary": "Queue location is blank when the login location is not queue-tagged",
+ "status": "Done",
+ "created": "2026-09-09T02:39:44.897+1000",
+ "resolved": null,
+ "description": "When creating a queue entry in the Service Queues app, the Queue Location field remains blank if the login location is not queue-tagged, even when it has a queue-tagged ancestor.\nThe Service Queues dashboard correctly resolves and selects the nearest queue-tagged ancestor. The form still defaults to the login location, which isn't among its dropdown options, leaving the field blank.\nSteps to reproduce:\nLog into the application at a location that is not queue-tagged but has a queue-tagged parent or ancestor.\n\nNavigate to Service Queues and confirm that the dashboard shows the queue-tagged ancestor.\n\nOpen the Add patient to queue form for a patient with an active visit.\n\nObserve the Queue Location field.\n\nExpected behavior: The Queue Location field defaults to the location selected in Service Queues, with the session location as fallback when no queue location is selected.\nActual behavior: The field is blank, requiring manual selection.\nThe cause is a mismatch between the form's default location and its available options, rather than an asynchronous delay in loading the session location.\nFix: PR #2731 uses the selected Service Queues location as the form default. Verified in the local app: the original code leaves the field blank, the patched code selects the queue-tagged ancestor, and manually clearing the field keeps it cleared."
+}

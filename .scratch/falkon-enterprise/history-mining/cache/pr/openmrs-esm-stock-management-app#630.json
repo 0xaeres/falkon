@@ -1,0 +1,21 @@
+{
+ "number": 630,
+ "url": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/630",
+ "title": "(fix) Use framework modal for stock locations",
+ "mergedAt": "2026-09-21T15:35:25Z",
+ "mergeCommit": "9556d5a07c6263b485df10dda346f2ec47df5427",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nThis moves stock location creation to a framework modal while keeping the existing workspace registration working for callers that still use it. The Save button is explicitly linked to the form now that the modal footer sits outside it.\r\n\r\nSuccessful saves and the Refresh action now revalidate the stock-location list through its bound mutate callback. The modal is also disposed when the table or workspace unmounts.\r\n\r\n## Screenshots\r\n\r\n## Related Issue\r\n\r\n## Other\r\n",
+ "files": [
+  "src/index.ts",
+  "src/routes.json",
+  "src/stock-locations/add-location.modal.tsx",
+  "src/stock-locations/add-location.test.tsx",
+  "src/stock-locations/add-locations-form.workspace.test.tsx",
+  "src/stock-locations/add-locations-form.workspace.tsx",
+  "src/stock-locations/location-admin-form.component.tsx",
+  "src/stock-locations/stock-locations-table.component.tsx",
+  "src/stock-locations/stock-locations-table.resource.test.ts",
+  "src/stock-locations/stock-locations-table.resource.ts",
+  "src/stock-lookups/stock-lookups.resource.ts"
+ ]
+}

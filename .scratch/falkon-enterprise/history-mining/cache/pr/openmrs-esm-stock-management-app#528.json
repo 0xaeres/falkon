@@ -1,0 +1,12 @@
+{
+ "number": 528,
+ "url": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/528",
+ "title": "(fix) O3-5563: Require purchase price packaging unit when purchase price is set",
+ "mergedAt": "2026-05-07T16:30:45Z",
+ "mergeCommit": "6ea904ad3ba59b17d8366d5cc3283f8968d416be",
+ "body": "## Requirements\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a conventional commit label. See existing PR titles for inspiration.\r\n- [ ] My work conforms to the OpenMRS 3.0 Styleguide and design documentation.\r\n- [ ] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nWhen editing a stock item, setting a purchase price without selecting a purchase price packaging unit would result in a misleading success toast being shown, while the purchase price value was silently not persisted. Reopening the item would confirm the value was never saved.\r\n\r\nThis fix adds frontend form validation to require the purchase price packaging unit whenever a purchase price is entered. An inline error message \u2014 \"Purchase price packaging unit is required when purchase price is set\" \u2014 is now shown on the field, and form submission is blocked until the packaging unit is selected.\r\n\r\n## Screenshots\r\n\r\n<!-- Add before/after screenshots or a short screen recording showing the validation error -->\r\n\r\n## Related Issue\r\n\r\nhttps://openmrs.atlassian.net/browse/O3-5563\r\n\r\n## Other",
+ "files": [
+  "src/stock-items/validationSchema.ts",
+  "translations/en.json"
+ ]
+}

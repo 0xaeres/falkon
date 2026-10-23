@@ -1,0 +1,9 @@
+{
+ "key": "O3-4518",
+ "url": "https://openmrs.atlassian.net/browse/O3-4518",
+ "summary": "Stock management ESM:  Unable to add user role scope on systems with many users",
+ "status": "Done",
+ "created": "2025-03-07T08:14:37.255+1100",
+ "resolved": "2026-07-17T16:07:01.119+1000",
+ "description": "In order to use the stock management functionality, users must be assigned to particular roles that have permission to do particular operations at particular locations.\nThe stock management ESM has a view for this, if you navigate to:\nhttp://localhost:8080/openmrs/spa/stock-management/user-scopes\nand click \u201cAdd New User Role Scope\u201d\nIn our existing environment, if we have more users than the default maxResults configured in the REST module, then whatever users are not returned when the user endpoint is queried are unable to be found, and unable to have permissions granted.\nTo solve this, we need to either:\nDo server-side searching / filtering of users, rather than client-side filtering\n\nImplement server-side paging to ensure all results are fetched in batches so that client-side filtering has all possible values\n\n /  - maybe you could advise on the best practice here?"
+}

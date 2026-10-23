@@ -1,0 +1,17 @@
+{
+ "number": 6588,
+ "url": "https://github.com/openmrs/openmrs-core/pull/6588",
+ "title": "TRUNK-6721: Replace StackWalker with a thread-local guard",
+ "mergedAt": "2026-09-21T20:28:22Z",
+ "mergeCommit": "f10e3fb9a645378ab6682c21d6be478bfdab6199",
+ "body": "<!--- Add a pull request title above in this format -->\r\n<!--- real example: 'TRUNK-5111: Replace use of deprecated isVoided' -->\r\n<!--- 'TRUNK-JiraIssueNumber: JiraIssueTitle' -->\r\n## Description of what I changed\r\n<!--- Describe your changes in detail -->\r\n<!--- It can simply be your commit message, which you must have -->\r\n\r\nReplaces the StackWalker guard that got added to password-saving methods with a thread-local guard. When validating passwords, this also allows any user to read the underlying GPs so we can validate the password against the policy regardless of the user's privilege level. This should be the preferred pattern for reading GPs.\r\n\r\n## Issue I worked on\r\n<!--- This project only accepts pull requests related to open issues -->\r\n<!--- Want a new feature or change? Discuss it in an issue first! -->\r\n<!--- Found a bug? Point us to the issue/or create one so we can reproduce it! -->\r\n<!--- Just add the issue number at the end: -->\r\nsee https://issues.openmrs.org/browse/TRUNK-6721\r\n\r\n## Checklist: I completed these to help reviewers :)\r\n<!--- Put an `x` in the box if you did the task -->\r\n<!--- If you forgot a task please follow the instructions below -->\r\n- [ ] My IDE is configured to follow the [**code style**](https://wiki.openmrs.org/display/docs/Java+Conventions) of this project.\r\n\r\n  No? Unsure? -> [configure your IDE](https://wiki.openmrs.org/display/docs/How-To+Setup+And+Use+Your+IDE), format the code and add the changes with `git add . && git commit --amend`\r\n\r\n- [x] I have **added tests** to cover my changes. (If you refactored\r\n  existing code that was well tested you do not have to add tests)\r\n\r\n  No? -> write tests and add them to this commit `git add . && git commit --amend`\r\n\r\n- [x] I ran `./mvnw clean package` right before creating this pull request and\r\n  added all formatting changes to my commit.\r\n\r\n  No? -> execute above command\r\n\r\n- [x] All new and existing **tests passed**.\r\n\r\n  No? -> figure out why and add the fix to your commit. It is your responsibility to make sure your code works.\r\n\r\n- [ ] My pull request is **based on the latest changes** of the master branch.\r\n\r\n  No? Unsure? -> execute command `git pull --rebase upstream master`\r\n\r\n",
+ "files": [
+  "api/src/main/java/org/openmrs/api/db/hibernate/HibernateUserDAO.java",
+  "api/src/main/java/org/openmrs/api/impl/UserServiceImpl.java",
+  "api/src/main/java/org/openmrs/util/OpenmrsUtil.java",
+  "api/src/test/java/org/openmrs/api/UserServiceTest.java",
+  "api/src/test/java/org/openmrs/api/db/UserDAOPasswordGuardTest.java",
+  "api/src/test/java/org/openmrs/api/db/UserDAOTest.java",
+  "api/src/test/java/org/openmrs/util/OpenmrsUtilTest.java"
+ ]
+}

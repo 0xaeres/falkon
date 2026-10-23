@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6796",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6796",
+ "summary": "Fix null check in PersonMergeLogData",
+ "status": "Closed",
+ "created": "2026-09-03T12:25:06.868+1000",
+ "resolved": "2026-10-08T01:14:43.404+1100",
+ "description": "computeHashValue() has an incorrect null check for priorDateOfDeath.\nIt checks priorDateOfBirth before calling getPriorDateOfDeath().toString(), which can cause a NullPointerException when priorDateOfDeath is null.\nFix the null check and add a test for this case."
+}

@@ -1,0 +1,14 @@
+{
+ "number": 542,
+ "url": "https://github.com/openmrs/openmrs-esm-stock-management-app/pull/542",
+ "title": "(fix) O3-5648: Wire up stock report submission and add missing patient/stock-item inputs",
+ "mergedAt": "2026-05-17T17:28:02Z",
+ "mergeCommit": "c9d7c101c64554474c6b32c734789362166eaf37",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing.en-US#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [ ] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nStock report submission was broken end-to-end:\r\n\r\n- The `<Form>` had no `onSubmit` handler, so clicking Save did nothing.\r\n- `handleSave` read `report.reportSystemName`, which is not on the form schema, causing every report parameter dependent on the system name to resolve to `undefined` and the backend to receive null parameters.\r\n- The Patient and Stock Item inputs were never rendered, so report types requiring them could not be submitted.\r\n- The `location` field was required at the schema level even for report types that do not use it, blocking submission with a \"Location Required\" error on a hidden field.\r\n\r\nThis PR:\r\n- Wires `handleSubmit(handleSave)` to the form's `onSubmit`.\r\n- Looks up `reportSystemName` from `reportTypes` and threads it through the parameter builders.\r\n- Makes `location` optional in the schema and adds a parameter-aware required check inside `handleSave`.\r\n- Adds debounced Patient and Stock Item ComboBoxes backed by `/patient` and `/stockmanagement/stockitem`.\r\n- Reduces `useGetReports` polling from 1s to 15s (refresh) / 10s (dedupe) and falls back to `totalCount` for pagination.\r\n\r\n## Screenshots\r\n<!-- Before: form submission silently failing; After: ComboBox results, successful submission snackbar -->\r\n\r\n## Related Issue\r\nhttps://openmrs.atlassian.net/browse/O3-5648\r\n\r\n## Other\r\n",
+ "files": [
+  "src/stock-reports/generate-report/create-stock-report.workspace.tsx",
+  "src/stock-reports/report-validation-schema.ts",
+  "src/stock-reports/stock-reports.resource.ts",
+  "translations/en.json"
+ ]
+}

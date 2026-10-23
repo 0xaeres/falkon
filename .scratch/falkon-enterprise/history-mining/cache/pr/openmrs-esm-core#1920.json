@@ -1,0 +1,16 @@
+{
+ "number": 1920,
+ "url": "https://github.com/openmrs/openmrs-esm-core/pull/1920",
+ "title": "(fix) O3-6028: Pass locationsPerRequest to the login location picker and drop numberToShow",
+ "mergedAt": "2026-10-02T12:20:10Z",
+ "mergeCommit": "4cc27d388fb4a4fe49316791a20127dbb04e31ae",
+ "body": "## Requirements\n\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\n- [ ] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\n- [x] My work includes tests or is validated by existing tests.\n- [x] I have updated the esm-framework and storybook mocks ([mock.tsx](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/mock.tsx), [mock-jest.tsx](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/mock-jest.tsx), and [storybook mocks](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/tooling/storybook/mocks/)) to reflect any API changes.\n\n## Summary\n\nThe login app declares `chooseLocation.locationsPerRequest` and `chooseLocation.numberToShow` in its config schema, but neither value was read anywhere. The shared `LocationPicker` from the styleguide always used its default page size of 50, so setting `locationsPerRequest` in a distro config had no effect.\n\nThis PR:\n\n* Passes `chooseLocation.locationsPerRequest` to `LocationPicker`, so the configured page size is used for the FHIR `Location` requests and for the infinite scroll trigger.\n* Removes `chooseLocation.numberToShow`. It comes from the fixed-length location list that predates infinite scroll and has no equivalent in the current picker. Implementations that still set it will see a single `Unknown config key` console error until they remove it; nothing else changes, since the option was already ignored.\n* Deletes the unused `useLoginLocations` hook from `login.resource.ts`. It was a stale copy of the styleguide hook and was not imported by anything in this repo. The login app is not consumable as a library, and a GitHub code search finds no external imports of it.\n\nA test covers the new behaviour: with `locationsPerRequest: 5` in config, `LocationPicker` receives `locationsPerRequest: 5`.\n\nOnly the login app's own `__mocks__/config.mock.ts` needed updating. The framework and storybook mocks do not reference these keys.\n\n## Screenshots\n\nNo UI changes.\n\n## Related Issue\n\nNone.\n\n## Other\n\nFound while testing the login flow against a local backend. With `locationsPerRequest: 5`, the picker still requested `_count=50`.\n",
+ "files": [
+  ".changeset/login-locations-per-request.md",
+  "packages/apps/esm-login-app/__mocks__/config.mock.ts",
+  "packages/apps/esm-login-app/src/config-schema.ts",
+  "packages/apps/esm-login-app/src/location-picker/location-picker-view.component.tsx",
+  "packages/apps/esm-login-app/src/location-picker/location-picker.test.tsx",
+  "packages/apps/esm-login-app/src/login.resource.ts"
+ ]
+}

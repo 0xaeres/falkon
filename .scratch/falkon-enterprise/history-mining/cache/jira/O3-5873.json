@@ -1,0 +1,9 @@
+{
+ "key": "O3-5873",
+ "url": "https://openmrs.atlassian.net/browse/O3-5873",
+ "summary": "Stop shipping the Module Federation runtime once per remote (~67 kB per app entry)",
+ "status": "Done",
+ "created": "2026-08-05T04:45:32.094+1000",
+ "resolved": null,
+ "description": "Background\nEvery frontend module's remote entry currently embeds its own copy of the Module Federation runtime (@module-federation/runtime-core + sdk, ~67 kB of each ~85 kB entry). Measured on the reference application, MF machinery totals 456 kB on the login page and 607 kB on the home page \u2014 11\u201313% of all JavaScript fetched. The genuinely per-app portion (container module map + share-scope metadata) is only ~15\u201318 kB; the runtime itself is identical across remotes and should ship once.\nRequested change\nInvestigate and enable federation-runtime hoisting/sharing in the shared rspack config (e.g. the ModuleFederation runtime experiments/options in current rspack / module-federation releases) so the runtime is provided once (by the app shell) and remotes reference it, rather than each embedding a copy. Apply the equivalent in the shared webpack config, or document the divergence if webpack has no equivalent mechanism.\nAcceptance criteria\nRemote entry size reduction measured and recorded on a representative assembled distribution (expected: roughly 67 kB per remote entry).\n\nA page load fetches the federation runtime once, not once per app (verify via network trace / source-map attribution).\n\nRemotes built with the previous tooling still load correctly alongside new ones (mixed-version distribution verified).\n\nBuild-level test or CI check in the tooling package guarding against the runtime reappearing in remote entries."
+}

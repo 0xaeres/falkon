@@ -1,0 +1,14 @@
+{
+ "number": 3639,
+ "url": "https://github.com/openmrs/openmrs-esm-patient-chart/pull/3639",
+ "title": "(fix) O3-6019: Preserve medication dosage drafts when switching modes",
+ "mergedAt": "2026-10-05T18:21:10Z",
+ "mergeCommit": "f5539ea4c4101357388e5bd00678856073f4b4ae",
+ "body": "## Requirements\r\n\r\n- [x] This PR has a title that briefly describes the work done including the ticket number. If there is a ticket, make sure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/en-US/docs/frontend-modules/contributing/#contributing-guidelines) label. See existing PR titles for inspiration.\r\n- [x] My work is based on designs, which are linked or shown either in the Jira ticket or the description below. (See also: [Styleguide](http://om.rs/o3ui))\r\n- [x] My work includes tests or is validated by existing tests.\r\n\r\n## Summary\r\n\r\nSwitching medication dosage modes now preserves structured and free-text entries independently while the form remains open. Inactive dosage details are hidden, and saving includes only the selected dosage representation. Free-text orders exclude the inactive structured fields, including frequency.\r\n\r\nSuccessful saves close the workspace without resetting individual fields. Failed saves retain the draft for retry.\r\n\r\n## Screenshots\r\n\r\n### Before\r\n\r\nSwitching between structured and free-text dosage clears the entries in each mode, forcing the prescriber to re-enter them.\r\n\r\nhttps://github.com/user-attachments/assets/4df444a6-ee6d-43af-8633-cd0530ab9d0b\r\n\r\n### After\r\n\r\nSwitching between structured and free-text dosage restores the entries in each mode and hides inactive dosage details. Saving adds only the selected free-text dosage to the order basket.\r\n\r\nhttps://github.com/user-attachments/assets/746423ef-faf8-48df-93b5-a03161829e44\r\n\r\nA simulated HTTP 503 interrupts a medication revision save. The entered dosage, prescription, dispensing, and indication values remain available, and Save stays enabled for retry.\r\n\r\nhttps://github.com/user-attachments/assets/53d264fe-0ae0-4084-a248-9e430f8ccbe6\r\n\r\n## Related Issue\r\nhttps://openmrs.atlassian.net/browse/O3-6019\r\n\r\n## Other\r\n<!-- Anything not covered above -->\r\n\r\n",
+ "files": [
+  "packages/esm-patient-medications-app/src/add-drug-order/add-drug-order.component.tsx",
+  "packages/esm-patient-medications-app/src/add-drug-order/add-drug-order.test.tsx",
+  "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.component.tsx",
+  "packages/esm-patient-medications-app/src/add-drug-order/drug-order-form.test.tsx"
+ ]
+}

@@ -1,0 +1,9 @@
+{
+ "key": "O3-6096",
+ "url": "https://openmrs.atlassian.net/browse/O3-6096",
+ "summary": "Creating a new list from a patient's chart (\"Add to list\") doesn't take the user back to add the patient",
+ "status": "Done",
+ "created": "2026-10-12T18:34:11.424+1100",
+ "resolved": null,
+ "description": "Repo: openmrs-esm-patient-management (patient-list-management-app)\nBackground\nA user who opens Add to list from a patient's chart wants to put that patient on a list.\n\n\"Create new patient list\" is only a step towards that when the list they need doesn't exist yet.\n\nCreating the list isn't the goal. Adding the patient is.\n\nSteps to reproduce\nOpen a patient's chart (e.g. Molly QA380 Test, 10004GT on test3).\n\nGo to Actions \u2192 Add to list \u2192 Create new patient list.\n\nFill in the form and press Create list.\n\nActual\nThe user is taken out of the patient chart to Home \u2192 Patient lists.\n\nThe new list exists, but the patient isn't on it.\n\nThe flow ends there, and nothing prompts the user to finish the task.\n\nTo finish, the user has to go back to the chart, reopen Add to list, find the new list and tick it.\n\nCancel also leaves the user on the Patient lists page, away from the patient.\n\nExpected\nAfter Create list, the user is taken back to the Add patient to list modal. The list of patient lists is refreshed to include the new list, and the new list is checked.\n\nThe user can then click Save to add the patient, or uncheck the new list first if they need to.\n\nSave adds the patient and confirms it, e.g. \"Molly QA380 Test added to 'test'\".\n\nWhy it matters\nLeaving the user with an empty new list invites them to think the patient was added.\n\nLists created this way can stay empty.\n\nTechnical note\nadd-patient.modal.tsx:34-40 navigates to home/patient-lists?create=true and closes the modal, without passing the patient or a way back."
+}

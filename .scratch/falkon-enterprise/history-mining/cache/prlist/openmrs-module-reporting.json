@@ -1,0 +1,65 @@
+[
+ {
+  "number": 277,
+  "url": "https://github.com/openmrs/openmrs-module-reporting/pull/277",
+  "title": "Fix SonarCloud reliability findings left by the Platform 3.0 upgrade",
+  "branch": "fix-sonar-reliability-core-3x",
+  "mergedAt": "2026-10-10T19:01:48Z",
+  "mergeCommit": "43cf8eb12b918c29436f4fdc6d7dbaf00c3bc50f",
+  "body": "Fixes the `new_reliability_rating` gate failure that #274 left on `core-3.x`. All four findings sit on lines #274 only touched for the lang\u2192lang3 switch; the issues themselves predate it.\n\n- **TextTemplateRenderer.java:110 (S2259)**: reachable. An unknown design uuid gives `getDesign` an empty `ReportDesign`, so `getTemplate` returns null. It used to surface as `RenderingException(\"Unable to render results due to: java.lang.NullPointerException...\")`. It now throws `RenderingException(\"No template found for report design with uuid: ...\")`.\n- **ParameterizableUtil.java:97 (S2259)**: reachable with a property the type does not have, or with a null type. The missing-property NPE was caught and rethrown as `IllegalArgumentException(\"Cannot retrieve Mapped type from: X.prop\")`; a null type escaped as an NPE from that message. The new `getMappedField` throws that same exception up front, and a null type is reported as `null.prop`.\n- **MappedPropertyPortletController.java:136 (S2259)**: reachable when `property` is empty, because `mappedType` stays null and `getSimpleName()` is evaluated even when a `typeLabel` was supplied. `nvlStr` now gets null, so the fallback is `\"\"`.\n- **SqlRunner.java:41 (S8786)**: `DELIMITER_PATTERN` now uses possessive quantifiers (`\\s*+`, `(\\S++)`). Giving characters back never changes whether a line matches or what `group(2)` captures, so it accepts the same lines. `SqlRunnerTest` checks `getNewDelimiter` against the previous pattern, kept in the test with `NOSONAR`, over a list of representative SQL lines and 200,000 randomly assembled ones. The random check catches deliberately wrong variants: dropping `=?` gave 2,682 mismatches and `\\s++` gave 25,482.\n\nNew tests: `ParameterizableUtilTest`, a missing-template case in `TextTemplateRendererTest`, and three `SqlRunnerTest` cases. The NPE tests failed before the fix. There is no omod test harness, so the portlet change has no test.\n\nBuild (Java 21, `mvn -fae clean install`): api-tests `Tests run: 837, Failures: 0, Errors: 15, Skipped: 14`, OMOD SUCCESS. Plain `core-3.x` gives `Tests run: 830, Failures: 0, Errors: 15, Skipped: 14`. The 15 errors are the same pre-existing `ReportServiceAuthorizationTest` failures (`AuthorizationDeniedException`), and `core-3.x`'s own CI run 38076382487 fails on them too. They are why this PR's Maven checks are red.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01ASZcAmLun5HaBwCZ4kjEjx\n"
+ },
+ {
+  "number": 274,
+  "url": "https://github.com/openmrs/openmrs-module-reporting/pull/274",
+  "title": "Upgrade to support OpenMRS Platform 3.0",
+  "branch": "platform-3.0",
+  "mergedAt": "2026-10-10T18:01:11Z",
+  "mergeCommit": "f82a4a04b437d17f7171548dd6905bf8c9b7ee86",
+  "body": "Updates reporting so it builds against, and runs on, openmrs-core master (Platform 3.0.0-SNAPSHOT: Java 21, Jakarta EE, Spring 7, Hibernate 7). It depends on openmrs/openmrs-module-htmlwidgets#18 and openmrs/openmrs-module-serialization.xstream#22. Same approach as the platform 3 upgrades of calculation (openmrs/openmrs-module-calculation#19), legacyui and webservices.rest.\n\n## Changes\n- Build:\n  - Module version is now 3.0.0-SNAPSHOT, on core 3.0.0-SNAPSHOT (with `openmrs-bom` imported), htmlwidgets 3.0.0-SNAPSHOT, serialization.xstream 1.0.0-SNAPSHOT, calculation 3.0.0-SNAPSHOT and legacyui 3.0.0-SNAPSHOT.\n  - Builds with Java 21 and `-parameters`.\n  - Libraries core already ships are `provided` or excluded from bundling: joda-time, encoder, jackson, snakeyaml, jakarta.mail, commons-codec/logging/lang3/text.\n  - `jackson-dataformat-yaml` is aligned with core's Jackson.\n  - **handlebars 1.1.2 becomes 4.5.5.** 1.1.2 drags in antlr4-runtime 4.1, which clashes with Hibernate 7's antlr 4.13 and broke the SessionFactory. 4.5.5 is also past GHSA-r4gv-qr8j-p3pg, fixed in 4.5.2. `TemplateFactory` keeps 1.x's HTML escaping (`EscapingStrategy.HBS3`), because 4.x also escapes `=`, which changed report filenames and labels.\n  - openmrs-web and htmlwidgets are now omod-only dependencies.\n  - CI uses JDK 21.\n- `config.xml` now sets `require_version` to 3.0.0.\n- javax.servlet/mail/activation become jakarta, commons-lang becomes lang3, codehaus Jackson becomes fasterxml, and Velocity 2 keeps 1.7-compatible settings.\n- `PatientIdSet` calls `setMemberships` directly. The reflective call silently failed against 3.0's new signature and broke cohort subtraction.\n- Spring context:\n  - Core 3.0 removed `serializationServiceTarget` and the `supportedTypes` property used by `parent=\"serializedObjectDAO\"`.\n  - The reporting serializer and the 11 serialized definition types are now registered through `MethodInvokingBean`s.\n  - The service `TransactionProxyFactoryBean`s are unchanged.\n- DAOs:\n  - `HibernateReportDAO` moves from Criteria to HQL, with saves via `HibernateUtil.saveOrUpdate`.\n  - `HibernateCohortQueryDAO` binds dates with their types, and reads named parameters from the query's parameter metadata (Hibernate 7's query string has them replaced by `?`).\n  - `HibernateDataSetQueryDAO` uses the mapping metamodel.\n  - `HqlQueryBuilder` reads columns from the parsed query and drops duplicate auto-generated aliases, which Hibernate 7 rejects.\n  - `BirthAndDeathCohortDefinitionEvaluator` selects `p.patientId`.\n- Mappings:\n  - `identity` id generators.\n  - Enums use core's `StringEnumType`.\n  - `PropertiesType` and `ReportDefinitionType` use Hibernate 7 UserType signatures.\n  - `ReportRequest`'s two-column types become Hibernate 7 `CompositeUserType`s mapped as `<component>`s, with the same columns, so no liquibase change.\n- Web:\n  - The JSTL fmt URI is now `jakarta.tags.fmt`.\n  - Three suffix-less `@RequestMapping`s also map their `.form` URL.\n  - `includeScripts.jsp` no longer uses `<spring:theme>`, which Spring 7 removed, matching legacyui 3.0.\n- Tests:\n  - Migrated to JUnit 5.\n  - The test dataset is updated for the 3.0 schema: uuids added, and `concept_name_tag_map` rows removed because the table has no PK in the test schema.\n\n## Verification\n- `mvn clean install` passes: 830 tests, 0 failures (14 already-ignored tests skipped), on JDK 21 and 25.\n- On openmrs-core master **with openmrs/openmrs-core#6633** (needed so core's `StringEnumType` can load module enums) and #6631 (`mvn jetty:run`, MySQL 8), in the full set of 26 upgraded O3 modules:\n  - All modules start, and logging in through the UI works.\n  - `/module/reporting/dashboard/index.form`, the cohort and data set definition managers, and `runReport.list` render.\n  - An ad hoc patient data set evaluated through reportingrest (the built-in \"males\" cohort plus a gender column) returns the expected rows.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/se"
+ },
+ {
+  "number": 272,
+  "url": "https://github.com/openmrs/openmrs-module-reporting/pull/272",
+  "title": "(docs) Replace the dead Travis badge with the GitHub Actions one",
+  "branch": "fix-readme-ci-badge",
+  "mergedAt": "2026-09-08T20:51:09Z",
+  "mergeCommit": "dc0f580cbf19e52219022fa2ecda9bbce126b3e7",
+  "body": "The README badge still points at travis-ci.org, which shut down and now redirects to a 404, so the badge renders blank. This module builds on GitHub Actions via build.yml, so this points the badge and its link there.\n\nHeads up that the badge will show red right now: the latest build.yml run on master failed on 2026-09-03 on the OWASP dependency check job, not the Maven build."
+ },
+ {
+  "number": 271,
+  "url": "https://github.com/openmrs/openmrs-module-reporting/pull/271",
+  "title": "REPORT-924: Require privileges for Reporting service methods",
+  "branch": "report-privileges",
+  "mergedAt": "2026-08-20T21:14:37Z",
+  "mergeCommit": "daa725dfc2ce32bdd35da4700b044107720d1797",
+  "body": "This adds privilege annotations to all `*Service` classes in this module. I tried to decide privileges to assign privileges  using the following rules:\r\n\r\n* Where possible to pull a privilege from existing JSP pages, prefer that\r\n* All methods needed to run reports should be protected by Run Reports\r\n* All methods needed to view reports should be protected by View Reports\r\n* All methods needed to change reports should be protected by Manage Reports\r\n* If a more specific privilege exists (e.g., Manage Report Definitions vs Manage Reports), prefer that where applicable\r\n\r\nThis also adds two tests to characterize this behaviour:\r\n\r\n1. `ServicePrivilegeConventionsTest` attempts to enforce standard privilege conventions across all services, e.g., \"every service method should require a privilege\", \"read privileges should never guard a write method\", etc.\r\n2. `ReportServiceAuthorizationTest` which checks that the privileges on the `ReportService` are enforced at runtime."
+ },
+ {
+  "number": 270,
+  "url": "https://github.com/openmrs/openmrs-module-reporting/pull/270",
+  "title": "REPORT-359 - Support PDF Report Rendering",
+  "branch": "REPORT-359",
+  "mergedAt": "2026-05-13T13:10:56Z",
+  "mergeCommit": "8c28986239e1368b08fd08970c1ec446556c7c18",
+  "body": ""
+ },
+ {
+  "number": 269,
+  "url": "https://github.com/openmrs/openmrs-module-reporting/pull/269",
+  "title": "Separate OWASP dependency check into its own job",
+  "branch": "separate-owasp-dependency-check",
+  "mergedAt": "2026-04-13T21:34:01Z",
+  "mergeCommit": "2eeceaa27681699109e1e2b72afd28b135b3c739",
+  "body": "## Summary\n- Separate OWASP dependency check into a standalone workflow job\n- OWASP check only runs on push and workflow_dispatch (not on PRs)\n- Build job no longer runs the OWASP check inline or needs the NVD_API_KEY secret\n\n## Test plan\n- [ ] Verify build job still passes\n- [ ] Verify OWASP dependency check runs on push to the default branch\n- [ ] Verify OWASP dependency check does not run on pull requests\n"
+ },
+ {
+  "number": 268,
+  "url": "https://github.com/openmrs/openmrs-module-reporting/pull/268",
+  "title": "Migrate to Reusable GitHub Action",
+  "branch": "gh-action",
+  "mergedAt": "2026-04-13T06:17:07Z",
+  "mergeCommit": "48fe8b81d095315b8566ff43a1ec697eca98c4bf",
+  "body": ""
+ }
+]

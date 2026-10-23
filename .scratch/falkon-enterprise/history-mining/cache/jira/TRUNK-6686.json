@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6686",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6686",
+ "summary": "Restore relevance weighting in patient search lost in the Hibernate Search 6 migration",
+ "status": "Closed",
+ "created": "2026-07-16T01:54:38.223+1000",
+ "resolved": "2026-09-15T07:21:07.006+1000",
+ "description": "Background\nIn 2.6.x, name and identifier fields carried index-time boosts (@Boost: phrase 8x, exact 4x, start 2x, anywhere 1x) so exact and prefix matches ranked above substring matches. Hibernate Search 6 removed index-time boosting, and the migrated mappings and query builders (PersonQuery) apply no per-field weighting at all on the main patient/person search path \u2014 every match type ranks equally. Boosting was only reintroduced for the soundex \"similar people\" path. Users see worse result ordering (exact matches buried under substring matches), which in practice drives re-searching and deeper paging against an already-expensive search path.\nRequested change\nApply query-time per-field boosts in the main patient/person name, identifier, and attribute search predicates, replicating the 2.6.x relative weights (phrase > exact > start > anywhere).\nAcceptance criteria\nAn exact name or identifier match ranks above start-with and substring matches for the same term.\n\nUnit tests assert relative ordering for a dataset containing exact, prefix, and substring matches of the same query."
+}

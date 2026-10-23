@@ -1,0 +1,9 @@
+{
+ "key": "O3-6046",
+ "url": "https://openmrs.atlassian.net/browse/O3-6046",
+ "summary": "Weight-for-height z-score is -4 when the height is outside the reference table",
+ "status": "Done",
+ "created": "2026-10-06T19:54:59.073+1100",
+ "resolved": null,
+ "description": "calcWeightForHeightZscore returns -4 whenever the height is below 45 cm or above 110 cm, in both form engines (common-expression-helpers.ts in esm-form-engine-lib and js-expression-helper.ts in ngx-formentry). -4 means severe wasting, but here it only means the table has no row for that height. The weight-for-length tables cover 45 to 110 cm, so this affects:\nchildren under 5 who are taller than 110 cm\n\nchildren aged 5 and over, who have no weight-for-height reference, once they're taller than 110 cm\n\nAMPATH's POC triage form hides the weight-for-height field when age>5, so a child aged exactly 5 who is taller than 110 cm still gets -4 saved to their encounter. I reproduced this in the Angular form engine with a 5-year-old girl at 112 cm.\nExpected behaviour\nThe helper returns null (no z-score) when the height is outside the reference table or no weight-for-height reference applies to the child, rather than -4.\n\nBoth form engines behave the same.\n\nRelated: O3-6044"
+}

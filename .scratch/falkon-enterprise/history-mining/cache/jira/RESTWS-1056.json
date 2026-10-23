@@ -1,0 +1,9 @@
+{
+ "key": "RESTWS-1056",
+ "url": "https://openmrs.atlassian.net/browse/RESTWS-1056",
+ "summary": "Return 401/403 for Spring Security's AccessDeniedException, as for APIAuthenticationException",
+ "status": "Closed",
+ "created": "2026-10-09T19:29:47.624+1100",
+ "resolved": "2026-10-22T09:37:39.179+1100",
+ "description": "Since TRUNK-6799, core's AuthorizationAdvice rejects a call that lacks a required privilege with Spring Security's AuthorizationDeniedException, which is an AccessDeniedException. BaseRestController's @ExceptionHandler(APIAuthenticationException.class) and its RestUtil.hasCause(ex, APIAuthenticationException.class) check don't match it, so these requests now return 500 instead of 401 or 403. TRUNK-6823 has the measurements: an unauthenticated GET /ws/rest/v1/patient returns 401 on core 3.0.0-SNAPSHOT build 434 and 500 on build 435.\nHandling AccessDeniedException the same way as APIAuthenticationException (401 when the user isn't authenticated, 403 when they are) would restore the status codes however TRUNK-6823 is resolved."
+}

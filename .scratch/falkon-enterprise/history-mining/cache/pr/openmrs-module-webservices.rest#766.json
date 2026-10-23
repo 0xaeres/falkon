@@ -1,0 +1,13 @@
+{
+ "number": 766,
+ "url": "https://github.com/openmrs/openmrs-module-webservices.rest/pull/766",
+ "title": "RESTWS-1052: Apply order arbitration to class-based resource lookup",
+ "mergedAt": "2026-09-17T18:04:20Z",
+ "mergeCommit": "ed382e24b442ff7965bc8a01f9958eb1171b0954",
+ "body": "## Summary\n`RestServiceImpl.initializeResources()` builds two lookup maps: `resourceDefinitionsByNames` (order-arbitrated on name collisions) and `resourcesBySupportedClasses` (no arbitration at all \u2014 last one scanned wins, regardless of `order`).\n\nBecause `RestService.getResourceBySupportedClass(Class)` and `ConversionUtil.getConverter(Class)` (which delegates to it) both read from `resourcesBySupportedClasses`, a resource can be silently and non-deterministically replaced by an unrelated, differently-named resource from another module that happens to support the same domain class \u2014 even when the replaced resource has a better `order` and would win a same-name comparison. Core's own `MainResourceController.retrieve()` resolves by name, so it's unaffected; custom code that resolves by class is exposed.\n\nThis fix applies the same `order`-based arbitration already used for `resourceDefinitionsByNames` to `resourcesBySupportedClasses`.\n\nFixes RESTWS-1052.\n\n## Test plan\n- Added `getResourceBySupportedClass_shouldNotBeClobberedByADifferentlyNamedResourceWithAWorseOrder` and `getResourceByName_shouldReturnResourceThatLostTheBySupportedClassLookup` to `RestServiceImplTest`, using a new fixture `AnimalWithHigherOrderResource_1_9`.\n- Verified manually (via `git stash`) that the first new test fails without this fix and passes with it.\n- Full `omod` test suite passes (55/55 in `RestServiceImplTest`).",
+ "files": [
+  "omod-common/src/main/java/org/openmrs/module/webservices/rest/web/api/impl/RestServiceImpl.java",
+  "omod-common/src/test/java/org/mockingbird/test/rest/resource/AnimalWithHigherOrderResource_1_9.java",
+  "omod/src/test/java/org/openmrs/module/webservices/rest/web/api/impl/RestServiceImplTest.java"
+ ]
+}

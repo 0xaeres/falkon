@@ -1,0 +1,9 @@
+{
+ "key": "TRUNK-6683",
+ "url": "https://openmrs.atlassian.net/browse/TRUNK-6683",
+ "summary": "Drug search runs a redundant concept-name full-text query when a concept is specified",
+ "status": "Closed",
+ "created": "2026-07-16T01:54:30.868+1000",
+ "resolved": "2026-07-19T01:53:15.424+1000",
+ "description": "Background\nIn 2.6.x, HibernateConceptDAO.newDrugQuery(...) treated the concept parameter and searchDrugConceptNames as mutually exclusive branches (if / else if): the extra concept-name full-text lookup only ran when no concept was supplied. In 2.8.x the branches are independent, so calling ConceptService.getDrugs(...) with both a concept and searchDrugConceptNames=true always executes an additional Hibernate Search query over the ConceptName index \u2014 including its expensive unique-key dedup pass \u2014 whose results are redundant because the concept is already known and matched directly.\nRequested change\nRestore the 2.6.x short-circuit: skip the concept-name full-text lookup when a concept is explicitly provided.\nAcceptance criteria\ngetDrugs with a non-null concept does not execute the concept-name index query, and results are unchanged for all parameter combinations.\n\nUnit tests cover the concept + searchDrugConceptNames=true combination, asserting both result correctness and that the redundant query path is not taken."
+}

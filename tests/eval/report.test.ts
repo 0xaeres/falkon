@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { DATASETS, FLOOR_DIR, loadAccepted, loadDataset, readRaw, type Arm, type Raw } from "./data.js";
+import { DATASETS, FLOOR_DIR, datasetSchema, loadAccepted, loadDataset, readRaw, type Arm, type Raw } from "./data.js";
 import { d25, report, type ReportInput } from "./report.js";
 import { scoreAnswer } from "./score.js";
 import { join } from "node:path";
@@ -120,4 +120,17 @@ test("the report shows the plain arm's denied research_codebase attempts and mal
   const text = dev(input);
   assert.match(text, /malformed 1; leaks 0\./);
   assert.match(text, /Denied research_codebase attempts: 3\./);
+});
+
+test("a history run scores commits, PRs and tickets against typed gold, with accepted extras for precision", () => {
+  const sha = "a".repeat(40);
+  const dataset = datasetSchema.parse({
+    id: "hist", repo: { url: "https://github.com/openmrs/openmrs-core", ref: "main", commit: sha }, corpus: { include: [], exclude: [] },
+    questions: [{ id: "h1", question: "Q", vocab: "natural", split: "dev", author: "a", required: [{ repo: "openmrs-core", commit: sha, pr: 7 }, { ticket: "TRUNK-1" }] }],
+  });
+  const raw = (arm: string, answer: Raw["answer"]): Raw => ({ taskId: "h1", repository: "hist", arm, answer, malformed: false, is_error: false, total_cost_usd: 0.1, usage: {}, num_turns: 1, wallClockMs: 1 });
+  const floor = [raw("v6-tools", [])], runs = [...floor, raw("clone-tools-git", [{ repo: "openmrs-core", commit: "aaaaaaa" }, { repo: "openmrs-core", pr: 7 }, { ticket: "trunk-1" }, { ticket: "TRUNK-9" }])];
+  const text = report({ datasets: [{ dataset, floor, runs }], accepted: { h1: [{ ticket: "TRUNK-9" }] }, split: "dev", arms: ["v6-tools", "clone-tools-git"], referenceArm: "v6-tools" });
+  assert.match(text, /\| recall \| 1\.0000 \| 0\.0000 \| 1 \|/);
+  assert.match(text, /\| precision \| 1\.0000 \| 0\.0000 \| 1 \|/);
 });

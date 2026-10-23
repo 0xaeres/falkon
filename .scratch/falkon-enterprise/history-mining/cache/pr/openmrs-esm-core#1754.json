@@ -1,0 +1,11 @@
+{
+ "number": 1754,
+ "url": "https://github.com/openmrs/openmrs-esm-core/pull/1754",
+ "title": "(test) Add regression tests for 401 Location-header redirect in openmrsFetch",
+ "mergedAt": "2026-05-01T13:02:39Z",
+ "mergeCommit": "e16e2d9e16a891670bbf4dd0a79ebe81414405d8",
+ "body": "# Requirements\n\n- [x] This PR has a title that briefly describes the work done including the ticket number. Ensure your PR title includes a [conventional commit](https://o3-docs.openmrs.org/docs/frontend-modules/contributing#contributing-guidelines) label (such as \\`feat\\`, \\`fix\\`, or \\`chore\\`, among others). See existing PR titles for inspiration.\n\n## If applicable\n\n- [x] My work includes tests or is validated by existing tests.\n\n## Summary\n\nAdds two regression tests covering the 401-redirect path in \\`openmrsFetch\\` (\\`packages/framework/esm-api/src/openmrs-fetch.test.ts\\`):\n\n- When a 401 response contains a \\`Location\\` header (auth-module challenge), \\`navigate\\` is called with the \\`Location\\` URL\n- When a 401 response has no \\`Location\\` header (genuine auth failure), \\`navigate\\` is called with the configured \\`redirectAuthFailure.url\\`\n\n## Screenshots\n\nN/A\n\n## Related Issue\n\n[O3-5629](https://openmrs.atlassian.net/browse/O3-5629)\n\n## Other\n\nN/A\n\n[O3-5629]: https://openmrs.atlassian.net/browse/O3-5629?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ",
+ "files": [
+  "packages/framework/esm-api/src/openmrs-fetch.test.ts"
+ ]
+}
