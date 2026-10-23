@@ -2,7 +2,7 @@ import { McpServer, type RegisteredTool, type ToolCallback } from "@modelcontext
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { toolDefinitions, toolNames, toolJsonSchema, type AnyToolDefinition, type Scope } from "@falkon/shared";
+import { historyToolDefinitions, historyToolNames, toolDefinitions, toolNames, toolJsonSchema, type AnyToolDefinition, type Scope } from "@falkon/shared";
 import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS } from "./ask/brief";
 import { IMPACT_INSTRUCTIONS } from "./ask/impact";
 import { configuredLanguageModels, languageModelsInfo } from "./ask/models";
@@ -50,8 +50,7 @@ export async function createMcpServer(scope: Scope) {
   ) {
     registered.push({ name, tool: server.registerTool(name, config, handler) });
   }
-  for (const name of toolNames) {
-    const d = toolDefinitions[name] as unknown as AnyToolDefinition;
+  const addDefinition = (d: AnyToolDefinition) =>
     add(
       d.name,
       { description: d.description, inputSchema: d.inputSchema, annotations: { readOnlyHint: d.isReadOnly, idempotentHint: d.isIdempotent } },
@@ -64,7 +63,7 @@ export async function createMcpServer(scope: Scope) {
         }
       },
     );
-  }
+  for (const name of toolNames) addDefinition(toolDefinitions[name] as unknown as AnyToolDefinition);
   const models = await configuredLanguageModels();
   add(
     "list_language_models",
@@ -131,6 +130,8 @@ export async function createMcpServer(scope: Scope) {
       messages: [{ role: "user" as const, content: { type: "text" as const, text: await researchBrief(query, repos?.split(",").map((name) => name.trim()).filter(Boolean)) } }],
     }),
   );
+  // MCP_HISTORY_TOOLS=on adds the pull request history tools after every other tool; anything else keeps today's registration bytes (D113).
+  if (process.env.MCP_HISTORY_TOOLS === "on") for (const name of historyToolNames) addDefinition(historyToolDefinitions[name] as unknown as AnyToolDefinition);
   // The SDK's native Zod 4 conversion changes schema content and key order.
   // Keep its registrations/validation, but list the same normalized bytes as Ask/KB.
   server.server.setRequestHandler(ListToolsRequestSchema, () => ({

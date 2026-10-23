@@ -98,6 +98,11 @@ export interface SearchQuery {
   repo?: string;
   limit?: number;
   offset?: number;
+  kind?: Discussion["kind"];
+  state?: Discussion["state"];
+  /** Created at or after / at or before. */
+  since?: Date;
+  until?: Date;
 }
 
 export interface SearchHit {
@@ -115,6 +120,9 @@ export interface SearchResult {
   hasMore: boolean;
   gaps: string[];
   timedOut: boolean;
+  /** Every match, at most MAX_OFFSET (`totalCapped` says it stopped there). */
+  total: number;
+  totalCapped: boolean;
 }
 
 /** Provenance storage (D87, D106): Postgres now, the graph database later. */
@@ -318,25 +326,40 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
       const rows = await repoRows(names);
       const ids = rows.filter((r) => r.ingested).map((r) => r.id);
       const gaps = gapsOf(rows);
-      if (!words.length || !ids.length) return { hits: [], hasMore: false, gaps, timedOut: false };
+      const none = { hits: [], hasMore: false, gaps, timedOut: false, total: 0, totalCapped: false };
+      if (!words.length || !ids.length) return none;
       // Each word must appear (case-insensitively) in the title, body, head branch or any comment: words are ANDed.
       const where = words
         .map((_, i) => `(d.title ILIKE $${i + 2} OR d.body ILIKE $${i + 2} OR d."headRef" ILIKE $${i + 2}
           OR EXISTS (SELECT 1 FROM "DiscussionComment" c WHERE c."discussionId" = d.id AND c.body ILIKE $${i + 2}))`)
         .join(" AND ");
+      // Optional filters take the parameters after the words'.
+      const extra: { sql: string; value: unknown }[] = [
+        ...(q.kind ? [{ sql: `d.kind = $N::"DiscussionKind"`, value: q.kind }] : []),
+        ...(q.state ? [{ sql: `d.state = $N`, value: q.state }] : []),
+        ...(q.since ? [{ sql: `d."createdAt" >= $N::${TS}`, value: iso(q.since) }] : []),
+        ...(q.until ? [{ sql: `d."createdAt" <= $N::${TS}`, value: iso(q.until) }] : []),
+      ];
+      const filters = extra.map((e, i) => ` AND ${e.sql.replace("$N", `$${words.length + 2 + i}`)}`).join("");
+      const params = [ids, ...words.map(likePattern), ...extra.map((e) => e.value)];
       try {
-        const hits = await db.$transaction(async (tx) => {
+        const found = await db.$transaction(async (tx) => {
           await tx.$executeRawUnsafe(`SET LOCAL statement_timeout = ${SEARCH_TIMEOUT_MS}`);
-          return tx.$queryRawUnsafe<SearchHit[]>(
+          const hits = await tx.$queryRawUnsafe<SearchHit[]>(
             `SELECT r.name AS repo, d.number, d.title, d.state, d."mergedAt", d."updatedAt", d.url FROM "Discussion" d JOIN "Repo" r ON r.id = d."repoId"
-             WHERE d."repoId" = ANY($1::int[]) AND ${where} ORDER BY d."updatedAt" DESC, r.name, d.number LIMIT ${limit + 1} OFFSET ${offset}`,
-            ids, ...words.map(likePattern),
+             WHERE d."repoId" = ANY($1::int[]) AND ${where}${filters} ORDER BY d."updatedAt" DESC, r.name, d.number LIMIT ${limit + 1} OFFSET ${offset}`,
+            ...params,
           );
+          const [{ n }] = await tx.$queryRawUnsafe<[{ n: number }]>(
+            `SELECT count(*)::int AS n FROM (SELECT 1 FROM "Discussion" d WHERE d."repoId" = ANY($1::int[]) AND ${where}${filters} LIMIT ${MAX_OFFSET + 1}) x`,
+            ...params,
+          );
+          return { hits, n };
         });
-        return { hits: hits.slice(0, limit), hasMore: hits.length > limit, gaps, timedOut: false };
+        return { hits: found.hits.slice(0, limit), hasMore: found.hits.length > limit, gaps, timedOut: false, total: Math.min(found.n, MAX_OFFSET), totalCapped: found.n > MAX_OFFSET };
       } catch (e) {
         // 57014: canceled by statement_timeout
-        if (/57014|statement timeout/.test(String((e as { meta?: { code?: string } }).meta?.code ?? "") + String(e))) return { hits: [], hasMore: false, gaps, timedOut: true };
+        if (/57014|statement timeout/.test(String((e as { meta?: { code?: string } }).meta?.code ?? "") + String(e))) return { ...none, timedOut: true };
         throw e;
       }
     },
