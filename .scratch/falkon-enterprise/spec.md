@@ -109,7 +109,7 @@ S46 kept: D104 (denied git-tool attempts count as denied attempts, not leaks) an
 
 Flags: the pooled verdict prints "withheld" because the reference arm `clone-tools` has 1 leak flag: hist-a-05 read a file under its own Claude scratchpad (`/private/tmp/claude-501/...`), which the leak pattern treats as private; no corpus or eval data was read, a false positive of the harness pattern, left as is. `clone-tools` made 3 denied git-tool attempts in hidden and 1 in dev (D104 working). The `clone-tools-git` arm's own gate verdict is not a regression gate; it is a floor, not a pass or fail.
 
-## Cycle 14 plan: pull request ingestion, measured against the floor (gate 1 pending)
+## Cycle 14 plan: pull request ingestion, measured against the floor (gate 1 approved 2026-10-23)
 
 Goal: Falkon stores pull requests with their comments and review comments, links each commit to its pull request and each pull request to its ticket keys, and gives agents tools to read them. Success is measured on the 40-question history stratum against a same-day rerun of `clone-tools-git` (floor recorded in cycle 13: recall 0.696).
 
