@@ -134,3 +134,16 @@ test("a history run scores commits, PRs and tickets against typed gold, with acc
   assert.match(text, /\| recall \| 1\.0000 \| 0\.0000 \| 1 \|/);
   assert.match(text, /\| precision \| 1\.0000 \| 0\.0000 \| 1 \|/);
 });
+
+test("the report shows tool calls per tool and recall and precision per history question kind, and accepts clone-tools-git-prs against clone-tools-git", () => {
+  const sha = "a".repeat(40), q = (id: string, ticket: string) => ({ id, question: "Q", vocab: "natural", split: "dev", author: "a", required: [{ ticket }] });
+  const dataset = datasetSchema.parse({ id: "hist", repo: { url: "https://github.com/openmrs/openmrs-core", ref: "main", commit: sha }, corpus: { include: [], exclude: [] }, questions: [q("hist-a-01", "T-1"), q("hist-b-01", "T-2")] });
+  const raw = (arm: string, taskId: string, answer: Raw["answer"], toolCalls: Record<string, number>): Raw => ({ taskId, repository: "hist", arm, answer, malformed: false, is_error: false, total_cost_usd: 0.1, usage: {}, num_turns: 1, wallClockMs: 1, toolCalls });
+  const floor = [raw("clone-tools-git", "hist-a-01", [], { grep: 1 }), raw("clone-tools-git", "hist-b-01", [], {})];
+  const runs = [...floor, raw("clone-tools-git-prs", "hist-a-01", [{ ticket: "T-1" }], { grep: 2, get_pull_request: 3 }), raw("clone-tools-git-prs", "hist-b-01", [], { get_pull_request: 1, get_provenance: 2 })];
+  const text = report({ datasets: [{ dataset, floor, runs }], accepted: {}, split: "dev", arms: ["clone-tools-git", "clone-tools-git-prs"], referenceArm: "clone-tools-git" });
+  assert.match(text, /### clone-tools-git-prs \(dev\)[\s\S]*Tool calls clone-tools-git-prs: get_provenance 2, get_pull_request 4, grep 2\./);
+  assert.match(text, /Kind why \(n 1\): recall 1\.0000; precision 1\.0000\./);
+  assert.match(text, /Kind what-when \(n 1\): recall 0\.0000/);
+  assert.doesNotMatch(text, /Kind ticket-to-code/);
+});

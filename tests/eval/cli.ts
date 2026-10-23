@@ -18,7 +18,7 @@
  *                                                   --check validates the gold pull requests of o3-history against the snapshot and the checkouts.
  *
  * Options for pilot, run and report: --model sonnet|haiku (or the full id; default sonnet), --arms from
- * clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git (default clone-tools,clone-research). Runs are stored per model under
+ * clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git,clone-tools-git-prs (default clone-tools,clone-research). Runs are stored per model under
  * <runs dir>/<model alias>/; Sonnet runs in the earlier layout (datasets directly under the runs dir) are still read.
  * The reference is the recorded Sonnet floor for sonnet, and the v6-tools runs of the model's own directory otherwise.
  *
@@ -28,7 +28,7 @@
  * `report --reference clone-tools` compares the arms against that arm's runs of the same model instead of the recorded floor or v6-tools.
  *
  * Commit-history set (S43): --dataset history selects o3-history, whose answers cite spans, commits, pull requests and tickets; arm clone-tools-git
- * (the clone stack, plus list_commits, get_diff and list_branches) is meant for it.
+ * (the clone stack, plus list_commits, get_diff and list_branches) is meant for it; arm clone-tools-git-prs adds get_pull_request, search_discussions and get_provenance and talks to the `--prs on` stack.
  *
  * Environment: EVAL_O3_DIR (corpus checkouts), EVAL_PORT (3400), EVAL_NOINSTR_PORT (3401), EVAL_RECIPE_PORT (3402), EVAL_PRS_PORT (3403), EVAL_RUNS_DIR, EVAL_WORK_DIR,
  * EVAL_API_KEY_FILE (optional key file for the clone stacks), EVAL_SPEND_CAP (agent spend ledger per model directory, default 6),
@@ -59,7 +59,7 @@ export function pilotIds(dataset: Dataset, count = 5): string[] {
   return [...first, ...dev.map((q) => q.id).filter((id) => !first.includes(id))].slice(0, count);
 }
 
-const config = (env: NodeJS.ProcessEnv) => ({
+export const config = (env: NodeJS.ProcessEnv) => ({
   o3Dir: resolve(env.EVAL_O3_DIR ?? "/Users/aeres/Desktop/projects/falkon/.local/eval"),
   port: Number(env.EVAL_PORT ?? 3400),
   noinstrPort: Number(env.EVAL_NOINSTR_PORT ?? 3401),
@@ -104,10 +104,11 @@ function exportChart(o3Dir: string, workDir: string): string {
 
 type Backend = { id: string; url: string; key?: string; kind: "clone" | "v6"; instructions?: boolean };
 /** The server an arm talks to; the v6 instance is configured only by EVAL_V6_URL and EVAL_V6_KEY_FILE, never by argv. Reads a key file, so it is not used when listing. */
-function backendOf(arm: Arm, cfg: ReturnType<typeof config>, env: NodeJS.ProcessEnv): Backend {
+export function backendOf(arm: Arm, cfg: ReturnType<typeof config>, env: NodeJS.ProcessEnv): Backend {
   const local = (port: number) => `http://127.0.0.1:${port}/api/mcp`;
   if (arm === "clone-tools-noinstr") return { id: "noinstr", url: local(cfg.noinstrPort), key: readKey(cfg.keyFile), kind: "clone", instructions: false };
   if (arm === "clone-tools-recipe") return { id: "recipe", url: local(cfg.recipePort), key: readKey(cfg.keyFile), kind: "clone", instructions: true };
+  if (arm === "clone-tools-git-prs") return { id: "prs", url: local(cfg.prsPort), key: readKey(cfg.keyFile), kind: "clone", instructions: true };
   if (arm !== "v6-tools") return { id: "clone", url: local(cfg.port), key: readKey(cfg.keyFile), kind: "clone", instructions: true };
   let url: URL | undefined;
   try { url = new URL(env.EVAL_V6_URL ?? ""); } catch { /* reported below */ }
@@ -153,7 +154,7 @@ function pilotReport(named: Dataset, stored: Raw[], arms: Arm[], alias: string, 
 export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env): Promise<string> {
   const args = argv.filter((a, i) => !(a === "--" && i < 2)); // pnpm may pass a leading "--"
   const command = args[0], cfg = config(env), listing = args.includes("--list");
-  if (!["pilot", "run", "report", "preflight", "stack", "corpus"].includes(command ?? "")) throw new Error("Usage: pnpm eval -- pilot|run|report|preflight|stack|corpus deepen [--split dev|hidden] [--model sonnet|haiku] [--arms clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git] [--dataset impact|history] [--reference arm] [--list] [--pilot] [--instructions off] [--recipe on] [--prs on]");
+  if (!["pilot", "run", "report", "preflight", "stack", "corpus"].includes(command ?? "")) throw new Error("Usage: pnpm eval -- pilot|run|report|preflight|stack|corpus deepen [--split dev|hidden] [--model sonnet|haiku] [--arms clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git,clone-tools-git-prs] [--dataset impact|history] [--reference arm] [--list] [--pilot] [--instructions off] [--recipe on] [--prs on]");
   const splitFlag = flagValue(args, "--split");
   if (splitFlag && !["dev", "hidden"].includes(splitFlag)) throw new Error("--split must be dev or hidden");
   const split = (splitFlag ?? "dev") as "dev" | "hidden";
