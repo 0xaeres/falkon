@@ -13,7 +13,7 @@ export const DATASETS = ["openmrs-xrepo", "openmrs-xrepo-unnamed"] as const;
 export const IMPACT_DATASETS = ["o3-impact"] as const;
 /** The commit-history question set (S43), selected with --dataset history; its answers carry commits, pull requests and tickets. */
 export const HISTORY_DATASETS = ["o3-history"] as const;
-export const ALL_ARMS = ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr", "clone-tools-recipe", "clone-tools-git"] as const;
+export const ALL_ARMS = ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr", "clone-tools-recipe", "clone-tools-git", "clone-tools-git-prs"] as const;
 export type Arm = typeof ALL_ARMS[number];
 /** The arms run when --arms is not given. */
 export const ARMS: Arm[] = ["clone-tools", "clone-research"];

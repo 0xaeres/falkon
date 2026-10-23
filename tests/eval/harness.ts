@@ -7,10 +7,13 @@ export const SERVER = "falkon";
 export const TOOLS = ["grep", "glob", "read_file", "list_tree", "list_repos", "find_symbol_definitions", "find_symbol_references"];
 /** The git tools only the clone-tools-git arm may call. */
 const GIT_TOOLS = ["list_commits", "get_diff", "list_branches"];
+/** The pull request and provenance tools only the clone-tools-git-prs arm may call (D113: the hint lives in their descriptions, not the prompt). */
+const PR_TOOLS = ["get_pull_request", "search_discussions", "get_provenance"];
 const DENIED_TOOLS = ["ask_codebase", "create_skill", "update_skill", "list_skills", "list_language_models"];
 const mcp = (name: string) => `mcp__${SERVER}__${name}`;
 /** MCP tool names an arm may call; only the research arm has research_codebase, the other arms are denied it. */
-const toolsFor = (arm: Arm) => arm === "clone-research" ? [...TOOLS, "research_codebase"] : arm === "clone-tools-git" ? [...TOOLS, ...GIT_TOOLS] : TOOLS;
+const toolsFor = (arm: Arm) => arm === "clone-research" ? [...TOOLS, "research_codebase"] : arm === "clone-tools-git" ? [...TOOLS, ...GIT_TOOLS] : arm === "clone-tools-git-prs" ? [...TOOLS, ...GIT_TOOLS, ...PR_TOOLS] : TOOLS;
+const deniedFor = (arm: Arm) => [...(arm === "clone-research" ? [] : ["research_codebase"]), ...(arm === "clone-tools-git" || arm === "clone-tools-git-prs" ? [] : GIT_TOOLS), ...(arm === "clone-tools-git-prs" ? [] : PR_TOOLS)];
 
 const historyCommon = (question: string) => `Answer the repository question by listing every piece of evidence that answers it (all of them, since scoring is by recall), best first. End with one fenced json array of at most 20 items, each one of: {"path": "repo-relative path", "startLine": 1, "endLine": 1} for a source span (inclusive, 1-based); {"repo": "openmrs-core", "commit": "<sha>"} for a commit; {"repo": "openmrs-core", "pr": 123} for a pull request; {"ticket": "TRUNK-1234"} for a ticket. Repo names are bare repository names, for example "openmrs-core", without a host prefix; commits are SHAs of at least 7 characters; PRs are numbers; tickets are keys like TRUNK-1234. Ignore any citation format the server describes; end only with the json array described here. Do not modify files.\n\nQuestion:\n${question}`;
 
@@ -28,7 +31,7 @@ export type CommandOptions = { question: string; tree: string; env: NodeJS.Proce
 export function buildCommand(arm: Arm, o: CommandOptions): { command: string; args: string[]; cwd: string; env: NodeJS.ProcessEnv; mcpConfig: string } {
   const fsTools = ["Read", "Grep", "Glob"];
   const outside = ["./eval", "./.local", "//Users", "//private/tmp/claude-501", ...o.denyPaths.map((p) => `/${p}`)];
-  const denied = [...fsTools.flatMap((t) => outside.map((p) => `${t}(${p}/**)`)), ...[...DENIED_TOOLS, ...(arm !== "clone-tools-git" ? GIT_TOOLS : []), ...(arm !== "clone-research" ? ["research_codebase"] : [])].map(mcp)];
+  const denied = [...fsTools.flatMap((t) => outside.map((p) => `${t}(${p}/**)`)), ...[...DENIED_TOOLS, ...deniedFor(arm)].map(mcp)];
   const server = { type: "http", url: o.url, ...(o.apiKey ? { headers: { Authorization: "Bearer ${EVAL_MCP_KEY}" } } : {}) };
   const { EVAL_MCP_KEY: _inherited, ...env } = o.env;
   return {
@@ -60,8 +63,8 @@ export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] 
     const item = node as Record<string, unknown>;
     if (item.type === "tool_use" && typeof item.name === "string") {
       out.firstTool ??= item.name.replace(`mcp__${SERVER}__`, "");
-      // An arm may try a tool it was denied (research_codebase, git history tools); that is counted, not a leak.
-      if ((arm !== "clone-research" && item.name === mcp("research_codebase")) || (arm !== "clone-tools-git" && GIT_TOOLS.map(mcp).includes(item.name))) out.deniedAttempts++;
+      // An arm may try a tool it was denied (research_codebase, git history and pull request tools); that is counted, not a leak.
+      if (deniedFor(arm).map(mcp).includes(item.name)) out.deniedAttempts++;
       else if (!allowed.includes(item.name)) out.leak = true;
       else if (item.name.startsWith(`mcp__${SERVER}__`)) { const short = item.name.slice(mcp("").length); out.toolCalls[short] = (out.toolCalls[short] ?? 0) + 1; }
       if (Object.hasOwn(pathFields, item.name)) {
