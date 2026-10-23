@@ -109,6 +109,67 @@ S46 kept: D104 (denied git-tool attempts count as denied attempts, not leaks) an
 
 Flags: the pooled verdict prints "withheld" because the reference arm `clone-tools` has 1 leak flag: hist-a-05 read a file under its own Claude scratchpad (`/private/tmp/claude-501/...`), which the leak pattern treats as private; no corpus or eval data was read, a false positive of the harness pattern, left as is. `clone-tools` made 3 denied git-tool attempts in hidden and 1 in dev (D104 working). The `clone-tools-git` arm's own gate verdict is not a regression gate; it is a floor, not a pass or fail.
 
+## Cycle 14 plan: pull request ingestion, measured against the floor (gate 1 pending)
+
+Goal: Falkon stores pull requests with their comments and review comments, links each commit to its pull request and each pull request to its ticket keys, and gives agents tools to read them. Success is measured on the 40-question history stratum against a same-day rerun of `clone-tools-git` (floor recorded in cycle 13: recall 0.696).
+
+Why this first (evidence, cycle 13): the "why" questions score 0.531 with git tools alone because the ticket and rationale sit in pull request or Jira text. Of the 16 "why" tickets, 11 appear in the pull request title, body or branch name and 5 only in Jira (hist-a-03, -06, -11, -13, -14); pull requests can recover at most 9 more ticket units, so the ceiling is about +0.28 on "why" and about +0.11 overall (0.696 to about 0.81); a realistic gain is about half. "What changed and when" and "ticket to code" are expected to move about zero. GitHub issues are disabled on the OpenMRS frontend repositories, so issues cannot be measured here.
+
+### Decisions (human, 2026-10-23, unless marked default)
+
+| # | Decision |
+|---|---|
+| D105 | Order: Phase 2 (pull requests and issues) before Phase 1 (git-only tools); amends the order in D82. Phase 1's declaration-level history and pickaxe search stay for a later cycle; the new provenance tool may use a bounded `git log -L` on a path and line span. |
+| D106 | Storage: Postgres tables only, behind the `ProvenanceStore` port (D87). Markdown in a Zoekt-indexed companion repository is added later only if pull request search measurably misses. |
+| D107 | This cycle loads data from a recorded snapshot through a `DiscussionSource` port (adapters: snapshot now, live GitHub next cycle). Same mapper, linker and writer for both. The live GitHub sync is cycle 15. |
+| D108 | Success rule: the D8 rule over all 40 questions for the new arm against a same-day `clone-tools-git` rerun; "why" reported separately; one Sonnet confirmation only if Haiku is inside the noise (D26 pattern). Eval spend cap for Phase 2: $5. |
+| D109 | The snapshot is fetched once with the human's `gh` login (read-only, public data), stored outside the repository under `$EVAL_O3_DIR/github-snapshot/`, with a checksum manifest committed under `tests/eval/datasets/`. Approved by the human. Contents cut at each repository's pin date (later merges appear as open with no merge commit). The token never enters the repository, the stack or a log. |
+| D110 (default) | Pull requests now; the table keeps a `kind` so issues reuse the pipeline later. No claim is made for issues. |
+| D111 (default) | Backfill: pull requests updated in the last 24 months (live default, configurable). Eval snapshot: the 12 gold repositories, pull requests created up to 24 months before each pin. The other 30 Product repositories have no pull request data and say so in the result. |
+| D112 (default) | Ticket keys in pull request text: an operator-configured list of project keys (TRUNK, RESTWS, O3 for OpenMRS) plus Jira browse links; no generic pattern. |
+| D113 (default) | New tools register only when `MCP_HISTORY_TOOLS=on`; with it off the registration snapshots stay byte-identical (regression gate check 1). The only guidance is in the tool descriptions; no new server-instruction recipe for the first measurement. |
+| D114 (default) | Store author logins, never emails. Pull request text is untrusted third-party content, like source code. Rows are keyed by repository so visibility equals the repository's (new isolation point P12 in the ADR). |
+
+### Slices (all built by Claude agents; reviews by a different Sonnet reviewer)
+
+**S47. Pull request snapshot for the eval corpus.** Tier standard. Network, writes outside the repository.
+- Goal: `pnpm eval -- corpus discussions` fetches pull requests, comments, review comments and changed-file lists for the 12 gold repositories, cut at each pin date, into `$EVAL_O3_DIR/github-snapshot/`, and writes the checksum manifest.
+- Scope: `tests/eval/cli.ts` subcommand and its test (fake `gh`), `tests/eval/datasets/github-snapshot.manifest.json`, the snapshot itself.
+- Done: re-running changes nothing; a validation script shows every gold change unit's pull request present and its merge commit reachable from the repository's pin; no file contains a token.
+- Verify: `pnpm typecheck && pnpm test`; the validation script output.
+- Blocked by: none.
+
+**S48. Store, ports, linker and snapshot import.** Tier hard (schema and linking edge cases).
+- Goal: Postgres tables for discussions, comments, changed files, links and sync state; `ProvenanceStore` and `DiscussionSource` ports in `packages/shared`; a Postgres adapter; a backend queue that imports the snapshot; a linker that ties commits to pull requests (merge commit sha, `(#N)` squash subject, `Merge pull request #N`) and pull requests to ticket keys (D112), checking every commit against the local clone.
+- Scope: `packages/db/prisma/schema.prisma`, `packages/shared`, `packages/backend`, `docs/adr/0001-falkon-architecture.md` (isolation point P12, provenance section), tests.
+- Done: a fixture covering squash, merge-commit, rebase and force-pushed pull requests links correctly; re-import is idempotent; an edited or deleted comment is replaced; on the eval stack every gold (commit, pull request) pair is linked and verified.
+- Verify: `pnpm typecheck && pnpm test`; `pnpm eval -- stack up` with the snapshot, then a SQL count check.
+- Adversarial cases (reviewer checks): empty pull request body; a body naming two ticket keys; a commit naming a pull request that is not in the snapshot; a force-pushed head sha; the same number in two repositories; a very large pull request (files and comments truncated with a flag); a link into a repository outside the caller's Product (dropped); a repository never imported (reported as a coverage gap, not empty).
+- Blocked by: S47.
+
+**S49. Agent tools behind `MCP_HISTORY_TOOLS`.** Tier standard.
+- Goal: `get_pull_request`, `search_discussions`, `get_provenance` (one anchor: commit, pull request, ticket, or path with optional line span), all bounded (about 24 KB output, 20 hits per page, query words ANDed, ticket keys and `#N` exact), reading only Postgres and the local clone; never GitHub.
+- Scope: `packages/shared` tool registry and `toolText.json`, `packages/web/src/lib/tools.ts` and `mcp.ts`, contract snapshots, isolation tests.
+- Done: with the flag off the existing registration snapshots are byte-identical; with it on the new tools follow the existing ones; an out-of-Product repository behaves exactly like a missing one; a never-imported repository returns a coverage gap.
+- Verify: `pnpm typecheck && pnpm test`.
+- Blocked by: S48.
+
+**S50. Eval arm and measurement.** Tier standard. Costs money.
+- Goal: arm `clone-tools-git-prs` (git arm plus the new tools) on its own eval stack with the flag on and the snapshot mounted; run `clone-tools-git` and the new arm on all 40 questions on Haiku the same day; report with `--reference clone-tools-git`.
+- Scope: `tests/eval/harness.ts`, `data.ts`, `cli.ts`, `stack.ts` and tests; other arms deny the new tools and count attempts as denied attempts (D104).
+- Done: per-kind and per-question results, tool-call counts, the D108 verdict.
+- Verify: `pnpm eval -- run --dataset history --model haiku --arms clone-tools-git,clone-tools-git-prs`, then `pnpm eval -- report --dataset history --model haiku --reference clone-tools-git`.
+- Blocked by: S47 to S49.
+
+Not in this cycle: the live GitHub adapter (cycle 15), issues, Markdown materialisation, git-only tools, Jira.
+
+### Limits and budget
+
+- The loop may decide alone: details inside each slice's scope, fix rounds, a re-run of a failed eval run once.
+- It stops for: any new dependency or Postgres extension; any change to the tool registration with the flag off; any secret or real-token step; ADR or glossary changes beyond the planned P12 and provenance text; a change to how existing datasets score; eval spend over $5.
+- Budget: 1.5M subagent tokens and 360 minutes (S48 is hard and the largest; recent cycles used 0.26M to 0.98M).
+- Gate 2 fires when S50's report exists, or on any trigger.
+
 ## Next (planned at gate 2 of cycle 13)
 
 Phase 1: shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor (history provenance linking commit, pull request and ticket behind the `ProvenanceStore` port, D87). Slice and grill it as cycle 14.
