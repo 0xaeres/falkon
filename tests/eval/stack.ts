@@ -3,10 +3,10 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadProduct } from "./data.js";
 
-type Stack = { o3Dir: string; repoRoot: string; port: number; project: string; instructions?: "off"; recipe?: "on" };
+type Stack = { o3Dir: string; repoRoot: string; port: number; project: string; instructions?: "off"; recipe?: "on"; prs?: "on" };
 
 /** The clone's config and an isolated compose project that indexes every product repository in place, read-only. */
-export function stackFiles({ o3Dir, repoRoot, port, project, instructions, recipe }: Stack) {
+export function stackFiles({ o3Dir, repoRoot, port, project, instructions, recipe, prs }: Stack) {
   const repos = loadProduct().repositories;
   const config = {
     knowledgeBase: { enabled: false },
@@ -20,7 +20,8 @@ export function stackFiles({ o3Dir, repoRoot, port, project, instructions, recip
     services: {
       postgres: { image: "postgres:17-alpine", environment: { POSTGRES_USER: "falkon", POSTGRES_PASSWORD: "falkon", POSTGRES_DB: "falkon" }, volumes: ["pgdata:/var/lib/postgresql/data"], healthcheck: { test: ["CMD-SHELL", "pg_isready -U falkon"], interval: "3s", retries: 30 } },
       redis: { image: "redis:7-alpine", healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: "3s", retries: 30 } },
-      backend: { ...app, build: { context: repoRoot, dockerfile: "docker/Dockerfile" }, command: ["sh", "-c", "pnpm --filter @falkon/db push && pnpm --filter @falkon/backend start"], depends_on: { postgres: { condition: "service_healthy" }, redis: { condition: "service_healthy" } } },
+      // --prs on: the backend imports the pull request snapshot (S47) after indexing each repository.
+      backend: { ...app, ...(prs ? { environment: { ...environment, DISCUSSIONS_SNAPSHOT_DIR: "/discussions", DISCUSSION_TICKET_KEYS: "TRUNK,RESTWS,O3" }, volumes: [...app.volumes, `${o3Dir}/github-snapshot:/discussions:ro`] } : {}), build: { context: repoRoot, dockerfile: "docker/Dockerfile" }, command: ["sh", "-c", "pnpm --filter @falkon/db push && pnpm --filter @falkon/backend start"], depends_on: { postgres: { condition: "service_healthy" }, redis: { condition: "service_healthy" } } },
       zoekt: { ...app, command: ["zoekt-webserver", "-index", "/data/index", "-rpc", "-listen", ":6070"], depends_on: ["backend"] },
       web: { ...app, environment: { ...environment, ...(instructions ? { MCP_INSTRUCTIONS: instructions } : {}), ...(recipe ? { MCP_IMPACT_RECIPE: recipe } : {}) }, command: ["pnpm", "--filter", "@falkon/web", "start"], ports: [`127.0.0.1:${port}:3000`], depends_on: ["backend", "zoekt"] },
     },

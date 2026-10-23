@@ -93,6 +93,8 @@ test("stack takes --instructions off only", async () => {
 test("stack takes --recipe on only, and not together with --instructions off", async () => {
   await assert.rejects(main(["stack", "up", "--recipe", "off"], {}), /--recipe must be on/);
   await assert.rejects(main(["stack", "up", "--recipe", "on", "--instructions", "off"], {}), /separate stacks/);
+  await assert.rejects(main(["stack", "up", "--prs", "on", "--recipe", "on"], {}), /separate stacks/);
+  await assert.rejects(main(["stack", "up", "--prs", "off"], {}), /--prs must be on/);
 });
 
 test("the impact set: 11 questions, 6 dev and 5 hidden, with 3 to 8 gold spans each, and a pilot of all the dev ones", async () => {

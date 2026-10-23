@@ -24,12 +24,13 @@
  *
  * Impact-and-change set (S25): --dataset impact selects o3-impact (11 questions, its pilot is the 6 dev ones) instead of the two O3 sets;
  * arm clone-tools-recipe talks to a second stack (`stack up --recipe on`: project falkon-eval-recipe on EVAL_RECIPE_PORT with MCP_IMPACT_RECIPE=on);
+ * `stack up --prs on` (S48) starts project falkon-eval-prs on EVAL_PRS_PORT, whose backend imports <EVAL_O3_DIR>/github-snapshot after indexing;
  * `report --reference clone-tools` compares the arms against that arm's runs of the same model instead of the recorded floor or v6-tools.
  *
  * Commit-history set (S43): --dataset history selects o3-history, whose answers cite spans, commits, pull requests and tickets; arm clone-tools-git
  * (the clone stack, plus list_commits, get_diff and list_branches) is meant for it.
  *
- * Environment: EVAL_O3_DIR (corpus checkouts), EVAL_PORT (3400), EVAL_NOINSTR_PORT (3401), EVAL_RECIPE_PORT (3402), EVAL_RUNS_DIR, EVAL_WORK_DIR,
+ * Environment: EVAL_O3_DIR (corpus checkouts), EVAL_PORT (3400), EVAL_NOINSTR_PORT (3401), EVAL_RECIPE_PORT (3402), EVAL_PRS_PORT (3403), EVAL_RUNS_DIR, EVAL_WORK_DIR,
  * EVAL_API_KEY_FILE (optional key file for the clone stacks), EVAL_SPEND_CAP (agent spend ledger per model directory, default 6),
  * EVAL_V6_URL (the v6-tools arm's MCP endpoint, e.g. http://127.0.0.1:3000/api/mcp) and EVAL_V6_KEY_FILE (its key, a mode 600 file).
  * Start the stack with `pnpm eval -- stack up`; its state lives under tests/eval/.local (ignored).
@@ -63,6 +64,7 @@ const config = (env: NodeJS.ProcessEnv) => ({
   port: Number(env.EVAL_PORT ?? 3400),
   noinstrPort: Number(env.EVAL_NOINSTR_PORT ?? 3401),
   recipePort: Number(env.EVAL_RECIPE_PORT ?? 3402),
+  prsPort: Number(env.EVAL_PRS_PORT ?? 3403),
   spendCap: Number(env.EVAL_SPEND_CAP ?? 6),
   runsRoot: resolve(env.EVAL_RUNS_DIR ?? join(REPO_ROOT, ".scratch/falkon-mvp/eval-runs")),
   workDir: resolve(env.EVAL_WORK_DIR ?? "/private/tmp/falkon-eval"),
@@ -151,7 +153,7 @@ function pilotReport(named: Dataset, stored: Raw[], arms: Arm[], alias: string, 
 export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env): Promise<string> {
   const args = argv.filter((a, i) => !(a === "--" && i < 2)); // pnpm may pass a leading "--"
   const command = args[0], cfg = config(env), listing = args.includes("--list");
-  if (!["pilot", "run", "report", "preflight", "stack", "corpus"].includes(command ?? "")) throw new Error("Usage: pnpm eval -- pilot|run|report|preflight|stack|corpus deepen [--split dev|hidden] [--model sonnet|haiku] [--arms clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git] [--dataset impact|history] [--reference arm] [--list] [--pilot] [--instructions off] [--recipe on]");
+  if (!["pilot", "run", "report", "preflight", "stack", "corpus"].includes(command ?? "")) throw new Error("Usage: pnpm eval -- pilot|run|report|preflight|stack|corpus deepen [--split dev|hidden] [--model sonnet|haiku] [--arms clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git] [--dataset impact|history] [--reference arm] [--list] [--pilot] [--instructions off] [--recipe on] [--prs on]");
   const splitFlag = flagValue(args, "--split");
   if (splitFlag && !["dev", "hidden"].includes(splitFlag)) throw new Error("--split must be dev or hidden");
   const split = (splitFlag ?? "dev") as "dev" | "hidden";
@@ -170,12 +172,14 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     return deepenCheckouts(cfg.o3Dir) + "\n";
   }
   if (command === "stack") {
-    const instructions = flagValue(args, "--instructions"), recipe = flagValue(args, "--recipe");
+    const instructions = flagValue(args, "--instructions"), recipe = flagValue(args, "--recipe"), prs = flagValue(args, "--prs");
     if (instructions && instructions !== "off") throw new Error("--instructions must be off (the default stack keeps the instructions on).");
     if (recipe && recipe !== "on") throw new Error("--recipe must be on (the default stack serves no recipe).");
-    if (instructions && recipe) throw new Error("--instructions off and --recipe on are separate stacks; pass one.");
-    const extra = args.slice(2).filter((a, i, all) => !["--instructions", "--recipe"].includes(a) && !["--instructions", "--recipe"].includes(all[i - 1]!));
+    if (prs && prs !== "on") throw new Error("--prs must be on (the default stack imports no pull requests).");
+    if ([instructions, recipe, prs].filter(Boolean).length > 1) throw new Error("--instructions off, --recipe on and --prs on are separate stacks; pass one.");
+    const extra = args.slice(2).filter((a, i, all) => !["--instructions", "--recipe", "--prs"].includes(a) && !["--instructions", "--recipe", "--prs"].includes(all[i - 1]!));
     const base = { o3Dir: cfg.o3Dir, repoRoot: REPO_ROOT };
+    if (prs) return stack(args[1] ?? "", extra, { ...base, port: cfg.prsPort, project: "falkon-eval-prs", prs: "on", stateDir: resolve(env.EVAL_PRS_STATE_DIR ?? join(EVAL_DIR, ".local/stack-prs")) });
     if (recipe) return stack(args[1] ?? "", extra, { ...base, port: cfg.recipePort, project: "falkon-eval-recipe", recipe: "on", stateDir: resolve(env.EVAL_RECIPE_STATE_DIR ?? join(EVAL_DIR, ".local/stack-recipe")) });
     return instructions
       ? stack(args[1] ?? "", extra, { ...base, port: cfg.noinstrPort, project: "falkon-eval-noinstr", instructions: "off", stateDir: resolve(env.EVAL_NOINSTR_STATE_DIR ?? join(EVAL_DIR, ".local/stack-noinstr")) })

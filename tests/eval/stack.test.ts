@@ -50,3 +50,16 @@ test("--instructions off sets MCP_INSTRUCTIONS on the web service only, in its o
   assert.equal(off.compose.services.web.environment.AUTH_URL, "http://127.0.0.1:3401");
   assert.ok(!JSON.stringify(files().compose).includes("MCP_INSTRUCTIONS"));
 });
+
+test("--prs on mounts the pull request snapshot read-only into the backend only and sets its import environment, in its own project and port", () => {
+  const on = stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3403, project: "falkon-eval-prs", prs: "on" });
+  assert.equal(on.compose.name, "falkon-eval-prs");
+  assert.deepEqual(on.compose.services.web.ports, ["127.0.0.1:3403:3000"]);
+  const backend = on.compose.services.backend as { environment: Record<string, string>; volumes: string[] };
+  assert.equal(backend.environment.DISCUSSIONS_SNAPSHOT_DIR, "/discussions");
+  assert.equal(backend.environment.DISCUSSION_TICKET_KEYS, "TRUNK,RESTWS,O3");
+  assert.ok(backend.volumes.includes("/corpus/github-snapshot:/discussions:ro"));
+  assert.equal(backend.volumes.length, files().compose.services.backend.volumes.length + 1);
+  for (const s of ["web", "zoekt"] as const) assert.ok(!JSON.stringify(on.compose.services[s]).includes("discussions"), s);
+  assert.ok(!JSON.stringify(files().compose).includes("discussions"));
+});
