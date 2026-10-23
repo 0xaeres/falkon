@@ -1,8 +1,9 @@
 import { prisma, RepoKind, type Repo } from "@falkon/db";
-import { createToolRunner, gitDirOf, repoPath, type ToolDeps, type ToolRepo } from "@falkon/shared";
+import { createToolRunner, gitDirOf, postgresProvenanceStore, repoPath, type ToolDeps, type ToolRepo } from "@falkon/shared";
 import "./repos";
 
 const toToolRepo = (r: Repo): ToolRepo => ({
+  id: r.id,
   name: r.name,
   displayName: r.displayName,
   codeHostType: r.external_codeHostType,
@@ -29,6 +30,8 @@ export const toolDeps: ToolDeps = {
     return rows.map(toToolRepo);
   },
   baseUrl: (process.env.AUTH_URL ?? "http://localhost:3000").replace(/\/$/, ""),
+  // Read by the history tools only, which register only with MCP_HISTORY_TOOLS=on.
+  history: postgresProvenanceStore(prisma),
 };
 
 export const runTool = createToolRunner(toolDeps);

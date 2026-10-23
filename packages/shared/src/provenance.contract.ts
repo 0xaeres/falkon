@@ -137,6 +137,22 @@ export function provenanceStoreContract(label: string, make: MakeStore, skip: bo
     assert.deepEqual([next.hits.map((h) => h.number), next.hasMore], [[2], false]);
   });
 
+  it("search: kind, state and created-date filters; total counts every match, capped", async () => {
+    const { store, id } = await seeded(make);
+    await store.replaceDiscussion(id(APP), pr(1, { title: "widget one", state: "merged", createdAt: t("2025-01-01T00:00:00Z") }), []);
+    await store.replaceDiscussion(id(APP), pr(2, { title: "widget two", state: "open", createdAt: t("2025-06-01T00:00:00Z") }), []);
+    await store.replaceDiscussion(id(LIB), pr(3, { title: "widget three", kind: "ISSUE", state: "closed", createdAt: t("2025-03-01T00:00:00Z") }), []);
+    const numbers = async (o = {}) => { const r = await store.search(SET, { words: ["widget"], ...o }); return [r.hits.map((h) => h.number).sort(), r.total, r.totalCapped]; };
+    assert.deepEqual(await numbers(), [[1, 2, 3], 3, false]);
+    assert.deepEqual(await numbers({ kind: "PR" }), [[1, 2], 2, false]);
+    assert.deepEqual(await numbers({ kind: "ISSUE" }), [[3], 1, false]);
+    assert.deepEqual(await numbers({ state: "open" }), [[2], 1, false]);
+    assert.deepEqual(await numbers({ since: t("2025-03-01T00:00:00Z") }), [[2, 3], 2, false]);
+    assert.deepEqual(await numbers({ until: t("2025-03-01T00:00:00Z") }), [[1, 3], 2, false]);
+    assert.deepEqual(await numbers({ limit: 1 }), [[3], 3, false], "total is the match count, not the page size");
+    assert.deepEqual(await numbers({ words: ["nothing"] }), [[], 0, false]);
+  });
+
   it("sync state round-trips", async () => {
     const { store, id } = await make();
     assert.equal(await store.syncState(id(APP)), undefined);

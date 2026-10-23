@@ -7,6 +7,7 @@ import { simpleGit } from "simple-git";
 import { qRepo, type Q } from "./ir";
 import { searchIR, type SearchResponse } from "./zoekt";
 import type { Scope } from "./access";
+import type { ProvenanceStore } from "./provenance";
 import text from "./toolText.json" with { type: "json" };
 
 /**
@@ -16,6 +17,8 @@ import text from "./toolText.json" with { type: "json" };
 
 /** A repository row as the tools need it. */
 export interface ToolRepo {
+  /** The registry id; the history tools read sync state by it. */
+  id?: number;
   name: string;
   displayName: string | null;
   codeHostType: string;
@@ -37,6 +40,8 @@ export interface ToolDeps {
   listRepos(o: { query?: string; sort: "name" | "pushed"; direction: "asc" | "desc" }): Promise<ToolRepo[]>;
   /** The web app's public base URL (the AUTH_URL setting). */
   baseUrl: string;
+  /** Pull request provenance (the history tools, registered only with MCP_HISTORY_TOOLS=on). */
+  history?: ProvenanceStore;
 }
 
 export interface ToolContext {
@@ -60,7 +65,7 @@ export interface ToolResult {
   sources?: ToolSource[];
 }
 
-interface ToolDefinition<S extends z.ZodRawShape> {
+export interface ToolDefinition<S extends z.ZodRawShape> {
   name: string;
   description: string;
   inputSchema: z.ZodObject<S>;
@@ -71,26 +76,26 @@ interface ToolDefinition<S extends z.ZodRawShape> {
 
 const t = text as Record<string, { description: string; params: Record<string, string> }>;
 const p = (tool: string, param: string) => t[tool]!.params[param]!;
-const define = <S extends z.ZodRawShape>(d: ToolDefinition<S>) => d;
+export const define = <S extends z.ZodRawShape>(d: ToolDefinition<S>) => d;
 
 // ---- service errors ----
 
 const notFound = (repo: string) => new Error(`Repository "${repo}" not found.`);
-const fileNotFound = (path: string, repo: string) => new Error(`File "${path}" not found in repository "${repo}"`);
+export const fileNotFound = (path: string, repo: string) => new Error(`File "${path}" not found in repository "${repo}"`);
 const invalidGitRef = (ref: string) => new Error(`Invalid git reference: "${ref}". Git refs cannot start with '-'.`);
 const unresolvedGitRef = (ref: string) => new Error(`Git reference "${ref}" could not be resolved.`);
 const unexpected = (m: string) => new Error(`Unexpected error: ${m}`);
 const isGitRefValid = (ref: string) => !ref.startsWith("-");
-const isPathValid = (path: string) => !(path.split("/").some((s) => s === "..") || path.includes("\0"));
+export const isPathValid = (path: string) => !(path.split("/").some((s) => s === "..") || path.includes("\0"));
 
 /** Repo by name, invisible (same error as missing) when the caller's scope excludes it. */
-async function repoOrThrow(ctx: ToolContext, name: string) {
+export async function repoOrThrow(ctx: ToolContext, name: string) {
   const r = ctx.scope.allows(name) ? await ctx.deps.getRepo(name) : undefined;
   if (!r) throw notFound(name);
   return r;
 }
 
-const git = (r: ToolRepo) => simpleGit().cwd(r.path);
+export const git = (r: ToolRepo, timeoutMs?: number) => (timeoutMs ? simpleGit({ abort: AbortSignal.timeout(timeoutMs) }) : simpleGit()).cwd(r.path);
 const truncateLine = (l: string) => (l.length > 2000 ? l.substring(0, 2000) + "... (line truncated to 2000 chars)" : l);
 const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
 

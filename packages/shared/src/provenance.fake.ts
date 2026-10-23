@@ -1,7 +1,7 @@
 // In-memory ProvenanceStore for tests without a database: the semantics the Postgres adapter must match
 // (provenance.contract.ts runs the same cases against both).
 import {
-  MAX_ROWS, notIngested, searchBounds,
+  MAX_OFFSET, MAX_ROWS, notIngested, searchBounds,
   type Discussion, type Link, type ProvenanceStore, type RepoLink, type SearchHit, type SyncState,
 } from "./provenance";
 
@@ -42,16 +42,17 @@ export function fakeProvenanceStore(repos: Record<string, number>) {
     },
     async search(set, q) {
       const { words, limit, offset } = searchBounds(q);
+      const { kind, state, since, until } = q;
       const r = rows(q.repo === undefined ? set : set.filter((n) => n === q.repo));
       const ids = new Set(r.filter((x) => x.ingested).map((x) => x.id));
       const has = (text: string | null, w: string) => (text ?? "").toLowerCase().includes(w.toLowerCase());
       const hits: SearchHit[] = words.length
         ? [...discussions.values()]
-            .filter((d) => ids.has(d.repoId) && words.every((w) => has(d.title, w) || has(d.body, w) || has(d.headRef, w) || d.comments.some((c) => has(c.body, w))))
+            .filter((d) => ids.has(d.repoId) && (!kind || d.kind === kind) && (!state || d.state === state) && (!since || d.createdAt >= since) && (!until || d.createdAt <= until) && words.every((w) => has(d.title, w) || has(d.body, w) || has(d.headRef, w) || d.comments.some((c) => has(c.body, w))))
             .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || nameOf(a.repoId).localeCompare(nameOf(b.repoId)) || a.number - b.number)
             .map((d) => ({ repo: nameOf(d.repoId), number: d.number, title: d.title, state: d.state, mergedAt: d.mergedAt, updatedAt: d.updatedAt, url: d.url }))
         : [];
-      return { hits: hits.slice(offset, offset + limit), hasMore: hits.length > offset + limit, gaps: gapsOf(r), timedOut: false };
+      return { hits: hits.slice(offset, offset + limit), hasMore: hits.length > offset + limit, gaps: gapsOf(r), timedOut: false, total: Math.min(hits.length, MAX_OFFSET), totalCapped: hits.length > MAX_OFFSET };
     },
     async links(set, anchor, o = {}) {
       if (anchor.kind === "pr" && !set.includes(anchor.repo)) return { links: [], gaps: [] };
