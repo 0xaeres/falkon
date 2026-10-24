@@ -18,6 +18,6 @@ empty results must be investigated before accepting a baseline.
 
 Normalization preserves Zoekt's ranked file, match and chunk order and MCP text.
 Only timings and unordered branch/range ordering are normalized. GET search
-supports `limit`, but ignores `page`. Search pagination is a named non-goal except
+supports `limit`; the recorder does not send `page`, which the api search route rejects. Search pagination is a named non-goal except
 where a route supports it; commit, branch and repository paging remain covered by
 the MCP contracts. The `page: 1` on limit-one covers only the recorder option shape.

@@ -35,24 +35,11 @@ services:
     <<: *app
     command: zoekt-webserver -index /data/index -rpc -listen :6070
     volumes: [data:/data]
-    # Not published to the host: zoekt has no auth, so it must only be reachable by web inside the compose network.
+    # Not published to the host: zoekt has no auth, so it must only be reachable by the api inside the compose network.
     expose: ["6070"]
     depends_on: [backend]
 
-  web:
-    <<: *app
-    command: pnpm --filter @falkon/web start
-    env_file: [.env]
-    environment:
-      DATABASE_URL: postgresql://falkon:falkon@postgres:5432/falkon
-      DATA_DIR: /data
-      ZOEKT_URL: http://zoekt:6070
-      CONFIG_PATH: /config/config.json
-    volumes: [data:/data, "./config.json:/config/config.json:ro"]
-    ports: ["3000:3000"]
-    depends_on: [backend, zoekt]
-
-  # NestJS boundary (strangler): serves /mcp/<product> beside web's untouched /api/mcp, and the Product
+  # NestJS service: serves /mcp/<product> and the Product
   # registry admin API on a second listener (3002). Both are published on host loopback only; the 0.0.0.0
   # binds are inside the container. The admin listener always runs and needs `Authorization: Bearer <token>`: ADMIN_TOKEN
   # (32+ characters) if set, else the token generated into /data/secrets/admin.token (`scripts/admin-token.sh show|reset`).

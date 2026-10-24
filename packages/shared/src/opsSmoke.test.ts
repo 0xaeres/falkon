@@ -34,14 +34,14 @@ if (command === 'date') {
   console.log(next);
 } else if (command === 'docker') {
   if (args[0] === 'stats') {
-    const names = ['backend', 'web', 'zoekt', 'postgres', 'redis', 'api'].slice(0, scenario === 'memory-five' ? 5 : 6);
+    const names = ['backend', 'zoekt', 'postgres', 'redis', 'api'].slice(0, scenario === 'memory-four' ? 4 : 5);
     for (const [i, name] of names.entries()) {
-      const usage = scenario === 'memory-bad' && !i ? 'n/a' : scenario === 'memory-fail' ? (i ? '100MB' : '154.01MB') :
-        scenario === 'memory-edge' ? (i ? '100MB' : '154MB') :
-        ['100MiB', '0.1GB', '100MB', '50000kB', '50000KiB', '100MB'][i];
+      const usage = scenario === 'memory-bad' && !i ? 'n/a' : scenario === 'memory-fail' ? (i ? '100MB' : '254.01MB') :
+        scenario === 'memory-edge' ? (i ? '100MB' : '254MB') :
+        ['100MiB', '100MB', '50000kB', '50000KiB', '100MB'][i];
       console.log(JSON.stringify({ Name: name, MemUsage: usage + ' / 2GiB' }));
     }
-  } else if (args.includes('ps')) console.log(scenario === 'memory-five' ? 'backend\\nweb\\nzoekt\\npostgres\\nredis' : 'backend\\nweb\\nzoekt\\npostgres\\nredis\\napi');
+  } else if (args.includes('ps')) console.log(scenario === 'memory-four' ? 'backend\\nzoekt\\npostgres\\nredis' : 'backend\\nzoekt\\npostgres\\nredis\\napi');
   else if (args.includes('logs')) console.log('fixture compose failure logs');
 } else if (command === 'pnpm') {
   if (args.includes('exec')) process.exit(scenario === 'deps' ? 1 : 0);
@@ -98,9 +98,9 @@ test("smoke compares two captures, warns without a baseline and records only whe
   assert.equal(missing.status, 0, missing.output);
   assert.match(missing.output, /WARN no baseline exists/);
   assert.match(missing.output, /PASS golden-stability/);
-  assert.match(missing.output, /INFO memory: whole clone stack 506\.06 MB/);
+  assert.match(missing.output, /INFO memory: whole clone stack 406\.06 MB/);
   assert.equal(missing.baseline, undefined);
-  assert.equal(missing.events.filter(event => event.args.includes("golden:record")).length, 3);
+  assert.equal(missing.events.filter(event => event.args.includes("golden:record")).length, 2);
   const recorded = smoke({ record: true });
   assert.equal(recorded.status, 0, recorded.output);
   assert.deepEqual(recorded.baseline, { capture: 1 });
@@ -139,10 +139,10 @@ test("smoke still fails memory when the measurement itself is unreliable", () =>
   assert.equal(bad.status, 1, bad.output);
   assert.match(bad.output, /unrecognized usage n\/a/);
   assert.doesNotMatch(bad.output, /INFO memory/);
-  const five = smoke({ scenario: "memory-five" });
-  assert.equal(five.status, 1, five.output);
-  assert.match(five.output, /expected measurements for all six clone services/);
-  assert.doesNotMatch(five.output, /INFO memory/);
+  const four = smoke({ scenario: "memory-four" });
+  assert.equal(four.status, 1, four.output);
+  assert.match(four.output, /expected measurements for all five clone services/);
+  assert.doesNotMatch(four.output, /INFO memory/);
 });
 
 test("smoke explains missing runner dependencies and bounds the config-reload deletion wait", () => {
@@ -156,14 +156,17 @@ test("smoke explains missing runner dependencies and bounds the config-reload de
   assert.match(deletion.output, /fixture compose failure logs/);
 });
 
-test("smoke routes a golden capture through the api service and fails when it differs or the api never answers", () => {
+test("smoke runs the whole stack as five services in a falkon-eval project and sends search and golden captures through the api", () => {
   const ok = smoke();
   assert.equal(ok.status, 0, ok.output);
-  assert.match(ok.output, /PASS golden-api/);
-  assert.equal(ok.events.filter(event => event.args.includes("golden:record")).length, 3);
-  const drift = smoke({ scenario: "api-drift" });
-  assert.equal(drift.status, 1, drift.output);
-  assert.match(drift.output, /FAIL golden-api: capture through \/mcp\/fixtures differs/);
+  const compose = ok.events.find((event) => event.command === "docker" && event.args.includes("up"))!;
+  assert.match(compose.args[compose.args.indexOf("-p") + 1]!, /^falkon-eval-/);
+  const searches = ok.events.filter((event) => event.command === "curl" && event.args.includes("-o"));
+  assert.ok(searches.length > 0);
+  for (const event of searches) {
+    assert.ok(event.args.includes("http://127.0.0.1:3302/ui/products/fixtures/search"));
+    assert.ok(event.args.some((arg) => /^authorization: Bearer [0-9a-f]{48}$/.test(arg)));
+  }
   const down = smoke({ scenario: "api-down" });
   assert.equal(down.status, 1, down.output);
   assert.match(down.output, /FAIL api: \/mcp\/fixtures did not answer within 3s/);

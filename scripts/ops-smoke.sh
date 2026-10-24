@@ -13,9 +13,7 @@ pnpm -C "$root" --filter @falkon/shared exec tsx -e "import '../../tests/golden/
     fail 'prerequisites: golden runner cannot start; run pnpm install in the worktree and retry'
 pass "$step"
 temp=$(mktemp -d)
-project="falkon-smoke-$$"
-port=${SMOKE_PORT:-3300}
-base="http://127.0.0.1:$port"
+project="falkon-eval-smoke-$$"
 api_port=${SMOKE_API_PORT:-3301}
 api_base="http://127.0.0.1:$api_port"
 admin_port=${SMOKE_ADMIN_PORT:-3302}
@@ -46,17 +44,16 @@ trap cleanup EXIT
 trap 'exit 130' HUP INT TERM
 step=fixtures
 sh "$root/tests/fixtures/build.sh" "$temp" >/dev/null
-ADMIN_TOKEN="$admin_token" node - "$root" "$temp" "$port" "$api_port" "$admin_port" docker/Dockerfile <<'JS'
+ADMIN_TOKEN="$admin_token" node - "$root" "$temp" "$api_port" "$admin_port" docker/Dockerfile <<'JS'
 const fs = require('node:fs');
-const [root, temp, port, apiPort, adminPort, dockerfile] = process.argv.slice(2);
-const env = { DATABASE_URL: 'postgresql://falkon:falkon@postgres:5432/falkon', REDIS_URL: 'redis://redis:6379', DATA_DIR: '/data', CONFIG_PATH: '/fixtures/config.json', ZOEKT_URL: 'http://zoekt:6070', AUTH_URL: `http://127.0.0.1:${port}`, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'safe.directory', GIT_CONFIG_VALUE_0: '*' };
+const [root, temp, apiPort, adminPort, dockerfile] = process.argv.slice(2);
+const env = { DATABASE_URL: 'postgresql://falkon:falkon@postgres:5432/falkon', REDIS_URL: 'redis://redis:6379', DATA_DIR: '/data', CONFIG_PATH: '/fixtures/config.json', ZOEKT_URL: 'http://zoekt:6070', AUTH_URL: `http://127.0.0.1:${apiPort}`, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'safe.directory', GIT_CONFIG_VALUE_0: '*' };
 const app = { image: 'falkon-smoke-app', pull_policy: 'never', environment: env, volumes: ['data:/data', `${temp}:/fixtures:ro`] };
 const compose = { services: {
   postgres: { image: 'postgres:17-alpine', environment: { POSTGRES_USER: 'falkon', POSTGRES_PASSWORD: 'falkon', POSTGRES_DB: 'falkon' }, volumes: ['pgdata:/var/lib/postgresql/data'], healthcheck: { test: ['CMD-SHELL', 'pg_isready -U falkon'], interval: '3s', retries: 30 } },
   redis: { image: 'redis:7-alpine', healthcheck: { test: ['CMD', 'redis-cli', 'ping'], interval: '3s', retries: 30 } },
   backend: { ...app, build: { context: root, dockerfile }, command: ['sh', '-c', 'pnpm --filter @falkon/db push && pnpm --filter @falkon/backend start'], depends_on: { postgres: { condition: 'service_healthy' }, redis: { condition: 'service_healthy' } } },
   zoekt: { ...app, command: ['zoekt-webserver', '-index', '/data/index', '-rpc', '-listen', ':6070'], depends_on: ['backend'] },
-  web: { ...app, command: ['pnpm', '--filter', '@falkon/web', 'start'], ports: [`127.0.0.1:${port}:3000`], depends_on: ['backend', 'zoekt'] },
   api: { ...app, environment: { ...env, API_HOST: '0.0.0.0', API_ADMIN_HOST: '0.0.0.0', AUTH_MODE: 'none', ADMIN_TOKEN: process.env.ADMIN_TOKEN }, command: ['node', 'packages/api/dist/main.js'], ports: [`127.0.0.1:${apiPort}:3001`, `127.0.0.1:${adminPort}:3002`], depends_on: ['backend', 'zoekt'] }
 }, volumes: { pgdata: {}, data: {} } };
 fs.writeFileSync(`${temp}/compose.json`, JSON.stringify(compose));
@@ -66,8 +63,10 @@ step=cold-start
 compose up -d --build >/dev/null
 pass "$step"
 
+# The fixtures Product (config context "fixtures") searched through the api's Product-scoped route on the admin listener.
+search_path=/ui/products/fixtures/search
 search() {
-    curl --silent --show-error --fail --max-time 10 --get --data-urlencode "q=$1" --data-urlencode 'limit=1000' "$base/api/search" -o "$temp/search.json" 2>/dev/null
+    curl --silent --show-error --fail --max-time 10 --get --header "authorization: Bearer $admin_token" --data-urlencode "q=$1" --data-urlencode 'limit=1000' "$admin_base$search_path" -o "$temp/search.json" 2>/dev/null
 }
 wait_for() {
     query=$1
@@ -137,8 +136,10 @@ step=oversized-file
 wait_for 'oversized_only_marker' absent fixtures.test/atlas
 pass "$step"
 step=golden-stability
-BASE_URL="$base" pnpm -C "$root" golden:record "$temp/golden-before.json" >/dev/null
-BASE_URL="$base" pnpm -C "$root" golden:record "$temp/golden-after.json" >/dev/null
+# Search and MCP both go through the api service: search on the admin listener (admin token), MCP on /mcp/fixtures.
+export MCP_PATH="$api_base/mcp/fixtures" SEARCH_PATH="$search_path" API_KEY="$admin_token" BASE_URL="$admin_base"
+pnpm -C "$root" golden:record "$temp/golden-before.json" >/dev/null
+pnpm -C "$root" golden:record "$temp/golden-after.json" >/dev/null
 pnpm -C "$root" golden:diff "$temp/golden-before.json" "$temp/golden-after.json" >/dev/null
 step=golden-baseline
 baseline="$root/tests/golden/expected.json"
@@ -151,12 +152,6 @@ fi
 # Optional durable output for a later slice's before/after comparison.
 if [ -n "${GOLDEN_OUTPUT:-}" ]; then cp "$temp/golden-before.json" "$GOLDEN_OUTPUT"; fi
 pass golden-stability
-step=golden-api
-# The same capture with the MCP steps routed through the Nest service; search stays on web. Must equal the reference exactly.
-MCP_PATH="$api_base/mcp/fixtures" BASE_URL="$base" pnpm -C "$root" golden:record "$temp/golden-api.json" >/dev/null
-if [ -f "$baseline" ]; then reference="$baseline"; else reference="$temp/golden-before.json"; fi
-pnpm -C "$root" golden:diff "$reference" "$temp/golden-api.json" || fail "golden-api: capture through /mcp/fixtures differs from $reference"
-pass "$step"
 step=resync
 printf '\nresync_only_marker\n' >> "$temp/repos/atlas/README.md"
 git -C "$temp/repos/atlas" add README.md
@@ -184,7 +179,7 @@ pass "$step"
 step=memory
 compose ps -q > "$temp/container-ids"
 [ -s "$temp/container-ids" ]
-# Include the whole clone stack: backend, web, api, zoekt, postgres and redis.
+# Include the whole clone stack: backend, api, zoekt, postgres and redis.
 # Docker container IDs are whitespace-free; pass each as a separate argument.
 # shellcheck disable=SC2046
 docker stats --no-stream --format '{{json .}}' $(cat "$temp/container-ids") > "$temp/memory.jsonl"
@@ -193,7 +188,7 @@ const fs = require('node:fs');
 const [file, ids] = process.argv.slice(2);
 const rows = fs.readFileSync(file, 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
 const expected = fs.readFileSync(ids, 'utf8').trim().split(/\s+/).length;
-if (rows.length !== expected || expected !== 6) throw new Error('FAIL memory: expected measurements for all six clone services');
+if (rows.length !== expected || expected !== 5) throw new Error('FAIL memory: expected measurements for all five clone services');
 const units = { B: 1, kB: 1e3, KB: 1e3, MB: 1e6, GB: 1e9, KiB: 1024, MiB: 1024 ** 2, GiB: 1024 ** 3 };
 let total = 0;
 for (const row of rows) {
