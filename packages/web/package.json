@@ -10,14 +10,9 @@
     "test": "node --import tsx --test \"src/lib/**/*.test.ts\""
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "3.0.70",
-    "@ai-sdk/openai": "3.0.53",
-    "@ai-sdk/openai-compatible": "2.0.41",
-    "@modelcontextprotocol/sdk": "^1.18.0",
     "@falkon/db": "workspace:*",
     "@falkon/shared": "workspace:*",
     "ai": "6.0.167",
-    "dedent": "1.7.1",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

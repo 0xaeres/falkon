@@ -10,7 +10,7 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-instructions-"));
 process.env.CONFIG_PATH = path.join(dir, "config.json");
 fs.writeFileSync(process.env.CONFIG_PATH, "{}");
 for (const key of ["LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY"]) delete process.env[key];
-import { registerHooks, createRequire } from "node:module";
+import { registerHooks } from "node:module";
 // Pin the workspace package to this tree, as the contract test does.
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
@@ -21,7 +21,7 @@ let createMcpServer: typeof import("../mcp").createMcpServer;
 let scopeFor: typeof import("@falkon/shared").scopeFor;
 before(async () => {
   ({ createMcpServer } = await import("../mcp"));
-  ({ scopeFor } = createRequire(import.meta.url)("@falkon/shared"));
+  ({ scopeFor } = await import("@falkon/shared"));
 });
 after(() => { hooks.deregister(); mock.restoreAll(); fs.rmSync(dir, { recursive: true, force: true }); delete process.env.MCP_INSTRUCTIONS; });
 

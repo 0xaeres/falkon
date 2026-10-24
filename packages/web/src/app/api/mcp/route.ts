@@ -1,4 +1,4 @@
-import { handleMcpDelete, handleMcpPost } from "@/lib/mcp";
+import { handleMcpDelete, handleMcpPost } from "@engine/mcp";
 import { scopeOf, unauthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";

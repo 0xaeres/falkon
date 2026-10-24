@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { registerHooks, createRequire } from "node:module";
+import { registerHooks } from "node:module";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
@@ -13,14 +13,14 @@ const seen = new Set<string>();
 registerHooks({
   resolve(specifier, context, nextResolve) {
     seen.add(specifier);
-    return nextResolve(specifier === "@falkon/shared" ? new URL("../../../../shared/src/index.ts", "file://" + __filename).href : specifier, context);
+    return nextResolve(specifier === "@falkon/shared" ? new URL("../../../../shared/src/index.ts", import.meta.url).href : specifier, context);
   },
 });
 const loadedAi = () => [...seen].filter((s) => s === "ai" || s.startsWith("ai/") || s.startsWith("@ai-sdk/"));
 
 async function main() {
   const { createMcpServer } = await import("../mcp");
-  const { scopeFor } = createRequire(__filename)("@falkon/shared");
+  const { scopeFor } = await import("@falkon/shared");
   const server = await createMcpServer(scopeFor(["*"]));
   const client = new Client({ name: "lazy", version: "1" });
   const [a, b] = InMemoryTransport.createLinkedPair();

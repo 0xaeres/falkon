@@ -14,7 +14,7 @@ process.env.DATA_DIR = fixture.dir;
 process.env.ZOEKT_URL = "invalid-contract-url";
 process.env.CONFIG_PATH = path.join(fixture.dir, "config.json");
 for (const key of ["LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY"]) delete process.env[key];
-import { registerHooks, createRequire } from "node:module";
+import { registerHooks } from "node:module";
 // Worktree node_modules can be symlinked to another checkout. Pin the workspace
 // package to this tree so this contract checks the source in this worktree.
 const localShared = new URL("../../../../shared/src/index.ts", import.meta.url).href;
@@ -32,7 +32,7 @@ const row = { name: REPO, displayName: null, codeHostType: "genericGitHost", web
 before(async () => {
   ({ createMcpServer } = await import("../mcp"));
   ({ toolDeps } = await import("../tools"));
-  ({ scopeFor, setZoektTransport } = createRequire(import.meta.url)("@falkon/shared"));
+  ({ scopeFor, setZoektTransport } = await import("@falkon/shared"));
   toolDeps.baseUrl = "http://localhost:3000";
   mock.method(toolDeps, "getRepo", async (name: string) => name === REPO ? row : undefined);
   mock.method(toolDeps, "listRepos", async ({ query }: { query?: string }) => !query || REPO.includes(query.toLowerCase()) ? [row] : []);
