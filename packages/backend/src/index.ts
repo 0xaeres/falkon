@@ -3,7 +3,7 @@ import micromatch from "micromatch";
 import { Queue, Worker } from "bullmq";
 import { Redis } from "ioredis";
 import { prisma, ConnectionSource, RepoKind, RepoStatus, ScanStatus } from "@falkon/db";
-import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, openCredential, parseTicketKeys, postgresProvenanceStore, repoGitDir, repoPath, resolveEnvironmentOverrides, setCredentialResolver, type Config } from "@falkon/shared";
+import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, openCredential, parseTicketKeys, postgresProvenanceStore, repoGitDir, repoPath, resolveEnvironmentOverrides, setCredentialResolver, type Config, type SyncState } from "@falkon/shared";
 import type { RepoMetadata } from "./connectors";
 import { credentialsFor } from "./credentials";
 import { cloneOrFetch, localDefaultBranch, repoStats, sortedRefs, upsertGitConfig } from "./git";
@@ -11,6 +11,8 @@ import { claimIndexRequests, claimSyncRequests, deleteKnowledge, removeOrphans, 
 import { indexRepo, removeShards, writeZoektGitConfig } from "./zoekt";
 import { kbModelReady, kbSelected, runKnowledgeScan } from "./kb/scan";
 import { importDiscussions, snapshotSource } from "./discussions";
+import { discussionConnection, planDiscussionSync, runDiscussionJob } from "./discussionSchedule";
+import { githubSource, githubTransport } from "./githubDiscussions";
 
 const connection = new Redis(env.redisUrl, { maxRetriesPerRequest: null });
 
@@ -202,6 +204,52 @@ const discussionWorker = new Worker<{ repoId: number }>(
 );
 discussionWorker.on("failed", (job, err) => console.error(`discussion import ${job?.data.repoId} failed: ${err.message}`));
 
+// The live GitHub sync (D116, D123). The snapshot directory wins: with it set no live job is enqueued or run.
+type SyncJobData = { repoId: number; reconcile: boolean };
+const syncQueue = new Queue<SyncJobData>("discussion-sync", {
+  connection,
+  // completed ids stay for an hour so a second backend process cannot enqueue the same interval's job again
+  defaultJobOptions: { removeOnComplete: { age: 3600 }, removeOnFail: { age: 3600 }, attempts: 1 },
+});
+const syncWorker = new Worker<SyncJobData>(
+  "discussion-sync",
+  async (job) => {
+    if (discussionSource) return;
+    const repo = await prisma.repo.findUnique({ where: { id: job.data.repoId }, include: { connections: { include: { connection: true } } } });
+    if (!repo?.headCommit) return;
+    await runDiscussionJob({
+      store: postgresProvenanceStore(prisma),
+      target: { id: repo.id, name: repo.name, dir: gitDirOf(repoPath(repo).path), head: repo.headCommit },
+      // read as the job starts: a flag turned off since the enqueue ends the job, and one already running finishes
+      conn: discussionConnection(repo.connections.map((c) => c.connection)),
+      reconcile: job.data.reconcile,
+      makeSource: async (conn, reconcile) => githubSource({ transport: await githubTransport(conn), backfillMonths: settings.discussionBackfillMonths, reconcile }),
+      requeue: async (data, jobId, delay) => void (await syncQueue.add("sync", data, { jobId, delay })),
+      ticketKeys: parseTicketKeys(process.env.DISCUSSION_TICKET_KEYS),
+    });
+  },
+  { connection, concurrency: 1, lockDuration: 10 * 60_000 },
+);
+// fixed text only: neither the token nor GitHub's words reach the log
+syncWorker.on("failed", (job) => console.error(`discussion sync ${job?.data.repoId} failed`));
+
+const narrowState = <T extends { status: string; access: string }>(s: T) => ({ ...s, status: s.status as SyncState["status"], access: s.access as SyncState["access"] });
+
+/** Enqueues the repositories due for a live sync, a bounded number per tick, oldest run first. */
+async function discussionTick() {
+  if (discussionSource) return;
+  const repos = await prisma.repo.findMany({
+    where: { kind: RepoKind.CODE, status: RepoStatus.INDEXED, headCommit: { not: null } },
+    select: { id: true, headCommit: true, connections: { select: { connection: { select: { config: true } } } } },
+  });
+  const states = new Map((await prisma.discussionSyncState.findMany({ where: { repoId: { in: repos.map((r) => r.id) } }, select: { repoId: true, status: true, lastRunAt: true, waitUntil: true, access: true, reconciledAt: true } })).map((s) => [s.repoId, s]));
+  const jobs = planDiscussionSync(
+    repos.map((r) => ({ id: r.id, indexed: true, headCommit: r.headCommit, connections: r.connections.map((c) => c.connection), state: states.get(r.id) && narrowState(states.get(r.id)!) })),
+    { now: new Date(), intervalMs: settings.discussionSyncIntervalMs, reconcileMs: settings.discussionReconcileIntervalMs, snapshot: false },
+  );
+  for (const j of jobs) await syncQueue.add("sync", { repoId: j.repoId, reconcile: j.reconcile }, { jobId: j.jobId });
+}
+
 // ---- knowledge base ---------------------------------------------------------------
 
 const kbQueue = new Queue<{ repoId: number; manual: boolean }>("kb-scan", {
@@ -285,6 +333,7 @@ syncAllConnections()
 prisma.knowledgeScan
   .updateMany({ where: { status: ScanStatus.RUNNING }, data: { status: ScanStatus.FAILED, error: "interrupted by restart", finishedAt: new Date() } })
   .catch((e) => console.error("scan cleanup failed:", e));
+setInterval(() => discussionTick().catch((e) => console.error("discussion tick failed:", e)), 30_000);
 setInterval(() => kbTick().catch((e) => console.error("kb tick failed:", e)), 30_000);
 
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
@@ -295,6 +344,8 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
     await kbWorker.close();
     await discussionWorker.close();
     await discussionQueue.close();
+    await syncWorker.close();
+    await syncQueue.close();
     await indexQueue.close();
     await kbQueue.close();
     await prisma.$disconnect();
