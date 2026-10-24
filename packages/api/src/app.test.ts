@@ -12,7 +12,7 @@ import type { SessionBindings } from "./sessions";
 import type { ProductRegistry } from "./product";
 
 const lookups: string[] = [];
-const calls: { verb: string; url: string; session: string | null; scope: Scope }[] = [];
+const calls: { verb: string; url: string; session: string | null; scope: Scope; product?: string }[] = [];
 const products: Record<string, { id: number; repoNames: string[] }> = {
   core: { id: 1, repoNames: ["a/one", "a/two"] },
   other: { id: 2, repoNames: ["b/one"] },
@@ -23,9 +23,9 @@ const registry: Pick<ProductRegistry, "find"> = {
 let nextSession = 0;
 /** A fake mcp.ts: a POST without a session id opens one (any id it is given is accepted, which is what the binding must guard). */
 const mcp: McpHandlers = {
-  post: async (req, scope) => {
+  post: async (req, scope, product) => {
     const session = req.headers.get("mcp-session-id");
-    calls.push({ verb: "post", url: req.url, session, scope });
+    calls.push({ verb: "post", url: req.url, session, scope, product });
     return Response.json({ ok: true }, { headers: { "mcp-session-id": session ?? `s${++nextSession}` } });
   },
   delete: async (req, scope) => { calls.push({ verb: "delete", url: req.url, session: req.headers.get("mcp-session-id"), scope }); return new Response(null, { status: 204 }); },
@@ -50,6 +50,12 @@ const open = async (product = "core", headers: Record<string, string> = {}) => {
 };
 const post = (product: string, session?: string, headers: Record<string, string> = {}) =>
   fetch(`${base}/mcp/${product}`, { method: "POST", headers: { ...headers, ...(session === undefined ? {} : { "mcp-session-id": session }) }, body: "{}" });
+
+test("POST hands the Product slug to mcp.ts (ask_codebase links and saves chats under it)", async () => {
+  calls.length = 0;
+  await open("core");
+  assert.equal(calls[0]!.product, "core");
+});
 
 test("POST and DELETE /mcp/<product> delegate with a scope built from the Product's repos", async () => {
   calls.length = 0;

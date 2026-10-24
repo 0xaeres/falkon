@@ -41,7 +41,7 @@ export class ThreadService {
 
   async list(slug: string): Promise<ThreadSummary[]> {
     await this.product(slug);
-    const chats = await this.db.chat.findMany({ where: { productId: slug, createdBy: UI_PRINCIPAL }, orderBy: { updatedAt: "desc" }, select: { id: true, name: true, updatedAt: true } });
+    const chats = await this.db.chat.findMany({ where: { productId: slug }, orderBy: { updatedAt: "desc" }, select: { id: true, name: true, updatedAt: true } });
     return chats.map((c) => ({ id: c.id, productId: slug, title: title(c.name), updatedAt: c.updatedAt.getTime() }));
   }
 

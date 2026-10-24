@@ -10,6 +10,15 @@ import { CHAT_NAME_PROMPT } from "./prompt";
 
 export const baseUrl = () => (process.env.AUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
 export const chatUrl = (id: string) => `${baseUrl()}/chat/${id}`;
+/** The Falkon UI's thread page (FALKON_UI_URL, trailing slash trimmed; unset or empty uses the local default). */
+export const threadUrl = (product: string, id: string) => `${(process.env.FALKON_UI_URL || "http://127.0.0.1:3100").replace(/\/$/, "")}/${encodeURIComponent(product)}/chat/${encodeURIComponent(id)}`;
+
+/** The new chat row: PUBLIC for anonymous callers, else the requested visibility (PRIVATE by default); `productId` makes it a thread of that Product. */
+export function newChatData(scope: Scope, requested: ChatVisibility | undefined, productId: string | undefined) {
+  const authenticated = scope.principal !== undefined && scope.principal !== "anonymous";
+  const visibility: ChatVisibility = requested && authenticated ? requested : authenticated ? "PRIVATE" : "PUBLIC";
+  return { visibility, createdBy: scope.principal, productId, messages: [] };
+}
 
 // Lives in errors.ts so http.ts (reached from the MCP path) need not load this module and the `ai` SDK.
 export { AskError };
@@ -53,12 +62,10 @@ export async function drain(s: ReadableStream<{ type: string; errorText?: string
  * The blocking Ask (/api/chat/blocking and MCP ask_codebase): creates a chat, runs one
  * agent turn to completion, names the chat, and returns the answer as portable markdown.
  */
-export async function askCodebase(o: { query: string; repos?: string[]; languageModel?: LanguageModelInfo; visibility?: ChatVisibility; scope: Scope }) {
+export async function askCodebase(o: { query: string; repos?: string[]; languageModel?: LanguageModelInfo; visibility?: ChatVisibility; scope: Scope; product?: string }) {
   const model = await pickModel(o.languageModel);
   const repos = await resolveRepos(o.repos ?? [], o.scope);
-  const authenticated = o.scope.principal !== undefined && o.scope.principal !== "anonymous";
-  const visibility: ChatVisibility = o.visibility && authenticated ? o.visibility : authenticated ? "PRIVATE" : "PUBLIC";
-  const chat = await prisma.chat.create({ data: { visibility, createdBy: o.scope.principal, messages: [] } });
+  const chat = await prisma.chat.create({ data: newChatData(o.scope, o.visibility, o.product) });
   const user: UIMessage = { id: randomUUID(), role: "user", parts: [{ type: "text", text: o.query }] };
   let final: UIMessage[] = [];
   const stream = await createMessageStream({ messages: [user], selectedRepos: repos, scope: o.scope, model, onFinish: (m) => void (final = m) });
@@ -69,7 +76,7 @@ export async function askCodebase(o: { query: string; repos?: string[]; language
   return {
     answer: toPortableMarkdown(text, baseUrl(), sourcesOf(final)),
     chatId: chat.id,
-    chatUrl: chatUrl(chat.id),
+    chatUrl: o.product ? threadUrl(o.product, chat.id) : chatUrl(chat.id),
     languageModel: await describeModel(model),
   };
 }

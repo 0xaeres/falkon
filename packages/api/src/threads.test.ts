@@ -96,7 +96,7 @@ const ref = (repo: string, p: string, a: number, b: number) => `@file:{${repo}::
 const ANSWER = `<!--answer-->\nGreeting is defined here ${ref(IN, "src/hello.ts", 1, 1)}.`;
 const until = async (cond: () => boolean) => { for (let i = 0; i < 100 && !cond(); i++) await new Promise((r) => setTimeout(r, 20)); assert(cond(), "condition not met in time"); };
 
-test("create, list and get threads: Product-scoped, UI chats only, newest first", async () => {
+test("create, list and get threads: Product-scoped, any principal, newest first", async () => {
   const created = await call("POST", "/ui/products/alpha/threads", {});
   assert.equal(created.status, 201);
   assert.deepEqual([created.json.productId, created.json.title, created.json.answers], ["alpha", "New thread", []]);
@@ -107,7 +107,8 @@ test("create, list and get threads: Product-scoped, UI chats only, newest first"
   await engine.db.chat.create({ data: { id: "other-principal", createdBy: "key:x", productId: "alpha", name: "other" } });
   const second = (await call("POST", "/ui/products/alpha/threads", {})).json;
   const listed = (await call("GET", "/ui/products/alpha/threads")).json as J[];
-  assert.deepEqual(listed.map((t) => t.id), [second.id, created.json.id]);
+  assert.deepEqual(listed.map((t) => t.id).sort(), [second.id, "other-principal", created.json.id].sort(), "an ask_codebase chat (any principal, PUBLIC or PRIVATE) with the Product's id is a thread; a chat with no Product is not");
+  assert.equal(listed[0]!.id, second.id);
   assert.deepEqual(Object.keys(listed[0]!).sort(), ["id", "productId", "title", "updatedAt"]);
   assert.equal(typeof listed[0]!.updatedAt, "number");
   assert.deepEqual((await call("GET", "/ui/products/beta/threads")).json, []);

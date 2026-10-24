@@ -9,7 +9,7 @@ import { sendWebResponse, toWebRequest } from "./webAdapter";
 
 /** The existing MCP runners (`handleMcpPost`, `handleMcpDelete` in the web package), injected so tests can fake them. */
 export interface McpHandlers {
-  post(req: Request, scope: Scope): Promise<Response>;
+  post(req: Request, scope: Scope, product?: string): Promise<Response>;
   delete(req: Request, scope: Scope): Promise<Response>;
 }
 export const MCP_HANDLERS = Symbol("McpHandlers");
@@ -74,7 +74,7 @@ class McpController {
       }
     }
 
-    const response = await this.mcp[verb](await toWebRequest(req), effective.scope);
+    const response = await this.mcp[verb](await toWebRequest(req), effective.scope, product);
     if (verb === "delete") this.sessions.delete(sessionId!);
     else {
       const created = response.headers.get(SESSION_HEADER);
