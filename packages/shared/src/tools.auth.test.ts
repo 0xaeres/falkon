@@ -57,7 +57,7 @@ const rows = [ALLOWED, SECRET].map((name) => ({
   name, displayName: null, codeHostType: "genericGitHost", webUrl: null, defaultBranch: "main", isFork: false, isArchived: false,
   pushedAt: null, indexedAt: null, indexedRevisions: ["refs/heads/main"], path: repoGitDir(name),
 }));
-const run = createToolRunner({ getRepo: async (n) => rows.find((r) => r.name === n), listRepos: async () => rows, baseUrl: "http://localhost:3000" });
+const run = createToolRunner({ getRepo: async (n) => rows.find((r) => r.name === n), listRepos: async () => rows });
 const scope = scopeFor([ALLOWED]);
 
 test("repo-bound tools refuse a repo outside the scope with the same error as a missing repo", async () => {
@@ -126,7 +126,7 @@ test("list_repos shows only scoped repos and pages over the visible set", async 
 
 // S60: a bare name that is the last segment of exactly one in-scope repository gets a hint.
 const hintRows = ["github.com/openmrs/esm-core", "github.com/acme/dup", "gitlab.com/other/dup", "github.com/acme/Mixed", "github.com/acme/hidden"].map((name) => ({ ...rows[0]!, name }));
-const hintRun = createToolRunner({ getRepo: async (n) => hintRows.find((r) => r.name === n), listRepos: async () => hintRows, baseUrl: "http://localhost:3000" });
+const hintRun = createToolRunner({ getRepo: async (n) => hintRows.find((r) => r.name === n), listRepos: async () => hintRows });
 const notFoundFor = (repo: string, s = scopeFor(["*"])) => hintRun("read_file", { repo, path: "x" }, s).then(() => assert.fail("resolved"), (e: Error) => e.message);
 
 test("a bare name matching one in-scope repository suggests the full name", async () => {
@@ -148,6 +148,6 @@ test("a repository outside the caller's scope is never suggested", async () => {
 });
 
 test("a failing listRepos leaves the plain not-found text", async () => {
-  const boom = createToolRunner({ getRepo: async () => undefined, listRepos: async () => { throw new Error("db down"); }, baseUrl: "http://localhost:3000" });
+  const boom = createToolRunner({ getRepo: async () => undefined, listRepos: async () => { throw new Error("db down"); } });
   await assert.rejects(boom("read_file", { repo: "esm-core", path: "x" }, scopeFor(["*"])), { message: 'Repository "esm-core" not found.' });
 });

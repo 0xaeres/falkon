@@ -5,7 +5,7 @@ export * from "./queryParser";
 export * from "./zoekt";
 export * as gitRead from "./git";
 export { setRepoResolver } from "./git";
-export { codeHostFileUrl, browsePath, toolDefinitions, toolNames, openAiTools, createToolRunner } from "./tools";
+export { codeHostFileUrl, toolDefinitions, toolNames, openAiTools, createToolRunner } from "./tools";
 export type { ToolRepo, ToolDeps, ToolContext, ToolSource, ToolResult, ToolName, AnyToolDefinition } from "./tools";
 export { historyToolDefinitions, historyToolNames } from "./historyTools";
 export { toolJsonSchema } from "./toolJsonSchema";

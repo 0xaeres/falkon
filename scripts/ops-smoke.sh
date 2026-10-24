@@ -48,7 +48,7 @@ sh "$root/tests/fixtures/build.sh" "$temp" >/dev/null
 ADMIN_TOKEN="$admin_token" node - "$root" "$temp" "$api_port" "$admin_port" docker/Dockerfile <<'JS'
 const fs = require('node:fs');
 const [root, temp, apiPort, adminPort, dockerfile] = process.argv.slice(2);
-const env = { DATABASE_URL: 'postgresql://falkon:falkon@postgres:5432/falkon', REDIS_URL: 'redis://redis:6379', DATA_DIR: '/data', CONFIG_PATH: '/fixtures/config.json', ZOEKT_URL: 'http://zoekt:6070', AUTH_URL: `http://127.0.0.1:${apiPort}`, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'safe.directory', GIT_CONFIG_VALUE_0: '*' };
+const env = { DATABASE_URL: 'postgresql://falkon:falkon@postgres:5432/falkon', REDIS_URL: 'redis://redis:6379', DATA_DIR: '/data', CONFIG_PATH: '/fixtures/config.json', ZOEKT_URL: 'http://zoekt:6070', GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'safe.directory', GIT_CONFIG_VALUE_0: '*' };
 const app = { image: 'falkon-smoke-app', pull_policy: 'never', environment: env, volumes: ['data:/data', `${temp}:/fixtures:ro`] };
 const compose = { services: {
   postgres: { image: 'postgres:17-alpine', environment: { POSTGRES_USER: 'falkon', POSTGRES_PASSWORD: 'falkon', POSTGRES_DB: 'falkon' }, volumes: ['pgdata:/var/lib/postgresql/data'], healthcheck: { test: ['CMD-SHELL', 'pg_isready -U falkon'], interval: '3s', retries: 30 } },

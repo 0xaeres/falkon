@@ -9,8 +9,6 @@ import { aiModel, configuredLanguageModels, describeModel, modelKey, toInfo, typ
 import { CHAT_NAME_PROMPT } from "./prompt";
 import { productDeps } from "../tools";
 
-export const baseUrl = () => (process.env.AUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
-export const chatUrl = (id: string) => `${baseUrl()}/chat/${id}`;
 /** The Falkon UI's thread page (FALKON_UI_URL, trailing slash trimmed; unset or empty uses the local default). */
 export const threadUrl = (product: string, id: string) => `${(process.env.FALKON_UI_URL || "http://127.0.0.1:3100").replace(/\/$/, "")}/${encodeURIComponent(product)}/chat/${encodeURIComponent(id)}`;
 
@@ -89,9 +87,9 @@ export async function askCodebase(o: { query: string; repos?: string[]; language
   const assistant = final.find((m) => m.role === "assistant");
   const text = assistant ? (answerPart(assistant, false)?.text ?? "") : "";
   return {
-    answer: toPortableMarkdown(text, baseUrl(), sourcesOf(final)),
+    answer: toPortableMarkdown(text, sourcesOf(final)),
     chatId: chat.id,
-    chatUrl: !saved ? undefined : o.product ? threadUrl(o.product, chat.id) : chatUrl(chat.id),
+    chatUrl: saved && o.product ? threadUrl(o.product, chat.id) : undefined,
     languageModel: await describeModel(model),
   };
 }

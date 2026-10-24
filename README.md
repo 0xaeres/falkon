@@ -397,7 +397,6 @@ scripts/sync-smoke.sh
 | `AUTH_MODE` | `none` | `none` admits every caller to a Product. `apiKey` requires a key from `ACCESS_FILE` |
 | `ACCESS_FILE` | unset | JSON file of per-key repository scopes. With `apiKey`, a missing or malformed file denies everyone |
 | `FALKON_UI_URL` | `http://127.0.0.1:3100` | Base URL of the Falkon UI; `ask_codebase` returns `<base>/<product>/chat/<thread id>`. Set it when agents or people open the UI from another address |
-| `AUTH_URL` | `http://localhost:3000` | Prefix of the repository browse links in `list_repos` results and portable Ask answers. The Falkon UI has no browse pages, so these links open nothing unless you serve them yourself |
 | `ADMIN_TOKEN` | generated | Admin bearer, at least 32 characters. Otherwise stored in `${DATA_DIR}/secrets/admin.token` |
 | `FALKON_SECRET_KEY` | generated | Base64 of 32 bytes. Encrypts stored code-host tokens |
 | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | unset | OpenAI-compatible model for Ask and the knowledge base |

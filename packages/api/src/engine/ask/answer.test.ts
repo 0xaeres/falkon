@@ -7,7 +7,6 @@ import { fileReferenceToString } from "./prompt";
 
 const REPO = "github.com/openmrs/openmrs-core";
 const PATH = "api/src/main/java/org/openmrs/api/impl/PatientServiceImpl.java";
-const BASE = "http://sb.test";
 const source: ToolSource = { type: "file", repo: REPO, path: PATH, name: "PatientServiceImpl.java", revision: "HEAD" };
 const msg = (...texts: string[]): UIMessage => ({ id: "m", role: "assistant", parts: texts.map((text) => ({ type: "text", text })) });
 
@@ -24,37 +23,31 @@ test("without the tag the whole last text is the answer, unless the turn is stil
   assert.equal(answerPart({ id: "m", role: "assistant", parts: [] }, false), undefined);
 });
 
-test("@file: references become browse links with the file name and highlight range", () => {
+test("@file: references become code spans naming repo, path and lines, with no link", () => {
   const text = `<!--answer-->\nSee @file:{${REPO}::${PATH}:1-40} and @file:{${REPO}::${PATH}} and @file:{${REPO}::${PATH}:7}.`;
-  const enc = encodeURIComponent(PATH);
-  assert.equal(
-    toPortableMarkdown(text, BASE, [source]),
-    `See [PatientServiceImpl.java:1-40](${BASE}/browse/${REPO}@HEAD/-/blob/${enc}?highlightRange=1%2C40) and ` +
-      `[PatientServiceImpl.java](${BASE}/browse/${REPO}@HEAD/-/blob/${enc}) and ` +
-      `[PatientServiceImpl.java:7](${BASE}/browse/${REPO}@HEAD/-/blob/${enc}?highlightRange=7%2C7).`,
-  );
+  assert.equal(toPortableMarkdown(text, [source]), `See \`${REPO}/${PATH}:1-40\` and \`${REPO}/${PATH}\` and \`${REPO}/${PATH}:7\`.`);
 });
 
 test("a single-line range written as a-a is labelled with one line", () => {
-  assert.match(toPortableMarkdown(`@file:{${REPO}::${PATH}:5-5}`, BASE, [source]), /^\[PatientServiceImpl\.java:5\]\(.*highlightRange=5%2C5\)$/);
+  assert.equal(toPortableMarkdown(`@file:{${REPO}::${PATH}:5-5}`, [source]), `\`${REPO}/${PATH}:5\``);
 });
 
 test("references to files no tool returned become their bare path", () => {
-  assert.equal(toPortableMarkdown(`@file:{${REPO}::does/not/exist.java:3}`, BASE, [source]), "does/not/exist.java");
+  assert.equal(toPortableMarkdown(`@file:{${REPO}::does/not/exist.java:3}`, [source]), "does/not/exist.java");
 });
 
-test("sources match by suffix, so a short repo name or path still resolves", () => {
-  assert.match(toPortableMarkdown(`@file:{openmrs-core::PatientServiceImpl.java}`, BASE, [source]), /^\[PatientServiceImpl\.java\]\(http:\/\/sb\.test\/browse\/openmrs-core@HEAD\//);
+test("sources match by suffix, so a short repo name or path still resolves to the full repo and path", () => {
+  assert.equal(toPortableMarkdown(`@file:{openmrs-core::PatientServiceImpl.java}`, [source]), `\`${REPO}/${PATH}\``);
 });
 
 test("malformed references are left alone", () => {
-  for (const bad of [`@file{${REPO}::a.ts}`, `@file:${REPO}::a.ts`, `@file:{a.ts}`]) assert.equal(toPortableMarkdown(bad, BASE, [source]), bad);
+  for (const bad of [`@file{${REPO}::a.ts}`, `@file:${REPO}::a.ts`, `@file:{a.ts}`]) assert.equal(toPortableMarkdown(bad, [source]), bad);
 });
 
 test("fileReferenceToString round-trips through the reference regex", () => {
   const s = fileReferenceToString({ repo: REPO, path: PATH, range: { startLine: 3, endLine: 9 } });
   assert.equal(s, `@file:{${REPO}::${PATH}:3-9}`);
-  assert.equal(toPortableMarkdown(s, BASE, [source]), `[PatientServiceImpl.java:3-9](${BASE}/browse/${REPO}@HEAD/-/blob/${encodeURIComponent(PATH)}?highlightRange=3%2C9)`);
+  assert.equal(toPortableMarkdown(s, [source]), `\`${REPO}/${PATH}:3-9\``);
 });
 
 test("sourcesOf keeps file data-source parts only", () => {

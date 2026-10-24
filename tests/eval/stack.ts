@@ -20,7 +20,7 @@ export function stackFiles({ o3Dir, repoRoot, port, project, instructions, recip
     // Connection names are limited to [a-zA-Z0-9_-]; the repository names the agents see come from the origin URLs.
     connections: Object.fromEntries(repos.map((r) => [r.name.replace(/[^a-zA-Z0-9_-]/g, "-"), { type: "git", url: `file:///repos/${r.name}` }])),
   };
-  const environment = { DATABASE_URL: "postgresql://falkon:falkon@postgres:5432/falkon", REDIS_URL: "redis://redis:6379", DATA_DIR: "/data", CONFIG_PATH: "/config/config.json", ZOEKT_URL: "http://zoekt:6070", AUTH_URL: `http://127.0.0.1:${port}`, GIT_CONFIG_COUNT: "1", GIT_CONFIG_KEY_0: "safe.directory", GIT_CONFIG_VALUE_0: "*" };
+  const environment = { DATABASE_URL: "postgresql://falkon:falkon@postgres:5432/falkon", REDIS_URL: "redis://redis:6379", DATA_DIR: "/data", CONFIG_PATH: "/config/config.json", ZOEKT_URL: "http://zoekt:6070", GIT_CONFIG_COUNT: "1", GIT_CONFIG_KEY_0: "safe.directory", GIT_CONFIG_VALUE_0: "*" };
   const app = { image: "falkon-eval-app", pull_policy: "never", environment, volumes: ["data:/data", "./config.json:/config/config.json:ro", ...repos.map((r) => `${o3Dir}/${r.checkout}:/repos/${r.name}:ro`)] };
   const adminPort = port + ADMIN_PORT_OFFSET;
   const apiEnvironment = { ...environment, API_HOST: "0.0.0.0", API_ADMIN_HOST: "0.0.0.0", AUTH_MODE: "none", ADMIN_TOKEN: "${ADMIN_TOKEN}", ...(instructions ? { MCP_INSTRUCTIONS: instructions } : {}), ...(recipe ? { MCP_IMPACT_RECIPE: recipe } : {}), ...(prs ? { MCP_HISTORY_TOOLS: "on" } : {}) };

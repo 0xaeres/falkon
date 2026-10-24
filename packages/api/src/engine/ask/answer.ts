@@ -1,4 +1,4 @@
-import { browsePath, type ToolSource } from "@falkon/shared";
+import type { ToolSource } from "@falkon/shared";
 import type { UIMessage } from "ai";
 import { ANSWER_TAG, FILE_REFERENCE_REGEX } from "./prompt";
 
@@ -12,22 +12,19 @@ export function answerPart(message: UIMessage, inProgress: boolean): TextPart | 
   return undefined;
 }
 
-/** The highlightRange query that browse links carry. */
-const highlight = (start: string, end?: string) => `?${new URLSearchParams({ highlightRange: `${start},${end || start}` }).toString()}`;
-
 /**
  * Answer text for outside the UI: drops the answer tag and turns each @file:{repo::path:a-b} into a
- * markdown link to the web UI, resolved against the files tools returned; unknown files become their path.
+ * code span naming repo, path and lines, resolved against the files tools returned; unknown files become their path.
  */
-export function toPortableMarkdown(text: string, baseUrl: string, sources: ToolSource[]): string {
+export function toPortableMarkdown(text: string, sources: ToolSource[]): string {
   return text
     .replace(ANSWER_TAG, "")
     .replace(FILE_REFERENCE_REGEX, (_m, repo: string, _port, path: string, start?: string, end?: string) => {
       const src = sources.find((s) => s.repo.endsWith(repo) && s.path.endsWith(path));
       if (!src) return path;
-      let label = src.name;
+      let label = `${src.repo}/${src.path}`;
       if (start) label += end && start !== end ? `:${start}-${end}` : `:${start}`;
-      return `[${label}](${baseUrl}${browsePath(repo, path, "blob", src.revision)}${start ? highlight(start, end) : ""})`;
+      return `\`${label}\``;
     })
     .trim();
 }

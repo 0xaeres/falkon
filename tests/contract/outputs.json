@@ -530,7 +530,7 @@
       "content": [
         {
           "type": "text",
-          "text": "{\"repos\":[{\"name\":\"fixtures.test/atlas\",\"url\":\"http://localhost:3000/browse/fixtures.test/atlas/-/tree/\",\"pushedAt\":\"2026-01-02T00:00:00.000Z\",\"defaultBranch\":\"refs/heads/main\",\"isFork\":false,\"isArchived\":false}],\"totalCount\":1}"
+          "text": "{\"repos\":[{\"name\":\"fixtures.test/atlas\",\"pushedAt\":\"2026-01-02T00:00:00.000Z\",\"defaultBranch\":\"refs/heads/main\",\"isFork\":false,\"isArchived\":false}],\"totalCount\":1}"
         }
       ]
     }

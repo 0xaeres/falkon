@@ -51,7 +51,6 @@ test("--instructions off sets MCP_INSTRUCTIONS on the api service only, in its o
   assert.deepEqual(off.compose.services.api.ports, ["127.0.0.1:3401:3001", "127.0.0.1:3501:3002"]);
   assert.equal(off.compose.services.api.environment.MCP_INSTRUCTIONS, "off");
   for (const s of ["backend", "zoekt"] as const) assert.ok(!("MCP_INSTRUCTIONS" in off.compose.services[s].environment), s);
-  assert.equal(off.compose.services.api.environment.AUTH_URL, "http://127.0.0.1:3401");
   assert.ok(!JSON.stringify(files().compose).includes("MCP_INSTRUCTIONS"));
 });
 

@@ -61,7 +61,6 @@ before(async () => {
   // the engine and this test share one instance of @falkon/shared: inject into it.
   const { setZoektTransport } = await import("@falkon/shared");
   const { createApp } = await import("./app");
-  toolDeps.baseUrl = "http://localhost:3000";
   mock.method(toolDeps, "getRepo", async (name: string) => rows.find((r) => r.name === name));
   mock.method(toolDeps, "listRepos", async ({ query }: { query?: string }) => rows.filter((r) => !query || r.name.includes(query.toLowerCase())));
   setZoektTransport({ search: async (r) => lyingZoekt(r), async *stream(r) { yield lyingZoekt(r); } });
