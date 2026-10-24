@@ -22,7 +22,7 @@ let dir: string, sha1: string, sha2: string, store: ProvenanceStore;
 const row = (name: string, p: string): ToolRepo => ({ id: ids[name], name, displayName: null, codeHostType: "github", webUrl: null, defaultBranch: "main", isFork: false, isArchived: false, pushedAt: null, indexedAt: null, indexedRevisions: [], path: p });
 const ctx = (...patterns: string[]): ToolContext => {
   const repos = Object.keys(ids).map((n) => row(n, dir));
-  const deps: ToolDeps = { getRepo: async (n) => repos.find((r) => r.name === n), listRepos: async () => repos, baseUrl: "http://x", history: store };
+  const deps: ToolDeps = { getRepo: async (n) => repos.find((r) => r.name === n), listRepos: async () => repos, history: store };
   return { deps, scope: scopeFor(patterns.length ? patterns : [APP, LIB, NEVER]) };
 };
 const tools = historyToolDefinitions;
@@ -513,7 +513,7 @@ test("freshness: a result touching many repositories lists at most 50 and says s
     await big.replaceDiscussion(id, pr(1, { title: "widget" }), []);
   }
   const repos = Object.entries(many).map(([n, id]) => ({ ...row(APP, dir), id, name: n }));
-  const deps: ToolDeps = { getRepo: async (n) => repos.find((r) => r.name === n), listRepos: async () => repos, baseUrl: "http://x", history: big };
+  const deps: ToolDeps = { getRepo: async (n) => repos.find((r) => r.name === n), listRepos: async () => repos, history: big };
   const c = { deps, scope: scopeFor(["github.com/acme/*"]) };
   const { json } = await run("search_discussions", { query: "widget", perPage: 20 }, c);
   assert.equal(json.hits.length, 20);

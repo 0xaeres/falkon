@@ -33,7 +33,6 @@ before(async () => {
   ({ createMcpServer } = await import("../mcp"));
   ({ toolDeps } = await import("../tools"));
   ({ scopeFor, setZoektTransport } = await import("@falkon/shared"));
-  toolDeps.baseUrl = "http://localhost:3000";
   mock.method(toolDeps, "getRepo", async (name: string) => name === REPO ? row : undefined);
   mock.method(toolDeps, "listRepos", async ({ query }: { query?: string }) => !query || REPO.includes(query.toLowerCase()) ? [row] : []);
   mock.method(globalThis, "fetch", async () => Response.json({}));

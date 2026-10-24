@@ -55,7 +55,6 @@ before(async () => {
   // the engine and this test share one instance of @falkon/shared: configure it.
   const { toolDeps } = await import("./engine/tools");
   const shared = await import("@falkon/shared");
-  toolDeps.baseUrl = "http://localhost:3000";
   mock.method(toolDeps, "getRepo", async (name: string) => (dirs[name] ? row(name) : undefined));
   mock.method(toolDeps, "listRepos", async () => Object.keys(dirs).map(row));
   shared.setRepoResolver(async (name) => dirs[name]);

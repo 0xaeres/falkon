@@ -38,8 +38,6 @@ export interface ToolDeps {
   getRepo(name: string): Promise<ToolRepo | undefined>;
   /** Every code repo whose name contains `query` (case-insensitive), in the requested order. The tool applies scope and paging. */
   listRepos(o: { query?: string; sort: "name" | "pushed"; direction: "asc" | "desc" }): Promise<ToolRepo[]>;
-  /** Base URL the engine prefixes to repository browse links (the AUTH_URL setting). */
-  baseUrl: string;
   /** Pull request provenance (the history tools, registered only with MCP_HISTORY_TOOLS=on). */
   history?: ProvenanceStore;
   /** How often the discussion sync runs, in ms; the history tools call a repository stale after twice this. Default 15 minutes. */
@@ -134,10 +132,6 @@ export function codeHostFileUrl(webUrl: string | null, codeHostType: string, bra
   }
   return undefined;
 }
-
-/** The web UI path for a repo tree/blob. */
-export const browsePath = (repo: string, path: string, type: "tree" | "blob", revision?: string) =>
-  `/browse/${repo}${revision ? `@${revision}` : ""}/-/${type}/${encodeURIComponent(path.replace(/^\/+/, ""))}`;
 
 // ---- search-backed tools ----
 
@@ -654,7 +648,6 @@ const listRepos = define({
       output: JSON.stringify({
         repos: repos.map((r) => ({
           name: r.name,
-          url: `${ctx.deps.baseUrl}${browsePath(r.name, "", "tree")}`,
           pushedAt: r.pushedAt?.toISOString() ?? null,
           defaultBranch: r.defaultBranch ?? null,
           isFork: r.isFork,

@@ -29,7 +29,6 @@ export const toolDeps: ToolDeps = {
     });
     return rows.map(toToolRepo);
   },
-  baseUrl: (process.env.AUTH_URL ?? "http://localhost:3000").replace(/\/$/, ""),
   // Read by the history tools only, which register only with MCP_HISTORY_TOOLS=on.
   history: postgresProvenanceStore(prisma),
   syncIntervalMs: env.discussionSyncIntervalMs,
