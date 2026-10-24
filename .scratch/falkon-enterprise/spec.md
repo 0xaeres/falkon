@@ -536,6 +536,99 @@ Decided without the human (beyond the spec's wording): the UI search route has n
 
 Not verified: the live eval preflight on `/mcp/o3` (plain and `--prs on` stacks), `docker compose up --build` on the real `docker-compose.yml`, the Falkon UI pages against a live stack, the Postgres variants of the tests. Open: `AUTH_URL` still feeds the repository browse links in `list_repos` and the source links in Ask answers, default `http://localhost:3000`, which pointed at the deleted web app; those links now open nothing. The Next.js security upgrade (16.4.0 flagged) is the human's decision.
 
+## Cycle 18 plan: live connections, no polling (gate 1 approved 2026-10-24)
+
+Gate 1 (human, 2026-10-24): plan approved as written.
+
+Goal: nothing in Falkon's browser-to-server traffic polls, and a dropped connection loses nothing. A chat answer keeps generating when the browser loses its network or the stream breaks, and the page resumes it from the start of the answer instead of failing with "The answer didn't arrive" and re-running the model. The status page, the thread list and the chat page update over one server-sent event stream per Product instead of the 2-second and 30-second status poll, and a lost connection shows a "Reconnecting" notice instead of an error page. Requests the UI makes of the backend worker (sync, retry, knowledge base actions) start at once instead of waiting for the worker's 30-second tick. It is not a history-phase cycle; it was taken up at the human's request ("a proper watchdog", then "no polling, only SSE, throughout Falkon").
+
+Base `main` at `5a4c2d9`. Cycle branch `loop/falkon-enterprise-c18` in `.loop/worktrees/resume`; the first commit holds this plan, and the uncommitted start of S71 (built before the loop began: `packages/api/src/liveAnswers.ts`, the resume and stop routes in `threads.ts`, the `hang`-with-`rest` turn in `fakeOpenAi.ts`, three api tests, one failing) is S71's starting point. Roles: Opus planned; Sonnet decides and commits after gate 1; Claude implements; a different Sonnet reviewer checks each slice; Codex is not used (D149). The UI redesign on `ui/premium-shadcn` rewrites `chat-view.tsx` and `workspace-shell.tsx` and is not committed; this cycle keeps its edits to those two files to a few lines each and puts new logic in new files (D150).
+
+### Inventory (2026-10-24, read from the tree)
+
+- Browser polling: one, the status `useSWR` in `packages/ui/src/components/layout/workspace-shell.tsx` (`refreshInterval` 2 s while building, else 30 s). A failed poll sets `statusError`, and both `status-view.tsx` and `chat-view.tsx` then replace the whole page with `ErrorState`, which also unmounts a chat mid-answer.
+- Chat: `ThreadService.message` passes the HTTP request's abort signal to the agent, so a dropped connection aborts the turn and only the question is stored; the UI uses `useChat` with `DefaultChatTransport`, no resume.
+- Requests polled by the worker: `Connection.syncRequestedAt` and `Repo.indexRequestedAt` (claimed in `scheduleTick`), `Repo.kbRequest` (claimed in `kbTick`), each on a 30-second `setInterval` in `packages/backend/src/index.ts`.
+- Schedules on the same timers (kept, D157): reindex after `reindexIntervalMs`, config connection resync, pull request sync, knowledge base refresh.
+- Dead settings: `resyncConnectionPollingIntervalMs` and `reindexRepoPollingIntervalMs` in `packages/shared/src/config.ts`, read nowhere.
+- The status text embeds the generation age (`generationAge`, and the `current` sentence "published 5 minutes ago"), which only stays true because the poll refreshes it.
+- Redis runs in compose and the backend uses `ioredis` 5; the `api` service has no `REDIS_URL` and no Redis client.
+- AI SDK 6.0.167 (read from `node_modules/ai/dist/index.mjs`): `resumeStream()` with a 204 returns without calling `onFinish` and leaves the status unchanged; a reconnect fetch error sets status `error` without `onFinish`; a resumed stream replays from its first chunk, so a partial assistant message must be dropped before resuming or its parts are duplicated.
+
+### Decisions (grilled 2026-10-24 with the human)
+
+| # | Decision |
+|---|---|
+| D144 | A running answer is kept in memory in the `api` process (`LiveAnswers`), not in Redis: the turn runs in that single process, so the buffer lives exactly as long as the turn can. Revisit only if Falkon runs more than one `api` instance. No `Chat` column. |
+| D145 | A new question on a thread whose answer is still running is refused: 409 `ANSWER_RUNNING`, "An answer is still being written in this thread." |
+| D146 | Leaving the page or losing the connection no longer stops an answer; it runs to its end and is stored. Only an explicit Stop (`POST /ui/products/:slug/threads/:id/stop`) ends it early, keeping the question only, as today. |
+| D147 | Opening or reloading a thread whose answer is running resumes it (`useChat` `resume`). The question appears with the answer when it finishes and the thread is reloaded from the server; showing the pending question earlier would need a contract change and is left out. |
+| D148 | Chat watchdog: after a stream error that is not a refusal from the server (`ApiError`), the answer shows as still working, not as an error, and the page resumes it: at once on the browser's `online` event, else after 1, 2, 4, 8, 15 and then every 30 seconds, with no retry limit. A 204 (nothing running) reloads the thread: a stored answer is shown; otherwise today's "The answer didn't arrive" error shows and an empty first thread is discarded as today. Stop also calls the server's stop route. |
+| D149 | Claude builds, a different Sonnet reviewer checks, Codex is not used (as in recent cycles). |
+| D150 | Built from `main`; `chat-view.tsx` and `workspace-shell.tsx` get only a few lines each, the new logic lives in new files, so the redesign merge has small conflicts; whichever lands second resolves them. |
+| D151 | Once a status has loaded, a lost status connection never replaces a page: the status page keeps the last status, and the chat page never turns into an error page over status. The full-page error stays only for a page that never loaded a status. |
+| D152 | One shared "Reconnecting" notice in the workspace shell, shown while the Product event stream is disconnected, gone on reconnect. |
+| D153 | The status poll is replaced by one server-sent event stream per Product, `GET /ui/products/:slug/events`: the full current status on connect, then a new status on every change. The browser's `EventSource` reconnects by itself, and every connection starts with the full state, so nothing is missed. |
+| D154 | The same stream carries the thread list (on connect and on change), so a thread made through `ask_codebase` or another tab appears without a reload. The product list and Product settings stay fetch-on-load (they change only by the user's own actions). |
+| D155 | The `api` learns of changes by Redis publish and subscribe. The `api` gains `ioredis` at the backend's version (`^5.4.0`; the one new dependency this cycle); the compose `api` service gains `REDIS_URL` and a dependency on the healthy `redis` service. |
+| D156 | UI requests to the worker (sync, retry, knowledge base scan, delete, include) still write their request row, which stays the durable record, then the `api` announces it on Redis and the worker claims it at once. The worker's existing claims at start and on its tick stay, so a request made while the worker was down is still taken. |
+| D157 | Time schedules (reindex, config resync, pull request sync, knowledge base refresh) stay on the worker's 30-second timer this cycle: they are schedules, not waits for a change. Moving them to queue-delayed jobs is a possible later cycle. |
+| D158 | `resyncConnectionPollingIntervalMs` and `reindexRepoPollingIntervalMs` and their defaults are deleted. |
+| D159 | The status carries the generation's publish time as `generationAt` (epoch milliseconds, nullable); `generationAge` is removed and the sentences drop the age phrase. The page renders the age and refreshes it every minute with a local timer that makes no request. A contract change, approved here. |
+| D160 | The change signal is bare (no payload) on one Redis channel. The worker publishes it when an index, connection sync, knowledge base or pull request job starts, finishes or fails, and after it claims a request; the `api` publishes it after its own writes (Product create, edit and delete, sync and knowledge requests, a thread turn stored or a thread deleted). On a signal the `api` recomputes the status and thread list of each Product that has at least one open stream, at most twice a second however many signals arrive, and sends an event only to streams whose data changed. Products nobody watches cost nothing. |
+| D161 | Each open stream sends an SSE comment line every 25 seconds so proxies and browsers keep an idle connection open; it reads nothing. |
+
+### Slices
+
+**S71. Resumable chat answers.** Tier standard. Agent claude.
+- Goal: D144 to D148.
+- Scope: `packages/api/src/{liveAnswers.ts,threads.ts,threads.test.ts,admin.ts}` (the route list), `packages/api/src/engine/ask/{agent.ts,fakeOpenAi.ts}`, the admin route-enumeration test; `packages/ui/src/app/api/products/[productId]/threads/[threadId]/{stream,stop}/route.ts`, `packages/ui/src/lib/api/{chat-transport.ts,client.ts}`, one new hook file under `packages/ui/src/features/chat/` for the watchdog, a few lines in `chat-view.tsx`, `packages/ui/tests/`; ADR 4.5 "Chat transport (S21)" and the admin route list amended in place.
+- Done: an api test drops the client mid-answer, resumes through `GET .../stream`, and gets the whole answer from its first chunk, with the model run once and the answer stored once; Stop through the new route leaves only the question stored and the next turn works; resume and stop with nothing running are 204 and store nothing; another Product's thread is 404 on both; a second message while one runs is 409. UI tests: a stream error mid-answer keeps the working state, a resume after the `online` event finishes the answer, a 204 resume reloads the thread and shows the stored answer, a 204 with nothing stored shows the existing error and discards an empty first thread, Stop calls the stop route, and a page opened on a thread resumes.
+- Verify: `pnpm typecheck && pnpm test`; `pnpm --filter @falkon/api build`; `pnpm --filter @falkon/ui build`.
+- Adversarial cases: the stream drops before the first chunk (question stored or not); the drop happens while the network is still down (the resume fetch fails and backoff continues); the answer finishes while the page is offline (204 then the stored answer); two tabs resuming the same answer; Stop pressed while reconnecting; the thread deleted while an answer runs; a model error mid-answer (no endless retry: the error chunk ends the turn, resume is 204, the error shows); the in-memory buffer is dropped once the turn ends.
+- Blocked by: none.
+
+**S72. Change signal and instant worker requests.** Tier standard. Agent claude.
+- Goal: D155, D156, D158, and the publishing half of D160.
+- Scope: one small module for the signal (publish and subscribe over `ioredis`, injectable so tests need no Redis) in `packages/shared/src/`; `packages/backend/src/index.ts` (publish on job start, finish and failure and after claims; subscribe and claim at once on a request signal); the `api` writers in `packages/api/src/{ui.ts,knowledge.ts,threads.ts}` publish after their writes; `packages/api/package.json` and `pnpm-lock.yaml` (`ioredis`); `docker-compose.yml` (`api` gets `REDIS_URL` and `depends_on` redis); `tests/eval/stack.ts` if its stack defines the `api` service environment; `packages/shared/src/config.ts` (delete the two settings); tests; ADR 4.5 "UI Products and status (S20b)" and the scheduling text amended in place; `README.md` if it lists settings.
+- Done: a test shows a sync request from the `api` is claimed by the worker without waiting for a tick (worker logic tested with the injected signal); a request written while no subscriber runs is still claimed by the tick; each worker job start, finish and failure publishes the signal; the two dead settings are gone and nothing references them; the `api` starts and serves when Redis is down (the signal is best effort; requests are still claimed by the tick and the stream from S74 still answers on connect).
+- Verify: `pnpm install && pnpm typecheck && pnpm test`; `pnpm --filter @falkon/api build`.
+- Adversarial cases: Redis down at `api` start and back later (reconnects without a restart); a burst of signals (no storm of claims: a claim already running is not started twice); a request claimed by the tick and the signal at once (claimed exactly once, as the existing `updateMany` claim guarantees); an operator `config.json` still naming a deleted setting (ignored, no crash).
+- Blocked by: none.
+
+**S73. Generation time in the page.** Tier standard. Agent claude.
+- Goal: D159.
+- Scope: `packages/contracts/src/index.ts` (`statusSchema`), `packages/api/src/uiProduct.ts` and its tests, the UI mock and the pages that show the age (`status-view.tsx`, `settings-view.tsx`, `chat-view.tsx` status line if it shows age), one small shared age formatter in `packages/ui/src/lib/`, `packages/ui/tests/`.
+- Done: the status carries `generationAt` and no `generationAge`; no status sentence names an age; the status page shows the age computed from `generationAt` and it advances a minute later with no request (fake timers); contract tests updated.
+- Verify: `pnpm typecheck && pnpm test`; `pnpm --filter @falkon/ui build`.
+- Adversarial cases: no generation yet (`generationAt` null); a generation from the future (clock skew: shown as "just now"); a page left open across midnight and for days.
+- Blocked by: none.
+
+**S74. Product event stream replaces the status poll.** Tier standard. Agent claude.
+- Goal: D151 to D154, the consuming half of D160, D161.
+- Scope: `packages/api/src/` (a Product events service and route `GET /ui/products/:slug/events`, the admin route list and its enumeration test), `packages/contracts` (the event schema: `status` and `threads` events), `packages/ui/src/app/api/products/[productId]/events/route.ts` (streamed through the same-origin proxy like chat), a new hook under `packages/ui/src/` that owns the `EventSource`, a few lines in `workspace-shell.tsx` (status and threads from the hook, no `refreshInterval`, the Reconnecting notice), `status-view.tsx` and `chat-view.tsx` (no page-replacing error once a status has loaded), `packages/ui/tests/`; ADR 4.5 amended in place (status served as a stream; route list).
+- Done: an api test opens the stream and gets the status and thread list first, then a new status within a second of a published signal after a repository's status changes, and nothing when the signal changes nothing; two streams on one Product cause one recompute per coalescing window; a Product nobody watches is never recomputed; another Product's events never arrive; an unknown Product is 404; the keep-alive comment arrives every 25 seconds (fake timers). UI tests: no `refreshInterval` or timer-driven fetch remains in `packages/ui/src` (a test greps for it), the shell shows the Reconnecting notice when the stream errors and hides it on the next event, the status page keeps the last status through a disconnect, a chat mid-answer stays mounted through a status disconnect, and a new thread pushed on the stream appears in the list.
+- Verify: `pnpm typecheck && pnpm test`; `pnpm --filter @falkon/api build`; `pnpm --filter @falkon/ui build`.
+- Adversarial cases: the browser opens many tabs on one Product (one recompute per window); a stream left open for hours (no growing memory per stream; a closed stream is removed from the watcher set); a Product deleted while watched (the stream ends); Redis down (the stream still sends the state on connect, and the notice is not shown because the stream itself is fine); the UI proxy must not apply its 15-second timeout to this stream; per-request work is bounded as `AGENTS.md` requires (the recompute reads the latest row per key, as `status` already does).
+- Blocked by: S71 (both edit `chat-view.tsx`), S72, S73.
+
+### Regression gate
+
+Check 1: the MCP registration snapshots are unchanged (no tool changes). Check 2: the golden search set is unchanged. Check 3: no paid run; nothing that scores changes. Check 4: `scripts/ops-smoke.sh` is not changed; the compose change adds only `REDIS_URL` and a `depends_on` to `api`. `pnpm typecheck && pnpm test` pass after every slice.
+
+### Order, limits, budget
+
+- Wave 1: S71, S72 and S73 in parallel (S71 touches chat files and `threads.ts`; S72 touches `threads.ts` only to add one publish line after the turn is stored, so S72 builds on the cycle branch after S71 is kept if both are ready together; S73 touches the status contract and pages). Wave 2: S74.
+- The gate-2 trigger "three slices finished" is set aside for this cycle, as cycles 15 and 17 did, because S74 needs S72 and S73 and the cycle's goal is incomplete without it.
+- The loop may decide alone: details inside each slice's scope, file and hook names, the exact notice wording within the existing design, fix rounds, one rerun of a failed verify.
+- It stops for: any dependency beyond `ioredis` in `api`; any contract change beyond D159 and the S74 event schema; any MCP tool change; changes to how the time schedules work (D157); ADR or glossary changes beyond the amendments named in the slices; any paid model call; any push or pull request; Docker beyond disposable `falkon-eval*` projects.
+- Not verified by the loop, for the human at gate 2: the manual check of starting an answer, turning the network off and on, and seeing it continue, on the real stack.
+- Budget: 1.4M subagent tokens and 300 minutes (recent cycles used 1.05M to 1.3M tokens for four to six slices; four slices here, none hard).
+
+### Not in this cycle
+
+Moving the worker's time schedules to queue-delayed jobs (D157); a pending question shown during a resumed answer (D147); running more than one `api` instance; live updates for the product list and Product settings (D154).
+
 ## Next
 
 Phase 1: shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
