@@ -290,6 +290,6 @@ test("a member the connection's clean sync did not return is Skipped; before tha
   Object.assign(connectionRow(cid), { syncedAt: new Date(Date.now() + 60_000), syncError: null, syncRequestedAt: null });
   assert.deepEqual(await stateOf(), [[APP, "indexed"], [GONE, "skipped"]]);
   const s = (await call("GET", "/ui/products/skp/status")).json;
-  assert.deepEqual([s.scenario, s.sentence, s.gaps], ["current", `Answers use ${s.generation}, published just now from the latest revision of all 1 repository.`, [{ count: 1, title: "Repository skipped", detail: GONE }]]);
+  assert.deepEqual([s.scenario, s.sentence, s.gaps], ["current", `Answers use ${s.generation} from the latest revision of all 1 repository.`, [{ count: 1, title: "Repository skipped", detail: GONE }]]);
   connectionRow(cid).syncedAt = null;
 });

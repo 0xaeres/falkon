@@ -12,6 +12,7 @@ import { WorkspaceShell } from "../src/components/layout/workspace-shell";
 import { StatusView } from "../src/features/status/status-view";
 import { repoState } from "../src/features/status/repo-state";
 import { keys } from "../src/lib/api/client";
+import { currentMinute } from "../src/lib/use-minute";
 import { seedProducts } from "./mock-fixtures";
 
 const router: AppRouterInstance = {
@@ -26,9 +27,9 @@ const router: AppRouterInstance = {
 const base: Status = {
   productId: "payments-platform",
   verdict: "Current",
-  sentence: "Answers use g-1, published 6 min ago.",
+  sentence: "Answers use g-1 from the latest revision.",
   generation: "g-1",
-  generationAge: "6 min ago",
+  generationAt: currentMinute() - 6 * 60_000,
   nextGeneration: null,
   build: "idle",
   stage: 4,
@@ -137,4 +138,11 @@ test("repoState: each typed state maps to its label; an absent state is derived"
     repositories: [{ ...repo, state: "skipped" }],
   });
   assert.match(html, />Skipped</);
+});
+
+test("the status page shows the age from generationAt: null shows nothing, a future time reads just now", () => {
+  const p = (generationAt: number | null) => main(render({ ...base, generationAt })).match(/<p class="vs">.*?<\/p>/)![0];
+  assert.match(p(currentMinute() - 6 * 60_000), /published 6 min ago/);
+  assert.match(p(currentMinute() + 3_600_000), /published just now/);
+  assert.doesNotMatch(p(null), /published/);
 });

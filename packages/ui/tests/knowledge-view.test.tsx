@@ -11,6 +11,7 @@ import type { Status } from "@falkon/contracts";
 import { WorkspaceShell } from "../src/components/layout/workspace-shell";
 import { press, SettingsView } from "../src/features/status/settings-view";
 import { keys } from "../src/lib/api/client";
+import { currentMinute } from "../src/lib/use-minute";
 import { seedProducts } from "./mock-fixtures";
 
 const router: AppRouterInstance = {
@@ -28,7 +29,7 @@ const base: Status = {
   verdict: "Current",
   sentence: "",
   generation: "g-1",
-  generationAge: "6 min ago",
+  generationAt: currentMinute() - 6 * 60_000,
   nextGeneration: null,
   build: "idle",
   stage: 4,
