@@ -91,7 +91,7 @@ Falkon is a weaker fit when your questions contain no identifiers or phrases to 
 
 ## How it works
 
-Falkon has four main parts. The engine API answers MCP calls and admin requests. A backend worker clones repositories and builds the index. Zoekt serves search. Postgres stores the registry of repositories, Products and chats. Redis holds the job queue.
+Falkon has four main parts. The engine API answers MCP calls and admin requests. A backend worker clones repositories and builds the index. Zoekt serves search. Postgres stores the registry of repositories, Products and chats. Redis holds the job queue and the change signals between the api and the worker.
 
 ### System components
 
@@ -106,7 +106,7 @@ The diagram shows every service in the Docker Compose stack and the outside syst
 | Backend worker | Fetches from code hosts, writes git mirrors, runs `zoekt-git-index` and runs knowledge base scans. |
 | `zoekt-webserver`, port 6070 | Search server. It reads shards from the data volume and is reachable only inside the stack. |
 | Postgres | Registry of repositories and Products, chat history and the knowledge base index. |
-| Redis | BullMQ job queues. |
+| Redis | BullMQ job queues; change and request signals between the api and the backend. |
 | `/data` volume | Git mirrors and Zoekt shards. |
 
 The compose file publishes only the ports you need, and only on host loopback. Zoekt has no authentication, so compose never publishes its port.
@@ -251,7 +251,7 @@ Local development needs these in addition:
 | Node.js | 24 | The image uses `node:24` |
 | pnpm | 10.28.0 | Pinned by `packageManager` in `package.json` |
 | PostgreSQL | 17 | Holds the registry and the knowledge base index |
-| Redis | 7 | BullMQ job queues |
+| Redis | 7 | BullMQ job queues; change and request signals |
 | Go | 1.26 | Only to build Zoekt from the commit in `ZOEKT_REF` (`docker/Dockerfile`) |
 | `zoekt-webserver`, `zoekt-git-index` | Built from `ZOEKT_REF` | Search server and indexer, on `PATH` |
 | universal-ctags | Any recent release | Symbol tools. Set `CTAGS_COMMAND` if the binary has another name |
