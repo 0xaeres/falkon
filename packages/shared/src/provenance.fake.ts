@@ -1,7 +1,7 @@
 // In-memory ProvenanceStore for tests without a database: the semantics the Postgres adapter must match
 // (provenance.contract.ts runs the same cases against both).
 import {
-  MAX_OFFSET, MAX_ROWS, notIngested, searchBounds,
+  FRESHNESS_REPOS, MAX_OFFSET, MAX_ROWS, notIngested, searchBounds,
   type Discussion, type Link, type ProvenanceStore, type RepoLink, type SearchHit, type SyncState,
 } from "./provenance";
 
@@ -10,6 +10,7 @@ export function fakeProvenanceStore(repos: Record<string, number>) {
   const discussions = new Map<string, Discussion & { repoId: number }>();
   const links: (Link & { repoId: number })[] = [];
   const states = new Map<number, SyncState>();
+  const probes = new Set<string>();
   const nameOf = (id: number) => Object.keys(repos).find((n) => repos[n] === id)!;
   const rows = (names: string[]) => names.filter((n) => n in repos).sort().map((name) => ({ id: repos[name]!, name, ingested: !!states.get(repos[name]!)?.lastSuccessAt }));
   const gapsOf = (r: ReturnType<typeof rows>) => r.filter((x) => !x.ingested).map((x) => notIngested(x.name));
@@ -27,8 +28,24 @@ export function fakeProvenanceStore(repos: Record<string, number>) {
       return [...discussions.values()].filter((d) => d.repoId === repoId).sort((a, b) => a.number - b.number).map((d) => ({ number: d.number, mergeCommitSha: d.mergeCommitSha }));
     },
     async replaceCommitLinks(repoId, ls) {
-      for (let i = links.length - 1; i >= 0; i--) if (links[i]!.repoId === repoId && links[i]!.fromKind === "commit") links.splice(i, 1);
+      const linked = new Set(ls.map((l) => l.fromRef));
+      for (let i = links.length - 1; i >= 0; i--) if (links[i]!.repoId === repoId && links[i]!.fromKind === "commit" && (links[i]!.source !== "commit-pulls-api" || linked.has(links[i]!.fromRef))) links.splice(i, 1);
       links.push(...ls.map((l) => ({ ...l, repoId })));
+    },
+    async probedCommits(repoId, shas) { return shas.filter((s) => probes.has(`${repoId}:${s}`)); },
+    async saveCommitProbes(repoId, ps, ls) {
+      const shas = new Set(ps.map((p) => p.sha));
+      for (const p of ps) probes.add(`${repoId}:${p.sha}`);
+      for (let i = links.length - 1; i >= 0; i--) if (links[i]!.repoId === repoId && links[i]!.source === "commit-pulls-api" && shas.has(links[i]!.fromRef)) links.splice(i, 1);
+      links.push(...ls.map((l) => ({ ...l, repoId })));
+    },
+    async freshness(repos) {
+      const names = [...new Set(repos)];
+      const out = rows(names.slice(0, FRESHNESS_REPOS)).flatMap((r) => {
+        const s = states.get(r.id);
+        return s ? [{ repo: r.name, lastSuccessAt: s.lastSuccessAt, status: s.status, access: s.access }] : [];
+      });
+      return { rows: copy(out), truncated: names.length > FRESHNESS_REPOS };
     },
     async getDiscussion(set, repo, number) {
       if (!set.includes(repo)) return undefined;
@@ -48,7 +65,7 @@ export function fakeProvenanceStore(repos: Record<string, number>) {
       const has = (text: string | null, w: string) => (text ?? "").toLowerCase().includes(w.toLowerCase());
       const hits: SearchHit[] = words.length
         ? [...discussions.values()]
-            .filter((d) => ids.has(d.repoId) && (!kind || d.kind === kind) && (!state || d.state === state) && (!since || d.createdAt >= since) && (!until || d.createdAt <= until) && words.every((w) => has(d.title, w) || has(d.body, w) || has(d.headRef, w) || d.comments.some((c) => has(c.body, w))))
+            .filter((d) => ids.has(d.repoId) && (!kind || d.kind === kind) && (!state || d.state === state) && (!since || d.createdAt >= since) && (!until || d.createdAt <= until) && (q.any ? words.some.bind(words) : words.every.bind(words))((w: string) => has(d.title, w) || has(d.body, w) || has(d.headRef, w) || d.comments.some((c) => has(c.body, w))))
             .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || nameOf(a.repoId).localeCompare(nameOf(b.repoId)) || a.number - b.number)
             .map((d) => ({ repo: nameOf(d.repoId), number: d.number, title: d.title, state: d.state, mergedAt: d.mergedAt, updatedAt: d.updatedAt, url: d.url }))
         : [];

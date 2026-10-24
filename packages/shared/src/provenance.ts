@@ -50,7 +50,7 @@ export interface Discussion {
   files: DiscussionFile[];
 }
 
-export type LinkSource = "merge-commit-sha" | "squash-subject" | "merge-subject" | "body-ref" | "ticket-pattern";
+export type LinkSource = "merge-commit-sha" | "squash-subject" | "merge-subject" | "body-ref" | "ticket-pattern" | "commit-pulls-api";
 
 /** commit → pr (the commit-subject and merge-commit rules), pr → ticket, pr → pr (body references). */
 export interface Link {
@@ -75,12 +75,33 @@ export interface SyncState {
   lastSuccessAt: Date | null;
   /** The head the commit links were last computed against. */
   headCommit: string | null;
-  status: "running" | "ok" | "failed";
+  /** `waiting`: the source yielded to a rate limit; see `waitUntil`. */
+  status: "running" | "ok" | "failed" | "waiting";
+  /** Whether the token may read the repository's pull requests; `unknown` until the first probe (D115). */
+  access: "unknown" | "ok" | "no-access";
+  /** When `waiting`: the provider's reset time, before which no run should start. */
+  waitUntil: Date | null;
+  /** The last full reconcile (D116). */
+  reconciledAt: Date | null;
   /** A fixed string, never provider text. */
   error: string | null;
   importedCount: number;
   /** Source items the last run could not read (malformed); the cursor does not move past them. */
   skippedCount: number;
+}
+
+/** A source throws this from `covers` or `pulls` when the provider's budget is nearly spent; the import saves its progress and waits. */
+export class RateLimited extends Error {
+  constructor(readonly resetAt: Date) {
+    super("rate limited");
+  }
+}
+
+/** A source throws this from `covers` or `pulls` when the token may not read the repository's pull requests. */
+export class NoAccess extends Error {
+  constructor() {
+    super("no access");
+  }
 }
 
 /** Where discussions come from: a recorded snapshot now, the live GitHub API later (D107). Same mapper output for both. */
@@ -89,12 +110,18 @@ export interface DiscussionSource {
   covers(repo: string): Promise<boolean>;
   /** Pull requests updated at or after `since` (all when null), one at a time; `skipped` names an item that could not be read. */
   pulls(repo: string, since: Date | null): AsyncIterable<Discussion | { skipped: string }>;
+  /** Optional (D125): commits newer than this may be asked `commitPulls`. Set with `commitPulls` (the live source's backfill window). */
+  commitsSince?: Date;
+  /** Optional (D125): the numbers of the pull requests that contain a default-branch commit (rebase and merge-queue merges). */
+  commitPulls?(repo: string, sha: string): Promise<number[]>;
 }
 
 export type Anchor = { kind: "commit"; sha: string } | { kind: "pr"; repo: string; number: number } | { kind: "ticket"; key: string };
 
 export interface SearchQuery {
   words: string[];
+  /** Match a discussion that has any word, not all of them (the hint fallback of search_discussions). */
+  any?: boolean;
   repo?: string;
   limit?: number;
   offset?: number;
@@ -125,6 +152,17 @@ export interface SearchResult {
   totalCapped: boolean;
 }
 
+/** What the history tools need of a sync-state row to report freshness (D122). */
+export interface FreshnessRow {
+  repo: string;
+  lastSuccessAt: Date | null;
+  status: SyncState["status"];
+  access: SyncState["access"];
+}
+
+/** Most repositories one freshness read returns. */
+export const FRESHNESS_REPOS = 50;
+
 /** Provenance storage (D87, D106): Postgres now, the graph database later. */
 export interface ProvenanceStore {
   // import side, by repository id
@@ -133,15 +171,25 @@ export interface ProvenanceStore {
   /** Upserts one discussion and replaces its comments, files and outgoing links as a set, in one transaction. */
   replaceDiscussion(repoId: number, d: Discussion, links: Link[]): Promise<void>;
   mergeCommits(repoId: number): Promise<{ number: number; mergeCommitSha: string | null }[]>;
-  /** Replaces every commit link of the repository as a set. */
+  /**
+   * Replaces the repository's rule-derived commit links as a set. Links from the `commit-pulls-api` source are kept, except
+   * those of a commit the new set links (first match wins), so a recompute never loses a probe result.
+   */
   replaceCommitLinks(repoId: number, links: Link[]): Promise<void>;
+  /** Which of `shas` were probed already (found or not). */
+  probedCommits(repoId: number, shas: string[]): Promise<string[]>;
+  /** Remembers probe results and stores the `commit-pulls-api` links they found, replacing earlier ones of the same commits, in one transaction. */
+  saveCommitProbes(repoId: number, probes: { sha: string; found: boolean }[], links: Link[], at: Date): Promise<void>;
   // read side, by the caller's effective repository set (P12)
+  /** The sync-state rows of the named code repositories, one bounded read; repositories never synced have no row. `truncated`: more than FRESHNESS_REPOS names were asked for. */
+  freshness(repos: string[]): Promise<{ rows: FreshnessRow[]; truncated: boolean }>;
   getDiscussion(repos: string[], repo: string, number: number): Promise<Discussion | { gap: string } | undefined>;
   search(repos: string[], q: SearchQuery): Promise<SearchResult>;
   links(repos: string[], anchor: Anchor, o?: { unverified?: boolean }): Promise<{ links: RepoLink[]; gaps: string[] }>;
 }
 
 export const notIngested = (repo: string) => `pull requests not ingested for ${repo}`;
+export const notReadable = (repo: string) => `pull requests not readable for ${repo}: the token needs Pull requests: Read and Issues: Read`;
 
 /** Read bounds shared by every adapter. */
 // MAX_ROWS caps comments, files and links per read silently: S49 must report a `truncated` flag when a cap is reached.
@@ -236,7 +284,7 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
   return {
     async syncState(repoId) {
       const [s] = await db.$queryRawUnsafe<SyncState[]>(
-        `SELECT "cursorUpdatedAt", "lastRunAt", "lastSuccessAt", "headCommit", status, error, "importedCount", "skippedCount" FROM "DiscussionSyncState" WHERE "repoId" = $1`,
+        `SELECT "cursorUpdatedAt", "lastRunAt", "lastSuccessAt", "headCommit", status, error, "importedCount", "skippedCount", access, "waitUntil", "reconciledAt" FROM "DiscussionSyncState" WHERE "repoId" = $1`,
         repoId,
       );
       return s;
@@ -244,12 +292,14 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
 
     async saveSyncState(repoId, s) {
       await db.$executeRawUnsafe(
-        `INSERT INTO "DiscussionSyncState" ("repoId", "cursorUpdatedAt", "lastRunAt", "lastSuccessAt", "headCommit", status, error, "importedCount", "skippedCount")
-         VALUES ($1, $2::${TS}, $3::${TS}, $4::${TS}, $5, $6, $7, $8, $9)
+        `INSERT INTO "DiscussionSyncState" ("repoId", "cursorUpdatedAt", "lastRunAt", "lastSuccessAt", "headCommit", status, error, "importedCount", "skippedCount", access, "waitUntil", "reconciledAt")
+         VALUES ($1, $2::${TS}, $3::${TS}, $4::${TS}, $5, $6, $7, $8, $9, $10, $11::${TS}, $12::${TS})
          ON CONFLICT ("repoId") DO UPDATE SET "cursorUpdatedAt" = EXCLUDED."cursorUpdatedAt", "lastRunAt" = EXCLUDED."lastRunAt",
            "lastSuccessAt" = EXCLUDED."lastSuccessAt", "headCommit" = EXCLUDED."headCommit", status = EXCLUDED.status, error = EXCLUDED.error,
-           "importedCount" = EXCLUDED."importedCount", "skippedCount" = EXCLUDED."skippedCount"`,
+           "importedCount" = EXCLUDED."importedCount", "skippedCount" = EXCLUDED."skippedCount",
+           access = EXCLUDED.access, "waitUntil" = EXCLUDED."waitUntil", "reconciledAt" = EXCLUDED."reconciledAt"`,
         repoId, iso(s.cursorUpdatedAt), iso(s.lastRunAt), iso(s.lastSuccessAt), s.headCommit, s.status, s.error, s.importedCount, s.skippedCount,
+        s.access, iso(s.waitUntil), iso(s.reconciledAt),
       );
     },
 
@@ -291,9 +341,46 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
 
     async replaceCommitLinks(repoId, links) {
       await db.$transaction(async (tx) => {
-        await tx.$executeRawUnsafe(`DELETE FROM "ProvenanceLink" WHERE "repoId" = $1 AND "fromKind" = 'commit'`, repoId);
+        await tx.$executeRawUnsafe(
+          `DELETE FROM "ProvenanceLink" WHERE "repoId" = $1 AND "fromKind" = 'commit' AND (source <> 'commit-pulls-api' OR "fromRef" = ANY($2::text[]))`,
+          repoId, [...new Set(links.map((l) => l.fromRef))],
+        );
         await insertLinks(tx, repoId, links);
       }, { timeout: 120_000 });
+    },
+
+    async probedCommits(repoId, shas) {
+      if (!shas.length) return [];
+      const rows = await db.$queryRawUnsafe<{ sha: string }[]>(`SELECT sha FROM "CommitPullProbe" WHERE "repoId" = $1 AND sha = ANY($2::text[]) LIMIT ${shas.length}`, repoId, shas);
+      return rows.map((r) => r.sha);
+    },
+
+    async saveCommitProbes(repoId, probes, links, at) {
+      if (!probes.length) return;
+      await db.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe(
+          `INSERT INTO "CommitPullProbe" ("repoId", sha, "probedAt", found)
+           SELECT $1, sha, $3::${TS}, found FROM jsonb_to_recordset($2::jsonb) AS x(sha text, found boolean)
+           ON CONFLICT ("repoId", sha) DO UPDATE SET "probedAt" = EXCLUDED."probedAt", found = EXCLUDED.found`,
+          repoId, JSON.stringify(probes), iso(at),
+        );
+        await tx.$executeRawUnsafe(
+          `DELETE FROM "ProvenanceLink" WHERE "repoId" = $1 AND "fromKind" = 'commit' AND source = 'commit-pulls-api' AND "fromRef" = ANY($2::text[])`,
+          repoId, probes.map((p) => p.sha),
+        );
+        await insertLinks(tx, repoId, links);
+      }, { timeout: 60_000 });
+    },
+
+    async freshness(repos) {
+      const names = [...new Set(repos)];
+      if (!names.length) return { rows: [], truncated: false };
+      const rows = await db.$queryRawUnsafe<FreshnessRow[]>(
+        `SELECT r.name AS repo, s."lastSuccessAt", s.status, s.access FROM "Repo" r JOIN "DiscussionSyncState" s ON s."repoId" = r.id
+         WHERE r.name = ANY($1::text[]) AND r.kind = 'CODE' ORDER BY r.name LIMIT ${FRESHNESS_REPOS}`,
+        names.slice(0, FRESHNESS_REPOS),
+      );
+      return { rows, truncated: names.length > FRESHNESS_REPOS };
     },
 
     async getDiscussion(repos, repo, number) {
@@ -328,11 +415,11 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
       const gaps = gapsOf(rows);
       const none = { hits: [], hasMore: false, gaps, timedOut: false, total: 0, totalCapped: false };
       if (!words.length || !ids.length) return none;
-      // Each word must appear (case-insensitively) in the title, body, head branch or any comment: words are ANDed.
+      // Each word must appear (case-insensitively) in the title, body, head branch or any comment: words are ANDed (ORed with `any`).
       const where = words
         .map((_, i) => `(d.title ILIKE $${i + 2} OR d.body ILIKE $${i + 2} OR d."headRef" ILIKE $${i + 2}
           OR EXISTS (SELECT 1 FROM "DiscussionComment" c WHERE c."discussionId" = d.id AND c.body ILIKE $${i + 2}))`)
-        .join(" AND ");
+        .join(q.any ? " OR " : " AND ");
       // Optional filters take the parameters after the words'.
       const extra: { sql: string; value: unknown }[] = [
         ...(q.kind ? [{ sql: `d.kind = $N::"DiscussionKind"`, value: q.kind }] : []),
@@ -347,11 +434,11 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
           await tx.$executeRawUnsafe(`SET LOCAL statement_timeout = ${SEARCH_TIMEOUT_MS}`);
           const hits = await tx.$queryRawUnsafe<SearchHit[]>(
             `SELECT r.name AS repo, d.number, d.title, d.state, d."mergedAt", d."updatedAt", d.url FROM "Discussion" d JOIN "Repo" r ON r.id = d."repoId"
-             WHERE d."repoId" = ANY($1::int[]) AND ${where}${filters} ORDER BY d."updatedAt" DESC, r.name, d.number LIMIT ${limit + 1} OFFSET ${offset}`,
+             WHERE d."repoId" = ANY($1::int[]) AND (${where})${filters} ORDER BY d."updatedAt" DESC, r.name, d.number LIMIT ${limit + 1} OFFSET ${offset}`,
             ...params,
           );
           const [{ n }] = await tx.$queryRawUnsafe<[{ n: number }]>(
-            `SELECT count(*)::int AS n FROM (SELECT 1 FROM "Discussion" d WHERE d."repoId" = ANY($1::int[]) AND ${where}${filters} LIMIT ${MAX_OFFSET + 1}) x`,
+            `SELECT count(*)::int AS n FROM (SELECT 1 FROM "Discussion" d WHERE d."repoId" = ANY($1::int[]) AND (${where})${filters} LIMIT ${MAX_OFFSET + 1}) x`,
             ...params,
           );
           return { hits, n };

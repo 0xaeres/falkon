@@ -17,7 +17,7 @@ export const pr = (number: number, o: Partial<Discussion> = {}): Discussion => (
   updatedAt: t(`2025-01-0${Math.min(9, (number % 9) + 1)}T00:00:00Z`), mergedAt: t("2025-01-02T00:00:00Z"), closedAt: t("2025-01-02T00:00:00Z"),
   mergeCommitSha: null, headRef: "feature", baseRef: "main", url: `https://example.test/pull/${number}`, labels: [], truncated: [], comments: [], files: [], ...o,
 });
-const ok = (): SyncState => ({ cursorUpdatedAt: t("2025-01-09T00:00:00Z"), lastRunAt: t("2025-02-01T00:00:00Z"), lastSuccessAt: t("2025-02-01T00:00:00Z"), headCommit: "abc", status: "ok", error: null, importedCount: 1, skippedCount: 0 });
+const ok = (): SyncState => ({ cursorUpdatedAt: t("2025-01-09T00:00:00Z"), lastRunAt: t("2025-02-01T00:00:00Z"), lastSuccessAt: t("2025-02-01T00:00:00Z"), headCommit: "abc", status: "ok", error: null, importedCount: 1, skippedCount: 0, access: "ok", waitUntil: null, reconciledAt: null });
 const commit = (sha: string, n: number, o: Partial<Link> = {}): Link => ({ fromKind: "commit", fromRef: sha, toKind: "pr", toRef: String(n), toRepo: null, source: "merge-commit-sha", verified: true, ...o });
 const ticket = (n: number, key: string): Link => ({ fromKind: "pr", fromRef: String(n), toKind: "ticket", toRef: key, toRepo: null, source: "ticket-pattern", verified: true });
 const comment = (id: string, body: string, at: string) => ({ externalId: id, kind: "issue_comment" as const, authorLogin: "rev", body, state: null, path: null, line: null, createdAt: t(at), updatedAt: t(at) });
@@ -111,6 +111,27 @@ export function provenanceStoreContract(label: string, make: MakeStore, skip: bo
     assert.deepEqual((await store.links(SET, { kind: "commit", sha: "e".repeat(40) })).links, []);
   });
 
+  it("commit probes: remembered per repository, upserted; their links survive a commit-link recompute unless a rule now links the commit", async () => {
+    const { store, id } = await seeded(make);
+    const a = "a".repeat(40), b = "b".repeat(40), c = "c".repeat(40), d = "d".repeat(40);
+    const api = (sha: string, n: number) => commit(sha, n, { source: "commit-pulls-api" });
+    await store.saveCommitProbes(id(APP), [{ sha: a, found: true }, { sha: b, found: false }], [api(a, 1)], t("2025-03-01T00:00:00Z"));
+    await store.saveCommitProbes(id(APP), [{ sha: b, found: true }, { sha: c, found: true }], [api(b, 2), api(c, 3)], t("2025-03-02T00:00:00Z"));
+    assert.deepEqual((await store.probedCommits(id(APP), [a, b, c, d])).sort(), [a, b, c]);
+    assert.deepEqual(await store.probedCommits(id(LIB), [a, b, c]), [], "per repository");
+    assert.deepEqual(await store.probedCommits(id(APP), []), []);
+    const of = async (sha: string) => (await store.links(SET, { kind: "commit", sha })).links.map((l) => [l.toRef, l.source]);
+    assert.deepEqual(await of(b), [["2", "commit-pulls-api"]], "a second probe of the same commit replaces its api links");
+    await store.replaceCommitLinks(id(APP), [commit(d, 4), commit(c, 3, { source: "squash-subject" })]);
+    assert.deepEqual(await of(a), [["1", "commit-pulls-api"]], "recompute keeps api links");
+    assert.deepEqual(await of(c), [["3", "squash-subject"]], "a rule that now links the commit wins");
+    assert.deepEqual(await of(d), [["4", "merge-commit-sha"]]);
+    assert.deepEqual(await store.probedCommits(id(APP), [c]), [c], "the probe is remembered");
+    await store.replaceCommitLinks(id(APP), [commit(d, 4)]);
+    assert.deepEqual(await of(a), [["1", "commit-pulls-api"]]);
+    assert.deepEqual(await of(c), [], "the rule link left with the recompute, and the api link had been dropped when the rule took over");
+  });
+
   it("ticket lookups span the set and normalise the key's case", async () => {
     const { store, id } = await seeded(make);
     await store.replaceDiscussion(id(APP), pr(1), [ticket(1, "O3-12")]);
@@ -137,6 +158,25 @@ export function provenanceStoreContract(label: string, make: MakeStore, skip: bo
     assert.deepEqual([next.hits.map((h) => h.number), next.hasMore], [[2], false]);
   });
 
+  it("search: any=true matches a discussion with any word, keeps the repo filter and the scope", async () => {
+    const { store, id } = await seeded(make);
+    await store.replaceDiscussion(id(APP), pr(1, { title: "alpha", updatedAt: t("2025-03-01T00:00:00Z") }), []);
+    await store.replaceDiscussion(id(APP), pr(2, { title: "beta", updatedAt: t("2025-02-01T00:00:00Z") }), []);
+    await store.replaceDiscussion(id(LIB), pr(3, { title: "alpha beta", updatedAt: t("2025-04-01T00:00:00Z") }), []);
+    const nums = async (o = {}) => (await store.search(SET, { words: ["alpha", "beta", "zzz"], any: true, ...o })).hits.map((h) => h.number);
+    assert.deepEqual(await nums(), [3, 1, 2]);
+    assert.deepEqual(await nums({ repo: APP }), [1, 2]);
+    assert.deepEqual(await nums({ limit: 2 }), [3, 1]);
+    assert.deepEqual((await store.search(SET, { words: ["alpha", "beta", "zzz"] })).hits, [], "default stays ANDed");
+    // P12 and filters must bind tighter than the ORed words: an out-of-set repository and a wrong state never leak through a later word.
+    await store.replaceDiscussion(id(SECRET), pr(4, { title: "beta outside", updatedAt: t("2025-05-01T00:00:00Z") }), []);
+    await store.replaceDiscussion(id(APP), pr(5, { title: "beta open", state: "open", mergedAt: null, updatedAt: t("2025-01-01T00:00:00Z") }), []);
+    assert.deepEqual(await nums(), [3, 1, 2, 5], "SECRET#4 never appears");
+    assert.deepEqual(await nums({ state: "open" }), [5], "state filter applies to every ORed word");
+    const r = await store.search(SET, { words: ["alpha", "beta"], any: true, state: "open" });
+    assert.deepEqual([r.total, r.hits.length], [1, 1]);
+  });
+
   it("search: kind, state and created-date filters; total counts every match, capped", async () => {
     const { store, id } = await seeded(make);
     await store.replaceDiscussion(id(APP), pr(1, { title: "widget one", state: "merged", createdAt: t("2025-01-01T00:00:00Z") }), []);
@@ -159,5 +199,31 @@ export function provenanceStoreContract(label: string, make: MakeStore, skip: bo
     const s: SyncState = { ...ok(), status: "failed", error: "import failed", lastSuccessAt: null };
     await store.saveSyncState(id(APP), s);
     assert.deepEqual(await store.syncState(id(APP)), s);
+  });
+
+  it("sync state round-trips waiting and no-access with their times", async () => {
+    const { store, id } = await make();
+    const w: SyncState = { ...ok(), status: "waiting", access: "unknown", waitUntil: t("2030-01-01T00:00:00Z"), reconciledAt: t("2025-01-05T00:00:00Z") };
+    await store.saveSyncState(id(APP), w);
+    assert.deepEqual(await store.syncState(id(APP)), w);
+    const n: SyncState = { ...w, status: "ok", access: "no-access", waitUntil: null };
+    await store.saveSyncState(id(APP), n);
+    assert.deepEqual(await store.syncState(id(APP)), n);
+  });
+
+  it("freshness lists the sync rows of the named repositories only, newest facts as stored", async () => {
+    const { store, id } = await make();
+    await store.saveSyncState(id(APP), ok());
+    await store.saveSyncState(id(LIB), { ...ok(), status: "failed", access: "no-access", lastSuccessAt: null });
+    await store.saveSyncState(id(SECRET), ok());
+    const got = await store.freshness([LIB, APP, NEVER, "github.com/acme/unknown"]);
+    assert.deepEqual(got, {
+      rows: [
+        { repo: APP, lastSuccessAt: t("2025-02-01T00:00:00Z"), status: "ok", access: "ok" },
+        { repo: LIB, lastSuccessAt: null, status: "failed", access: "no-access" },
+      ],
+      truncated: false,
+    }, "NEVER has no row, SECRET was not named");
+    assert.deepEqual(await store.freshness([]), { rows: [], truncated: false });
   });
 }

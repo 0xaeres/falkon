@@ -7,7 +7,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import type { ProvenanceStore } from "@falkon/shared";
+import { NoAccess, RateLimited, type Discussion, type DiscussionSource, type ProvenanceStore } from "@falkon/shared";
+import { pr } from "../../shared/src/provenance.contract";
 import { fakeProvenanceStore } from "../../shared/src/provenance.fake";
 import { MAX_TEXT, importDiscussions, snapshotSource } from "./discussions";
 import { pgClose, pgSkip, pgTestStore } from "./provenancePg.testing";
@@ -210,6 +211,98 @@ for (const [label, make, skip] of variants) {
     assert.deepEqual((await store.links(SET, { kind: "commit", sha: g.r1 })).links.map((l) => l.toRef).sort(), ["26", "27"], "two pull requests recording one merge commit are both linked");
     assert.deepEqual((await importDiscussions(store, snapshotSource(snap), target, KEYS))?.skipped, 3, "still counted on the next run");
   });
+
+  // ---- sync state: rate-limit yield and no access (D115, D118) ----------------------------------------------------
+  const D = (n: number) => new Date(`2025-03-0${n}T00:00:00Z`);
+  type Item = Discussion | { skipped: string } | Error;
+  /** A source that replays `items` per repository in order (a thrown Error ends the run), honouring `since`, and records every `since`. */
+  const scripted = (items: Record<string, Item[]>, coversError: Record<string, Error> = {}) => {
+    const since: (Date | null)[] = [];
+    const source: DiscussionSource = {
+      covers: async (r) => { if (coversError[r]) throw coversError[r]; return r in items; },
+      async *pulls(r, s) {
+        since.push(s);
+        for (const i of items[r]!) {
+          if (i instanceof Error) throw i;
+          if ("skipped" in i || !s || i.updatedAt >= s) yield i;
+        }
+      },
+    };
+    return { source, since };
+  };
+  const p = (n: number) => pr(n, { updatedAt: D(n) });
+  const wait = new RateLimited(new Date("2030-01-01T00:00:00Z"));
+  const at = (id: (n: string) => number, name = APP) => ({ id: id(name), name, dir: g.dir, head: g.head });
+
+  test(`${label}: a rate limit after three pull requests keeps them, parks the cursor and resumes after it`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const first = scripted({ [APP]: [p(1), p(2), p(3), wait, p(4), p(5)] });
+    const r = await importDiscussions(store, first.source, at(id), KEYS);
+    assert.equal(r?.imported, 3);
+    assert.equal((await store.mergeCommits(id(APP))).length, 3);
+    const s = await store.syncState(id(APP));
+    assert.deepEqual([s?.status, s?.waitUntil, s?.cursorUpdatedAt, s?.error, s?.lastSuccessAt], ["waiting", wait.resetAt, D(3), null, null]);
+    assert.deepEqual(await store.getDiscussion(SET, APP, 1), { gap: `pull requests not ingested for ${APP}` }, "a run that never finished is still a gap");
+    const second = scripted({ [APP]: [p(1), p(2), p(3), p(4), p(5)] });
+    await importDiscussions(store, second.source, at(id), KEYS);
+    assert.deepEqual(second.since, [D(3)], "the next run starts at the cursor");
+    const done = await store.syncState(id(APP));
+    assert.deepEqual([done?.status, done?.waitUntil, done?.cursorUpdatedAt, done?.importedCount, done?.access], ["ok", null, D(5), 5, "ok"]);
+  });
+
+  test(`${label}: a rate limit on the very first item moves no cursor`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    await importDiscussions(store, scripted({ [APP]: [p(1), p(2)] }).source, at(id), KEYS);
+    await importDiscussions(store, scripted({ [APP]: [wait, p(3)] }).source, at(id), KEYS);
+    const s = await store.syncState(id(APP));
+    assert.deepEqual([s?.status, s?.cursorUpdatedAt, s?.waitUntil, s?.importedCount], ["waiting", D(2), wait.resetAt, 2]);
+    assert.ok(s?.lastSuccessAt, "the earlier success stays");
+  });
+
+  test(`${label}: a rate limit after a skipped item keeps the cursor before the skipped item`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    await importDiscussions(store, scripted({ [APP]: [p(1), { skipped: "2.json" }, p(3), wait] }).source, at(id), KEYS);
+    const s = await store.syncState(id(APP));
+    assert.deepEqual([s?.status, s?.cursorUpdatedAt, s?.skippedCount], ["waiting", D(1), 1]);
+    assert.equal((await store.mergeCommits(id(APP))).length, 2, "the items after the skip are still stored");
+  });
+
+  test(`${label}: no access stores the verdict, imports nothing and leaves other repositories alone`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const { source } = scripted({ [APP]: [p(1)], [LIB]: [p(1), p(2)] }, { [APP]: new NoAccess() });
+    const denied = await importDiscussions(store, source, at(id), KEYS);
+    const fine = await importDiscussions(store, source, at(id, LIB), KEYS);
+    assert.equal(denied?.imported, 0);
+    assert.equal(fine?.imported, 2);
+    const s = await store.syncState(id(APP));
+    assert.deepEqual([s?.access, s?.status, s?.error, s?.lastSuccessAt, s?.cursorUpdatedAt], ["no-access", "ok", null, null, null]);
+    assert.equal((await store.mergeCommits(id(APP))).length, 0);
+    const l = await store.syncState(id(LIB));
+    assert.deepEqual([l?.access, l?.status, l?.waitUntil], ["ok", "ok", null]);
+  });
+
+  test(`${label}: no access thrown mid-run keeps what was stored and a waiting repository does not block another`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const { source } = scripted({ [APP]: [p(1), new NoAccess(), p(2)], [LIB]: [wait, p(1)], [BARE]: [p(1)] });
+    await importDiscussions(store, source, at(id), KEYS);
+    await importDiscussions(store, source, at(id, LIB), KEYS);
+    await importDiscussions(store, source, at(id, BARE), KEYS);
+    assert.deepEqual([(await store.syncState(id(APP)))?.access, (await store.syncState(id(APP)))?.cursorUpdatedAt, (await store.mergeCommits(id(APP))).length], ["no-access", D(1), 1]);
+    assert.equal((await store.syncState(id(LIB)))?.status, "waiting");
+    assert.deepEqual([(await store.syncState(id(BARE)))?.status, (await store.mergeCommits(id(BARE))).length], ["ok", 1]);
+  });
+
+  test(`${label}: a rate limit raised by covers parks the repository; a waitUntil in the past resumes at once; a plain error still fails`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    await importDiscussions(store, scripted({ [APP]: [p(1)] }, { [APP]: wait }).source, at(id), KEYS);
+    assert.deepEqual([(await store.syncState(id(APP)))?.status, (await store.syncState(id(APP)))?.waitUntil], ["waiting", wait.resetAt]);
+    await store.saveSyncState(id(APP), { ...(await store.syncState(id(APP)))!, waitUntil: new Date("2000-01-01T00:00:00Z") });
+    const r = await importDiscussions(store, scripted({ [APP]: [p(1)] }).source, at(id), KEYS);
+    assert.equal(r?.imported, 1);
+    assert.deepEqual([(await store.syncState(id(APP)))?.status, (await store.syncState(id(APP)))?.waitUntil], ["ok", null]);
+    await assert.rejects(importDiscussions(store, scripted({ [APP]: [new Error("boom")] }).source, at(id), KEYS), /boom/);
+    assert.deepEqual([(await store.syncState(id(APP)))?.status, (await store.syncState(id(APP)))?.error], ["failed", "import failed"]);
+  });
 }
 
 test("the snapshot source reads only a directory whose metadata names the repository's owner", async () => {
@@ -223,3 +316,130 @@ test("the snapshot source reads only a directory whose metadata names the reposi
   for await (const d of src.pulls(APP, new Date("2025-01-03T00:00:00Z"))) if (!("skipped" in d)) numbers.push(d.number);
   assert.deepEqual(numbers, [6]);
 });
+
+// ---- unlinked-commit fallback (S56, D125) ---------------------------------------------------------------------------
+
+/** A repository of `n` empty commits named c0..c(n-1) (c(n-1) is head), for the 50-probe cap. */
+function chain(n: number) {
+  const dir = tmp("falkon-chain-");
+  const git = (...a: string[]) => execFileSync("git", ["-c", "commit.gpgsign=false", ...a], { cwd: dir, env, encoding: "utf8" }).trim();
+  git("init", "-q", "-b", "main");
+  for (let i = 0; i < n; i++) git("commit", "-q", "--allow-empty", "-m", `c${i}`);
+  return { dir, head: git("rev-parse", "HEAD"), shas: git("rev-list", "HEAD").split("\n") /* newest first */ };
+}
+
+for (const [label, make, skip] of variants) {
+  const D = (n: number) => new Date(`2025-03-0${n}T00:00:00Z`);
+  const rate = new RateLimited(new Date("2030-01-01T00:00:00Z"));
+  /** Pull requests 1..n in the store (no merge shas); `answer` maps a sha to pull request numbers, or throws. */
+  const probing = (n: number, answer: (sha: string, k: number) => number[]) => {
+    const asked: string[] = [];
+    const source: DiscussionSource = {
+      covers: async () => true,
+      async *pulls() { for (let i = 1; i <= n; i++) yield pr(i, { updatedAt: D(i), mergeCommitSha: null }); },
+      commitsSince: new Date("2000-01-01T00:00:00Z"),
+      commitPulls: async (_r, sha) => { asked.push(sha); return answer(sha, asked.length); },
+    };
+    return { source, asked };
+  };
+  const apiLinks = async (store: ProvenanceStore, n: number) =>
+    (await store.links(SET, { kind: "pr", repo: APP, number: n })).links.filter((l) => l.source === "commit-pulls-api").map((l) => l.fromRef).sort();
+  const target = (id: (n: string) => number, c: { dir: string; head: string } = g) => ({ id: id(APP), name: APP, dir: c.dir, head: c.head });
+  const log = (dir: string) => execFileSync("git", ["rev-list", "--all"], { cwd: dir, encoding: "utf8" }).trim().split("\n");
+
+  test(`${label}: a rebase-merged pull request: every commit gains a verified link once, and the next recompute keeps it`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const rebased = new Set([g.r1, g.r2]);
+    const { source, asked } = probing(5, (sha) => (rebased.has(sha) ? [5] : []));
+    await importDiscussions(store, source, target(id), KEYS);
+    assert.deepEqual(await apiLinks(store, 5), [g.r1, g.r2].sort());
+    const l = (await store.links(SET, { kind: "commit", sha: g.r1 })).links;
+    assert.deepEqual(l.map((x) => [x.toRef, x.source, x.verified]), [["5", "commit-pulls-api", true]], "visible without the unverified flag");
+    const again = await importDiscussions(store, source, target(id), KEYS); // imports #5 again at the cursor: links recomputed
+    assert.equal(again?.commitLinks, 4, "the subject rules only; api links are not part of the recompute");
+    assert.deepEqual(await apiLinks(store, 5), [g.r1, g.r2].sort(), "api links survive the recompute");
+    assert.equal(asked.length, new Set(asked).size, "no commit asked twice");
+    assert.ok(asked.every((s) => log(g.dir).includes(s)));
+    for (const s of [g.forced, g.stale]) assert.ok(!asked.includes(s), "a commit not on the indexed head is never probed");
+  });
+
+  test(`${label}: a commit with no pull request is probed once; one with several links to all the stored ones; one outside the store is dropped`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const { source, asked } = probing(3, (sha) => (sha === g.r1 ? [2, 3, 999] : sha === g.n99 ? [999] : []));
+    await importDiscussions(store, source, target(id), KEYS);
+    await importDiscussions(store, source, target(id), KEYS);
+    await importDiscussions(store, source, target(id), KEYS);
+    assert.deepEqual((await store.links(SET, { kind: "commit", sha: g.r1 })).links.map((x) => x.toRef), ["2", "3"]);
+    assert.deepEqual((await store.links(SET, { kind: "commit", sha: g.n99 }, { unverified: true })).links, [], "pull request 999 is not in the store");
+    assert.equal(asked.filter((s) => s === g.r2).length, 1, "a commit with no pull request is asked once");
+    assert.equal(asked.filter((s) => s === g.n99).length, 1);
+    assert.equal(asked.length, new Set(asked).size);
+  });
+
+  test(`${label}: at most 50 probes a run, newest first; the rest wait for the next runs`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const c = chain(60);
+    const { source, asked } = probing(1, () => []);
+    await importDiscussions(store, source, target(id, c), KEYS);
+    assert.deepEqual(asked, c.shas.slice(0, 50));
+    assert.equal((await store.syncState(id(APP)))?.headCommit, null, "unfinished: the next run recomputes and goes on");
+    await importDiscussions(store, source, target(id, c), KEYS);
+    assert.deepEqual(asked.slice(50), c.shas.slice(50));
+    assert.equal((await store.syncState(id(APP)))?.headCommit, c.head);
+    await importDiscussions(store, source, target(id, c), KEYS);
+    assert.equal(asked.length, 60);
+  });
+
+  test(`${label}: commits older than the source's window are not probed`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const c = chain(3);
+    const { source, asked } = probing(1, () => []);
+    source.commitsSince = new Date(Date.now() + 86_400_000);
+    await importDiscussions(store, source, target(id, c), KEYS);
+    assert.deepEqual(asked, []);
+  });
+
+  test(`${label}: the rate limit mid-probing yields; the probes so far are kept and the rest resume`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const c = chain(5);
+    let limited = true;
+    const { source, asked } = probing(1, (_s, k) => { if (limited && k === 3) throw rate; return k === 1 ? [1] : []; });
+    const r = await importDiscussions(store, source, target(id, c), KEYS);
+    assert.equal(r?.commitLinks, undefined);
+    const s = await store.syncState(id(APP));
+    assert.deepEqual([s?.status, s?.waitUntil, s?.error], ["waiting", rate.resetAt, null]);
+    assert.deepEqual(await store.probedCommits(id(APP), c.shas), c.shas.slice(0, 2), "the two answered probes are saved");
+    limited = false;
+    await importDiscussions(store, source, target(id, c), KEYS);
+    assert.deepEqual(asked, [...c.shas.slice(0, 3), ...c.shas.slice(2)], "the two answered probes are not repeated; the limited one is asked again");
+    assert.equal((await store.syncState(id(APP)))?.status, "ok");
+    assert.deepEqual(await apiLinks(store, 1), [c.shas[0]!], "the first probe's link is kept");
+  });
+
+  test(`${label}: a commit GitHub does not know (answered []) is saved as probed, does not block the commits behind it, and is not asked again`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const c = chain(4);
+    const { source, asked } = probing(1, () => []); // what commitPulls returns for a 404 or 422
+    await importDiscussions(store, source, target(id, c), KEYS);
+    assert.deepEqual(asked, c.shas, "every commit behind the first was asked in the same run");
+    assert.equal((await store.syncState(id(APP)))?.headCommit, c.head);
+    await importDiscussions(store, source, target(id, c), KEYS);
+    assert.equal(asked.length, 4);
+  });
+
+  test(`${label}: no access on a probe stops probing without failing the sync; any other error does too, with a fixed message`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const c = chain(5);
+    const denied = probing(1, () => { throw new NoAccess(); });
+    const r = await importDiscussions(store, denied.source, target(id, c), KEYS);
+    assert.equal(denied.asked.length, 1, "probing stopped");
+    let s = await store.syncState(id(APP));
+    assert.deepEqual([s?.status, s?.error, s?.access, s?.headCommit, r?.imported], ["ok", null, "ok", c.head, 1]);
+    assert.equal(await store.getDiscussion(SET, APP, 1).then((d) => !!d && !("gap" in d)), true);
+    const broken = probing(1, () => { throw new Error("GitHub said: secret"); });
+    await importDiscussions(store, broken.source, target(id, c), KEYS);
+    assert.equal(broken.asked.length, 1);
+    s = await store.syncState(id(APP));
+    assert.deepEqual([s?.status, s?.error, s?.headCommit], ["ok", "commit probe failed", null]);
+  });
+}

@@ -120,6 +120,21 @@
           "type": "number",
           "minimum": 1,
           "description": "Longest time one repo index job may take."
+        },
+        "discussionSyncIntervalMs": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Gap between pull request syncs of a repo (connections with discussions on)."
+        },
+        "discussionReconcileIntervalMs": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Gap between full reconciles of a repo's pull requests updated in the last 30 days."
+        },
+        "discussionBackfillMonths": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How many months of pull requests a repo's first sync reads."
         }
       },
       "additionalProperties": false
@@ -284,6 +299,10 @@
                   "type": "string",
                   "pattern": "^https?:\\/\\/[^\\s/$.?#].[^\\s]*$",
                   "description": "GitHub Enterprise address; github.com when omitted."
+                },
+                "discussions": {
+                  "type": "boolean",
+                  "description": "Sync pull requests with this token (fine-grained: Pull requests: Read, Issues: Read, Contents: Read). Off by default."
                 },
                 "users": {
                   "type": "array",

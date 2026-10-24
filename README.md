@@ -354,13 +354,43 @@ The web app also serves an MCP route at `/api/mcp` on port 3000. It covers every
 | Key | Purpose |
 | --- | --- |
 | `connections` | Code hosts to sync. Types are `github` (cloud or Enterprise) and `git` (an http(s) remote, or a `file://` glob of local repositories indexed in place) |
-| `settings` | Index limits, reindex and resync intervals, concurrency and timeouts |
+| `settings` | Index limits, reindex and resync intervals, concurrency and timeouts, and the pull request sync settings below |
 | `contexts` | Products. Each name is a Product slug and an MCP path |
 | `environmentOverrides` | Environment values resolved at load time |
 | `models` | Language models for Ask, of type `openai-compatible`, `openai` or `anthropic` |
 | `knowledgeBase` | Knowledge base switches, budget and repositories to document |
 
 A token is either `{ "env": "NAME" }` or `{ "googleCloudSecret": "..." }`. To convert a file written for an older Falkon build, run `pnpm convert-config /absolute/path/old.json > new.json`.
+
+### Pull request sync
+
+A GitHub connection syncs pull requests only when it sets `"discussions": true` (outbound traffic with your token). `DISCUSSIONS_SNAPSHOT_DIR`, when set, wins and no live sync runs.
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| connection `discussions` | `false` | Syncs pull requests of the connection's indexed repositories. A fine-grained token needs Pull requests: Read, Issues: Read and Contents: Read |
+| `settings.discussionSyncIntervalMs` | 900000 (15 minutes) | Gap between syncs of a repository. A tick every 30 seconds enqueues at most 20 due repositories, oldest first |
+| `settings.discussionReconcileIntervalMs` | 604800000 (7 days) | Gap between full reconciles, which re-read every pull request updated in the last 30 days |
+| `settings.discussionBackfillMonths` | 24 | How far back a repository's first sync reads |
+| `DISCUSSION_SYNC_INTERVAL_MS` (web) | 900000 | Set it to the same value as `discussionSyncIntervalMs`: the history tools call a repository stale after twice this |
+
+**Turn it on.** In the GitHub connection of `config.json` set `"discussions": true`. The connection's own token does the reading, so it needs these permissions:
+
+- Fine-grained token: Pull requests: Read, Issues: Read (a pull request's conversation comments come from the issues API) and Contents: Read (cloning).
+- Classic token: scope `repo` (private repositories) or `public_repo` (public only).
+
+Every run of a repository starts by probing its pull requests and issue comments with one small read each. A refusal marks the repository `no-access`; the history tools then report a coverage gap that names the missing permissions, and other repositories keep syncing.
+
+**Prove it with a real token.** The smoke script syncs two small public repositories (default `openmrs/openmrs-module-dataentrystatistics` and `openmrs/openmrs-contrib-keycloak-smart-auth`; pass `owner/name` arguments to change them) into a throwaway Postgres container named `falkon-eval-sync-pg`. It needs Docker, git and pnpm, and removes the container on exit. It reads the token from your shell's environment (or prompts for it when unset in a terminal) and never prints or stores it. It prints repositories synced, pull requests stored, commit links (rule and api), requests used and remaining budget, the permission probe result per repository, and `PASS` or `FAIL` with the first failing reason. It pulls `postgres:17-alpine` over the network and clones the repositories from github.com. Any token that can read public repositories works for the test (a fine-grained token limited to the owner's own repositories may not). A classic token with `repo` scope works but grants write access to all the owner's repositories, so create it only for the smoke test and delete it afterwards; a classic token with only `public_repo` is enough for public repositories. The smoke reads a 120-month window (printed as `backfill window: 120 months`; the product default stays 24), because the default repositories are old and 24 months would find almost nothing. Expected for the default repositories, as rough ranges from the recorded fixtures and not exact: about 7 pull requests stored in total, and at least some rule links and some api links (the api link comes from the rebase-merged pull request 2 of `openmrs-module-dataentrystatistics`). Type the token yourself, never paste it into a chat or an agent session:
+
+```sh
+read -rs GITHUB_TOKEN && export GITHUB_TOKEN
+scripts/sync-smoke.sh
+```
+
+**Freshness.** With `MCP_HISTORY_TOOLS=on`, every history tool result lists, for each repository it read, `lastSyncedAt` and `stale`. `stale: true` (with a `reason`) means the last success is older than twice the sync interval, the last run failed, the sync is waiting for the rate limit, or the token cannot read the repository. The data is still served from what was stored; an agent should treat it as possibly behind GitHub and say so. The tools read only Postgres and never call GitHub.
+
+**Limits.** Polling only: no webhooks, so a change shows after the next run (15 minutes by default). Pull requests only: issues are not synced. A first sync reads the last 24 months of pull requests; older history stays reachable through git. A pull request with more than 100 comments, reviews or files, or 30 review threads, is stored with those parts cut and flagged `truncated`. When the rate-limit budget falls below 10% the sync stops, saves its progress and resumes after GitHub's reset time.
 
 ### Environment variables
 

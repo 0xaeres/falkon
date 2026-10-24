@@ -85,7 +85,7 @@ test("stream parsing takes the result event's text, cost, turns and error flag",
 test("answers keep the last json fence, drop unknown files and bare filenames, clamp lines and cap at twenty", () => {
   const lines = (path: string) => path === "repo-a/x.ts" ? 30 : path === "top.ts" ? 5 : undefined;
   const text = "```json\n[]\n```\nfinal\n```json\n" + JSON.stringify([{ path: "./repo-a/x.ts", startLine: 5, endLine: 99 }, { path: "repo-a/missing.ts", startLine: 1, endLine: 2 }, { path: "top.ts", startLine: 1, endLine: 2 }, { path: "repo-a/x.ts", startLine: 9, endLine: 3 }]) + "\n```";
-  assert.deepEqual(parseAnswer(text, lines), { answer: [{ path: "repo-a/x.ts", startLine: 5, endLine: 30 }], malformed: false });
+  assert.deepEqual(parseAnswer(text, lines), { answer: [{ path: "repo-a/x.ts", startLine: 5, endLine: 30 }], malformed: false, dropped: 1 });
   assert.equal(parseAnswer("no fence", lines).malformed, true);
   assert.equal(parseAnswer("```json\n{}\n```", lines).malformed, true);
   const many = "```json\n" + JSON.stringify(Array.from({ length: 25 }, (_, i) => ({ path: "repo-a/x.ts", startLine: i + 1, endLine: i + 1 }))) + "\n```";
@@ -141,7 +141,8 @@ test("the prompt for the existing datasets is byte-identical to the one on main"
 test("the history prompt asks for the four-shape array; existing prompt text is untouched", () => {
   const p = prompt("clone-tools", "Q", true);
   assert.ok(p.includes("Question:\nQ"));
-  for (const s of ['{"path"', '{"repo"', '"commit"', '"pr"', '{"ticket"', "openmrs-core", "TRUNK-1234", "at most 20"]) assert.ok(p.includes(s), s);
+  for (const s of ['{"path"', '{"repo"', '"commit"', '"pr"', '{"ticket"', "TRUNK-1234", "at most 20", "<repository-name>/<path inside the repository>", "answering change"]) assert.ok(p.includes(s), s);
+  assert.ok(!p.includes("openmrs-core"));
   assert.notEqual(p, prompt("clone-tools", "Q"));
   assert.equal(prompt("clone-tools", "Q", false), prompt("clone-tools", "Q"));
 });
@@ -173,8 +174,17 @@ test("answers accept spans, commits, pull requests and tickets; malformed typed 
     { repo: "openmrs-core", commit: "abcdef" }, { repo: "openmrs-core", commit: "xyzxyzxyz" }, { repo: "openmrs-core", pr: 1.5 }, { repo: "openmrs-core", pr: "7" }, { repo: "openmrs-core", pr: 0 }, { ticket: "" }, { ticket: 5 }, { repo: "", commit: "abcdef1" }, 7, null,
   ];
   assert.deepEqual(parseAnswer("```json\n" + JSON.stringify(items) + "\n```", lines), {
-    answer: [{ path: "repo-a/x.ts", startLine: 1, endLine: 2 }, { repo: "openmrs-core", commit: "abcdef1234" }, { repo: "openmrs-core", pr: 77 }, { ticket: "TRUNK-1234" }], malformed: false,
+    answer: [{ path: "repo-a/x.ts", startLine: 1, endLine: 2 }, { repo: "openmrs-core", commit: "abcdef1234" }, { repo: "openmrs-core", pr: 77 }, { ticket: "TRUNK-1234" }], malformed: false, dropped: 0,
   });
   const many = "```json\n" + JSON.stringify(Array.from({ length: 21 }, (_, i) => ({ ticket: `T-${i + 1}` }))) + "\n```";
   assert.equal(parseAnswer(many, lines).answer.length, 20);
+});
+
+test("parseAnswer counts spans whose path is not in the corpus: unprefixed, wrong repository, 21 items, malformed fence", () => {
+  const lines = (path: string) => path === "repo-a/x.ts" || path === "repo-b/x.ts" ? 30 : undefined;
+  const fence = (items: unknown[]) => "```json\n" + JSON.stringify(items) + "\n```";
+  const r = parseAnswer(fence([{ path: "repo-a/x.ts", startLine: 1, endLine: 2 }, { path: "x.ts", startLine: 1, endLine: 2 }, { path: "src/x.ts", startLine: 1, endLine: 2 }, { path: "repo-b/x.ts", startLine: 3, endLine: 4 }, { path: "repo-c/x.ts", startLine: 1, endLine: 2 }, { ticket: "T-1" }]), lines);
+  assert.deepEqual([r.answer.length, r.dropped], [3, 3]);
+  assert.equal(parseAnswer("```json\n[{\"path\": \n```", lines).dropped, 0);
+  assert.equal(parseAnswer(fence(Array.from({ length: 21 }, () => ({ path: "nope/x.ts", startLine: 1, endLine: 1 }))), lines).dropped, 21);
 });

@@ -9,7 +9,7 @@ import { toolJsonSchema } from "./toolJsonSchema";
 import { historyToolDefinitions, historyToolNames } from "./historyTools";
 import { fakeProvenanceStore } from "./provenance.fake";
 import { pr } from "./provenance.contract";
-import { MAX_OFFSET, type Discussion, type Link, type ProvenanceStore } from "./provenance";
+import { MAX_OFFSET, type Discussion, type Link, type ProvenanceStore, type SyncState } from "./provenance";
 import type { ToolContext, ToolDeps, ToolRepo } from "./tools";
 
 const APP = "github.com/acme/app", LIB = "github.com/acme/lib", SECRET = "github.com/other/secret", NEVER = "github.com/acme/never";
@@ -35,7 +35,7 @@ const rejects = (name: keyof typeof tools, args: Record<string, unknown>) => ass
 const comment = (i: number, body: string, o: Partial<Discussion["comments"][number]> = {}) => ({ externalId: String(i), kind: "issue_comment" as const, authorLogin: "rev", body, state: null, path: null, line: null, createdAt: new Date(Date.UTC(2025, 0, 2, 0, 0, i)), updatedAt: null, ...o });
 const ticket = (n: number, key: string): Link => ({ fromKind: "pr", fromRef: String(n), toKind: "ticket", toRef: key, toRepo: null, source: "ticket-pattern", verified: true });
 const commitLink = (sha: string, n: number, o: Partial<Link> = {}): Link => ({ fromKind: "commit", fromRef: sha, toKind: "pr", toRef: String(n), toRepo: null, source: "squash-subject", verified: true, ...o });
-const ok = { cursorUpdatedAt: t("2025-01-09T00:00:00Z"), lastRunAt: t("2025-02-01T00:00:00Z"), lastSuccessAt: t("2025-02-01T00:00:00Z"), headCommit: "abc", status: "ok" as const, error: null, importedCount: 1, skippedCount: 0 };
+const ok = { cursorUpdatedAt: t("2025-01-09T00:00:00Z"), lastRunAt: t("2025-02-01T00:00:00Z"), lastSuccessAt: t("2025-02-01T00:00:00Z"), headCommit: "abc", status: "ok" as const, error: null, importedCount: 1, skippedCount: 0, access: "ok" as const, waitUntil: null, reconciledAt: null };
 
 before(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-history-"));
@@ -150,7 +150,7 @@ test("get_pull_request: missing, out-of-Product and never-imported repositories"
   assert.ok(missing instanceof Error && outside instanceof Error);
   assert.equal(outside.message, `Repository "${SECRET}" not found.`);
   assert.equal(outside.message, missing.message.replace("github.com/acme/none", SECRET));
-  assert.deepEqual((await run("get_pull_request", { repo: NEVER, number: 1 })).json, { repo: NEVER, number: 1, coverageGaps: [`pull requests not ingested for ${NEVER}`] });
+  assert.deepEqual((await run("get_pull_request", { repo: NEVER, number: 1 })).json, { repo: NEVER, number: 1, coverageGaps: [`pull requests not ingested for ${NEVER}`], freshness: [] });
   await assert.rejects(run("get_pull_request", { repo: APP, number: 77 }), /Pull request #77 not found in "github.com\/acme\/app"/);
 });
 
@@ -226,6 +226,55 @@ test("search_discussions: LIKE characters, quotes and a long query are literal a
   const long = await hits(("word ".repeat(40) + "x".repeat(500)).trim());
   assert.deepEqual(long.hits, []);
   assert.match(long.truncated.join("\n"), /query .*8 words/);
+});
+
+test("search_discussions: a multi-word query with no all-words hit gets a hint and up to 5 partial matches", async () => {
+  await seed();
+  await store.replaceDiscussion(ids[APP], pr(1, { title: "Patient search should bypass service worker caching", updatedAt: t("2025-03-01T00:00:00Z") }), []);
+  await store.replaceDiscussion(ids[LIB], pr(2, { title: "slow render", updatedAt: t("2025-04-01T00:00:00Z") }), []);
+  await store.replaceDiscussion(ids[SECRET], pr(3, { title: "service worker slow" }), []);
+  const { json } = await run("search_discussions", { query: "service worker patient search slow" });
+  assert.equal(json.totalCount, 0);
+  assert.deepEqual(json.hits, []);
+  assert.match(json.hint, /all words are required/);
+  assert.deepEqual(json.partialMatches.map((m: any) => [m.repo, m.number, m.title, m.matchedWords]), [
+    [LIB, 2, "slow render", ["slow"]],
+    [APP, 1, "Patient search should bypass service worker caching", ["service", "worker", "patient", "search"]],
+  ], "newest first, outside repository never shown");
+  const scoped = (await run("search_discussions", { query: "service worker patient search slow", repo: APP })).json;
+  assert.deepEqual(scoped.partialMatches.map((m: any) => m.repo), [APP]);
+});
+
+test("search_discussions: no hint for one word, for a hit, or for ticket and #N shapes", async () => {
+  await seedSearch();
+  for (const query of ["zzzz", "TRUNK-1", "#99"]) {
+    const j = (await run("search_discussions", { query })).json;
+    assert.deepEqual([j.hint, j.partialMatches], [undefined, undefined], query);
+  }
+  const hit = (await run("search_discussions", { query: "login redirect" })).json;
+  assert.deepEqual([hit.hint, hit.partialMatches], [undefined, undefined]);
+});
+
+test("search_discussions: partial matches cap at 5, words cap at 8, every word matching a different pull request", async () => {
+  await seed();
+  const ws = ["aa", "bb", "cc", "dd", "ee", "ff", "gg", "hh", "ii"];
+  for (const [i, w] of ws.entries()) await store.replaceDiscussion(ids[APP], pr(i + 1, { title: w }), []);
+  const j = (await run("search_discussions", { query: ws.join(" ") })).json;
+  assert.equal(j.partialMatches.length, 5);
+  assert.ok(j.partialMatches.every((m: any) => m.matchedWords.length === 1));
+  assert.match(j.truncated.join("\n"), /8 words/);
+  assert.ok(!j.partialMatches.some((m: any) => m.title === "ii"), "the ninth word is cut");
+});
+
+test("search_discussions: a timeout in the fallback keeps the hint and says so in truncated", async () => {
+  await seed();
+  const real = store;
+  store = { ...real, search: async (n, q) => (q.any ? { hits: [], hasMore: false, gaps: [], timedOut: true, total: 0, totalCapped: false } : real.search(n, q)) };
+  const j = (await run("search_discussions", { query: "alpha beta" })).json;
+  store = real;
+  assert.match(j.hint, /all words are required/);
+  assert.deepEqual(j.partialMatches, []);
+  assert.match(j.truncated.join("\n"), /timed out/);
 });
 
 test("search_discussions: empty or blank queries and out-of-range paging are rejected", async () => {
@@ -371,4 +420,128 @@ test("get_pull_request clips url, author, merge commit and comment path/author a
   const { json } = await run("get_pull_request", { repo: APP, number: 9 });
   assert.deepEqual([json.url.length, json.author.length, json.mergeCommit.length, json.comments[0].path.length, json.comments[0].author.length], [500, 100, 100, 500, 100]);
   for (const re of [/url/, /author/, /mergeCommit/, /path/]) assert.match(json.truncated.join("\n"), re);
+});
+
+// ---- freshness (D122) ----
+
+const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000);
+const state = (repo: string, o: Partial<SyncState> = {}) => store.saveSyncState(ids[repo]!, { ...ok, lastSuccessAt: minutesAgo(1), ...o });
+const fresh = (json: any) => json.freshness as { repo: string; lastSyncedAt: string | null; stale: boolean; reason?: string }[];
+
+test("freshness: a recent success is not stale; an old one, a failed run, a rate-limit wait and no access are, each with a reason", async () => {
+  await seed();
+  await state(APP);
+  await state(LIB, { lastSuccessAt: minutesAgo(31) });
+  await store.replaceDiscussion(ids[APP], pr(1), []);
+  const a = fresh((await run("get_pull_request", { repo: APP, number: 1 })).json);
+  assert.deepEqual(a.map((f) => [f.repo, f.stale, f.reason]), [[APP, false, undefined]]);
+  assert.ok(a[0]!.lastSyncedAt && Date.now() - Date.parse(a[0]!.lastSyncedAt) < 120_000);
+
+  await store.replaceDiscussion(ids[LIB], pr(1), []);
+  const old = fresh((await run("get_pull_request", { repo: LIB, number: 1 })).json)[0]!;
+  assert.deepEqual([old.stale, typeof old.reason], [true, "string"]);
+
+  await state(LIB, { lastSuccessAt: minutesAgo(29) });
+  assert.equal(fresh((await run("get_pull_request", { repo: LIB, number: 1 })).json)[0]!.stale, false, "29 minutes is inside twice the 15 minute interval");
+
+  const reasons = new Set<string>();
+  for (const o of [{ status: "failed", error: "import failed" }, { status: "waiting", waitUntil: new Date(Date.now() + 60_000) }, { access: "no-access" }] as Partial<SyncState>[]) {
+    await state(APP, o);
+    const f = fresh((await run("get_pull_request", { repo: APP, number: 1 })).json)[0]!;
+    assert.equal(f.stale, true);
+    assert.ok(f.reason);
+    reasons.add(f.reason!);
+  }
+  assert.equal(reasons.size, 3, "each state names its own reason");
+});
+
+test("freshness: a failed run after an old success is stale and still reports the old success; a failed first run reports null", async () => {
+  await seed();
+  await store.replaceDiscussion(ids[APP], pr(1), []);
+  await state(APP, { status: "failed", lastSuccessAt: minutesAgo(600) });
+  const f = fresh((await run("get_pull_request", { repo: APP, number: 1 })).json)[0]!;
+  assert.deepEqual([f.stale, f.lastSyncedAt], [true, minutesAgo(600).toISOString().slice(0, 16) + f.lastSyncedAt!.slice(16)]);
+  await state(APP, { status: "failed", lastSuccessAt: null });
+  const gap = (await run("get_pull_request", { repo: APP, number: 1 })).json;
+  assert.deepEqual(gap.coverageGaps, ["pull requests not ingested for " + APP]);
+  assert.deepEqual(fresh(gap).map((x) => [x.repo, x.lastSyncedAt, x.stale]), [[APP, null, true]]);
+});
+
+test("freshness: a repository never imported is a coverage gap and is not listed as stale", async () => {
+  await seed();
+  const j = (await run("get_pull_request", { repo: NEVER, number: 1 })).json;
+  assert.deepEqual(j.coverageGaps, ["pull requests not ingested for " + NEVER]);
+  assert.deepEqual(fresh(j), []);
+  const s = (await run("search_discussions", { query: "zzz" })).json;
+  assert.ok(s.coverageGaps.includes("pull requests not ingested for " + NEVER));
+  assert.ok(fresh(s).every((f) => f.repo !== NEVER));
+});
+
+test("freshness: no-access turns the gap text into the token requirement", async () => {
+  await seed();
+  await store.saveSyncState(ids[NEVER], { ...ok, lastSuccessAt: null, access: "no-access" });
+  const want = `pull requests not readable for ${NEVER}: the token needs Pull requests: Read and Issues: Read`;
+  const g = (await run("get_pull_request", { repo: NEVER, number: 1 })).json;
+  assert.deepEqual(g.coverageGaps, [want]);
+  assert.deepEqual(fresh(g).map((f) => [f.repo, f.stale]), [[NEVER, true]]);
+  assert.ok((await run("search_discussions", { query: "zzz" })).json.coverageGaps.includes(want));
+  assert.ok((await run("get_provenance", { ticket: "TRUNK-1" })).json.coverageGaps.includes(want));
+});
+
+test("freshness: search and provenance list the repositories of their hits and links; an out-of-Product repository never appears", async () => {
+  await seed();
+  for (const r of [APP, LIB, SECRET]) await state(r);
+  await store.replaceDiscussion(ids[APP], pr(1, { title: "widget" }), [ticket(1, "TRUNK-9")]);
+  await store.replaceDiscussion(ids[LIB], pr(2, { title: "widget" }), [ticket(2, "TRUNK-9")]);
+  await store.replaceDiscussion(ids[SECRET], pr(3, { title: "widget" }), [ticket(3, "TRUNK-9")]);
+  const s = (await run("search_discussions", { query: "widget" })).json;
+  assert.deepEqual(fresh(s).map((f) => f.repo), [APP, LIB]);
+  const p = (await run("get_provenance", { ticket: "TRUNK-9" })).json;
+  assert.deepEqual(fresh(p).map((f) => f.repo), [APP, LIB]);
+  assert.ok(!JSON.stringify([s, p]).includes(SECRET));
+  const none = (await run("search_discussions", { query: "nomatchatall" })).json;
+  assert.deepEqual(fresh(none), []);
+  await assert.rejects(() => run("get_pull_request", { repo: SECRET, number: 3 }));
+});
+
+test("freshness: a result touching many repositories lists at most 50 and says so", async () => {
+  const many: Record<string, number> = {};
+  for (let i = 0; i < 60; i++) many[`github.com/acme/r${String(i).padStart(2, "0")}`] = 100 + i;
+  const big = fakeProvenanceStore(many);
+  for (const [n, id] of Object.entries(many)) {
+    await big.saveSyncState(id, { ...ok, lastSuccessAt: minutesAgo(1) });
+    await big.replaceDiscussion(id, pr(1, { title: "widget" }), []);
+  }
+  const repos = Object.entries(many).map(([n, id]) => ({ ...row(APP, dir), id, name: n }));
+  const deps: ToolDeps = { getRepo: async (n) => repos.find((r) => r.name === n), listRepos: async () => repos, baseUrl: "http://x", history: big };
+  const c = { deps, scope: scopeFor(["github.com/acme/*"]) };
+  const { json } = await run("search_discussions", { query: "widget", perPage: 20 }, c);
+  assert.equal(json.hits.length, 20);
+  assert.equal(fresh(json).length, 20);
+  const prov = (await run("get_provenance", { ticket: "NONE-1" }, c)).json;
+  assert.deepEqual(fresh(prov), []);
+  // 60 links across 60 repositories
+  for (const id of Object.values(many)) await big.replaceDiscussion(id, pr(1, { title: "widget" }), [ticket(1, "TRUNK-5")]);
+  const wide = (await run("get_provenance", { ticket: "TRUNK-5" }, c)).json;
+  assert.equal(fresh(wide).length, 50);
+  assert.ok(wide.truncated.some((x: string) => /freshness/.test(x)));
+});
+
+test("freshness: the sync interval comes from ToolDeps when set", async () => {
+  await seed();
+  await state(APP, { lastSuccessAt: minutesAgo(5) });
+  await store.replaceDiscussion(ids[APP], pr(1), []);
+  const c = ctx();
+  const quick = { ...c, deps: { ...c.deps, syncIntervalMs: 60_000 } };
+  assert.equal(fresh((await run("get_pull_request", { repo: APP, number: 1 }, quick)).json)[0]!.stale, true);
+  assert.equal(fresh((await run("get_pull_request", { repo: APP, number: 1 })).json)[0]!.stale, false);
+});
+
+test("the history tools never reach the code host: no network client in the tools module", () => {
+  const src = fs.readFileSync(new URL("./historyTools.ts", import.meta.url), "utf8");
+  const web = fs.readFileSync(new URL("../../web/src/lib/tools.ts", import.meta.url), "utf8");
+  for (const [name, code] of [["historyTools.ts", src], ["web tools.ts", web]]) {
+    assert.doesNotMatch(code, /from\s+["'](@octokit|octokit|node:https?|https?|undici|axios|node-fetch|got)\b/, `${name} imports a network client`);
+    assert.doesNotMatch(code, /\bfetch\s*\(|githubDiscussions|XMLHttpRequest/, `${name} uses the network`);
+  }
 });

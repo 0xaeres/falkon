@@ -137,6 +137,7 @@ model Repo {
   updatedAt             DateTime           @updatedAt
   discussions           Discussion[]
   provenanceLinks       ProvenanceLink[]
+  commitPullProbes      CommitPullProbe[]
   discussionSync        DiscussionSyncState?
 
   @@unique([external_id, external_codeHostUrl])
@@ -311,6 +312,17 @@ model ProvenanceLink {
   @@index([toKind, toRef])
 }
 
+/// A default-branch commit already asked GitHub `commits/{sha}/pulls`; `found`: a stored pull request was linked. A commit is asked once.
+model CommitPullProbe {
+  repo     Repo     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  repoId   Int
+  sha      String
+  probedAt DateTime
+  found    Boolean
+
+  @@id([repoId, sha])
+}
+
 /// Per repository: where the last import got to. A repository without a successful import is a coverage gap.
 model DiscussionSyncState {
   repo            Repo      @relation(fields: [repoId], references: [id], onDelete: Cascade)
@@ -319,7 +331,10 @@ model DiscussionSyncState {
   lastRunAt       DateTime?
   lastSuccessAt   DateTime?
   headCommit      String? // the head the commit links were computed against
-  status          String // running | ok | failed
+  status          String // running | ok | failed | waiting
+  access          String    @default("unknown") // unknown | ok | no-access: whether the token may read the repository's pull requests
+  waitUntil       DateTime? // when status is waiting: the provider's rate-limit reset
+  reconciledAt    DateTime? // the last full reconcile
   error           String? // fixed strings only, never provider text
   importedCount   Int       @default(0)
   skippedCount    Int       @default(0) // malformed source items in the last run; the cursor waits for them
