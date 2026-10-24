@@ -148,6 +148,17 @@ export interface SearchResult {
   totalCapped: boolean;
 }
 
+/** What the history tools need of a sync-state row to report freshness (D122). */
+export interface FreshnessRow {
+  repo: string;
+  lastSuccessAt: Date | null;
+  status: SyncState["status"];
+  access: SyncState["access"];
+}
+
+/** Most repositories one freshness read returns. */
+export const FRESHNESS_REPOS = 50;
+
 /** Provenance storage (D87, D106): Postgres now, the graph database later. */
 export interface ProvenanceStore {
   // import side, by repository id
@@ -159,12 +170,15 @@ export interface ProvenanceStore {
   /** Replaces every commit link of the repository as a set. */
   replaceCommitLinks(repoId: number, links: Link[]): Promise<void>;
   // read side, by the caller's effective repository set (P12)
+  /** The sync-state rows of the named code repositories, one bounded read; repositories never synced have no row. `truncated`: more than FRESHNESS_REPOS names were asked for. */
+  freshness(repos: string[]): Promise<{ rows: FreshnessRow[]; truncated: boolean }>;
   getDiscussion(repos: string[], repo: string, number: number): Promise<Discussion | { gap: string } | undefined>;
   search(repos: string[], q: SearchQuery): Promise<SearchResult>;
   links(repos: string[], anchor: Anchor, o?: { unverified?: boolean }): Promise<{ links: RepoLink[]; gaps: string[] }>;
 }
 
 export const notIngested = (repo: string) => `pull requests not ingested for ${repo}`;
+export const notReadable = (repo: string) => `pull requests not readable for ${repo}: the token needs Pull requests: Read and Issues: Read`;
 
 /** Read bounds shared by every adapter. */
 // MAX_ROWS caps comments, files and links per read silently: S49 must report a `truncated` flag when a cap is reached.
@@ -319,6 +333,17 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
         await tx.$executeRawUnsafe(`DELETE FROM "ProvenanceLink" WHERE "repoId" = $1 AND "fromKind" = 'commit'`, repoId);
         await insertLinks(tx, repoId, links);
       }, { timeout: 120_000 });
+    },
+
+    async freshness(repos) {
+      const names = [...new Set(repos)];
+      if (!names.length) return { rows: [], truncated: false };
+      const rows = await db.$queryRawUnsafe<FreshnessRow[]>(
+        `SELECT r.name AS repo, s."lastSuccessAt", s.status, s.access FROM "Repo" r JOIN "DiscussionSyncState" s ON s."repoId" = r.id
+         WHERE r.name = ANY($1::text[]) AND r.kind = 'CODE' ORDER BY r.name LIMIT ${FRESHNESS_REPOS}`,
+        names.slice(0, FRESHNESS_REPOS),
+      );
+      return { rows, truncated: names.length > FRESHNESS_REPOS };
     },
 
     async getDiscussion(repos, repo, number) {

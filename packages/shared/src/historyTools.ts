@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MAX_OFFSET, MAX_ROWS, MAX_WORD, MAX_WORDS, type Discussion, type ProvenanceStore, type RepoLink, notIngested } from "./provenance";
+import { FRESHNESS_REPOS, MAX_OFFSET, MAX_ROWS, MAX_WORD, MAX_WORDS, type Discussion, type ProvenanceStore, type RepoLink, notIngested, notReadable } from "./provenance";
 import { define, fileNotFound, git, isPathValid, repoOrThrow, type ToolContext } from "./tools";
 import text from "./historyToolText.json" with { type: "json" };
 
@@ -54,6 +54,34 @@ async function scopedNames(ctx: ToolContext) {
 /** Coverage gaps of `names` (one repository when given), without reading any discussion. */
 const gapsOf = async (h: ProvenanceStore, names: string[], repo?: string) => (await h.search(names, { words: [], repo })).gaps;
 
+const DEFAULT_SYNC_INTERVAL_MS = 15 * 60_000;
+
+/**
+ * Freshness (D122) of the repositories a result touched, and `gaps` with the no-access text swapped in. One bounded read of the stored sync
+ * state; only repositories of the effective set `names` are asked for (P12). A repository never imported has no row: it stays a gap.
+ */
+async function freshnessOf(ctx: ToolContext, h: ProvenanceStore, names: string[], touched: Iterable<string | undefined>, gaps: string[]) {
+  const inSet = new Set(names);
+  const shown = [...new Set([...touched].filter((n): n is string => !!n && inSet.has(n)))].sort();
+  const gapRepos = names.filter((n) => !shown.includes(n) && gaps.includes(notIngested(n)));
+  const { rows } = await h.freshness([...shown, ...gapRepos]);
+  const maxAge = 2 * (ctx.deps.syncIntervalMs ?? DEFAULT_SYNC_INTERVAL_MS);
+  const reasonOf = (r: (typeof rows)[number]) =>
+    r.access === "no-access" ? "the token cannot read this repository's pull requests"
+    : r.status === "failed" ? "the last sync failed"
+    : r.status === "waiting" ? "the sync is waiting for the rate limit"
+    : r.lastSuccessAt && Date.now() - r.lastSuccessAt.getTime() > maxAge ? "the last successful sync is older than twice the sync interval"
+    : undefined;
+  const freshness = rows.filter((r) => shown.includes(r.repo)).map((r) => {
+    const reason = reasonOf(r);
+    return { repo: r.repo, lastSyncedAt: r.lastSuccessAt?.toISOString() ?? null, stale: reason !== undefined, ...(reason ? { reason } : {}) };
+  });
+  const denied = new Set(rows.filter((r) => r.access === "no-access").map((r) => notIngested(r.repo)));
+  const coverageGaps = gaps.map((g) => (denied.has(g) ? notReadable(g.slice(notIngested("").length)) : g));
+  const note = shown.length > FRESHNESS_REPOS ? [`freshness: showing ${FRESHNESS_REPOS} of ${shown.length} repositories`] : [];
+  return { freshness, coverageGaps, note };
+}
+
 const done = (v: unknown) => ({ output: JSON.stringify(v) });
 const iso = z.string().regex(/^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:\d{2})?)?$/, "Use an ISO 8601 date or time.").refine((s) => !Number.isNaN(Date.parse(s)), "Not a valid date.");
 
@@ -76,7 +104,10 @@ const getPullRequest = define({
     const names = await scopedNames(ctx);
     const d = await h.getDiscussion(names, repo, number);
     if (!d) throw new Error(`Pull request #${number} not found in "${repo}".`);
-    if ("gap" in d) return done({ repo, number, coverageGaps: [d.gap] });
+    if ("gap" in d) {
+      const f = await freshnessOf(ctx, h, names, [repo], [d.gap]);
+      return done({ repo, number, coverageGaps: f.coverageGaps, freshness: f.freshness });
+    }
 
     const truncated = new Set<string>();
     for (const part of d.truncated) truncated.add(`${part} was cut when the pull request was imported`);
@@ -137,7 +168,9 @@ const getPullRequest = define({
       out.comments = kept;
       nextOffset = offset + kept.length < d.comments.length ? offset + kept.length : null;
     }
-    return done({ ...out, nextOffset, truncated: [...truncated] });
+    const f = await freshnessOf(ctx, h, names, [repo], []);
+    f.note.forEach((x) => truncated.add(x));
+    return done({ ...out, freshness: f.freshness, nextOffset, truncated: [...truncated] });
   },
 });
 
@@ -279,7 +312,9 @@ const searchDiscussions = define({
       });
     }
     if (totalCapped) truncated.add(`totalCount stops at ${MAX_OFFSET}`);
-    const result = () => ({ totalCount: total, totalCapped, page, perPage, hasMore, hits, hint, partialMatches, coverageGaps: gaps, truncated: [...truncated] });
+    const f = await freshnessOf(ctx, h, names, [repo, ...hits.map((x) => x.repo), ...(partialMatches as { repo: string }[] | undefined ?? []).map((x) => x.repo)], gaps ?? []);
+    f.note.forEach((x) => truncated.add(x));
+    const result = () => ({ totalCount: total, totalCapped, page, perPage, hasMore, hits, hint, partialMatches, coverageGaps: f.coverageGaps, freshness: f.freshness, truncated: [...truncated] });
     // Keep the answer inside the size bound by dropping snippets, last hit first.
     for (let i = hits.length - 1; bytes(result()) > MAX_BYTES && i >= 0; ) {
       if (hits[i]!.snippets.length) {
@@ -372,7 +407,10 @@ const getProvenance = define({
       if (all.length > PER_KIND) truncated.add(`${kind}: showing ${PER_KIND} of ${all.length}`);
       out[kind] = all.slice(0, PER_KIND);
     }
-    return done({ ...out, coverageGaps: gaps, truncated: [...truncated] });
+    const touched = [repo, ...Object.values(lists).flatMap((m) => [...m.values()].map((x) => (x as { repo?: string }).repo))];
+    const f = await freshnessOf(ctx, h, names, touched, gaps);
+    f.note.forEach((x) => truncated.add(x));
+    return done({ ...out, coverageGaps: f.coverageGaps, freshness: f.freshness, truncated: [...truncated] });
   },
 });
 

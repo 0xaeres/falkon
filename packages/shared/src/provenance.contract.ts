@@ -189,4 +189,20 @@ export function provenanceStoreContract(label: string, make: MakeStore, skip: bo
     await store.saveSyncState(id(APP), n);
     assert.deepEqual(await store.syncState(id(APP)), n);
   });
+
+  it("freshness lists the sync rows of the named repositories only, newest facts as stored", async () => {
+    const { store, id } = await make();
+    await store.saveSyncState(id(APP), ok());
+    await store.saveSyncState(id(LIB), { ...ok(), status: "failed", access: "no-access", lastSuccessAt: null });
+    await store.saveSyncState(id(SECRET), ok());
+    const got = await store.freshness([LIB, APP, NEVER, "github.com/acme/unknown"]);
+    assert.deepEqual(got, {
+      rows: [
+        { repo: APP, lastSuccessAt: t("2025-02-01T00:00:00Z"), status: "ok", access: "ok" },
+        { repo: LIB, lastSuccessAt: null, status: "failed", access: "no-access" },
+      ],
+      truncated: false,
+    }, "NEVER has no row, SECRET was not named");
+    assert.deepEqual(await store.freshness([]), { rows: [], truncated: false });
+  });
 }

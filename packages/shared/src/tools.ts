@@ -42,6 +42,8 @@ export interface ToolDeps {
   baseUrl: string;
   /** Pull request provenance (the history tools, registered only with MCP_HISTORY_TOOLS=on). */
   history?: ProvenanceStore;
+  /** How often the discussion sync runs, in ms; the history tools call a repository stale after twice this. Default 15 minutes. */
+  syncIntervalMs?: number;
 }
 
 export interface ToolContext {
