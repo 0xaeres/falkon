@@ -35,7 +35,7 @@ const rejects = (name: keyof typeof tools, args: Record<string, unknown>) => ass
 const comment = (i: number, body: string, o: Partial<Discussion["comments"][number]> = {}) => ({ externalId: String(i), kind: "issue_comment" as const, authorLogin: "rev", body, state: null, path: null, line: null, createdAt: new Date(Date.UTC(2025, 0, 2, 0, 0, i)), updatedAt: null, ...o });
 const ticket = (n: number, key: string): Link => ({ fromKind: "pr", fromRef: String(n), toKind: "ticket", toRef: key, toRepo: null, source: "ticket-pattern", verified: true });
 const commitLink = (sha: string, n: number, o: Partial<Link> = {}): Link => ({ fromKind: "commit", fromRef: sha, toKind: "pr", toRef: String(n), toRepo: null, source: "squash-subject", verified: true, ...o });
-const ok = { cursorUpdatedAt: t("2025-01-09T00:00:00Z"), lastRunAt: t("2025-02-01T00:00:00Z"), lastSuccessAt: t("2025-02-01T00:00:00Z"), headCommit: "abc", status: "ok" as const, error: null, importedCount: 1, skippedCount: 0 };
+const ok = { cursorUpdatedAt: t("2025-01-09T00:00:00Z"), lastRunAt: t("2025-02-01T00:00:00Z"), lastSuccessAt: t("2025-02-01T00:00:00Z"), headCommit: "abc", status: "ok" as const, error: null, importedCount: 1, skippedCount: 0, access: "ok" as const, waitUntil: null, reconciledAt: null };
 
 before(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-history-"));

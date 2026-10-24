@@ -4,7 +4,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { discussionLinks, type Discussion, type DiscussionComment, type DiscussionSource, type Link, type ProvenanceStore } from "@falkon/shared";
+import { NoAccess, RateLimited, discussionLinks, type Discussion, type DiscussionComment, type DiscussionSource, type Link, type ProvenanceStore } from "@falkon/shared";
 import { git } from "./git";
 
 // ---- snapshot source -------------------------------------------------------------------------------------------
@@ -145,16 +145,28 @@ export interface ImportTarget {
  * repository's commit links. Undefined when the source has nothing for the repository: it stays a coverage gap.
  */
 export async function importDiscussions(store: ProvenanceStore, source: DiscussionSource, repo: ImportTarget, ticketKeys: string[], now = () => new Date()) {
-  if (!(await source.covers(repo.name))) return undefined;
-  const state = (await store.syncState(repo.id)) ?? { cursorUpdatedAt: null, lastRunAt: null, lastSuccessAt: null, headCommit: null, status: "running" as const, error: null, importedCount: 0, skippedCount: 0 };
+  const state = (await store.syncState(repo.id)) ?? { cursorUpdatedAt: null, lastRunAt: null, lastSuccessAt: null, headCommit: null, status: "running" as const, error: null, importedCount: 0, skippedCount: 0, access: "unknown" as const, waitUntil: null, reconciledAt: null };
   const started = now();
-  await store.saveSyncState(repo.id, { ...state, status: "running", lastRunAt: started });
+  /** A source signal is no failure: save how far the run got (never moving the cursor past an unprocessed or skipped item) and stop. */
+  const halt = async (e: RateLimited | NoAccess, cursor: Date | null, imported: number, skipped: number) => {
+    // links were not recomputed, so the next run must (headCommit null); lastSuccessAt stays, a run that never finished is no success
+    const next = { ...state, cursorUpdatedAt: cursor, lastRunAt: started, error: null, skippedCount: skipped, headCommit: imported ? null : state.headCommit };
+    await store.saveSyncState(repo.id, e instanceof NoAccess ? { ...next, status: "ok", access: "no-access", waitUntil: null } : { ...next, status: "waiting", waitUntil: e.resetAt });
+    return { imported, skipped, total: state.importedCount, commitLinks: undefined, ms: now().getTime() - started.getTime() };
+  };
+  try {
+    if (!(await source.covers(repo.name))) return undefined;
+  } catch (e) {
+    if (e instanceof RateLimited || e instanceof NoAccess) return halt(e, state.cursorUpdatedAt, 0, state.skippedCount);
+    throw e;
+  }
+  await store.saveSyncState(repo.id, { ...state, status: "running", lastRunAt: started, waitUntil: null });
+  let imported = 0, skipped = 0, cursor = state.cursorUpdatedAt, held = cursor;
   try {
     if (!repo.head) throw new Error("repository not indexed");
-    let imported = 0, skipped = 0, cursor = state.cursorUpdatedAt;
     for await (const pull of source.pulls(repo.name, state.cursorUpdatedAt)) {
       if ("skipped" in pull) {
-        skipped++;
+        if (!skipped++) held = cursor; // a signal later in the run must not park the cursor past this item
         continue;
       }
       const d = capped(pull);
@@ -171,11 +183,12 @@ export async function importDiscussions(store: ProvenanceStore, source: Discussi
     }
     const done = now();
     // With a skipped file the cursor stays put, so the next run reads it again (and counts it again) until it is fixed.
-    await store.saveSyncState(repo.id, { cursorUpdatedAt: skipped ? state.cursorUpdatedAt : cursor, lastRunAt: started, lastSuccessAt: done, headCommit: repo.head, status: "ok", error: null, importedCount: prs.length, skippedCount: skipped });
+    await store.saveSyncState(repo.id, { ...state, cursorUpdatedAt: skipped ? state.cursorUpdatedAt : cursor, lastRunAt: started, lastSuccessAt: done, headCommit: repo.head, status: "ok", error: null, importedCount: prs.length, skippedCount: skipped, access: "ok", waitUntil: null });
     return { imported, skipped, total: prs.length, commitLinks: commitLinkCount, ms: done.getTime() - started.getTime() };
   } catch (e) {
+    if (e instanceof RateLimited || e instanceof NoAccess) return halt(e, skipped ? held : cursor, imported, skipped);
     // a fixed string: provider text never reaches the state row
-    await store.saveSyncState(repo.id, { ...state, lastRunAt: started, status: "failed", error: "import failed" }).catch(() => {});
+    await store.saveSyncState(repo.id, { ...state, lastRunAt: started, status: "failed", error: "import failed", waitUntil: null }).catch(() => {});
     throw e;
   }
 }

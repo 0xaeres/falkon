@@ -17,7 +17,7 @@ export const pr = (number: number, o: Partial<Discussion> = {}): Discussion => (
   updatedAt: t(`2025-01-0${Math.min(9, (number % 9) + 1)}T00:00:00Z`), mergedAt: t("2025-01-02T00:00:00Z"), closedAt: t("2025-01-02T00:00:00Z"),
   mergeCommitSha: null, headRef: "feature", baseRef: "main", url: `https://example.test/pull/${number}`, labels: [], truncated: [], comments: [], files: [], ...o,
 });
-const ok = (): SyncState => ({ cursorUpdatedAt: t("2025-01-09T00:00:00Z"), lastRunAt: t("2025-02-01T00:00:00Z"), lastSuccessAt: t("2025-02-01T00:00:00Z"), headCommit: "abc", status: "ok", error: null, importedCount: 1, skippedCount: 0 });
+const ok = (): SyncState => ({ cursorUpdatedAt: t("2025-01-09T00:00:00Z"), lastRunAt: t("2025-02-01T00:00:00Z"), lastSuccessAt: t("2025-02-01T00:00:00Z"), headCommit: "abc", status: "ok", error: null, importedCount: 1, skippedCount: 0, access: "ok", waitUntil: null, reconciledAt: null });
 const commit = (sha: string, n: number, o: Partial<Link> = {}): Link => ({ fromKind: "commit", fromRef: sha, toKind: "pr", toRef: String(n), toRepo: null, source: "merge-commit-sha", verified: true, ...o });
 const ticket = (n: number, key: string): Link => ({ fromKind: "pr", fromRef: String(n), toKind: "ticket", toRef: key, toRepo: null, source: "ticket-pattern", verified: true });
 const comment = (id: string, body: string, at: string) => ({ externalId: id, kind: "issue_comment" as const, authorLogin: "rev", body, state: null, path: null, line: null, createdAt: t(at), updatedAt: t(at) });
@@ -159,5 +159,15 @@ export function provenanceStoreContract(label: string, make: MakeStore, skip: bo
     const s: SyncState = { ...ok(), status: "failed", error: "import failed", lastSuccessAt: null };
     await store.saveSyncState(id(APP), s);
     assert.deepEqual(await store.syncState(id(APP)), s);
+  });
+
+  it("sync state round-trips waiting and no-access with their times", async () => {
+    const { store, id } = await make();
+    const w: SyncState = { ...ok(), status: "waiting", access: "unknown", waitUntil: t("2030-01-01T00:00:00Z"), reconciledAt: t("2025-01-05T00:00:00Z") };
+    await store.saveSyncState(id(APP), w);
+    assert.deepEqual(await store.syncState(id(APP)), w);
+    const n: SyncState = { ...w, status: "ok", access: "no-access", waitUntil: null };
+    await store.saveSyncState(id(APP), n);
+    assert.deepEqual(await store.syncState(id(APP)), n);
   });
 }

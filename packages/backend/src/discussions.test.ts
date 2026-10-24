@@ -7,7 +7,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import type { ProvenanceStore } from "@falkon/shared";
+import { NoAccess, RateLimited, type Discussion, type DiscussionSource, type ProvenanceStore } from "@falkon/shared";
+import { pr } from "../../shared/src/provenance.contract";
 import { fakeProvenanceStore } from "../../shared/src/provenance.fake";
 import { MAX_TEXT, importDiscussions, snapshotSource } from "./discussions";
 import { pgClose, pgSkip, pgTestStore } from "./provenancePg.testing";
@@ -209,6 +210,98 @@ for (const [label, make, skip] of variants) {
     assert.equal(await store.getDiscussion(SET, APP, 23), undefined);
     assert.deepEqual((await store.links(SET, { kind: "commit", sha: g.r1 })).links.map((l) => l.toRef).sort(), ["26", "27"], "two pull requests recording one merge commit are both linked");
     assert.deepEqual((await importDiscussions(store, snapshotSource(snap), target, KEYS))?.skipped, 3, "still counted on the next run");
+  });
+
+  // ---- sync state: rate-limit yield and no access (D115, D118) ----------------------------------------------------
+  const D = (n: number) => new Date(`2025-03-0${n}T00:00:00Z`);
+  type Item = Discussion | { skipped: string } | Error;
+  /** A source that replays `items` per repository in order (a thrown Error ends the run), honouring `since`, and records every `since`. */
+  const scripted = (items: Record<string, Item[]>, coversError: Record<string, Error> = {}) => {
+    const since: (Date | null)[] = [];
+    const source: DiscussionSource = {
+      covers: async (r) => { if (coversError[r]) throw coversError[r]; return r in items; },
+      async *pulls(r, s) {
+        since.push(s);
+        for (const i of items[r]!) {
+          if (i instanceof Error) throw i;
+          if ("skipped" in i || !s || i.updatedAt >= s) yield i;
+        }
+      },
+    };
+    return { source, since };
+  };
+  const p = (n: number) => pr(n, { updatedAt: D(n) });
+  const wait = new RateLimited(new Date("2030-01-01T00:00:00Z"));
+  const at = (id: (n: string) => number, name = APP) => ({ id: id(name), name, dir: g.dir, head: g.head });
+
+  test(`${label}: a rate limit after three pull requests keeps them, parks the cursor and resumes after it`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const first = scripted({ [APP]: [p(1), p(2), p(3), wait, p(4), p(5)] });
+    const r = await importDiscussions(store, first.source, at(id), KEYS);
+    assert.equal(r?.imported, 3);
+    assert.equal((await store.mergeCommits(id(APP))).length, 3);
+    const s = await store.syncState(id(APP));
+    assert.deepEqual([s?.status, s?.waitUntil, s?.cursorUpdatedAt, s?.error, s?.lastSuccessAt], ["waiting", wait.resetAt, D(3), null, null]);
+    assert.deepEqual(await store.getDiscussion(SET, APP, 1), { gap: `pull requests not ingested for ${APP}` }, "a run that never finished is still a gap");
+    const second = scripted({ [APP]: [p(1), p(2), p(3), p(4), p(5)] });
+    await importDiscussions(store, second.source, at(id), KEYS);
+    assert.deepEqual(second.since, [D(3)], "the next run starts at the cursor");
+    const done = await store.syncState(id(APP));
+    assert.deepEqual([done?.status, done?.waitUntil, done?.cursorUpdatedAt, done?.importedCount, done?.access], ["ok", null, D(5), 5, "ok"]);
+  });
+
+  test(`${label}: a rate limit on the very first item moves no cursor`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    await importDiscussions(store, scripted({ [APP]: [p(1), p(2)] }).source, at(id), KEYS);
+    await importDiscussions(store, scripted({ [APP]: [wait, p(3)] }).source, at(id), KEYS);
+    const s = await store.syncState(id(APP));
+    assert.deepEqual([s?.status, s?.cursorUpdatedAt, s?.waitUntil, s?.importedCount], ["waiting", D(2), wait.resetAt, 2]);
+    assert.ok(s?.lastSuccessAt, "the earlier success stays");
+  });
+
+  test(`${label}: a rate limit after a skipped item keeps the cursor before the skipped item`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    await importDiscussions(store, scripted({ [APP]: [p(1), { skipped: "2.json" }, p(3), wait] }).source, at(id), KEYS);
+    const s = await store.syncState(id(APP));
+    assert.deepEqual([s?.status, s?.cursorUpdatedAt, s?.skippedCount], ["waiting", D(1), 1]);
+    assert.equal((await store.mergeCommits(id(APP))).length, 2, "the items after the skip are still stored");
+  });
+
+  test(`${label}: no access stores the verdict, imports nothing and leaves other repositories alone`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const { source } = scripted({ [APP]: [p(1)], [LIB]: [p(1), p(2)] }, { [APP]: new NoAccess() });
+    const denied = await importDiscussions(store, source, at(id), KEYS);
+    const fine = await importDiscussions(store, source, at(id, LIB), KEYS);
+    assert.equal(denied?.imported, 0);
+    assert.equal(fine?.imported, 2);
+    const s = await store.syncState(id(APP));
+    assert.deepEqual([s?.access, s?.status, s?.error, s?.lastSuccessAt, s?.cursorUpdatedAt], ["no-access", "ok", null, null, null]);
+    assert.equal((await store.mergeCommits(id(APP))).length, 0);
+    const l = await store.syncState(id(LIB));
+    assert.deepEqual([l?.access, l?.status, l?.waitUntil], ["ok", "ok", null]);
+  });
+
+  test(`${label}: no access thrown mid-run keeps what was stored and a waiting repository does not block another`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    const { source } = scripted({ [APP]: [p(1), new NoAccess(), p(2)], [LIB]: [wait, p(1)], [BARE]: [p(1)] });
+    await importDiscussions(store, source, at(id), KEYS);
+    await importDiscussions(store, source, at(id, LIB), KEYS);
+    await importDiscussions(store, source, at(id, BARE), KEYS);
+    assert.deepEqual([(await store.syncState(id(APP)))?.access, (await store.syncState(id(APP)))?.cursorUpdatedAt, (await store.mergeCommits(id(APP))).length], ["no-access", D(1), 1]);
+    assert.equal((await store.syncState(id(LIB)))?.status, "waiting");
+    assert.deepEqual([(await store.syncState(id(BARE)))?.status, (await store.mergeCommits(id(BARE))).length], ["ok", 1]);
+  });
+
+  test(`${label}: a rate limit raised by covers parks the repository; a waitUntil in the past resumes at once; a plain error still fails`, { skip }, async () => {
+    const { store, id } = await make(SET);
+    await importDiscussions(store, scripted({ [APP]: [p(1)] }, { [APP]: wait }).source, at(id), KEYS);
+    assert.deepEqual([(await store.syncState(id(APP)))?.status, (await store.syncState(id(APP)))?.waitUntil], ["waiting", wait.resetAt]);
+    await store.saveSyncState(id(APP), { ...(await store.syncState(id(APP)))!, waitUntil: new Date("2000-01-01T00:00:00Z") });
+    const r = await importDiscussions(store, scripted({ [APP]: [p(1)] }).source, at(id), KEYS);
+    assert.equal(r?.imported, 1);
+    assert.deepEqual([(await store.syncState(id(APP)))?.status, (await store.syncState(id(APP)))?.waitUntil], ["ok", null]);
+    await assert.rejects(importDiscussions(store, scripted({ [APP]: [new Error("boom")] }).source, at(id), KEYS), /boom/);
+    assert.deepEqual([(await store.syncState(id(APP)))?.status, (await store.syncState(id(APP)))?.error], ["failed", "import failed"]);
   });
 }
 
