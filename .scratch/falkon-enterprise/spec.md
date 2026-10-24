@@ -348,6 +348,8 @@ What the numbers say. (1) The prompt and parser fixes (S58) worked: the three qu
 
 Note for the runner: with concurrency 3 and a $1 per-run reservation, the runner stops new runs when ledger spend plus the reservation passes the cap even though real spend is lower; the dev split needed seven reruns of the same command. Also `stack down` leaves the `--prs on` stack up (`stack down --prs on` is needed).
 
+Real-token smoke (human, 2026-10-24, classic token with repo scope, `scripts/sync-smoke.sh`): first run FAILED with 'no commit links' because the 24-month window excluded the old default repositories (1 pull request stored, an open one); a smoke-design defect, fixed in the follow-up (the smoke reads a 120-month window; the product default stays 24). Second run PASS: backfill window 120 months; openmrs-module-dataentrystatistics 10 pull requests, 6 rule links, 1 api link; openmrs-contrib-keycloak-smart-auth 21 pull requests, 10 rule links, 0 api links; 31 pull requests stored, 16 rule and 1 api commit links; 50 REST and 4 GraphQL requests; budget 4950 REST and 4996 GraphQL of 5000 each; permission probe ok for both. This proves the real GitHub path end to end (probe, discovery, GraphQL detail, linking, the `commits/{sha}/pulls` fallback, request accounting) on two small public repositories; it does not exercise the rate-limit yield, a no-access token, a long backfill or the scheduler, and the Postgres variants of the contract tests are still not run.
+
 Decisions waiting for the human at gate 2: see the gate 2 digest in the session; recorded here when answered.
 
 ## Next
