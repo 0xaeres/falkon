@@ -1,7 +1,7 @@
 // In-memory ProvenanceStore for tests without a database: the semantics the Postgres adapter must match
 // (provenance.contract.ts runs the same cases against both).
 import {
-  MAX_OFFSET, MAX_ROWS, notIngested, searchBounds,
+  FRESHNESS_REPOS, MAX_OFFSET, MAX_ROWS, notIngested, searchBounds,
   type Discussion, type Link, type ProvenanceStore, type RepoLink, type SearchHit, type SyncState,
 } from "./provenance";
 
@@ -29,6 +29,14 @@ export function fakeProvenanceStore(repos: Record<string, number>) {
     async replaceCommitLinks(repoId, ls) {
       for (let i = links.length - 1; i >= 0; i--) if (links[i]!.repoId === repoId && links[i]!.fromKind === "commit") links.splice(i, 1);
       links.push(...ls.map((l) => ({ ...l, repoId })));
+    },
+    async freshness(repos) {
+      const names = [...new Set(repos)];
+      const out = rows(names.slice(0, FRESHNESS_REPOS)).flatMap((r) => {
+        const s = states.get(r.id);
+        return s ? [{ repo: r.name, lastSuccessAt: s.lastSuccessAt, status: s.status, access: s.access }] : [];
+      });
+      return { rows: copy(out), truncated: names.length > FRESHNESS_REPOS };
     },
     async getDiscussion(set, repo, number) {
       if (!set.includes(repo)) return undefined;
