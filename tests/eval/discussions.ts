@@ -8,6 +8,9 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { BATCH, conn, detailQuery, scrub, shapePull, type Pages } from "../../packages/backend/src/githubQuery.js";
+
+export { scrub };
 
 export type Gh = (args: string[], input: string) => string;
 export type Deps = { gh: Gh; sleep: (ms: number) => Promise<void>; now: () => Date; log: (line: string) => void };
@@ -21,23 +24,9 @@ export const realDeps = (): Deps => ({
   log: (line) => console.error(line),
 });
 
-const OWNER = "openmrs", MONTHS = 24, BATCH = 10, MAX_PAGES = 5, LOW = 150;
-const AUTHOR = "author{login}";
-const SELECT: Record<string, string> = {
-  comments: `databaseId ${AUTHOR} body createdAt updatedAt`,
-  reviews: `databaseId ${AUTHOR} state body submittedAt`,
-  reviewThreads: `comments(first:30){pageInfo{hasNextPage} nodes{databaseId ${AUTHOR} body path line originalLine createdAt updatedAt}}`,
-  files: "path additions deletions",
-};
-const SIZE: Record<string, number> = { comments: 100, reviews: 100, reviewThreads: 30, files: 100 };
-const conn = (f: string, after = "") => `${f}(first:${SIZE[f]}${after}){pageInfo{hasNextPage endCursor} nodes{${SELECT[f]}}}`;
-const FRAGMENT = `fragment F on PullRequest{number title body state merged mergedAt createdAt updatedAt closedAt ${AUTHOR} headRefName baseRefName mergeCommit{oid} url labels(first:50){nodes{name}} ${Object.keys(SELECT).map((f) => conn(f)).join(" ")}}`;
+const OWNER = "openmrs", MONTHS = 24, MAX_PAGES = 5, LOW = 150;
 const RATE = "rateLimit{cost remaining resetAt}";
 
-/** Emails and token-like strings in third-party text become placeholders; only logins are stored. */
-export const scrub = (s: string | null | undefined): string => (s ?? "")
-  .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g, "[email removed]")
-  .replace(/\b(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]+/g, "[token removed]");
 const sha = (data: string | Buffer) => createHash("sha256").update(data).digest("hex");
 const iso = (d: Date) => d.toISOString().replace(".000Z", "Z");
 
@@ -91,24 +80,9 @@ async function drain(c: Client, repo: string, number: number, field: string, fir
 
 /** One pull request as the snapshot stores it: text cut at the pin date, logins only, emails and tokens scrubbed. */
 async function shape(c: Client, repo: string, pr: any, pin: string, pinSha: string) {
-  const before = (t: string | null) => !!t && t <= pin;
-  // The pin commit's own pull request counts as merged even when GitHub stamped the merge seconds after the commit date.
-  const merged = pr.merged && (before(pr.mergedAt) || pr.mergeCommit?.oid === pinSha), closed = merged || before(pr.closedAt);
-  const truncated: Record<string, boolean> = {};
-  const get = async (f: string) => { const r = await drain(c, repo, pr.number, f, pr[f]); if (r.truncated) truncated[f === "reviewThreads" ? "reviewComments" : f] = true; return r.nodes; };
-  const login = (n: any) => n.author?.login ?? null;
-  const comments = (await get("comments")).filter((n) => before(n.createdAt)).map((n) => ({ id: n.databaseId, authorLogin: login(n), body: scrub(n.body), createdAt: n.createdAt, updatedAt: n.updatedAt < pin ? n.updatedAt : pin }));
-  const reviews = (await get("reviews")).filter((n) => before(n.submittedAt)).map((n) => ({ id: n.databaseId, authorLogin: login(n), state: n.state, body: scrub(n.body), submittedAt: n.submittedAt }));
-  const threads = await get("reviewThreads");
-  if (threads.some((t) => t.comments.pageInfo.hasNextPage)) truncated.reviewComments = true;
-  const reviewComments = threads.flatMap((t) => t.comments.nodes).filter((n) => before(n.createdAt)).map((n) => ({ id: n.databaseId, authorLogin: login(n), body: scrub(n.body), path: n.path, line: n.line ?? n.originalLine ?? null, createdAt: n.createdAt, updatedAt: n.updatedAt < pin ? n.updatedAt : pin }));
-  const files = (await get("files")).map((n) => ({ path: n.path, additions: n.additions, deletions: n.deletions }));
-  return {
-    number: pr.number, title: scrub(pr.title), body: scrub(pr.body), state: closed ? "closed" : "open", merged,
-    mergedAt: merged ? pr.mergedAt : null, createdAt: pr.createdAt, updatedAt: pr.updatedAt < pin ? pr.updatedAt : pin, closedAt: closed ? pr.closedAt : null,
-    authorLogin: login(pr), headRef: pr.headRefName, baseRef: pr.baseRefName, mergeCommitSha: merged ? pr.mergeCommit?.oid ?? null : null,
-    url: pr.url, labels: pr.labels.nodes.map((l: any) => l.name), comments, reviews, reviewComments, files, truncated,
-  };
+  const pages: Pages = {};
+  for (const f of ["comments", "reviews", "reviewThreads", "files"]) pages[f] = await drain(c, repo, pr.number, f, pr[f]);
+  return shapePull(pr, pages, pin, pinSha);
 }
 
 const json = (v: unknown) => JSON.stringify(v, null, 2) + "\n";
@@ -144,7 +118,7 @@ export async function fetchSnapshot(o3Dir: string, repos: Repo[], deps: Deps, ma
     const stale = listed.filter((p) => readJson(join(pulls, `${p.number}.json`))?.updatedAt !== (p.updatedAt < pinDate ? p.updatedAt : pinDate));
     let written = 0;
     const fetchBatch = async (nums: number[]): Promise<void> => {
-      const q = `query($owner:String!,$name:String!){repository(owner:$owner,name:$name){${nums.map((n) => `p${n}:pullRequest(number:${n}){...F}`).join(" ")}} ${RATE}} ${FRAGMENT}`;
+      const q = detailQuery(nums, RATE);
       let data: any;
       try { data = await c.query(q, { owner: OWNER, name: repo.name }); } catch (e) {
         if (nums.length === 1) throw e;
