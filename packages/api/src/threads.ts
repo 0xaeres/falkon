@@ -19,6 +19,8 @@ const notFound = () => error(404, "NOT_FOUND", "Product not found.");
 // One body for an unknown thread and for another Product's thread, so the response is no oracle.
 const threadNotFound = () => error(404, "NOT_FOUND", "Thread not found.");
 const UI_PRINCIPAL = "ui";
+/** Most threads one list returns, newest first. */
+export const LIST_CAP = 200;
 export const NO_GENERATION = "Chat opens when the first Evidence Generation publishes.";
 
 const title = (name: string | null) => name ?? "New thread";
@@ -41,7 +43,7 @@ export class ThreadService {
 
   async list(slug: string): Promise<ThreadSummary[]> {
     await this.product(slug);
-    const chats = await this.db.chat.findMany({ where: { productId: slug, createdBy: UI_PRINCIPAL }, orderBy: { updatedAt: "desc" }, select: { id: true, name: true, updatedAt: true } });
+    const chats = await this.db.chat.findMany({ where: { productId: slug, OR: [{ createdBy: { in: [UI_PRINCIPAL, "anonymous"] } }, { visibility: "PUBLIC" }] }, orderBy: { updatedAt: "desc" }, take: LIST_CAP, select: { id: true, name: true, updatedAt: true } });
     return chats.map((c) => ({ id: c.id, productId: slug, title: title(c.name), updatedAt: c.updatedAt.getTime() }));
   }
 

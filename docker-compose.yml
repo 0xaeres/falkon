@@ -70,6 +70,7 @@ services:
       API_HOST: 0.0.0.0
       API_ADMIN_HOST: 0.0.0.0
       AUTH_MODE: ${AUTH_MODE:-none}
+      FALKON_UI_URL: ${FALKON_UI_URL:-}
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
       # Host names (no port) the listeners answer besides loopback: `api` is how the ui container reaches the admin listener.
       API_ALLOWED_HOSTS: api

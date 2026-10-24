@@ -33,3 +33,29 @@ test("a stream without errors drains", async () => {
   const s = createUIMessageStream({ execute: ({ writer }) => { writer.write({ type: "start" }); writer.write({ type: "finish" }); } });
   await drain(s);
 });
+
+test("threadUrl: UI base (default, trailing slash trimmed) + encoded Product slug + thread id", async () => {
+  const { threadUrl } = await import("./chat");
+  const was = process.env.FALKON_UI_URL;
+  try {
+    delete process.env.FALKON_UI_URL;
+    assert.equal(threadUrl("alpha", "abc"), "http://127.0.0.1:3100/alpha/chat/abc");
+    process.env.FALKON_UI_URL = "https://falkon.example.com/";
+    assert.equal(threadUrl("alpha", "abc"), "https://falkon.example.com/alpha/chat/abc");
+    process.env.FALKON_UI_URL = "";
+    assert.equal(threadUrl("alpha", "abc"), "http://127.0.0.1:3100/alpha/chat/abc", "empty counts as unset (compose passes empty)");
+    assert.equal(threadUrl("a/b c", "x y"), "http://127.0.0.1:3100/a%2Fb%20c/chat/x%20y");
+  } finally {
+    if (was === undefined) delete process.env.FALKON_UI_URL; else process.env.FALKON_UI_URL = was;
+  }
+});
+
+test("newChatData: an MCP chat carries the Product; PUBLIC survives for signed-in callers; anonymous is PUBLIC", async () => {
+  const { newChatData } = await import("./chat");
+  const { scopeFor } = await import("@falkon/shared");
+  const key = { ...scopeFor(["*"]), principal: "key:x" };
+  assert.deepEqual(newChatData(key, "PUBLIC", "alpha"), { visibility: "PUBLIC", createdBy: "key:x", productId: "alpha", messages: [] });
+  assert.equal(newChatData(key, undefined, "alpha").visibility, "PRIVATE");
+  assert.equal(newChatData(scopeFor(["*"]), "PRIVATE", "alpha").visibility, "PUBLIC");
+  assert.equal(newChatData(key, undefined, undefined).productId, undefined, "the legacy blocking Ask saves no Product");
+});

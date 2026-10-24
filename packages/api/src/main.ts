@@ -1,6 +1,7 @@
 // The MCP handlers and the Ask agent live in ./engine (moved from the web package, spec D141).
 import { prisma } from "@falkon/db";
 import { accessPolicyFromEnv } from "@falkon/shared";
+import { productDeps } from "./engine/tools";
 import { handleMcpDelete, handleMcpPost } from "./engine/mcp";
 import { adminToken, startAdmin } from "./admin";
 import { createApp } from "./app";
@@ -26,4 +27,5 @@ console.log(`api listening on ${host}:${port} (AUTH_MODE=${process.env.AUTH_MODE
 
 const connections = new ConnectionService(prisma);
 const ui = new UiProductService(prisma, connections);
+productDeps.generation = async (slug) => (await ui.status(slug)).generation ?? "";
 await startAdmin(registry, process.env, connections, ui, new ThreadService(prisma, ui), new SearchService(prisma), new KnowledgeService(prisma, ui));

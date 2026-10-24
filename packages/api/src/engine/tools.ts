@@ -36,3 +36,6 @@ export const toolDeps: ToolDeps = {
 };
 
 export const runTool = createToolRunner(toolDeps);
+
+/** Set by main.ts: the Product's current generation id, or "" when none is published. The default serves callers that have no Product service (the legacy web app). Lives here so setting it does not load the `ai` SDK. */
+export const productDeps = { generation: async (_product: string): Promise<string> => "" };

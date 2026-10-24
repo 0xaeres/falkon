@@ -19,7 +19,7 @@ Pass the question as \`query\`; optionally narrow the agent with \`repos\` and c
 
 The call blocks while the agent works and can take a minute or more.
 
-Returns markdown with code references, followed by a link to the saved chat in the Falkon web UI, where every tool call and step of the research can be reviewed.
+Returns markdown with code references, followed by a link to the saved chat thread in the Falkon UI, where every tool call and step of the research can be reviewed.
 
 For a chat shared with others (a Slack thread, say), pass visibility 'PUBLIC' so the link opens for everyone.`;
 
@@ -28,7 +28,7 @@ const RESEARCH_DESCRIPTION = "Prepare a repository-scoped research brief for you
 let warnedMode = false;
 
 /** One MCP server per session, retaining the existing tool order, annotations and error text. */
-export async function createMcpServer(scope: Scope) {
+export async function createMcpServer(scope: Scope, product?: string) {
   // MCP_INSTRUCTIONS=off drops the server instructions (eval ablation); unset or "default" keeps them.
   const mode = process.env.MCP_INSTRUCTIONS;
   if (mode !== undefined && mode !== "default" && mode !== "off" && !warnedMode) {
@@ -93,8 +93,8 @@ export async function createMcpServer(scope: Scope) {
         try {
           // Loaded on first use: pulls in the `ai` SDK, which a tool-listing server never needs.
           const { askCodebase } = await import("./ask/chat");
-          const r = await askCodebase({ query: a.query, repos: a.repos, languageModel: a.languageModel, visibility: a.visibility, scope });
-          return { content: [{ type: "text" as const, text: `${r.answer}\n\n---\n**View full research session:** ${r.chatUrl}\n**Model used:** ${r.languageModel.model}` }] };
+          const r = await askCodebase({ query: a.query, repos: a.repos, languageModel: a.languageModel, visibility: a.visibility, scope, product });
+          return { content: [{ type: "text" as const, text: `${r.answer}\n\n---\n${r.chatUrl ? `**View full research session:** ${r.chatUrl}\n` : ""}**Model used:** ${r.languageModel.model}` }] };
         } catch (e) {
           return { content: [{ type: "text" as const, text: `Failed to ask codebase: ${e instanceof Error ? e.message : String(e)}` }] };
         }
@@ -154,7 +154,7 @@ const SESSION_HEADER = "mcp-session-id";
 const json = (status: number, errorCode: string, message: string) => Response.json({ statusCode: status, errorCode, message }, { status });
 
 /** Streamable HTTP, stateful: a request without a known session id starts one. */
-export async function handleMcpPost(req: Request, scope: Scope): Promise<Response> {
+export async function handleMcpPost(req: Request, scope: Scope, product?: string): Promise<Response> {
   const owner = scope.principal ?? "anonymous";
   const id = req.headers.get(SESSION_HEADER);
   const existing = id ? sessions.get(id) : undefined;
@@ -162,7 +162,7 @@ export async function handleMcpPost(req: Request, scope: Scope): Promise<Respons
     if (existing.owner !== owner) return json(403, "INSUFFICIENT_PERMISSIONS", "This session was opened by a different caller.");
     return existing.transport.handleRequest(req);
   }
-  const server = await createMcpServer(scope);
+  const server = await createMcpServer(scope, product);
   const transport: WebStandardStreamableHTTPServerTransport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: () => crypto.randomUUID(),
     onsessioninitialized: (sid) => {
