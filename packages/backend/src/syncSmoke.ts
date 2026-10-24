@@ -31,10 +31,13 @@ export function verdict(rs: RepoResult[]): string | undefined {
     if (r.status === "waiting") return "rate limited: the sync yielded before the budget ran out; retry after the reset time";
     if (r.status !== "ok") return "sync failed: the import did not finish";
   }
-  if (!rs.reduce((n, r) => n + r.prs, 0)) return "no pull requests stored";
+  if (!rs.reduce((n, r) => n + r.prs, 0)) return "no pull requests inside the backfill window";
   if (!rs.reduce((n, r) => n + r.rule + r.api, 0)) return "no commit links";
   return undefined;
 }
+
+/** Months of history the smoke reads: wide enough that the old default repositories have pull requests and commits inside it (the product default is 24). */
+export const BACKFILL_MONTHS = 120;
 
 async function main() {
   const [dir, ...repos] = process.argv.slice(2);
@@ -57,6 +60,7 @@ async function main() {
     }
   };
   const before = await budget();
+  console.log(`backfill window: ${BACKFILL_MONTHS} months`);
   const results: RepoResult[] = [];
   for (const full of repos) {
     const name = `github.com/${full}`;
@@ -65,7 +69,7 @@ async function main() {
     const r: RepoResult = { repo: full, access: "unknown", status: "unknown", prs: 0, rule: 0, api: 0 };
     try {
       const head = await git(clone, ["rev-parse", "HEAD"]);
-      await importDiscussions(store, githubSource({ transport }), { id, name, dir: clone, head }, []);
+      await importDiscussions(store, githubSource({ transport, backfillMonths: BACKFILL_MONTHS }), { id, name, dir: clone, head }, []);
     } catch {
       r.failed = true; // a fixed message in the verdict: never the provider's text
     }
