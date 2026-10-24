@@ -58,7 +58,7 @@ let fx: string;
 before(async () => {
   const mcp = await import("./engine/mcp");
   const { toolDeps } = await import("./engine/tools");
-  // web's sources load as CommonJS, so they hold the require()d instance of @falkon/shared: inject into that one.
+  // the engine and this test share one instance of @falkon/shared: inject into it.
   const { setZoektTransport } = await import("@falkon/shared");
   const { createApp } = await import("./app");
   toolDeps.baseUrl = "http://localhost:3000";

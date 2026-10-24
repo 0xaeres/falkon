@@ -1,4 +1,4 @@
-// Imports the Next-free runners from the web package in place (spec D19): no file moves, no copies.
+// The MCP handlers and the Ask agent live in ./engine (moved from the web package, spec D141).
 import { prisma } from "@falkon/db";
 import { accessPolicyFromEnv } from "@falkon/shared";
 import { handleMcpDelete, handleMcpPost } from "./engine/mcp";

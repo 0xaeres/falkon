@@ -51,7 +51,7 @@ before(async () => {
   process.env.LLM_BASE_URL = fake.url;
   process.env.LLM_MODEL = "fixture-model";
   process.env.LLM_API_KEY = "k";
-  // web's sources load as CommonJS, so they hold the require()d instance of @falkon/shared: configure that one.
+  // the engine and this test share one instance of @falkon/shared: configure it.
   const { toolDeps } = await import("./engine/tools");
   const shared = await import("@falkon/shared");
   toolDeps.baseUrl = "http://localhost:3000";
