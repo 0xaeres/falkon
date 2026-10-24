@@ -515,7 +515,9 @@ Check 1: registration snapshots byte-identical except the one `ask_codebase` sen
 
 Moving the Falkon UI to host port 3000; a file viewer or code-host links in search; streaming search; a knowledge base document list; porting plain HTTP Ask.
 
-## Cycle 17 results: `packages/web` retired (built 2026-10-24; gate 2 pending)
+## Cycle 17 results: `packages/web` retired (gate 2 approved 2026-10-24)
+
+Gate 2 (human, 2026-10-24): approved and merged (`6968a37`). Decisions: upgrade Next.js now; drop the `AUTH_URL` browse links rather than point them anywhere (a feature that is not implemented and not needed now is removed, with no dead links); the Falkon UI stays on host port 3100; prune the loop skill. Follow-ups done the same day, each reviewed and merged to `main`: the Next.js bump to 16.4.3 (`d67b107`; the registry reports no advisory for it, the three advisories against 16.4.0 were a Server Actions denial of service and two critical remote code executions) and the removal of `AUTH_URL`, the `list_repos` `url` field, the legacy chat link and the Ask answer source links (`5df8e36`; portable Ask citations are now code spans naming repository, path and lines; the `list_repos` contract snapshot lost its `url` field and nothing else changed). The full suite on the merged `main` passes (typecheck, tests 0 failures, api and UI builds exit 0, no advisory message on the UI build). Still not run: the live eval preflight on the Product path (needs `EVAL_O3_DIR`), `docker compose up --build` on the real compose file, the Falkon UI pages on a live stack, the Postgres variants of the tests.
 
 Built on the cycle branch `loop/falkon-enterprise-c17` (base `43e0609`, tip `97f38da`). Claude agents built each slice and a different Sonnet reviewer checked each; five of the six needed one fix round, and the main session fixed stale comments and ADR paths in S65 itself.
 
