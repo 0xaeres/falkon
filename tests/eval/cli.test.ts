@@ -276,9 +276,9 @@ test("clone-tools-git is a valid arm that lists the git tools; --dataset history
 
 test("clone-tools-git-prs routes to the --prs on stack and lists the pull request tools", async () => {
   const cfg = config({ EVAL_PRS_PORT: "4403" });
-  assert.deepEqual(backendOf("clone-tools-git-prs", cfg, {}), { id: "prs", url: "http://127.0.0.1:4403/api/mcp", key: undefined, kind: "clone", instructions: true });
-  assert.equal(backendOf("clone-tools-git-prs", config({}), {}).url, "http://127.0.0.1:3403/api/mcp");
-  assert.equal(backendOf("clone-tools-git", config({}), {}).url, "http://127.0.0.1:3400/api/mcp");
+  assert.deepEqual(backendOf("clone-tools-git-prs", cfg, {}), { id: "prs", url: "http://127.0.0.1:4403/mcp/o3", key: undefined, kind: "clone", instructions: true });
+  assert.equal(backendOf("clone-tools-git-prs", config({}), {}).url, "http://127.0.0.1:3403/mcp/o3");
+  assert.equal(backendOf("clone-tools-git", config({}), {}).url, "http://127.0.0.1:3400/mcp/o3");
   await assert.rejects(main(["bogus"], {}), /clone-tools-git-prs/);
   await withRuns(async (runs) => {
     assert.match(await main(["pilot", "--list", "--arms", "clone-tools-git-prs"], env(runs)), /clone-tools-git-prs: .*mcp__falkon__get_pull_request,mcp__falkon__search_discussions,mcp__falkon__get_provenance/);

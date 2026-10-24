@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { execFileSync } from "node:child_process";
+import { createServer } from "node:http";
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { assertFullHistory, deepenCheckouts, goldPaths, preflight, readKey, shallowCheckouts, type EvalClient } from "./preflight.js";
+import { assertFullHistory, connect, deepenCheckouts, goldPaths, preflight, readKey, shallowCheckouts, type EvalClient } from "./preflight.js";
 import { TOOLS } from "./harness.js";
 
 const names = ["a", "b", "c"];
@@ -112,4 +113,16 @@ test("deepen refuses a checkout whose HEAD is not its pin", () => {
   try {
     assert.throws(() => deepenCheckouts(fx.root, [{ checkout: "clone", commit: "0".repeat(40) }]), /HEAD/);
   } finally { rmSync(fx.root, { recursive: true, force: true }); }
+});
+
+test("a missing Product and a refused key name their cause", async () => {
+  const server = createServer((_, res) => { res.statusCode = status; res.end(); });
+  let status = 404;
+  await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
+  const url = `http://127.0.0.1:${(server.address() as { port: number }).port}/mcp/o3`;
+  try {
+    await assert.rejects(connect(url), /404.*Product does not exist.*stack up/);
+    status = 401;
+    await assert.rejects(connect(url), /refused \(401\).*EVAL_API_KEY_FILE/);
+  } finally { server.close(); }
 });

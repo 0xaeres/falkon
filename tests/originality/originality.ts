@@ -87,10 +87,10 @@ const root = resolve(fileURLToPath(import.meta.url), "../../..");
 export function shippedFiles(): string[] {
   const p = (s: string) => join(root, s);
   return [
-    ...["prompt", "impact", "evidence", "brief"].map((n) => p(`packages/web/src/lib/ask/${n}.ts`)),
+    ...["prompt", "impact", "evidence", "brief"].map((n) => p(`packages/api/src/engine/ask/${n}.ts`)),
     p("packages/shared/src/toolText.json"),
     p("packages/shared/src/tools.ts"),
-    p("packages/web/src/lib/mcp.ts"),
+    p("packages/api/src/engine/mcp.ts"),
     p("packages/shared/schemas/falkon/config.json"),
     ...walk(p("packages/shared/src/kb")).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts")),
   ];

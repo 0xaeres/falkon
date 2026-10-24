@@ -4,10 +4,12 @@ import {
   connectionSchema,
   productSchema,
   repositorySchema,
+  searchResponseSchema,
   statusSchema,
   threadSchema,
   threadSummarySchema,
   type EditRequest,
+  type KnowledgeActionRequest,
   type SetupRequest,
 } from "@falkon/contracts";
 
@@ -22,6 +24,8 @@ export const keys = {
   threads: (id: string) => `${base}/products/${encodeURIComponent(id)}/threads`,
   thread: (productId: string, threadId: string) =>
     `${base}/products/${encodeURIComponent(productId)}/threads/${encodeURIComponent(threadId)}`,
+  search: (id: string, params: URLSearchParams) =>
+    `${base}/products/${encodeURIComponent(id)}/search?${params}`,
   messages: (productId: string, threadId: string) =>
     `${keys.thread(productId, threadId)}/messages`,
 };
@@ -77,6 +81,7 @@ export const api = {
     return all;
   },
   status: (url: string) => request(url, statusSchema),
+  search: (url: string) => request(url, searchResponseSchema),
   threads: (url: string) => request(url, z.array(threadSummarySchema)),
   thread: (url: string) => request(url, threadSchema),
   connect: (input: unknown) =>
@@ -87,6 +92,8 @@ export const api = {
     request(keys.product(id), productSchema, "PATCH", input),
   sync: (id: string, input: unknown) =>
     request(`${keys.product(id)}/sync`, statusSchema, "POST", input),
+  knowledge: (id: string, input: KnowledgeActionRequest) =>
+    request(`${keys.product(id)}/knowledge`, statusSchema, "POST", input),
   newThread: (id: string) => request(keys.threads(id), threadSchema, "POST"),
   /** Best effort: the engine refuses a thread that has answers. */
   deleteThread: async (productId: string, threadId: string) =>

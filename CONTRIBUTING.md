@@ -33,13 +33,9 @@ pnpm typecheck
 pnpm test
 ```
 
-Run `docker compose up --build` when your change touches the image, compose services, the Zoekt build, or anything a running stack depends on. For a change that alters search results, also run the golden checks:
+Run `docker compose up --build` when your change touches the image, compose services, the Zoekt build, or anything a running stack depends on. For a change that alters search results, also run `scripts/ops-smoke.sh`. It starts a disposable stack, captures the golden query set through the api search route and `/mcp/fixtures`, and fails when the capture differs from `tests/golden/expected.json`.
 
-```bash
-pnpm golden:diff
-```
-
-`pnpm golden:record` rewrites the recorded results. Run it only when a change to search output is intended, and explain the difference in your pull request.
+`GOLDEN_RECORD=1 scripts/ops-smoke.sh` rewrites `tests/golden/expected.json`. Run it only when a change to search output is intended, and explain the difference in your pull request. See [`tests/golden/README.md`](tests/golden/README.md).
 
 ### Originality check
 

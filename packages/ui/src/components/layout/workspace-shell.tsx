@@ -23,6 +23,7 @@ import {
   MessageCircle,
   PanelRight,
   Plus,
+  Search,
   Settings,
   X,
 } from "lucide-react";
@@ -105,11 +106,13 @@ export function WorkspaceShell({
   const [actionError, setActionError] = useState("");
   const active = pathname.includes("/chat")
     ? "Chat"
-    : pathname.endsWith("/settings")
-      ? "Settings"
-      : pathname.endsWith("/connect")
-        ? "Connect"
-        : "Status";
+    : pathname.endsWith("/search")
+      ? "Search"
+      : pathname.endsWith("/settings")
+        ? "Settings"
+        : pathname.endsWith("/connect")
+          ? "Connect"
+          : "Status";
   function toggleSidebar() {
     const collapsed =
       mode === "collapsed" || (mode === "auto" && window.innerWidth < 1280);
@@ -261,6 +264,7 @@ export function WorkspaceShell({
         {[
           { name: "Status", icon: Layers },
           { name: "Chat", icon: MessageCircle },
+          { name: "Search", icon: Search },
           { name: "Connect", icon: Plug },
           { name: "Settings", icon: Settings },
         ].map(({ name, icon: Icon }) => (

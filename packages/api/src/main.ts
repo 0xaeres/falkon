@@ -1,11 +1,14 @@
-// Imports the Next-free runners from the web package in place (spec D19): no file moves, no copies.
+// The MCP handlers and the Ask agent live in ./engine (moved from the web package, spec D141).
 import { prisma } from "@falkon/db";
 import { accessPolicyFromEnv } from "@falkon/shared";
-import { handleMcpDelete, handleMcpPost } from "../../web/src/lib/mcp";
+import { productDeps } from "./engine/tools";
+import { handleMcpDelete, handleMcpPost } from "./engine/mcp";
 import { adminToken, startAdmin } from "./admin";
 import { createApp } from "./app";
 import { ConnectionService } from "./connections";
 import { PrismaProductRegistry } from "./product";
+import { KnowledgeService } from "./knowledge";
+import { SearchService } from "./search";
 import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
 
@@ -24,4 +27,5 @@ console.log(`api listening on ${host}:${port} (AUTH_MODE=${process.env.AUTH_MODE
 
 const connections = new ConnectionService(prisma);
 const ui = new UiProductService(prisma, connections);
-await startAdmin(registry, process.env, connections, ui, new ThreadService(prisma, ui));
+productDeps.generation = async (slug) => (await ui.status(slug)).generation ?? "";
+await startAdmin(registry, process.env, connections, ui, new ThreadService(prisma, ui), new SearchService(prisma), new KnowledgeService(prisma, ui));

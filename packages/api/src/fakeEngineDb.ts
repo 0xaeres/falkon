@@ -1,12 +1,14 @@
 // Test helper: the Prisma surface ConnectionService, UiProductService and ThreadService use (product, repo, connection, credential, chat), in memory.
+import { randomUUID } from "node:crypto";
 import type { PrismaClient } from "@falkon/db";
 import { fakeProductTable } from "../../backend/src/productTable.fake";
 
 type Row = Record<string, any>;
 type Where = Record<string, any>;
 
-function matches(row: Row, where: Where = {}) {
+function matches(row: Row, where: Where = {}): boolean {
   return Object.entries(where).every(([k, v]) => {
+    if (k === "OR") return (v as Where[]).some((w) => matches(row, w));
     const value = row[k];
     if (v && typeof v === "object" && !(v instanceof Date)) {
       if ("in" in v) return v.in.includes(value);
@@ -104,13 +106,13 @@ export function fakeEngineDb() {
     chat: {
       async create({ data }: { data: Row }) {
         const now = new Date();
-        const row = { name: null, visibility: "PRIVATE", createdBy: null, productId: null, messages: [], createdAt: now, updatedAt: now, ...structuredClone(data) };
+        const row = { id: randomUUID(), name: null, visibility: "PRIVATE", createdBy: null, productId: null, messages: [], createdAt: now, updatedAt: now, ...structuredClone(data) };
         chats.push(row);
         return structuredClone(row);
       },
-      async findMany({ where, orderBy }: { where?: Where; orderBy?: Row } = {}) {
+      async findMany({ where, orderBy, take }: { where?: Where; orderBy?: Row; take?: number } = {}) {
         const hit = chats.filter((c) => matches(c, where)).map((c) => structuredClone(c));
-        return orderBy?.updatedAt === "desc" ? hit.sort((a, b) => b.updatedAt - a.updatedAt) : hit;
+        return (orderBy?.updatedAt === "desc" ? hit.sort((a, b) => b.updatedAt - a.updatedAt) : hit).slice(0, take);
       },
       async findUnique({ where }: { where: Where }) {
         const c = chats.find((row) => matches(row, where));

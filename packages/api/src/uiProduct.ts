@@ -17,6 +17,8 @@ export interface RepoFacts {
   /** Knowledge base facts (D43), loaded with the repo: the commit last scanned, the exclusion flag, and the latest scan's status. */
   kbScannedCommit?: string | null;
   kbExcluded?: boolean;
+  /** A scan, delete or include asked for from the UI and not yet claimed by the backend. */
+  kbRequest?: string | null;
   scan?: ScanStatus | null;
 }
 export interface ConnectionFacts {
@@ -149,6 +151,7 @@ export function deriveKnowledge(enabled: boolean, modelConfigured: boolean, repo
   if (mine.some((r) => r.scan === "RUNNING")) return { state: "scanning" };
   if (mine.some((r) => r.scan === "FAILED")) return { state: "failed", detail: "Last scan failed" };
   if (mine.some((r) => r.scan === "BUDGET_EXHAUSTED")) return { state: "budget-exhausted" };
+  if (mine.some((r) => (r.kbRequest === "scan" || r.kbRequest === "include") && !r.kbScannedCommit)) return { state: "pending" }; // a first scan was asked for and the backend has not picked it up
   if (mine.some((r) => r.status === "INDEXED" && !!r.headCommit && r.kbScannedCommit !== r.headCommit)) return { state: "pending" };
   return { state: "ready" };
 }

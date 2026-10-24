@@ -466,7 +466,7 @@
   },
   {
     "name": "ask_codebase",
-    "description": "Only call this tool when the user's request names ask_codebase explicitly; otherwise use the search and read tools yourself.\n\nPuts a natural-language question about the code to a Falkon agent. The agent runs its own searches, reads files and follows symbol definitions and references, then writes the answer.\n\nPass the question as `query`; optionally narrow the agent with `repos` and choose a model with `languageModel` (see list_language_models).\n\nThe call blocks while the agent works and can take a minute or more.\n\nReturns markdown with code references, followed by a link to the saved chat in the Falkon web UI, where every tool call and step of the research can be reviewed.\n\nFor a chat shared with others (a Slack thread, say), pass visibility 'PUBLIC' so the link opens for everyone.",
+    "description": "Only call this tool when the user's request names ask_codebase explicitly; otherwise use the search and read tools yourself.\n\nPuts a natural-language question about the code to a Falkon agent. The agent runs its own searches, reads files and follows symbol definitions and references, then writes the answer.\n\nPass the question as `query`; optionally narrow the agent with `repos` and choose a model with `languageModel` (see list_language_models).\n\nThe call blocks while the agent works and can take a minute or more.\n\nReturns markdown with code references, followed by a link to the saved chat thread in the Falkon UI, where every tool call and step of the research can be reviewed.\n\nFor a chat shared with others (a Slack thread, say), pass visibility 'PUBLIC' so the link opens for everyone.",
     "inputSchema": {
       "type": "object",
       "properties": {

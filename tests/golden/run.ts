@@ -18,8 +18,11 @@ export interface GoldenQuery {
 export async function runGolden(baseUrl: string, queries: GoldenQuery[], request: typeof fetch = fetch) {
   const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json, text/event-stream" };
   if (process.env.API_KEY) headers.authorization = `Bearer ${process.env.API_KEY}`;
-  // MCP_PATH points the MCP steps at another endpoint: a path on baseUrl, or an absolute URL such as http://127.0.0.1:3001/mcp/<product>. The REST search steps stay on baseUrl.
-  const mcpPath = process.env.MCP_PATH ?? "/api/mcp";
+  // MCP_PATH is the MCP endpoint: a path on baseUrl, or an absolute URL such as http://127.0.0.1:3001/mcp/<product>.
+  // SEARCH_PATH is the search route on baseUrl, e.g. /ui/products/<slug>/search on the api admin listener (API_KEY is then the admin token).
+  const mcpPath = process.env.MCP_PATH ?? "";
+  const searchPath = process.env.SEARCH_PATH ?? "";
+  if (!mcpPath || !searchPath) throw new Error("Set MCP_PATH and SEARCH_PATH: the api routes of the Product to capture.");
   let session: string | null = null;
   let nextId = 0;
   async function rpc(method: string, params?: unknown, notification = false): Promise<any> {
@@ -46,12 +49,11 @@ export async function runGolden(baseUrl: string, queries: GoldenQuery[], request
       await rpc("notifications/initialized", undefined, true);
     }
     for (const query of queries) {
-      const url = new URL("/api/search", baseUrl);
+      const url = new URL(searchPath, baseUrl);
       url.searchParams.set("q", query.repos?.length ? `(${query.query}) reposet:${query.repos.join(",")}` : query.query);
       url.searchParams.set("regex", query.regex ? "1" : "0");
       url.searchParams.set("case", query.case ? "1" : "0");
       url.searchParams.set("limit", String(query.limit ?? 500));
-      if (query.page !== undefined) url.searchParams.set("page", String(query.page));
       const response = await request(url, { headers: headers.authorization ? { authorization: headers.authorization } : {}, signal: AbortSignal.timeout(60_000) });
       if (response.status >= 500 || response.status === 401 || response.status === 403) throw new Error(`Search ${query.id}: HTTP ${response.status}`);
       const entry: Record<string, unknown> = { id: query.id, query, search: { status: response.status, body: await response.json() } };
@@ -73,7 +75,7 @@ export async function runGolden(baseUrl: string, queries: GoldenQuery[], request
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   void (async () => {
-    if (!process.env.BASE_URL || !process.argv[2]) throw new Error("Usage: BASE_URL=http://localhost:3000 pnpm golden:record OUTPUT.json");
+    if (!process.env.BASE_URL || !process.argv[2]) throw new Error("Usage: BASE_URL=http://127.0.0.1:3002 MCP_PATH=http://127.0.0.1:3001/mcp/<product> SEARCH_PATH=/ui/products/<product>/search API_KEY=<admin token> pnpm golden:record OUTPUT.json");
     const queries = JSON.parse(fs.readFileSync(new URL("./queries.json", import.meta.url), "utf8")) as GoldenQuery[];
     fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(await runGolden(process.env.BASE_URL, queries), null, 2) + "\n");
   })().catch((e) => { console.error((e as Error).message); process.exitCode = 1; });

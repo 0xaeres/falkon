@@ -8,7 +8,6 @@
     "db:push": "pnpm --filter @falkon/db push",
     "eval": "pnpm --filter @falkon/eval eval",
     "dev:backend": "pnpm --filter @falkon/backend dev",
-    "dev:web": "pnpm --filter @falkon/web dev",
     "test": "pnpm -r --if-present test",
     "convert-config": "pnpm --filter @falkon/shared exec tsx ../../scripts/convert-config.ts",
     "golden:record": "pnpm --filter @falkon/shared exec tsx ../../tests/golden/run.ts",

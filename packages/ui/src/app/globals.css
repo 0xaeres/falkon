@@ -2423,3 +2423,40 @@ body > .loading-mark {
     min-height: 32px;
   }
 }
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+.search-form .input {
+  flex: 1 1 100%;
+}
+.search-file {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 12px;
+}
+.search-file h2 {
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.search-line {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.search-n {
+  flex: none;
+  width: 4ch;
+  text-align: right;
+  color: var(--faint);
+}
+.search-line mark {
+  background: var(--amber-soft);
+  color: var(--amber);
+}

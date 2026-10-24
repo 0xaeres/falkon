@@ -6,7 +6,6 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { createRequire } from "node:module";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
 import { messagesToAnswers } from "@falkon/contracts";
@@ -17,7 +16,7 @@ import { PrismaProductRegistry } from "./product";
 import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
 import { seedContractRepo } from "../../../tests/contract/fixture";
-import { fakeOpenAi } from "../../web/src/lib/ask/fakeOpenAi";
+import { fakeOpenAi } from "./engine/ask/fakeOpenAi";
 
 const fixture = seedContractRepo();
 process.env.DATA_DIR = fixture.dir;
@@ -47,14 +46,15 @@ const row = (name: string) => ({ name, displayName: null, codeHostType: "generic
 const engine = fakeEngineDb();
 const fake = await fakeOpenAi();
 let admin: INestApplication;
+let ui: UiProductService;
 let base: string;
 before(async () => {
   process.env.LLM_BASE_URL = fake.url;
   process.env.LLM_MODEL = "fixture-model";
   process.env.LLM_API_KEY = "k";
-  // web's sources load as CommonJS, so they hold the require()d instance of @falkon/shared: configure that one.
-  const { toolDeps } = await import("../../web/src/lib/tools");
-  const shared = createRequire(import.meta.url)("@falkon/shared") as typeof import("@falkon/shared");
+  // the engine and this test share one instance of @falkon/shared: configure it.
+  const { toolDeps } = await import("./engine/tools");
+  const shared = await import("@falkon/shared");
   toolDeps.baseUrl = "http://localhost:3000";
   mock.method(toolDeps, "getRepo", async (name: string) => (dirs[name] ? row(name) : undefined));
   mock.method(toolDeps, "listRepos", async () => Object.keys(dirs).map(row));
@@ -66,7 +66,7 @@ before(async () => {
   engine.addRepo(COLD);
   for (const [slug, repo] of [["alpha", IN], ["beta", OUT], ["cold", COLD]] as const) await engine.product.create({ data: { slug, name: slug, source: "api", definition: { include: [repo] }, repoNames: [repo] } });
   const connections = new ConnectionService(engine.db as never);
-  const ui = new UiProductService(engine.db, connections);
+  ui = new UiProductService(engine.db, connections);
   admin = await createAdminApp(new PrismaProductRegistry(engine.db as never), TOKEN, {}, connections, ui, new ThreadService(engine.db, ui));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
@@ -97,7 +97,7 @@ const ref = (repo: string, p: string, a: number, b: number) => `@file:{${repo}::
 const ANSWER = `<!--answer-->\nGreeting is defined here ${ref(IN, "src/hello.ts", 1, 1)}.`;
 const until = async (cond: () => boolean) => { for (let i = 0; i < 100 && !cond(); i++) await new Promise((r) => setTimeout(r, 20)); assert(cond(), "condition not met in time"); };
 
-test("create, list and get threads: Product-scoped, UI chats only, newest first", async () => {
+test("create, list and get threads: Product-scoped, UI chats, newest first", async () => {
   const created = await call("POST", "/ui/products/alpha/threads", {});
   assert.equal(created.status, 201);
   assert.deepEqual([created.json.productId, created.json.title, created.json.answers], ["alpha", "New thread", []]);
@@ -108,12 +108,62 @@ test("create, list and get threads: Product-scoped, UI chats only, newest first"
   await engine.db.chat.create({ data: { id: "other-principal", createdBy: "key:x", productId: "alpha", name: "other" } });
   const second = (await call("POST", "/ui/products/alpha/threads", {})).json;
   const listed = (await call("GET", "/ui/products/alpha/threads")).json as J[];
-  assert.deepEqual(listed.map((t) => t.id), [second.id, created.json.id]);
+  assert.deepEqual(listed.map((t) => t.id).sort(), [second.id, created.json.id].sort(), "another principal's PRIVATE chat and a chat with no Product are not listed");
+  assert.equal(listed[0]!.id, second.id);
   assert.deepEqual(Object.keys(listed[0]!).sort(), ["id", "productId", "title", "updatedAt"]);
   assert.equal(typeof listed[0]!.updatedAt, "number");
   assert.deepEqual((await call("GET", "/ui/products/beta/threads")).json, []);
   assert.equal((await call("GET", `/ui/products/alpha/threads/${created.json.id}`)).json.id, created.json.id);
   assert.equal((await call("GET", "/ui/products/alpha/threads/web-chat")).status, 404, "a chat with no Product is never a thread");
+});
+
+test("list rule: UI, anonymous and PUBLIC chats are listed; another key's PRIVATE chat is not, but its link (GET by id) opens", async () => {
+  const mk = (id: string, createdBy: string, visibility: "PRIVATE" | "PUBLIC") => engine.db.chat.create({ data: { id, createdBy, visibility, productId: "gamma", name: id } });
+  await engine.product.create({ data: { slug: "gamma", name: "gamma", source: "api", definition: { include: [IN] }, repoNames: [IN] } });
+  await mk("k-private", "key:x", "PRIVATE");
+  await mk("k-public", "key:x", "PUBLIC");
+  await mk("anon", "anonymous", "PUBLIC");
+  await mk("anon-private", "anonymous", "PRIVATE");
+  await mk("ui-one", "ui", "PRIVATE");
+  const listed = ((await call("GET", "/ui/products/gamma/threads")).json as J[]).map((t) => t.id).sort();
+  assert.deepEqual(listed, ["anon", "anon-private", "k-public", "ui-one"]);
+  assert.equal((await call("GET", "/ui/products/gamma/threads/k-private")).status, 200);
+});
+
+test("the thread list is bounded to the newest LIST_CAP", async () => {
+  const { LIST_CAP } = await import("./threads");
+  await engine.product.create({ data: { slug: "delta", name: "delta", source: "api", definition: { include: [IN] }, repoNames: [IN] } });
+  for (let i = 0; i < LIST_CAP + 5; i++) await engine.db.chat.create({ data: { id: `d${i}`, createdBy: "ui", productId: "delta" } });
+  assert.equal(((await call("GET", "/ui/products/delta/threads")).json as J[]).length, LIST_CAP);
+});
+
+test("ask_codebase through a Product saves a thread the UI renders: answer, evidence, no abstention; a chat deleted meanwhile returns the answer without a link", async () => {
+  const { prisma } = await import("@falkon/db");
+  // askCodebase reads the global client: point its models at the in-memory database for this test.
+  for (const model of ["chat", "product", "repo", "connection", "knowledgeScan"] as const) Object.defineProperty(prisma, model, { value: (engine.db as never)[model], configurable: true });
+  after(() => { for (const model of ["chat", "product", "repo", "connection", "knowledgeScan"]) delete (prisma as never)[model]; });
+  const { askCodebase } = await import("./engine/ask/chat");
+  const { productDeps } = await import("./engine/tools");
+  productDeps.generation = async (slug) => (await ui.status(slug)).generation ?? "";
+  const shared = await import("@falkon/shared");
+  const scope = { ...shared.scopeFor([IN]), principal: "key:x" };
+
+  fake.play([{ tool: "read_file", args: { repo: IN, path: "src/hello.ts" } }, { text: ANSWER }]);
+  const r = await askCodebase({ query: "Where is the greeting?", scope, product: "alpha" });
+  assert.equal(r.chatUrl, `http://127.0.0.1:3100/alpha/chat/${r.chatId}`);
+  assert.deepEqual([stored(r.chatId).productId, stored(r.chatId).createdBy, stored(r.chatId).visibility], ["alpha", "key:x", "PRIVATE"]);
+  const thread = (await call("GET", `/ui/products/alpha/threads/${r.chatId}`)).json;
+  assert.equal(thread.answers.length, 1);
+  assert.deepEqual([thread.answers[0].kind, thread.answers[0].paragraphs[0].text, thread.answers[0].evidence.length], ["grounded", "Greeting is defined here [1].", 1]);
+  assert.equal(thread.answers[0].abstention, null);
+
+  // The row vanishes while the agent runs (the chat name request is the last thing the fake serves).
+  fake.play([{ text: "<!--answer-->\nGone." }]);
+  const create = engine.db.chat.create;
+  const vanish = mock.method(engine.db.chat, "create", async (a: never) => { const row = await create(a); engine.chats.splice(engine.chats.indexOf(stored(row.id)), 1); return row; });
+  const gone = await askCodebase({ query: "q", scope, product: "alpha" }).finally(() => vanish.mock.restore());
+  assert.equal(gone.chatUrl, undefined);
+  assert.match(gone.answer, /Gone/);
 });
 
 test("unknown Product, bad slug and unknown thread are 404", async () => {

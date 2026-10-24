@@ -14,16 +14,6 @@ const keepSourceUrl = {
   },
 };
 
-// ask/http.ts imports NextResponse only for its error helpers, which the MCP path never calls (it needs just
-// languageModelInfo). Bundling Next's server runtime is large and breaks as ESM, so swap in the one method used.
-const nextShim = {
-  name: "next-server-shim",
-  setup(b) {
-    b.onResolve({ filter: /^next\/server$/ }, () => ({ path: "next/server", namespace: "next-shim" }));
-    b.onLoad({ filter: /.*/, namespace: "next-shim" }, () => ({ contents: "export const NextResponse = { json: (body, init) => Response.json(body, init) };", loader: "js" }));
-  },
-};
-
 await build({
   entryPoints: ["src/main.ts"],
   // Splitting moves the dynamically imported `ai` SDK into chunks under dist/chunks that load on first ask_codebase use;
@@ -40,6 +30,6 @@ await build({
   // The generated Prisma client lives in node_modules; Nest loads these optional peers lazily and only when used.
   external: ["@prisma/client", "@nestjs/microservices", "@nestjs/websockets", "@nestjs/platform-socket.io", "class-validator", "class-transformer"],
   banner: { js: 'import { createRequire as __cr } from "node:module"; const require = __cr(import.meta.url);' },
-  plugins: [keepSourceUrl, nextShim],
+  plugins: [keepSourceUrl],
   logLevel: "warning",
 });

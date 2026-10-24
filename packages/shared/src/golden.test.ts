@@ -57,20 +57,23 @@ test("golden diff CLI returns zero for equal files and nonzero with a readable d
 
 test("golden runner records API and MCP responses through mocked HTTP, including SSE and session teardown", async () => {
   const { runGolden } = await import("../../../tests/golden/run");
+  process.env.MCP_PATH = "/mcp/fixtures";
+  process.env.SEARCH_PATH = "/ui/products/fixtures/search";
   const requests: { url: URL; method: string; body?: any; headers: Headers }[] = [];
   const request: typeof fetch = async (input, init) => {
     const url = new URL(String(input)); const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     requests.push({ url, method: init?.method ?? "GET", body, headers: new Headers(init?.headers) });
-    if (url.pathname === "/api/search") return Response.json({ durationMs: 99, files: [], fileCount: 0, matchCount: 0, isSearchExhaustive: true });
+    if (url.pathname.endsWith("/search")) return Response.json({ durationMs: 99, files: [], fileCount: 0, matchCount: 0, isSearchExhaustive: true });
     if (init?.method === "DELETE" || body.method === "notifications/initialized") return new Response(null, { status: 202 });
     if (body.method === "initialize") return Response.json({ jsonrpc: "2.0", id: body.id, result: { protocolVersion: "2025-03-26" } }, { headers: { "mcp-session-id": "fixture-session" } });
     return new Response(`event: message\r\ndata: ${JSON.stringify({ jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: "No files found" }] } })}\r\n\r\n`, { headers: { "content-type": "text/event-stream" } });
   };
   const result = await runGolden("http://fixture.test", [{ id: "one", query: "Needle", regex: true, case: true, page: 2, limit: 1, repos: ["fixtures.test/atlas"], grep: { pattern: "Needle", repo: "fixtures.test/atlas" } }], request);
   assert.deepEqual(result, [{ id: "one", query: { id: "one", query: "Needle", regex: true, case: true, page: 2, limit: 1, repos: ["fixtures.test/atlas"], grep: { pattern: "Needle", repo: "fixtures.test/atlas" } }, search: { status: 200, body: { files: [], fileCount: 0, matchCount: 0, isSearchExhaustive: true } }, grep: { content: [{ type: "text", text: "No files found" }] } }]);
-  const search = requests.find((req) => req.url.pathname === "/api/search")!;
+  const search = requests.find((req) => req.url.pathname.endsWith("/search"))!;
   assert.equal(search.url.searchParams.get("q"), "(Needle) reposet:fixtures.test/atlas");
-  for (const [key, value] of [["regex", "1"], ["case", "1"], ["page", "2"], ["limit", "1"]]) assert.equal(search.url.searchParams.get(key!), value);
+  for (const [key, value] of [["regex", "1"], ["case", "1"], ["limit", "1"]]) assert.equal(search.url.searchParams.get(key!), value);
+  assert.equal(search.url.searchParams.has("page"), false, "the api search route rejects unknown parameters");
   assert.deepEqual(requests.filter((req) => req.body).map((req) => req.body.method), ["initialize", "notifications/initialized", "tools/call"]);
   assert.equal(requests.at(-1)!.method, "DELETE");
   assert.equal(requests.at(-1)!.headers.get("mcp-session-id"), "fixture-session");
