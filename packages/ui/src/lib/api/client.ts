@@ -9,6 +9,7 @@ import {
   threadSchema,
   threadSummarySchema,
   type EditRequest,
+  type KnowledgeActionRequest,
   type SetupRequest,
 } from "@falkon/contracts";
 
@@ -91,6 +92,8 @@ export const api = {
     request(keys.product(id), productSchema, "PATCH", input),
   sync: (id: string, input: unknown) =>
     request(`${keys.product(id)}/sync`, statusSchema, "POST", input),
+  knowledge: (id: string, input: KnowledgeActionRequest) =>
+    request(`${keys.product(id)}/knowledge`, statusSchema, "POST", input),
   newThread: (id: string) => request(keys.threads(id), threadSchema, "POST"),
   /** Best effort: the engine refuses a thread that has answers. */
   deleteThread: async (productId: string, threadId: string) =>

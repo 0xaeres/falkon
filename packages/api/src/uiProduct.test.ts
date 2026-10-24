@@ -164,3 +164,11 @@ test("toUiProduct gives each repository a state; a skipped one has state skipped
   assert.deepEqual(productSchema.parse(p).repositories.map((r) => r.state), ["indexed", "pending", "indexing", "failed", "skipped"]);
   assert.ok(!("reason" in p.repositories[4]!));
 });
+
+test("knowledge: a request not yet picked up by the backend shows as pending, below scanning and above failed", () => {
+  const asked = kb("a", "SUCCEEDED", { kbRequest: "scan" });
+  assert.equal(know([asked]).state, "pending");
+  assert.equal(know([asked, kb("b", "FAILED")]).state, "pending");
+  assert.equal(know([asked, kb("b", "RUNNING")]).state, "scanning");
+  assert.equal(know([kb("a", "SUCCEEDED", { kbRequest: "include", kbExcluded: true })]).state, "pending");
+});

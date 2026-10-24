@@ -42,7 +42,7 @@ export class UiProductService {
    * The config's knowledgeBase block, cached for 30 s. A failed or slow (2 s) load keeps the last known value, or the
    * schema default if none was ever loaded, and is retried after the next TTL, so a remote CONFIG_PATH never stalls polls.
    */
-  private async knowledge(): Promise<KnowledgeBaseConfig> {
+  async knowledge(): Promise<KnowledgeBaseConfig> {
     const t = this.now();
     if (this.kbCache && t - this.kbCache.at < KB_TTL_MS) return this.kbCache.cfg;
     let cfg = this.kbCache?.cfg ?? knowledgeBaseSchema.parse({});

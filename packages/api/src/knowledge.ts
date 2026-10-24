@@ -1,0 +1,39 @@
+// Product-scoped knowledge base actions for the Falkon UI (D138): POST /ui/products/:slug/knowledge on the admin listener.
+// Sets kbRequest and kbRequestedAt on a member repo exactly as the old web app did; the backend tick picks the request up.
+import { Controller, Inject, Param, Post, Req } from "@nestjs/common";
+import type { IncomingMessage } from "node:http";
+import { knowledgeActionRequestSchema } from "@falkon/contracts";
+import { RepoKind, type PrismaClient } from "@falkon/db";
+import { isProductName } from "./product";
+import { body, error } from "./request";
+import { UiProductService } from "./ui";
+import { memberNames } from "./uiProduct";
+
+type Db = Pick<PrismaClient, "product" | "repo">;
+
+const knowledgeBody = knowledgeActionRequestSchema.strict();
+
+export class KnowledgeService {
+  constructor(private readonly db: Db, private readonly ui: Pick<UiProductService, "knowledge" | "status">) {}
+
+  async act(slug: string, input: { repo: string; action: string }) {
+    const row = isProductName(slug) ? await this.db.product.findUnique({ where: { slug } }) : null;
+    if (!row) throw error(404, "NOT_FOUND", "Product not found.");
+    // One body for a repository outside the Product and for an unknown one, so the response is no oracle (P12).
+    if (!memberNames(row).includes(input.repo)) throw error(404, "NOT_FOUND", "Repository not found.");
+    if (!(await this.ui.knowledge()).enabled) throw error(409, "KNOWLEDGE_BASE_DISABLED", "The knowledge base is turned off in the config.");
+    const { count } = await this.db.repo.updateMany({ where: { name: input.repo, kind: RepoKind.CODE }, data: { kbRequest: input.action, kbRequestedAt: new Date() } });
+    if (!count) throw error(404, "NOT_FOUND", "Repository not found.");
+    return this.ui.status(slug);
+  }
+}
+
+@Controller("ui/products")
+export class KnowledgeController {
+  constructor(@Inject(KnowledgeService) private readonly knowledge: KnowledgeService) {}
+
+  @Post(":slug/knowledge")
+  async act(@Param("slug") slug: string, @Req() req: IncomingMessage) {
+    return this.knowledge.act(slug, await body(req, knowledgeBody));
+  }
+}

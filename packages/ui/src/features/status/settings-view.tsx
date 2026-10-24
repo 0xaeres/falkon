@@ -1,8 +1,41 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
+import type { KnowledgeActionRequest } from "@falkon/contracts";
 import { useWorkspace } from "@/components/layout/workspace-shell";
+import { Alert, Button } from "@/components/ui/primitives";
+import { api } from "@/lib/api/client";
+import { knowledgeLine } from "@/lib/knowledge";
+
+const ACTIONS = [
+  ["scan", "Scan"],
+  ["delete", "Delete"],
+  ["include", "Include"],
+] as const;
+
 export function SettingsView() {
-  const { product } = useWorkspace();
+  const { product, status, refresh } = useWorkspace();
+  const [busy, setBusy] = useState("");
+  const [actionError, setActionError] = useState("");
+  const kb = status?.knowledge;
+  const kbLine = knowledgeLine(kb);
+  // One request at a time: a double click cannot send the same action twice.
+  async function ask(repo: string, action: KnowledgeActionRequest["action"]) {
+    setBusy(repo);
+    setActionError("");
+    try {
+      await api.knowledge(product.id, { repo, action });
+      await refresh();
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "The request could not be sent. Try again.",
+      );
+    } finally {
+      setBusy("");
+    }
+  }
   return (
     <div className="page">
       <h1>Settings</h1>
@@ -21,6 +54,42 @@ export function SettingsView() {
           Edit repositories
         </Link>
       </section>
+      {kb && (
+        <section className="page-section">
+          <h2>Knowledge base</h2>
+          {kb.state === "off" ? (
+            <p className="muted">
+              The knowledge base is turned off in the config.
+            </p>
+          ) : (
+            <>
+              {kbLine && <p className="muted">{kbLine}</p>}
+              {actionError && <Alert tone="err">{actionError}</Alert>}
+              <table className="repo-table">
+                <tbody>
+                  {product.repositories.map((repo) => (
+                    <tr key={repo.id}>
+                      <td title={repo.id}>{repo.name}</td>
+                      <td>
+                        {ACTIONS.map(([action, label]) => (
+                          <Button
+                            key={action}
+                            disabled={busy !== ""}
+                            busy={busy === repo.id}
+                            onClick={() => void ask(repo.id, action)}
+                          >
+                            {label}
+                          </Button>
+                        ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+        </section>
+      )}
     </div>
   );
 }
