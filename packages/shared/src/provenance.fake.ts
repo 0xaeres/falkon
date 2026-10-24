@@ -10,6 +10,7 @@ export function fakeProvenanceStore(repos: Record<string, number>) {
   const discussions = new Map<string, Discussion & { repoId: number }>();
   const links: (Link & { repoId: number })[] = [];
   const states = new Map<number, SyncState>();
+  const probes = new Set<string>();
   const nameOf = (id: number) => Object.keys(repos).find((n) => repos[n] === id)!;
   const rows = (names: string[]) => names.filter((n) => n in repos).sort().map((name) => ({ id: repos[name]!, name, ingested: !!states.get(repos[name]!)?.lastSuccessAt }));
   const gapsOf = (r: ReturnType<typeof rows>) => r.filter((x) => !x.ingested).map((x) => notIngested(x.name));
@@ -27,7 +28,15 @@ export function fakeProvenanceStore(repos: Record<string, number>) {
       return [...discussions.values()].filter((d) => d.repoId === repoId).sort((a, b) => a.number - b.number).map((d) => ({ number: d.number, mergeCommitSha: d.mergeCommitSha }));
     },
     async replaceCommitLinks(repoId, ls) {
-      for (let i = links.length - 1; i >= 0; i--) if (links[i]!.repoId === repoId && links[i]!.fromKind === "commit") links.splice(i, 1);
+      const linked = new Set(ls.map((l) => l.fromRef));
+      for (let i = links.length - 1; i >= 0; i--) if (links[i]!.repoId === repoId && links[i]!.fromKind === "commit" && (links[i]!.source !== "commit-pulls-api" || linked.has(links[i]!.fromRef))) links.splice(i, 1);
+      links.push(...ls.map((l) => ({ ...l, repoId })));
+    },
+    async probedCommits(repoId, shas) { return shas.filter((s) => probes.has(`${repoId}:${s}`)); },
+    async saveCommitProbes(repoId, ps, ls) {
+      const shas = new Set(ps.map((p) => p.sha));
+      for (const p of ps) probes.add(`${repoId}:${p.sha}`);
+      for (let i = links.length - 1; i >= 0; i--) if (links[i]!.repoId === repoId && links[i]!.source === "commit-pulls-api" && shas.has(links[i]!.fromRef)) links.splice(i, 1);
       links.push(...ls.map((l) => ({ ...l, repoId })));
     },
     async freshness(repos) {

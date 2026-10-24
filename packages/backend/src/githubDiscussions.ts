@@ -83,7 +83,20 @@ export function githubSource({ transport, backfillMonths = 24, reconcile = false
     const at = (d: Discussion | { skipped: string }) => ("skipped" in d ? -Infinity : d.updatedAt.getTime());
     yield* out.sort((a, b) => at(a) - at(b));
   }
+  const since = now();
+  since.setUTCMonth(since.getUTCMonth() - backfillMonths);
   return {
+    commitsSince: since,
+    async commitPulls(repo, sha) {
+      const [owner, name] = ownerName(repo);
+      if (!owner || !name) return [];
+      // single attempt (like the probe): a 403 is a verdict, not something to sleep on
+      // 404 and 422: GitHub does not know this commit (fork, mirror, local), read before classify turns a 404 into NoAccess; "none" is remembered
+      const unknown = (e: any) => { if (e?.status === 404 || e?.status === 422) return { data: [] as any, headers: {} as Record<string, unknown> }; throw e; };
+      const { data, headers: h } = await call(() => transport.get(`/repos/${owner}/${name}/commits/${sha}/pulls`, { per_page: PAGE }).catch(unknown), `pull requests of commit in ${owner}/${name}`, 1);
+      note(h["x-ratelimit-remaining"], h["x-ratelimit-limit"], new Date(Number(h["x-ratelimit-reset"]) * 1000));
+      return (Array.isArray(data) ? data : []).map((p) => p?.number).filter((n): n is number => Number.isInteger(n));
+    },
     async covers(repo) {
       const [owner, name] = ownerName(repo);
       if (!owner || !name) return false;

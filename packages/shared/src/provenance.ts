@@ -50,7 +50,7 @@ export interface Discussion {
   files: DiscussionFile[];
 }
 
-export type LinkSource = "merge-commit-sha" | "squash-subject" | "merge-subject" | "body-ref" | "ticket-pattern";
+export type LinkSource = "merge-commit-sha" | "squash-subject" | "merge-subject" | "body-ref" | "ticket-pattern" | "commit-pulls-api";
 
 /** commit → pr (the commit-subject and merge-commit rules), pr → ticket, pr → pr (body references). */
 export interface Link {
@@ -110,6 +110,10 @@ export interface DiscussionSource {
   covers(repo: string): Promise<boolean>;
   /** Pull requests updated at or after `since` (all when null), one at a time; `skipped` names an item that could not be read. */
   pulls(repo: string, since: Date | null): AsyncIterable<Discussion | { skipped: string }>;
+  /** Optional (D125): commits newer than this may be asked `commitPulls`. Set with `commitPulls` (the live source's backfill window). */
+  commitsSince?: Date;
+  /** Optional (D125): the numbers of the pull requests that contain a default-branch commit (rebase and merge-queue merges). */
+  commitPulls?(repo: string, sha: string): Promise<number[]>;
 }
 
 export type Anchor = { kind: "commit"; sha: string } | { kind: "pr"; repo: string; number: number } | { kind: "ticket"; key: string };
@@ -167,8 +171,15 @@ export interface ProvenanceStore {
   /** Upserts one discussion and replaces its comments, files and outgoing links as a set, in one transaction. */
   replaceDiscussion(repoId: number, d: Discussion, links: Link[]): Promise<void>;
   mergeCommits(repoId: number): Promise<{ number: number; mergeCommitSha: string | null }[]>;
-  /** Replaces every commit link of the repository as a set. */
+  /**
+   * Replaces the repository's rule-derived commit links as a set. Links from the `commit-pulls-api` source are kept, except
+   * those of a commit the new set links (first match wins), so a recompute never loses a probe result.
+   */
   replaceCommitLinks(repoId: number, links: Link[]): Promise<void>;
+  /** Which of `shas` were probed already (found or not). */
+  probedCommits(repoId: number, shas: string[]): Promise<string[]>;
+  /** Remembers probe results and stores the `commit-pulls-api` links they found, replacing earlier ones of the same commits, in one transaction. */
+  saveCommitProbes(repoId: number, probes: { sha: string; found: boolean }[], links: Link[], at: Date): Promise<void>;
   // read side, by the caller's effective repository set (P12)
   /** The sync-state rows of the named code repositories, one bounded read; repositories never synced have no row. `truncated`: more than FRESHNESS_REPOS names were asked for. */
   freshness(repos: string[]): Promise<{ rows: FreshnessRow[]; truncated: boolean }>;
@@ -330,9 +341,35 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
 
     async replaceCommitLinks(repoId, links) {
       await db.$transaction(async (tx) => {
-        await tx.$executeRawUnsafe(`DELETE FROM "ProvenanceLink" WHERE "repoId" = $1 AND "fromKind" = 'commit'`, repoId);
+        await tx.$executeRawUnsafe(
+          `DELETE FROM "ProvenanceLink" WHERE "repoId" = $1 AND "fromKind" = 'commit' AND (source <> 'commit-pulls-api' OR "fromRef" = ANY($2::text[]))`,
+          repoId, [...new Set(links.map((l) => l.fromRef))],
+        );
         await insertLinks(tx, repoId, links);
       }, { timeout: 120_000 });
+    },
+
+    async probedCommits(repoId, shas) {
+      if (!shas.length) return [];
+      const rows = await db.$queryRawUnsafe<{ sha: string }[]>(`SELECT sha FROM "CommitPullProbe" WHERE "repoId" = $1 AND sha = ANY($2::text[]) LIMIT ${shas.length}`, repoId, shas);
+      return rows.map((r) => r.sha);
+    },
+
+    async saveCommitProbes(repoId, probes, links, at) {
+      if (!probes.length) return;
+      await db.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe(
+          `INSERT INTO "CommitPullProbe" ("repoId", sha, "probedAt", found)
+           SELECT $1, sha, $3::${TS}, found FROM jsonb_to_recordset($2::jsonb) AS x(sha text, found boolean)
+           ON CONFLICT ("repoId", sha) DO UPDATE SET "probedAt" = EXCLUDED."probedAt", found = EXCLUDED.found`,
+          repoId, JSON.stringify(probes), iso(at),
+        );
+        await tx.$executeRawUnsafe(
+          `DELETE FROM "ProvenanceLink" WHERE "repoId" = $1 AND "fromKind" = 'commit' AND source = 'commit-pulls-api' AND "fromRef" = ANY($2::text[])`,
+          repoId, probes.map((p) => p.sha),
+        );
+        await insertLinks(tx, repoId, links);
+      }, { timeout: 60_000 });
     },
 
     async freshness(repos) {

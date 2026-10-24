@@ -298,3 +298,38 @@ test("a GraphQL RATE_LIMITED error with no data is RateLimited, with the block's
     await assert.rejects(collect(githubSource({ transport: f.transport, backfillMonths: LONG, now: NOW }).pulls(`github.com/${DS}`, null)), (e) => e instanceof RateLimited && e.resetAt.toISOString() === reset);
   }
 });
+
+// ---- commitPulls (S56, D125) ---------------------------------------------------------------------------------------
+
+const SHA = "bd64dafb4351de34629e3d2d343a29196e168dae";
+
+test("commitPulls: GET commits/{sha}/pulls on the recorded rebase-merged commit returns its pull request number; the window is the backfill window", async () => {
+  const f = fake({ get: (p) => (p.includes("/commits/") ? { data: fx("dataentrystatistics-commit-pulls.json"), headers: HEADERS } : undefined) });
+  const src = githubSource({ transport: f.transport, backfillMonths: 24, now: NOW });
+  assert.deepEqual(await src.commitPulls!(`github.com/${DS}`, SHA), [2]);
+  assert.deepEqual(f.calls.map((c) => c.path), [`/repos/${DS}/commits/${SHA}/pulls`]);
+  assert.deepEqual(src.commitsSince, new Date("2024-10-24T00:00:00Z"));
+});
+
+test("commitPulls: several pull requests are all returned; junk entries are ignored; 403 is NoAccess after one request; the budget gate yields", async () => {
+  const f = fake({ get: (p) => (p.includes("/commits/") ? { data: [{ number: 4 }, { number: 9 }, {}, null, { number: "x" }], headers: HEADERS } : undefined) });
+  assert.deepEqual(await githubSource({ transport: f.transport, now: NOW }).commitPulls!(`github.com/${DS}`, SHA), [4, 9]);
+  const denied = fake({ get: () => { throw forbidden({ "x-ratelimit-remaining": "4000", "x-ratelimit-reset": "1792811421" }); } });
+  await assert.rejects(githubSource({ transport: denied.transport, now: NOW }).commitPulls!(`github.com/${DS}`, SHA), (e) => e instanceof NoAccess);
+  assert.equal(denied.calls.length, 1);
+  const low = fake({ get: () => ({ data: [], headers: { ...HEADERS, "x-ratelimit-remaining": "10", "x-ratelimit-limit": "5000", "x-ratelimit-reset": "1792811421" } }) });
+  const src = githubSource({ transport: low.transport, now: NOW });
+  await src.commitPulls!(`github.com/${DS}`, SHA);
+  await assert.rejects(src.commitPulls!(`github.com/${DS}`, SHA), (e) => e instanceof RateLimited && e.resetAt.getTime() === 1792811421_000);
+  assert.equal(low.calls.length, 1, "the second request is never sent");
+});
+
+test("commitPulls: 404 and 422 mean GitHub does not know the commit: [] (so it is recorded as probed); 403 stays NoAccess", async () => {
+  for (const status of [404, 422]) {
+    const f = fake({ get: () => { throw Object.assign(new Error("No commit found"), { status }); } });
+    assert.deepEqual(await githubSource({ transport: f.transport, now: NOW }).commitPulls!(`github.com/${DS}`, SHA), [], String(status));
+    assert.equal(f.calls.length, 1, "no retry");
+  }
+  const f = fake({ get: () => { throw forbidden({ "x-ratelimit-remaining": "4000", "x-ratelimit-reset": "1792811421" }); } });
+  await assert.rejects(githubSource({ transport: f.transport, now: NOW }).commitPulls!(`github.com/${DS}`, SHA), (e) => e instanceof NoAccess);
+});
