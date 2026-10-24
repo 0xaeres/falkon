@@ -75,12 +75,33 @@ export interface SyncState {
   lastSuccessAt: Date | null;
   /** The head the commit links were last computed against. */
   headCommit: string | null;
-  status: "running" | "ok" | "failed";
+  /** `waiting`: the source yielded to a rate limit; see `waitUntil`. */
+  status: "running" | "ok" | "failed" | "waiting";
+  /** Whether the token may read the repository's pull requests; `unknown` until the first probe (D115). */
+  access: "unknown" | "ok" | "no-access";
+  /** When `waiting`: the provider's reset time, before which no run should start. */
+  waitUntil: Date | null;
+  /** The last full reconcile (D116). */
+  reconciledAt: Date | null;
   /** A fixed string, never provider text. */
   error: string | null;
   importedCount: number;
   /** Source items the last run could not read (malformed); the cursor does not move past them. */
   skippedCount: number;
+}
+
+/** A source throws this from `covers` or `pulls` when the provider's budget is nearly spent; the import saves its progress and waits. */
+export class RateLimited extends Error {
+  constructor(readonly resetAt: Date) {
+    super("rate limited");
+  }
+}
+
+/** A source throws this from `covers` or `pulls` when the token may not read the repository's pull requests. */
+export class NoAccess extends Error {
+  constructor() {
+    super("no access");
+  }
 }
 
 /** Where discussions come from: a recorded snapshot now, the live GitHub API later (D107). Same mapper output for both. */
@@ -236,7 +257,7 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
   return {
     async syncState(repoId) {
       const [s] = await db.$queryRawUnsafe<SyncState[]>(
-        `SELECT "cursorUpdatedAt", "lastRunAt", "lastSuccessAt", "headCommit", status, error, "importedCount", "skippedCount" FROM "DiscussionSyncState" WHERE "repoId" = $1`,
+        `SELECT "cursorUpdatedAt", "lastRunAt", "lastSuccessAt", "headCommit", status, error, "importedCount", "skippedCount", access, "waitUntil", "reconciledAt" FROM "DiscussionSyncState" WHERE "repoId" = $1`,
         repoId,
       );
       return s;
@@ -244,12 +265,14 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
 
     async saveSyncState(repoId, s) {
       await db.$executeRawUnsafe(
-        `INSERT INTO "DiscussionSyncState" ("repoId", "cursorUpdatedAt", "lastRunAt", "lastSuccessAt", "headCommit", status, error, "importedCount", "skippedCount")
-         VALUES ($1, $2::${TS}, $3::${TS}, $4::${TS}, $5, $6, $7, $8, $9)
+        `INSERT INTO "DiscussionSyncState" ("repoId", "cursorUpdatedAt", "lastRunAt", "lastSuccessAt", "headCommit", status, error, "importedCount", "skippedCount", access, "waitUntil", "reconciledAt")
+         VALUES ($1, $2::${TS}, $3::${TS}, $4::${TS}, $5, $6, $7, $8, $9, $10, $11::${TS}, $12::${TS})
          ON CONFLICT ("repoId") DO UPDATE SET "cursorUpdatedAt" = EXCLUDED."cursorUpdatedAt", "lastRunAt" = EXCLUDED."lastRunAt",
            "lastSuccessAt" = EXCLUDED."lastSuccessAt", "headCommit" = EXCLUDED."headCommit", status = EXCLUDED.status, error = EXCLUDED.error,
-           "importedCount" = EXCLUDED."importedCount", "skippedCount" = EXCLUDED."skippedCount"`,
+           "importedCount" = EXCLUDED."importedCount", "skippedCount" = EXCLUDED."skippedCount",
+           access = EXCLUDED.access, "waitUntil" = EXCLUDED."waitUntil", "reconciledAt" = EXCLUDED."reconciledAt"`,
         repoId, iso(s.cursorUpdatedAt), iso(s.lastRunAt), iso(s.lastSuccessAt), s.headCommit, s.status, s.error, s.importedCount, s.skippedCount,
+        s.access, iso(s.waitUntil), iso(s.reconciledAt),
       );
     },
 
