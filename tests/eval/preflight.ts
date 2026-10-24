@@ -33,7 +33,13 @@ export async function connect(url: string, apiKey?: string): Promise<EvalClient>
   const client = new Client({ name: "falkon-eval-preflight", version: "1" });
   const headers = apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined;
   try { await client.connect(new StreamableHTTPClientTransport(new URL(url), { requestInit: { headers } })); return client; }
-  catch { await client.close().catch(() => {}); throw new Error(`MCP initialize failed at ${new URL(url).host}; check that the server is running (and the API key, if one is set).`); }
+  catch (e) {
+    await client.close().catch(() => {});
+    const status = (e as { code?: number }).code;
+    if (status === 404) throw new Error(`MCP initialize got 404 at ${url}: the Product does not exist there. Run pnpm eval -- stack up, which creates it.`);
+    if (status === 401 || status === 403) throw new Error(`MCP initialize was refused (${status}) at ${new URL(url).host}; set EVAL_API_KEY_FILE to a valid key.`);
+    throw new Error(`MCP initialize failed at ${new URL(url).host}; check that the server is running (and the API key, if one is set).`);
+  }
 }
 
 const text = (r: Record<string, unknown>) => (r.content as { text?: string }[] | undefined)?.map((p) => p.text ?? "").join("\n") ?? "";
