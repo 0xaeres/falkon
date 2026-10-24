@@ -417,11 +417,13 @@ Nothing in `packages/` changes, so registration snapshots and existing datasets 
 
 Fuzzy or word-form matching in `search_discussions` (D134), further prompt iteration after D133, any second pass or extra runs per cell (would need a new spend approval), Phase 1 git history tools.
 
-## Cycle 17 plan: retire `packages/web` (planned 2026-10-24; gate 1 pending)
+## Cycle 17 plan: retire `packages/web` (gate 1 approved 2026-10-24)
 
 Goal: one web surface. The Falkon UI (`packages/ui`, Next 16, host port 3100) and the Nest `api` service take over everything the inherited Next 15 app `packages/web` (host port 3000) still does, and `packages/web` is deleted. This fulfils MVP spec D16 and D61 (retire the engine's own pages after the Falkon UI reaches parity) and ADR 4.6 (the old Next.js routes are removed once contract and golden tests pass against the Nest boundary). It is not a history-phase cycle; it was taken up at the human's request after the human found two Next.js apps running and the inherited UI on port 3000.
 
 Base `main` at the commit that holds this plan. Cycle branch `loop/falkon-enterprise-c17`. Roles: Opus plans, Sonnet decides and commits after gate 1, Claude implements, a different Sonnet reviewer checks each slice. Codex is not used.
+
+Gate 1 (human, 2026-10-24): plan approved as written; the main session switched to Sonnet for the build, as the loop prescribes. Not started: no cycle branch or worktree exists yet.
 
 ### Inventory (2026-10-24, read from the tree)
 
