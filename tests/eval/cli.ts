@@ -8,7 +8,8 @@
  *                                                   difference vs the reference is at least -0.10, losses are at most 2 x wins, and no run
  *                                                   failed, was malformed or leaked; else FAIL, or withheld when coverage is incomplete
  *   pnpm eval -- report --pilot                     one line per pilot run, and the stop rules
- *   pnpm eval -- stack up|down [-v] [--instructions off]   the clone stack over the 42 checkouts (Docker, 127.0.0.1:EVAL_PORT);
+ *   pnpm eval -- stack up|down [-v] [--instructions off]   the clone stack over the 42 checkouts (Docker): the api service on 127.0.0.1:EVAL_PORT serves /mcp/o3, a Product holding all 42
+ *                                                   repositories that `stack up` creates through the admin listener (EVAL_PORT + 100);
  *                                                   --instructions off: project falkon-eval-noinstr on EVAL_NOINSTR_PORT with MCP_INSTRUCTIONS=off
  *   pnpm eval -- preflight [--arms ...]             42 repositories and 104 gold paths readable through each selected arm's server; refuses a shallow checkout
  *   pnpm eval -- corpus deepen                      git fetch --unshallow per checkout (complete ones are left as they are), then HEAD must equal its pin.
@@ -47,7 +48,7 @@ import { assertFullHistory, deepenCheckouts, expectedRepos, goldPaths, preflight
 import { report } from "./report.js";
 import { execute, runTasks, spentSoFar, type Task } from "./runner.js";
 import { scoreAnswer } from "./score.js";
-import { stack } from "./stack.js";
+import { PRODUCT, stack } from "./stack.js";
 
 const PER_RUN_CAP = 1;
 const hash = (id: string) => createHash("sha256").update("eval|" + id).digest("hex");
@@ -105,7 +106,7 @@ function exportChart(o3Dir: string, workDir: string): string {
 type Backend = { id: string; url: string; key?: string; kind: "clone" | "v6"; instructions?: boolean };
 /** The server an arm talks to; the v6 instance is configured only by EVAL_V6_URL and EVAL_V6_KEY_FILE, never by argv. Reads a key file, so it is not used when listing. */
 export function backendOf(arm: Arm, cfg: ReturnType<typeof config>, env: NodeJS.ProcessEnv): Backend {
-  const local = (port: number) => `http://127.0.0.1:${port}/api/mcp`;
+  const local = (port: number) => `http://127.0.0.1:${port}/mcp/${PRODUCT}`;
   if (arm === "clone-tools-noinstr") return { id: "noinstr", url: local(cfg.noinstrPort), key: readKey(cfg.keyFile), kind: "clone", instructions: false };
   if (arm === "clone-tools-recipe") return { id: "recipe", url: local(cfg.recipePort), key: readKey(cfg.keyFile), kind: "clone", instructions: true };
   if (arm === "clone-tools-git-prs") return { id: "prs", url: local(cfg.prsPort), key: readKey(cfg.keyFile), kind: "clone", instructions: true };

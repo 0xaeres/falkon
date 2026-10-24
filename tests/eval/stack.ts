@@ -1,7 +1,14 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadProduct } from "./data.js";
+import { loadProduct, stackRepoName } from "./data.js";
+
+/** The Product that holds all 42 repositories; the eval talks to `/mcp/o3` on the api service. */
+export const PRODUCT = "o3";
+/** The admin listener of a stack is published on the MCP port plus this, so the four stacks never collide. */
+const ADMIN_PORT_OFFSET = 100;
+const stackRepos = stackRepoName("*");
 
 type Stack = { o3Dir: string; repoRoot: string; port: number; project: string; instructions?: "off"; recipe?: "on"; prs?: "on" };
 
@@ -15,6 +22,8 @@ export function stackFiles({ o3Dir, repoRoot, port, project, instructions, recip
   };
   const environment = { DATABASE_URL: "postgresql://falkon:falkon@postgres:5432/falkon", REDIS_URL: "redis://redis:6379", DATA_DIR: "/data", CONFIG_PATH: "/config/config.json", ZOEKT_URL: "http://zoekt:6070", AUTH_URL: `http://127.0.0.1:${port}`, GIT_CONFIG_COUNT: "1", GIT_CONFIG_KEY_0: "safe.directory", GIT_CONFIG_VALUE_0: "*" };
   const app = { image: "falkon-eval-app", pull_policy: "never", environment, volumes: ["data:/data", "./config.json:/config/config.json:ro", ...repos.map((r) => `${o3Dir}/${r.checkout}:/repos/${r.name}:ro`)] };
+  const adminPort = port + ADMIN_PORT_OFFSET;
+  const apiEnvironment = { ...environment, API_HOST: "0.0.0.0", API_ADMIN_HOST: "0.0.0.0", AUTH_MODE: "none", ADMIN_TOKEN: "${ADMIN_TOKEN}", ...(instructions ? { MCP_INSTRUCTIONS: instructions } : {}), ...(recipe ? { MCP_IMPACT_RECIPE: recipe } : {}), ...(prs ? { MCP_HISTORY_TOOLS: "on" } : {}) };
   const compose = {
     name: project,
     services: {
@@ -23,22 +32,62 @@ export function stackFiles({ o3Dir, repoRoot, port, project, instructions, recip
       // --prs on: the backend imports the pull request snapshot (S47) after indexing each repository.
       backend: { ...app, ...(prs ? { environment: { ...environment, DISCUSSIONS_SNAPSHOT_DIR: "/discussions", DISCUSSION_TICKET_KEYS: "TRUNK,RESTWS,O3" }, volumes: [...app.volumes, `${o3Dir}/github-snapshot:/discussions:ro`] } : {}), build: { context: repoRoot, dockerfile: "docker/Dockerfile" }, command: ["sh", "-c", "pnpm --filter @falkon/db push && pnpm --filter @falkon/backend start"], depends_on: { postgres: { condition: "service_healthy" }, redis: { condition: "service_healthy" } } },
       zoekt: { ...app, command: ["zoekt-webserver", "-index", "/data/index", "-rpc", "-listen", ":6070"], depends_on: ["backend"] },
-      web: { ...app, environment: { ...environment, ...(instructions ? { MCP_INSTRUCTIONS: instructions } : {}), ...(recipe ? { MCP_IMPACT_RECIPE: recipe } : {}), ...(prs ? { MCP_HISTORY_TOOLS: "on" } : {}) }, command: ["pnpm", "--filter", "@falkon/web", "start"], ports: [`127.0.0.1:${port}:3000`], depends_on: ["backend", "zoekt"] },
+      // Kept until S70 deletes it; nothing in the eval depends on it, so it publishes no port.
+      web: { ...app, command: ["pnpm", "--filter", "@falkon/web", "start"], depends_on: ["backend", "zoekt"] },
+      api: { ...app, environment: apiEnvironment, command: ["node", "packages/api/dist/main.js"], ports: [`127.0.0.1:${port}:3001`, `127.0.0.1:${adminPort}:3002`], depends_on: ["backend", "zoekt"] },
     },
     volumes: { pgdata: {}, data: {} },
   };
   return { config, compose, project };
 }
 
-/** `up` writes the files under stateDir and starts the stack; `down` stops it (`down -v` also deletes indexes and database). */
-export function stack(action: string, extra: string[], s: Stack & { stateDir: string }): string {
+/** The admin token of a stack: generated once into its state directory (mode 600), never into the compose file. */
+export function adminToken(stateDir: string): string {
+  const file = join(stateDir, "admin.token");
+  if (!existsSync(file)) writeFileSync(file, randomBytes(24).toString("hex"), { mode: 0o600 });
+  chmodSync(file, 0o600);
+  return readFileSync(file, "utf8").trim();
+}
+
+/**
+ * Creates the Product holding every stack repository, or replaces its definition when it exists (a re-used stack).
+ * Waits for the admin listener: a network error, 404 or 5xx while the backend's `db push` runs is retried until the deadline.
+ * 400, 401, 403 and a 409 on the replace (a config Product, read-only) fail at once.
+ */
+export async function ensureProduct(adminUrl: string, token: string, { fetchFn = fetch, wait = 120_000, sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}): Promise<void> {
+  const headers = { authorization: `Bearer ${token}`, "content-type": "application/json" };
+  const input = { name: "O3", definition: { include: [stackRepos] } };
+  const call = (method: string, path: string, body: unknown) => fetchFn(`${adminUrl}/products${path}`, { method, headers, body: JSON.stringify(body) });
+  const deadline = Date.now() + wait;
+  for (;;) {
+    let status: number | undefined;
+    try {
+      let r = await call("POST", "", { slug: PRODUCT, ...input });
+      if (r.status === 409) {
+        r = await call("PUT", `/${PRODUCT}`, input);
+        if (r.status === 409) throw new Error(`The ${PRODUCT} Product comes from config and is read-only through the admin API; remove it from the config.`);
+      }
+      if (r.ok) return;
+      status = r.status;
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith(`The ${PRODUCT} Product`)) throw e;
+    }
+    if (status !== undefined && status !== 404 && status < 500) throw new Error(`The admin API refused the ${PRODUCT} Product (HTTP ${status}).`);
+    if (Date.now() > deadline) throw new Error(`The admin API at ${adminUrl} did not become ready within ${wait / 1000}s${status ? ` (last HTTP ${status})` : ""}.`);
+    await sleep(2000);
+  }
+}
+
+/** `up` writes the files under stateDir, starts the stack and creates the Product; `down` stops it (`down -v` also deletes indexes and database). */
+export async function stack(action: string, extra: string[], s: Stack & { stateDir: string }): Promise<string> {
   const { config, compose, project } = stackFiles(s);
   mkdirSync(s.stateDir, { recursive: true });
   writeFileSync(join(s.stateDir, "config.json"), JSON.stringify(config, null, 2));
   writeFileSync(join(s.stateDir, "compose.json"), JSON.stringify(compose));
-  const docker = (...args: string[]) => execFileSync("docker", ["compose", "-p", project, "-f", join(s.stateDir, "compose.json"), ...args], { stdio: "inherit" });
-  if (action === "up") docker("up", "-d", "--build");
+  const token = adminToken(s.stateDir);
+  const docker = (...args: string[]) => execFileSync("docker", ["compose", "-p", project, "-f", join(s.stateDir, "compose.json"), ...args], { stdio: "inherit", env: { ...process.env, ADMIN_TOKEN: token } });
+  if (action === "up") { docker("up", "-d", "--build"); await ensureProduct(`http://127.0.0.1:${s.port + ADMIN_PORT_OFFSET}`, token); }
   else if (action === "down") docker("down", ...extra);
   else throw new Error("Usage: pnpm eval -- stack up|down [-v]");
-  return `stack ${action}: project ${project}, http://127.0.0.1:${s.port}/api/mcp\n`;
+  return `stack ${action}: project ${project}, http://127.0.0.1:${s.port}/mcp/${PRODUCT}\n`;
 }

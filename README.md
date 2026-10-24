@@ -230,6 +230,8 @@ pnpm --filter @falkon/eval eval -- run --split hidden --model haiku
 pnpm --filter @falkon/eval eval -- report --model haiku          # per-split tables from stored runs, no spend
 ```
 
+`stack up` starts the `api` service on `127.0.0.1:EVAL_PORT` (default 3400) with its admin listener on the port 100 higher, creates a Product `o3` holding all 42 repositories (it replaces the definition when the stack is re-used), and prints the endpoint the eval uses, `http://127.0.0.1:3400/mcp/o3`. The MCP flags for the ablation stacks (`--instructions off`, `--recipe on`, `--prs on`) are set on that service. `pnpm --filter @falkon/eval eval -- preflight` fails with the cause when the Product does not exist (404) or the key is refused (401).
+
 The runs call Claude, so they cost money. The Haiku gate at the 0.1.0 release cost $0.59, and `EVAL_SPEND_CAP` limits spend. The header of [`tests/eval/cli.ts`](tests/eval/cli.ts) lists every option and environment variable.
 
 ## Requirements
