@@ -137,6 +137,7 @@ model Repo {
   updatedAt             DateTime           @updatedAt
   discussions           Discussion[]
   provenanceLinks       ProvenanceLink[]
+  commitPullProbes      CommitPullProbe[]
   discussionSync        DiscussionSyncState?
 
   @@unique([external_id, external_codeHostUrl])
@@ -309,6 +310,17 @@ model ProvenanceLink {
 
   @@index([repoId, fromKind, fromRef])
   @@index([toKind, toRef])
+}
+
+/// A default-branch commit already asked GitHub `commits/{sha}/pulls`; `found`: a stored pull request was linked. A commit is asked once.
+model CommitPullProbe {
+  repo     Repo     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  repoId   Int
+  sha      String
+  probedAt DateTime
+  found    Boolean
+
+  @@id([repoId, sha])
 }
 
 /// Per repository: where the last import got to. A repository without a successful import is a coverage gap.

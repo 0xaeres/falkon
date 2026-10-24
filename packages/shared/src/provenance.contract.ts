@@ -111,6 +111,27 @@ export function provenanceStoreContract(label: string, make: MakeStore, skip: bo
     assert.deepEqual((await store.links(SET, { kind: "commit", sha: "e".repeat(40) })).links, []);
   });
 
+  it("commit probes: remembered per repository, upserted; their links survive a commit-link recompute unless a rule now links the commit", async () => {
+    const { store, id } = await seeded(make);
+    const a = "a".repeat(40), b = "b".repeat(40), c = "c".repeat(40), d = "d".repeat(40);
+    const api = (sha: string, n: number) => commit(sha, n, { source: "commit-pulls-api" });
+    await store.saveCommitProbes(id(APP), [{ sha: a, found: true }, { sha: b, found: false }], [api(a, 1)], t("2025-03-01T00:00:00Z"));
+    await store.saveCommitProbes(id(APP), [{ sha: b, found: true }, { sha: c, found: true }], [api(b, 2), api(c, 3)], t("2025-03-02T00:00:00Z"));
+    assert.deepEqual((await store.probedCommits(id(APP), [a, b, c, d])).sort(), [a, b, c]);
+    assert.deepEqual(await store.probedCommits(id(LIB), [a, b, c]), [], "per repository");
+    assert.deepEqual(await store.probedCommits(id(APP), []), []);
+    const of = async (sha: string) => (await store.links(SET, { kind: "commit", sha })).links.map((l) => [l.toRef, l.source]);
+    assert.deepEqual(await of(b), [["2", "commit-pulls-api"]], "a second probe of the same commit replaces its api links");
+    await store.replaceCommitLinks(id(APP), [commit(d, 4), commit(c, 3, { source: "squash-subject" })]);
+    assert.deepEqual(await of(a), [["1", "commit-pulls-api"]], "recompute keeps api links");
+    assert.deepEqual(await of(c), [["3", "squash-subject"]], "a rule that now links the commit wins");
+    assert.deepEqual(await of(d), [["4", "merge-commit-sha"]]);
+    assert.deepEqual(await store.probedCommits(id(APP), [c]), [c], "the probe is remembered");
+    await store.replaceCommitLinks(id(APP), [commit(d, 4)]);
+    assert.deepEqual(await of(a), [["1", "commit-pulls-api"]]);
+    assert.deepEqual(await of(c), [], "the rule link left with the recompute, and the api link had been dropped when the rule took over");
+  });
+
   it("ticket lookups span the set and normalise the key's case", async () => {
     const { store, id } = await seeded(make);
     await store.replaceDiscussion(id(APP), pr(1), [ticket(1, "O3-12")]);

@@ -117,6 +117,42 @@ export async function commitLinks(dir: string, head: string, prs: { number: numb
   return links;
 }
 
+// ---- unlinked-commit fallback (D125) ---------------------------------------------------------------------------------
+
+/** Most `commits/{sha}/pulls` probes one run makes. */
+export const MAX_PROBES = 50;
+
+/**
+ * Asks the source which pull requests contain the commits of `head` (newer than the source's window) that no rule linked and
+ * that were never asked, newest first, at most MAX_PROBES. Only pull requests in the store are linked. Results, "none"
+ * included, are saved even when the run is cut short; a rate limit is rethrown after the save, any other stop is returned.
+ * `more`: unprobed commits remain, so the next run must recompute and go on.
+ */
+async function probeCommits(store: ProvenanceStore, source: DiscussionSource, repo: ImportTarget & { head: string }, linked: Set<string>, stored: Set<number>, at: Date) {
+  if (!source.commitPulls || !source.commitsSince) return { more: false, stop: undefined };
+  const log = (await git(repo.dir, ["log", "--format=%H", `--since=${source.commitsSince.toISOString().replace(/\.\d{3}Z$/, "Z")}`, repo.head, "--"])).split("\n").filter((l) => /^[0-9a-f]{40}$/.test(l) && !linked.has(l));
+  const todo: string[] = [];
+  for (let i = 0; i < log.length && todo.length <= MAX_PROBES; i += 500) {
+    const chunk = log.slice(i, i + 500), seen = new Set(await store.probedCommits(repo.id, chunk));
+    for (const sha of chunk) if (!seen.has(sha) && todo.length <= MAX_PROBES) todo.push(sha);
+  }
+  const more = todo.length > MAX_PROBES;
+  const probes: { sha: string; found: boolean }[] = [], links: Link[] = [];
+  let stop: unknown;
+  try {
+    for (const sha of todo.slice(0, MAX_PROBES)) {
+      const numbers = [...new Set(await source.commitPulls(repo.name, sha))].filter((n) => stored.has(n));
+      for (const n of numbers) links.push({ fromKind: "commit", fromRef: sha, toKind: "pr", toRef: String(n), toRepo: null, source: "commit-pulls-api", verified: true });
+      probes.push({ sha, found: numbers.length > 0 });
+    }
+  } catch (e) {
+    stop = e;
+  }
+  await store.saveCommitProbes(repo.id, probes, links, at);
+  if (stop instanceof RateLimited) throw stop;
+  return { more, stop };
+}
+
 // ---- import --------------------------------------------------------------------------------------------------------
 
 export const MAX_TEXT = 64 * 1024;
@@ -175,15 +211,20 @@ export async function importDiscussions(store: ProvenanceStore, source: Discussi
       if (!cursor || d.updatedAt > cursor) cursor = d.updatedAt;
     }
     const prs = await store.mergeCommits(repo.id);
-    let commitLinkCount: number | undefined;
+    let commitLinkCount: number | undefined, unfinished = false, error: string | null = null;
     if (imported || state.headCommit !== repo.head || !state.lastSuccessAt) {
       const links = await commitLinks(repo.dir, repo.head, prs);
       await store.replaceCommitLinks(repo.id, links);
       commitLinkCount = links.length;
+      const probe = await probeCommits(store, source, { ...repo, head: repo.head }, new Set(links.map((l) => l.fromRef)), new Set(prs.map((p) => p.number)), now());
+      // a refusal is a verdict for this head; an unexpected error or a backlog keeps the head unrecorded so the next run goes on
+      const failed = probe.stop !== undefined && !(probe.stop instanceof NoAccess);
+      unfinished = probe.more || failed;
+      if (failed) error = "commit probe failed"; // a fixed string: never the provider's text
     }
     const done = now();
     // With a skipped file the cursor stays put, so the next run reads it again (and counts it again) until it is fixed.
-    await store.saveSyncState(repo.id, { ...state, cursorUpdatedAt: skipped ? state.cursorUpdatedAt : cursor, lastRunAt: started, lastSuccessAt: done, headCommit: repo.head, status: "ok", error: null, importedCount: prs.length, skippedCount: skipped, access: "ok", waitUntil: null });
+    await store.saveSyncState(repo.id, { ...state, cursorUpdatedAt: skipped ? state.cursorUpdatedAt : cursor, lastRunAt: started, lastSuccessAt: done, headCommit: unfinished ? null : repo.head, status: "ok", error, importedCount: prs.length, skippedCount: skipped, access: "ok", waitUntil: null });
     return { imported, skipped, total: prs.length, commitLinks: commitLinkCount, ms: done.getTime() - started.getTime() };
   } catch (e) {
     if (e instanceof RateLimited || e instanceof NoAccess) return halt(e, skipped ? held : cursor, imported, skipped);
