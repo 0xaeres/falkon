@@ -6,7 +6,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { chatMessageRequestSchema, messagesToAnswers, type ChatMessageLike, type Thread, type ThreadSummary } from "@falkon/contracts";
 import type { PrismaClient } from "@falkon/db";
 import { noneAccessPolicy, scopeFor } from "@falkon/shared";
-import { AskError } from "../../web/src/lib/ask/errors";
+import { AskError } from "./engine/ask/errors";
 import { sendJson } from "./http";
 import { isProductName } from "./product";
 import { body, error } from "./request";
@@ -78,7 +78,7 @@ export class ThreadService {
     const user = { id: randomUUID(), role: "user" as const, parts: [{ type: "text" as const, text: input.text }] };
     // The Product's repositories exactly (the same intersection the MCP path uses), whatever the caller sent.
     const effective = noneAccessPolicy().effectiveScope({ ...scopeFor(["*"]), principal: UI_PRINCIPAL }, repoNames)!;
-    const { uiChatResponse } = await import("../../web/src/lib/ask/uiChat");
+    const { uiChatResponse } = await import("./engine/ask/uiChat");
     return uiChatResponse({
       messages: [...history, user] as never,
       selectedRepos: effective.repos,

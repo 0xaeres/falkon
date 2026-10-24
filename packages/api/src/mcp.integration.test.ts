@@ -17,9 +17,9 @@ const repos = ["fixtures.test/atlas"];
 const anonymous = { ...scopeFor(repos), principal: "anonymous" };
 let app: INestApplication;
 let base: string;
-let mcp: typeof import("../../web/src/lib/mcp");
+let mcp: typeof import("./engine/mcp");
 before(async () => {
-  mcp = await import("../../web/src/lib/mcp");
+  mcp = await import("./engine/mcp");
   const { createApp } = await import("./app");
   app = await createApp({ find: async (p) => (p === "fx" ? { id: 1, repoNames: repos } : undefined) }, { post: mcp.handleMcpPost, delete: mcp.handleMcpDelete });
   await app.listen(0, "127.0.0.1");

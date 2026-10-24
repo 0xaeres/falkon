@@ -2,9 +2,9 @@ import { createUIMessageStreamResponse, type UIMessage } from "ai";
 import { z } from "zod";
 import { prisma } from "@falkon/db";
 import { scopeOf, unauthorized } from "@/lib/auth";
-import { createMessageStream } from "@/lib/ask/agent";
-import { AskError, chatName, pickModel, resolveRepos } from "@/lib/ask/chat";
-import { askErrorResponse, languageModelInfo, schemaError } from "@/lib/ask/http";
+import { createMessageStream } from "@engine/ask/agent";
+import { AskError, chatName, pickModel, resolveRepos } from "@engine/ask/chat";
+import { askErrorResponse, languageModelInfo, schemaError } from "@engine/ask/http";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 600;

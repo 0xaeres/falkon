@@ -17,6 +17,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@engine/*": [
+        "../api/src/engine/*"
       ]
     },
     "noEmit": true,

@@ -10,6 +10,15 @@ importers:
 
   packages/api:
     dependencies:
+      '@ai-sdk/anthropic':
+        specifier: 3.0.70
+        version: 3.0.70(zod@4.6.5)
+      '@ai-sdk/openai':
+        specifier: 3.0.53
+        version: 3.0.53(zod@4.6.5)
+      '@ai-sdk/openai-compatible':
+        specifier: 2.0.41
+        version: 2.0.41(zod@4.6.5)
       '@falkon/contracts':
         specifier: workspace:*
         version: link:../contracts
@@ -19,6 +28,9 @@ importers:
       '@falkon/shared':
         specifier: workspace:*
         version: link:../shared
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.18.0
+        version: 1.32.1(zod@4.6.5)
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.2.7(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -31,6 +43,12 @@ importers:
       '@prisma/client':
         specifier: ^6.2.0
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
+      ai:
+        specifier: 6.0.167
+        version: 6.0.167(zod@4.6.5)
+      dedent:
+        specifier: 1.7.1
+        version: 1.7.1
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -265,30 +283,15 @@ importers:
 
   packages/web:
     dependencies:
-      '@ai-sdk/anthropic':
-        specifier: 3.0.70
-        version: 3.0.70(zod@4.6.5)
-      '@ai-sdk/openai':
-        specifier: 3.0.53
-        version: 3.0.53(zod@4.6.5)
-      '@ai-sdk/openai-compatible':
-        specifier: 2.0.41
-        version: 2.0.41(zod@4.6.5)
       '@falkon/db':
         specifier: workspace:*
         version: link:../db
       '@falkon/shared':
         specifier: workspace:*
         version: link:../shared
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.18.0
-        version: 1.32.1(zod@4.6.5)
       ai:
         specifier: 6.0.167
         version: 6.0.167(zod@4.6.5)
-      dedent:
-        specifier: 1.7.1
-        version: 1.7.1
       next:
         specifier: ^15.1.0
         version: 15.5.28(@opentelemetry/api@1.9.0)(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)

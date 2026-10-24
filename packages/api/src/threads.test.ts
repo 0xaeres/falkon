@@ -6,7 +6,6 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { createRequire } from "node:module";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
 import { messagesToAnswers } from "@falkon/contracts";
@@ -17,7 +16,7 @@ import { PrismaProductRegistry } from "./product";
 import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
 import { seedContractRepo } from "../../../tests/contract/fixture";
-import { fakeOpenAi } from "../../web/src/lib/ask/fakeOpenAi";
+import { fakeOpenAi } from "./engine/ask/fakeOpenAi";
 
 const fixture = seedContractRepo();
 process.env.DATA_DIR = fixture.dir;
@@ -53,8 +52,8 @@ before(async () => {
   process.env.LLM_MODEL = "fixture-model";
   process.env.LLM_API_KEY = "k";
   // web's sources load as CommonJS, so they hold the require()d instance of @falkon/shared: configure that one.
-  const { toolDeps } = await import("../../web/src/lib/tools");
-  const shared = createRequire(import.meta.url)("@falkon/shared") as typeof import("@falkon/shared");
+  const { toolDeps } = await import("./engine/tools");
+  const shared = await import("@falkon/shared");
   toolDeps.baseUrl = "http://localhost:3000";
   mock.method(toolDeps, "getRepo", async (name: string) => (dirs[name] ? row(name) : undefined));
   mock.method(toolDeps, "listRepos", async () => Object.keys(dirs).map(row));

@@ -7,10 +7,14 @@
     "dev": "tsx watch src/main.ts",
     "start": "tsx src/main.ts",
     "typecheck": "tsc -p .",
-    "test": "node --import tsx --test src/*.test.ts",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "build": "node build.mjs"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "3.0.70",
+    "@ai-sdk/openai": "3.0.53",
+    "@ai-sdk/openai-compatible": "2.0.41",
+    "@modelcontextprotocol/sdk": "^1.18.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
@@ -18,6 +22,8 @@
     "@falkon/contracts": "workspace:*",
     "@falkon/db": "workspace:*",
     "@falkon/shared": "workspace:*",
+    "ai": "6.0.167",
+    "dedent": "1.7.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.0",
     "zod": "^4.6.5"

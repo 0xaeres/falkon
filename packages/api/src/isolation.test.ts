@@ -8,7 +8,6 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { createRequire } from "node:module";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
 import { scopeFor, type WSearchRequest } from "@falkon/shared";
@@ -57,10 +56,10 @@ let app: INestApplication;
 let base: string;
 let fx: string;
 before(async () => {
-  const mcp = await import("../../web/src/lib/mcp");
-  const { toolDeps } = await import("../../web/src/lib/tools");
+  const mcp = await import("./engine/mcp");
+  const { toolDeps } = await import("./engine/tools");
   // web's sources load as CommonJS, so they hold the require()d instance of @falkon/shared: inject into that one.
-  const { setZoektTransport } = createRequire(import.meta.url)("@falkon/shared") as typeof import("@falkon/shared");
+  const { setZoektTransport } = await import("@falkon/shared");
   const { createApp } = await import("./app");
   toolDeps.baseUrl = "http://localhost:3000";
   mock.method(toolDeps, "getRepo", async (name: string) => rows.find((r) => r.name === name));
@@ -265,7 +264,7 @@ test("P11: a membership change rejects the open session (no widening through an 
 // ---- P12: the pull request history tools (MCP_HISTORY_TOOLS=on) through the real Product listener ----
 
 test("P12: history tools exist only with the flag, and the Product's repository set bounds every read", async () => {
-  const { toolDeps } = await import("../../web/src/lib/tools");
+  const { toolDeps } = await import("./engine/tools");
   const { fakeProvenanceStore } = await import("../../shared/src/provenance.fake");
   const store = fakeProvenanceStore({ [IN]: 1, [OUT]: 2 });
   const ok = { cursorUpdatedAt: null, lastRunAt: null, lastSuccessAt: new Date("2025-02-01T00:00:00Z"), headCommit: null, status: "ok" as const, error: null, importedCount: 1, skippedCount: 0, access: "ok" as const, waitUntil: null, reconciledAt: null };

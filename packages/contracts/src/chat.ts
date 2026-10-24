@@ -10,7 +10,7 @@ export const chatMessageRequestSchema = z.strictObject({
 });
 export type ChatMessageRequest = z.infer<typeof chatMessageRequestSchema>;
 
-/** Copy of FILE_REFERENCE_REGEX in packages/web/src/lib/ask/prompt.ts (chat.test.ts keeps them in step). Use `new RegExp(...)` per scan. */
+/** Copy of FILE_REFERENCE_REGEX in packages/api/src/engine/ask/prompt.ts (chat.test.ts keeps them in step). Use `new RegExp(...)` per scan. */
 export const FILE_REFERENCE_REGEX = new RegExp("@file:\\{([^:}]+(:\\d+)?[^:}]*)::([^:}]+)(?::(\\d+)(?:-(\\d+))?)?\\}", "g");
 
 /** Streaming preview: each distinct `@file:{repo::path:a-b}` becomes `[n]`, numbered by first appearance. */

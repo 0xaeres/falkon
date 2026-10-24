@@ -1,9 +1,8 @@
-import { NextResponse } from "next/server";
 import { QuerySyntaxError, SearchContextNotFoundError } from "@falkon/shared";
 
 /** The error body: `{ statusCode, errorCode, message }`. */
 export const serviceError = (statusCode: number, errorCode: string, message: string) =>
-  NextResponse.json({ statusCode, errorCode, message }, { status: statusCode });
+  Response.json({ statusCode, errorCode, message }, { status: statusCode });
 
 /** Maps a search failure to the status, code and message it maps to. */
 export function searchError(e: unknown) {

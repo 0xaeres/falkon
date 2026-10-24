@@ -539,8 +539,8 @@ test("freshness: the sync interval comes from ToolDeps when set", async () => {
 
 test("the history tools never reach the code host: no network client in the tools module", () => {
   const src = fs.readFileSync(new URL("./historyTools.ts", import.meta.url), "utf8");
-  const web = fs.readFileSync(new URL("../../web/src/lib/tools.ts", import.meta.url), "utf8");
-  for (const [name, code] of [["historyTools.ts", src], ["web tools.ts", web]]) {
+  const web = fs.readFileSync(new URL("../../api/src/engine/tools.ts", import.meta.url), "utf8");
+  for (const [name, code] of [["historyTools.ts", src], ["engine tools.ts", web]]) {
     assert.doesNotMatch(code, /from\s+["'](@octokit|octokit|node:https?|https?|undici|axios|node-fetch|got)\b/, `${name} imports a network client`);
     assert.doesNotMatch(code, /\bfetch\s*\(|githubDiscussions|XMLHttpRequest/, `${name} uses the network`);
   }

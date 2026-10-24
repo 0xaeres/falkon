@@ -13,8 +13,8 @@ import {
   type ChatMessageLike,
 } from "./index";
 
-// The regex is copied from packages/web/src/lib/ask/prompt.ts (contracts must not import web); this keeps the copies in step.
-const promptSource = readFileSync(new URL("../../web/src/lib/ask/prompt.ts", import.meta.url), "utf8");
+// The regex is copied from packages/api/src/engine/ask/prompt.ts (contracts must not import api); this keeps the copies in step.
+const promptSource = readFileSync(new URL("../../api/src/engine/ask/prompt.ts", import.meta.url), "utf8");
 const webRegex = new RegExp(new Function("FILE_REFERENCE_PREFIX", `return ${promptSource.match(/FILE_REFERENCE_REGEX = new RegExp\((`.*`), "g"\)/)![1]}`)("@file:"), "g");
 
 const SAMPLES = [

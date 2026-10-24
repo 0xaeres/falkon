@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { AskError } from "./errors";
 
@@ -21,10 +20,10 @@ export const languageModelInfo = z.object({
 
 /** Errors as `{ statusCode, errorCode, message }`. */
 export function askErrorResponse(e: unknown) {
-  if (e instanceof AskError) return NextResponse.json({ statusCode: e.statusCode, errorCode: e.errorCode, message: e.message }, { status: e.statusCode });
+  if (e instanceof AskError) return Response.json({ statusCode: e.statusCode, errorCode: e.errorCode, message: e.message }, { status: e.statusCode });
   const message = e instanceof Error ? e.message : String(e);
-  return NextResponse.json({ statusCode: 500, errorCode: "UNEXPECTED_ERROR", message }, { status: 500 });
+  return Response.json({ statusCode: 500, errorCode: "UNEXPECTED_ERROR", message }, { status: 500 });
 }
 
 export const schemaError = (e: z.ZodError) =>
-  NextResponse.json({ statusCode: 400, errorCode: "INVALID_REQUEST_BODY", message: `Schema validation failed with: ${e.message}` }, { status: 400 });
+  Response.json({ statusCode: 400, errorCode: "INVALID_REQUEST_BODY", message: `Schema validation failed with: ${e.message}` }, { status: 400 });

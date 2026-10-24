@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { scopeOf, unauthorized } from "@/lib/auth";
-import { askCodebase } from "@/lib/ask/chat";
-import { askErrorResponse, languageModelInfo, schemaError } from "@/lib/ask/http";
+import { askCodebase } from "@engine/ask/chat";
+import { askErrorResponse, languageModelInfo, schemaError } from "@engine/ask/http";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 600;
