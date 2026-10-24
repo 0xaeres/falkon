@@ -515,6 +515,25 @@ Check 1: registration snapshots byte-identical except the one `ask_codebase` sen
 
 Moving the Falkon UI to host port 3000; a file viewer or code-host links in search; streaming search; a knowledge base document list; porting plain HTTP Ask.
 
+## Cycle 17 results: `packages/web` retired (built 2026-10-24; gate 2 pending)
+
+Built on the cycle branch `loop/falkon-enterprise-c17` (base `43e0609`, tip `97f38da`). Claude agents built each slice and a different Sonnet reviewer checked each; five of the six needed one fix round, and the main session fixed stale comments and ADR paths in S65 itself.
+
+| Slice | Outcome |
+|---|---|
+| S65 engine core to `packages/api/src/engine/` | kept; 68 tests moved (web plus api 209 before and after); MCP registration snapshots byte-identical |
+| S66 eval and ops smoke on the Product path | kept; fix round: Product creation retries 404 and 5xx on a cold start, token file forced to mode 600; **live preflight not run** (`EVAL_O3_DIR` unset) |
+| S67 search in the Falkon UI | kept; fix round: golden parity test now compares the request sent, highlight ranges clamped, search contexts cached (30 s TTL, 2 s timeout) |
+| S68 knowledge base actions in settings | kept; fix round: `pending` status scoped and ranked below failures, Delete needs a confirm press |
+| S69 `ask_codebase` links to the Falkon UI thread | kept; fix round: the saved chat now carries evidence so the thread renders the answer; thread list narrowed; deleted chat tolerated |
+| S70 delete `packages/web` | kept; fix round: golden runner requires its routes, admin token off the command line, ADR P9 row, stale comments; 41 files, 115 added, 1,260 removed |
+
+Checks on the tip: `pnpm typecheck` exit 0; `pnpm test` exit 0 with 0 failures (contracts 23, tests/eval 114, shared 178, ui 29 and 45, backend 75 passed and 18 skipped, api 214 passed and 14 skipped; the skips are the Postgres-gated tests); api build exit 0; no reference to `@falkon/web` or `packages/web` outside `.scratch`; rescore of the stored cycle 15 runs unchanged (git arm recall 0.7446 precision 0.5631, pull request arm 0.8438 and 0.5765). `scripts/ops-smoke.sh` on a disposable `falkon-eval-smoke` project, run twice by the S70 builder (once before and once after its review fixes): every step PASS including `golden-baseline` (the capture through the api search route equals `tests/golden/expected.json`) and `golden-stability`; memory for five services 494 MB then 541 MB against the 654 MB ceiling. The Falkon UI build (`next build`) exits 1 intermittently with a Next.js 16.4.0 security-advisory message that says to retry; the retry passes (observed in every slice).
+
+Decided without the human (beyond the spec's wording): the UI search route has no mock when `ENGINE_URL` is unset (an existing UI test requires 503); the admin port in the eval stack is the MCP port plus 100; the thread list shows chats created by the UI or anonymous callers or marked PUBLIC, while a chat from an API key stays out of the list but its link opens it (get, delete and continue are guarded by `productId` only, as before); the `ask_codebase` link base is a new optional setting `FALKON_UI_URL` (default `http://127.0.0.1:3100`); the `golden-api` smoke step was removed as redundant once search and MCP both run through the api; `FALKON_API_KEY` and the `falkon_key` cookie are gone (D142); S70 also edited `.env.example`, the architecture diagrams and the golden runner.
+
+Not verified: the live eval preflight on `/mcp/o3` (plain and `--prs on` stacks), `docker compose up --build` on the real `docker-compose.yml`, the Falkon UI pages against a live stack, the Postgres variants of the tests. Open: `AUTH_URL` still feeds the repository browse links in `list_repos` and the source links in Ask answers, default `http://localhost:3000`, which pointed at the deleted web app; those links now open nothing. The Next.js security upgrade (16.4.0 flagged) is the human's decision.
+
 ## Next
 
 Phase 1: shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
