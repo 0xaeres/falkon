@@ -6,6 +6,7 @@ import { adminToken, startAdmin } from "./admin";
 import { createApp } from "./app";
 import { ConnectionService } from "./connections";
 import { PrismaProductRegistry } from "./product";
+import { SearchService } from "./search";
 import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
 
@@ -24,4 +25,4 @@ console.log(`api listening on ${host}:${port} (AUTH_MODE=${process.env.AUTH_MODE
 
 const connections = new ConnectionService(prisma);
 const ui = new UiProductService(prisma, connections);
-await startAdmin(registry, process.env, connections, ui, new ThreadService(prisma, ui));
+await startAdmin(registry, process.env, connections, ui, new ThreadService(prisma, ui), new SearchService(prisma));

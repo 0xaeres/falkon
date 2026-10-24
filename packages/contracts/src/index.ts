@@ -190,3 +190,4 @@ export type ThreadSummary = z.infer<typeof threadSummarySchema>;
 export type SetupRequest = z.infer<typeof setupRequestSchema>;
 export type EditRequest = z.infer<typeof editRequestSchema>;
 export * from "./chat";
+export * from "./search";
