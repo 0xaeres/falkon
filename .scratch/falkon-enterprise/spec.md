@@ -195,7 +195,7 @@ Open limits: five "why" tickets appear only in Jira; Jira ingestion is Phase 3. 
 
 [`c14-followup-analysis.md`](c14-followup-analysis.md) explains the five questions that got worse and the low "why" precision. Short form: three of the five were lost by the answer prompt and parser, not the tools (the prompt's format example uses the repository name `openmrs-core`, and span paths without the repository prefix are silently dropped); one is a search usability gap (all query words must match); one is noise. "Why" precision is low because the agent lists source spans that no "why" gold contains (95 of 173 items); without spans it is 0.616. No gold is wrong. The recommended eval fixes (prompt example and span rule, a dropped-span counter, a hint when a multi-word search finds nothing) are not part of cycle 15; any rerun needs a new spend approval.
 
-## Cycle 15 plan: the live GitHub sync (draft, waiting at gate 1)
+## Cycle 15 plan: the live GitHub sync (gate 1 approved 2026-10-24, with S58 added)
 
 Goal: a deployed Falkon fills and refreshes its pull request store from GitHub by itself, so the history tools work for real users and not only on the recorded snapshot. The live adapter implements the existing `DiscussionSource` port (ADR 4.11, decision D107); the mapper, linker, writer, store and tools do not change except where a slice below says so. Success is not an eval score: it is that the adapter produces the same stored shape as the snapshot path for the same pull requests (parity test on recorded GitHub responses), survives the adversarial cases below, and passes one real-token smoke run by the human at gate 2.
 
@@ -276,22 +276,30 @@ Base `main` at the commit that holds this plan. Cycle branch `loop/falkon-enterp
 - Verify: `pnpm typecheck && pnpm test`; `shellcheck scripts/sync-smoke.sh`; a dry run of the script with a deliberately wrong token shows the fixed no-access message and exits non-zero.
 - Blocked by: S53, S54, S55, S56.
 
+**S58. Eval prompt, parser and rescore fixes.** Tier standard. Agent claude. No model spend (added by the human at gate 1; follows `c14-followup-analysis.md`).
+- Goal: remove the answer-format flaws found in cycle 14 without running a paid eval.
+- Scope: `tests/eval/harness.ts` (history prompt only: the format example uses `<repository-name>` placeholders instead of `openmrs-core`; spans are cited as `<repository-name>/<path>`, resolving the clash with the product paragraph; for why and when questions only the answering change and ticket go in the array, related changes in prose), `parseAnswer` (counts spans it drops as `droppedSpans` in the run record and report), `report.ts`, tests. The prompt of the non-history datasets stays byte-identical (test).
+- Done: a test pins the old non-history prompt text; the new history prompt contains no literal `openmrs-core` example; rescoring the stored cycle 14 runs prints the same recall and precision as `baseline-c14-report.md` plus a new dropped-span count (53 git arm, 60 new arm); no scoring rule changes.
+- Verify: `pnpm typecheck && pnpm test`; `pnpm eval -- report --dataset history --model haiku --arms clone-tools-git,clone-tools-git-prs --reference clone-tools-git` with `EVAL_RUNS_DIR=.scratch/falkon-enterprise/eval-runs-c14`, diffed against the recorded report.
+- Adversarial cases: a span path with and without the prefix; a path in two repositories; a malformed fence; 21 items.
+- Blocked by: none. A rerun of the arms with the new prompt needs a new spend approval and is not part of this cycle.
+
 ### Regression gate
 
 Check 1 (registration snapshots with `MCP_HISTORY_TOOLS` off) stays byte-identical; nothing in this cycle changes how existing datasets score; `pnpm typecheck && pnpm test` pass; the cycle 14 pull request eval stack still imports the snapshot (S54 keeps `DISCUSSIONS_SNAPSHOT_DIR` working). No paid eval run is planned.
 
 ### Order, limits, budget
 
-- Wave 1: S51 and S52 in parallel. Wave 2: S53 and S55 in parallel. Wave 3: S54. Wave 4: S56. Wave 5: S57. Gate 2 also needs the human's real-token smoke run.
+- Wave 1: S51 and S52 in parallel. Wave 2: S53 and S55 in parallel. Wave 3: S54. Wave 4: S56. Wave 5: S57. S58 runs in wave 1 beside S51 and S52 (it touches only `tests/eval`). Gate 2 also needs the human's real-token smoke run.
 - The loop may decide alone: details inside each slice's scope, fix rounds, a rerun of a failed verify once.
 - It stops for: any new dependency; any change to the tool registration with the flag off; any step that needs a real token or the human's `gh` login beyond S51; ADR or glossary changes beyond the planned 4.11 amendment; a change to how existing datasets score; a schema change beyond the additive ones named above; any push or pull request; any eval run that costs money (Phase 2 cap $5, $3.69 used; a new approval is required).
 - Docker: one stack at a time, only disposable `falkon-eval*` projects; never the human's `falkon` project or the `falcon-sourcebot-*` containers.
 - Budget: 1.6M subagent tokens and 360 minutes (the last four cycles used 0.26M to 1.05M; S53 is hard).
 - Gate 2 fires when S57 is kept and the human has the smoke result, or on any trigger.
 
-### Not in this cycle (decide at gate 1)
+### Not in this cycle
 
-- The eval prompt, parser and search-hint fixes from the follow-up analysis. They are small, cost nothing to build, and only a rerun costs money. Offered as an optional slice S58 (prompt example and span rule, a dropped-span counter, rescore of stored runs), or deferred to the cycle that reruns the arms.
+- The search-hint fix for multi-word searches that find nothing and the bare-repository-name error hint (they touch the tools, flag-gated; later).
 - Issues, webhooks, Jira, the git-only history tools of Phase 1, visibility synced from GitHub (Phase 6).
 
 ## Next
