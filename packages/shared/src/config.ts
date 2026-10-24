@@ -31,6 +31,8 @@ export interface GithubConnectionConfig extends ConnectionBase {
   type: "github";
   token?: Token;
   url?: string;
+  /** Sync pull requests from this connection's repositories with its token (off by default; D123). */
+  discussions?: boolean;
   users?: string[];
   orgs?: string[];
   repos?: string[];
@@ -75,6 +77,12 @@ export interface Settings {
   maxRepoGarbageCollectionJobConcurrency: number;
   repoGarbageCollectionGracePeriodMs: number;
   repoIndexTimeoutMs: number;
+  /** Gap between pull request syncs of a repository (D116). */
+  discussionSyncIntervalMs: number;
+  /** Gap between full reconciles of a repository's recent pull requests (D116). */
+  discussionReconcileIntervalMs: number;
+  /** How far back a repository's first pull request sync reads (D117). */
+  discussionBackfillMonths: number;
 }
 
 /** Defaults for `settings`. */
@@ -90,6 +98,9 @@ export const DEFAULT_SETTINGS: Settings = {
   maxRepoGarbageCollectionJobConcurrency: 2,
   repoGarbageCollectionGracePeriodMs: 10 * 1000,
   repoIndexTimeoutMs: 2 * 60 * 60 * 1000,
+  discussionSyncIntervalMs: 15 * 60 * 1000,
+  discussionReconcileIntervalMs: 7 * 24 * 60 * 60 * 1000,
+  discussionBackfillMonths: 24,
 };
 
 export type EnvironmentOverride =

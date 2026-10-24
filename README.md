@@ -354,13 +354,25 @@ The web app also serves an MCP route at `/api/mcp` on port 3000. It covers every
 | Key | Purpose |
 | --- | --- |
 | `connections` | Code hosts to sync. Types are `github` (cloud or Enterprise) and `git` (an http(s) remote, or a `file://` glob of local repositories indexed in place) |
-| `settings` | Index limits, reindex and resync intervals, concurrency and timeouts |
+| `settings` | Index limits, reindex and resync intervals, concurrency and timeouts, and the pull request sync settings below |
 | `contexts` | Products. Each name is a Product slug and an MCP path |
 | `environmentOverrides` | Environment values resolved at load time |
 | `models` | Language models for Ask, of type `openai-compatible`, `openai` or `anthropic` |
 | `knowledgeBase` | Knowledge base switches, budget and repositories to document |
 
 A token is either `{ "env": "NAME" }` or `{ "googleCloudSecret": "..." }`. To convert a file written for an older Falkon build, run `pnpm convert-config /absolute/path/old.json > new.json`.
+
+### Pull request sync
+
+A GitHub connection syncs pull requests only when it sets `"discussions": true` (outbound traffic with your token). `DISCUSSIONS_SNAPSHOT_DIR`, when set, wins and no live sync runs.
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| connection `discussions` | `false` | Syncs pull requests of the connection's indexed repositories. A fine-grained token needs Pull requests: Read, Issues: Read and Contents: Read |
+| `settings.discussionSyncIntervalMs` | 900000 (15 minutes) | Gap between syncs of a repository. A tick every 30 seconds enqueues at most 20 due repositories, oldest first |
+| `settings.discussionReconcileIntervalMs` | 604800000 (7 days) | Gap between full reconciles, which re-read every pull request updated in the last 30 days |
+| `settings.discussionBackfillMonths` | 24 | How far back a repository's first sync reads |
+| `DISCUSSION_SYNC_INTERVAL_MS` (web) | 900000 | Set it to the same value as `discussionSyncIntervalMs`: the history tools call a repository stale after twice this |
 
 ### Environment variables
 

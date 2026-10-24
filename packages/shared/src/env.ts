@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { DEFAULT_SETTINGS } from "./config";
 
 export const env = {
   get dataDir() {
@@ -16,6 +17,10 @@ export const env = {
   },
   get redisUrl() {
     return process.env.REDIS_URL ?? "redis://localhost:6379";
+  },
+  /** The web process reads no settings; the history tools take the sync interval from here (same default as the backend setting). */
+  get discussionSyncIntervalMs() {
+    return Number(process.env.DISCUSSION_SYNC_INTERVAL_MS) || DEFAULT_SETTINGS.discussionSyncIntervalMs;
   },
   get configPath() {
     return path.resolve(process.env.CONFIG_PATH ?? "./config.json");

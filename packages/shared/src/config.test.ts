@@ -20,6 +20,9 @@ test("settings fall back to Falkon's defaults", () => {
   assert.equal(c.settings.maxFileSize, 10);
   assert.equal(c.settings.maxTrigramCount, DEFAULT_SETTINGS.maxTrigramCount);
   assert.equal(c.settings.reindexIntervalMs, 3_600_000);
+  assert.equal(c.settings.discussionSyncIntervalMs, 900_000);
+  assert.equal(c.settings.discussionReconcileIntervalMs, 604_800_000);
+  assert.equal(c.settings.discussionBackfillMonths, 24);
 });
 
 test("the schema rejects what Falkon rejects", () => {
@@ -92,4 +95,13 @@ test("a model with an unsupported provider is named with the supported three", (
 
 test("a top level that is not an object is an invalid-config error", () => {
   for (const text of ["[]", "null", "5", '"x"']) assert.throws(() => parseConfig(text), /is invalid: must be a JSON object/, text);
+});
+
+test("discussion settings and the connection flag validate", () => {
+  const c = parseConfig(JSON.stringify({ settings: { discussionSyncIntervalMs: 60_000, discussionBackfillMonths: 6 }, connections: { g: { type: "github", discussions: true } } }));
+  assert.equal(c.settings.discussionSyncIntervalMs, 60_000);
+  assert.equal(c.settings.discussionBackfillMonths, 6);
+  assert.equal((c.connections.g as { discussions?: boolean }).discussions, true);
+  assert.throws(() => parseConfig(JSON.stringify({ connections: { g: { type: "github", discussions: "yes" } } })), /invalid/);
+  assert.throws(() => parseConfig(JSON.stringify({ settings: { discussionBackfillMonths: 0 } })), /invalid/);
 });
