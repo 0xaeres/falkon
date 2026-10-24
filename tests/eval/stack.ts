@@ -1,14 +1,14 @@
 import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadProduct } from "./data.js";
+import { loadProduct, stackRepoName } from "./data.js";
 
 /** The Product that holds all 42 repositories; the eval talks to `/mcp/o3` on the api service. */
 export const PRODUCT = "o3";
 /** The admin listener of a stack is published on the MCP port plus this, so the four stacks never collide. */
 const ADMIN_PORT_OFFSET = 100;
-const stackRepos = "github.com/openmrs/*";
+const stackRepos = stackRepoName("*");
 
 type Stack = { o3Dir: string; repoRoot: string; port: number; project: string; instructions?: "off"; recipe?: "on"; prs?: "on" };
 
@@ -42,29 +42,39 @@ export function stackFiles({ o3Dir, repoRoot, port, project, instructions, recip
 }
 
 /** The admin token of a stack: generated once into its state directory (mode 600), never into the compose file. */
-function adminToken(stateDir: string): string {
+export function adminToken(stateDir: string): string {
   const file = join(stateDir, "admin.token");
   if (!existsSync(file)) writeFileSync(file, randomBytes(24).toString("hex"), { mode: 0o600 });
+  chmodSync(file, 0o600);
   return readFileSync(file, "utf8").trim();
 }
 
-/** Creates the Product holding every stack repository, or replaces its definition when it exists (a re-used stack). Waits for the admin listener. */
-export async function ensureProduct(adminUrl: string, token: string, { fetchFn = fetch, wait = 120_000 } = {}): Promise<void> {
+/**
+ * Creates the Product holding every stack repository, or replaces its definition when it exists (a re-used stack).
+ * Waits for the admin listener: a network error, 404 or 5xx while the backend's `db push` runs is retried until the deadline.
+ * 400, 401, 403 and a 409 on the replace (a config Product, read-only) fail at once.
+ */
+export async function ensureProduct(adminUrl: string, token: string, { fetchFn = fetch, wait = 120_000, sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}): Promise<void> {
   const headers = { authorization: `Bearer ${token}`, "content-type": "application/json" };
   const input = { name: "O3", definition: { include: [stackRepos] } };
   const call = (method: string, path: string, body: unknown) => fetchFn(`${adminUrl}/products${path}`, { method, headers, body: JSON.stringify(body) });
   const deadline = Date.now() + wait;
   for (;;) {
+    let status: number | undefined;
     try {
       let r = await call("POST", "", { slug: PRODUCT, ...input });
-      if (r.status === 409) r = await call("PUT", `/${PRODUCT}`, input);
+      if (r.status === 409) {
+        r = await call("PUT", `/${PRODUCT}`, input);
+        if (r.status === 409) throw new Error(`The ${PRODUCT} Product comes from config and is read-only through the admin API; remove it from the config.`);
+      }
       if (r.ok) return;
-      throw new Error(`The admin API refused the ${PRODUCT} Product (HTTP ${r.status}).`);
+      status = r.status;
     } catch (e) {
-      if (e instanceof Error && e.message.startsWith("The admin API")) throw e;
-      if (Date.now() > deadline) throw new Error(`The admin API at ${adminUrl} did not answer within ${wait / 1000}s.`);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      if (e instanceof Error && e.message.startsWith(`The ${PRODUCT} Product`)) throw e;
     }
+    if (status !== undefined && status !== 404 && status < 500) throw new Error(`The admin API refused the ${PRODUCT} Product (HTTP ${status}).`);
+    if (Date.now() > deadline) throw new Error(`The admin API at ${adminUrl} did not become ready within ${wait / 1000}s${status ? ` (last HTTP ${status})` : ""}.`);
+    await sleep(2000);
   }
 }
 

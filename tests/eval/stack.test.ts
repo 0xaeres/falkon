@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { loadProduct } from "./data.js";
-import { PRODUCT, ensureProduct, stackFiles } from "./stack.js";
+import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { PRODUCT, adminToken, ensureProduct, stackFiles } from "./stack.js";
 
 const files = () => stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3400, project: "falkon-eval" });
 
@@ -25,7 +28,8 @@ test("the stack uses its own project and port, binds loopback only and sets no k
   const { compose, project } = files();
   assert.equal(project, "falkon-eval");
   assert.deepEqual(compose.services.api.ports, ["127.0.0.1:3400:3001", "127.0.0.1:3500:3002"]);
-  assert.deepEqual(compose.services.web, { ...compose.services.web, command: ["pnpm", "--filter", "@falkon/web", "start"] });
+  assert.deepEqual(compose.services.web.command, ["pnpm", "--filter", "@falkon/web", "start"]);
+  assert.ok(!JSON.stringify(compose.services.web).includes("MCP_"));
   assert.ok(!("ports" in compose.services.web), "nothing depends on web, so it publishes nothing");
   assert.ok(!JSON.stringify(compose).match(/:3000:3000|3300/));
   assert.ok(!JSON.stringify(compose).includes("API_KEY"));
@@ -98,13 +102,40 @@ test("ensureProduct creates o3 over every stack repository with the bearer token
   assert.deepEqual(calls[0]!.body, { slug: PRODUCT, name: "O3", definition: { include: ["github.com/openmrs/*"] } });
 });
 
+const noSleep = async () => {};
+
 test("ensureProduct on a re-used stack replaces the existing Product instead of failing, and waits for the admin listener", async () => {
   const { calls, fetchFn } = recorder([0, 409, 200]);
-  await ensureProduct("http://x", "tok", { fetchFn, wait: 60_000 });
+  await ensureProduct("http://x", "tok", { fetchFn, wait: 60_000, sleep: noSleep });
   assert.deepEqual(calls.map((c) => `${c.method} ${c.url}`), ["POST http://x/products", "POST http://x/products", "PUT http://x/products/o3"]);
 });
 
-test("ensureProduct names a refusal and a listener that never answers", async () => {
-  await assert.rejects(ensureProduct("http://x", "bad", { fetchFn: recorder([401]).fetchFn }), /refused the o3 Product \(HTTP 401\)/);
-  await assert.rejects(ensureProduct("http://x", "tok", { fetchFn: recorder([0]).fetchFn, wait: -1 }), /did not answer/);
+test("ensureProduct retries a 500 and a 404 while the backend is still pushing its schema", async () => {
+  const { calls, fetchFn } = recorder([500, 404, 503, 201]);
+  await ensureProduct("http://x", "tok", { fetchFn, wait: 60_000, sleep: noSleep });
+  assert.equal(calls.length, 4);
+});
+
+test("ensureProduct fails at once on 400, 401, 403 and on a read-only config Product, and names a listener that never answers", async () => {
+  for (const status of [400, 401, 403]) {
+    const { calls, fetchFn } = recorder([status]);
+    await assert.rejects(ensureProduct("http://x", "bad", { fetchFn, sleep: noSleep }), new RegExp(`refused the o3 Product \\(HTTP ${status}\\)`));
+    assert.equal(calls.length, 1);
+  }
+  await assert.rejects(ensureProduct("http://x", "tok", { fetchFn: recorder([409, 409]).fetchFn, sleep: noSleep }), /comes from config and is read-only/);
+  await assert.rejects(ensureProduct("http://x", "tok", { fetchFn: recorder([500]).fetchFn, wait: -1, sleep: noSleep }), /did not become ready.*last HTTP 500/);
+  await assert.rejects(ensureProduct("http://x", "tok", { fetchFn: recorder([0]).fetchFn, wait: -1, sleep: noSleep }), /did not become ready/);
+});
+
+test("the admin token file is mode 600 (also when it already existed) and its value is not in the compose file", () => {
+  const dir = mkdtempSync(join(tmpdir(), "stack-token-"));
+  writeFileSync(join(dir, "admin.token"), "x".repeat(40), { mode: 0o644 });
+  const token = adminToken(dir);
+  assert.equal(token, "x".repeat(40));
+  assert.equal(statSync(join(dir, "admin.token")).mode & 0o777, 0o600);
+  const fresh = mkdtempSync(join(tmpdir(), "stack-token-"));
+  const made = adminToken(fresh);
+  assert.equal(statSync(join(fresh, "admin.token")).mode & 0o777, 0o600);
+  assert.equal(readFileSync(join(fresh, "admin.token"), "utf8"), made);
+  assert.ok(!JSON.stringify(files().compose).includes(made));
 });
