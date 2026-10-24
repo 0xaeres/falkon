@@ -94,7 +94,7 @@ export async function createMcpServer(scope: Scope, product?: string) {
           // Loaded on first use: pulls in the `ai` SDK, which a tool-listing server never needs.
           const { askCodebase } = await import("./ask/chat");
           const r = await askCodebase({ query: a.query, repos: a.repos, languageModel: a.languageModel, visibility: a.visibility, scope, product });
-          return { content: [{ type: "text" as const, text: `${r.answer}\n\n---\n**View full research session:** ${r.chatUrl}\n**Model used:** ${r.languageModel.model}` }] };
+          return { content: [{ type: "text" as const, text: `${r.answer}\n\n---\n${r.chatUrl ? `**View full research session:** ${r.chatUrl}\n` : ""}**Model used:** ${r.languageModel.model}` }] };
         } catch (e) {
           return { content: [{ type: "text" as const, text: `Failed to ask codebase: ${e instanceof Error ? e.message : String(e)}` }] };
         }

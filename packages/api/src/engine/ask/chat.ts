@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { generateText, type UIMessage } from "ai";
 import { prisma, type ChatVisibility } from "@falkon/db";
-import type { Scope } from "@falkon/shared";
+import { gitRead, type Scope } from "@falkon/shared";
 import { AskError } from "./errors";
 import { answerPart, sourcesOf, toPortableMarkdown } from "./answer";
 import { createMessageStream } from "./agent";
 import { aiModel, configuredLanguageModels, describeModel, modelKey, toInfo, type LanguageModelConfig, type LanguageModelInfo } from "./models";
 import { CHAT_NAME_PROMPT } from "./prompt";
+import { productDeps } from "../tools";
 
 export const baseUrl = () => (process.env.AUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
 export const chatUrl = (id: string) => `${baseUrl()}/chat/${id}`;
@@ -58,6 +59,14 @@ export async function drain(s: ReadableStream<{ type: string; errorText?: string
   if (error !== undefined) throw new AskError(500, "UNEXPECTED_ERROR", error);
 }
 
+/** The UI chat's evidence step for a Product: the same `buildEvidence` over the Product's current generation (none yet: an empty id, as `messagesToAnswers` reads a missing one). */
+async function evidenceFor(product: string, scope: Scope) {
+  const { buildEvidence } = await import("./evidence");
+  const generation = await productDeps.generation(product);
+  return (ctx: Parameters<NonNullable<Parameters<typeof createMessageStream>[0]["postProcess"]>>[0]) =>
+    buildEvidence({ ...ctx, scopeAllows: scope.allows, productId: product, generation, readFile: gitRead.readFile });
+}
+
 /**
  * The blocking Ask (/api/chat/blocking and MCP ask_codebase): creates a chat, runs one
  * agent turn to completion, names the chat, and returns the answer as portable markdown.
@@ -68,15 +77,21 @@ export async function askCodebase(o: { query: string; repos?: string[]; language
   const chat = await prisma.chat.create({ data: newChatData(o.scope, o.visibility, o.product) });
   const user: UIMessage = { id: randomUUID(), role: "user", parts: [{ type: "text", text: o.query }] };
   let final: UIMessage[] = [];
-  const stream = await createMessageStream({ messages: [user], selectedRepos: repos, scope: o.scope, model, onFinish: (m) => void (final = m) });
+  // A thread of a Product stores what the UI chat stores (answer and evidence parts), so its page renders the answer.
+  const postProcess = o.product ? await evidenceFor(o.product, o.scope) : undefined;
+  const stream = await createMessageStream({ messages: [user], selectedRepos: repos, scope: o.scope, model, onFinish: (m) => void (final = m), postProcess });
   const [, name] = await Promise.all([drain(stream), chatName(o.query, model)]);
-  await prisma.chat.update({ where: { id: chat.id }, data: { messages: final as object[], name } });
+  // The chat may have been deleted while the agent ran: the answer still returns, without a link.
+  const saved = await prisma.chat.update({ where: { id: chat.id }, data: { messages: final as object[], name } }).then(() => true, (e: { code?: string }) => {
+    if (e?.code !== "P2025") throw e;
+    return false;
+  });
   const assistant = final.find((m) => m.role === "assistant");
   const text = assistant ? (answerPart(assistant, false)?.text ?? "") : "";
   return {
     answer: toPortableMarkdown(text, baseUrl(), sourcesOf(final)),
     chatId: chat.id,
-    chatUrl: o.product ? threadUrl(o.product, chat.id) : chatUrl(chat.id),
+    chatUrl: !saved ? undefined : o.product ? threadUrl(o.product, chat.id) : chatUrl(chat.id),
     languageModel: await describeModel(model),
   };
 }
