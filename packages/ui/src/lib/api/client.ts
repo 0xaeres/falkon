@@ -28,6 +28,10 @@ export const keys = {
     `${base}/products/${encodeURIComponent(id)}/search?${params}`,
   messages: (productId: string, threadId: string) =>
     `${keys.thread(productId, threadId)}/messages`,
+  stream: (productId: string, threadId: string) =>
+    `${keys.thread(productId, threadId)}/stream`,
+  stop: (productId: string, threadId: string) =>
+    `${keys.thread(productId, threadId)}/stop`,
 };
 export class ApiError extends Error {
   constructor(
@@ -95,6 +99,14 @@ export const api = {
   knowledge: (id: string, input: KnowledgeActionRequest) =>
     request(`${keys.product(id)}/knowledge`, statusSchema, "POST", input),
   newThread: (id: string) => request(keys.threads(id), threadSchema, "POST"),
+  /** Ends the answer being written; the engine keeps the question. */
+  stopThread: async (productId: string, threadId: string) =>
+    void (await check(
+      await fetch(keys.stop(productId, threadId), {
+        method: "POST",
+        signal: AbortSignal.timeout(15000),
+      }),
+    )),
   /** Best effort: the engine refuses a thread that has answers. */
   deleteThread: async (productId: string, threadId: string) =>
     void (await check(

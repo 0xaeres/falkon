@@ -77,7 +77,7 @@ export async function createMessageStream(o: {
   scope: Scope;
   model: LanguageModelConfig;
   onFinish?: (messages: UIMessage[]) => Promise<void> | void;
-  /** Stops the model run (a client that went away). */
+  /** Stops the model run (an explicit Stop). */
   abortSignal?: AbortSignal;
   /** Extra data parts written (and persisted) once the model stream has ended, before the finish chunk. */
   postProcess?: (ctx: { text: string; sources: ToolSource[]; stepCapHit: boolean; toolCalls: number }) => Promise<{ type: `data-${string}`; data: unknown }[]>;

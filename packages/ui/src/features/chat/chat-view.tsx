@@ -43,6 +43,7 @@ import {
   type Thread,
 } from "@falkon/contracts";
 import { Markdown } from "./markdown";
+import { settleThread, useResumeWatchdog } from "./resume-watchdog";
 const EvidencePanel = dynamic(() => import("./evidence-panel"), {
   loading: () => <LoadingMark label="Loading evidence" />,
 });
@@ -83,7 +84,10 @@ const hasAnswer = (message?: UIMessage) =>
   !!message?.parts.some((part) => part.type === "data-answer");
 /** The streaming preview: the text after the answer tag, references as [n], a half-written reference hidden. */
 const preview = (message?: UIMessage) => {
-  const text = message?.parts.findLast((part) => part.type === "text");
+  const text =
+    message?.role === "assistant"
+      ? message.parts.findLast((part) => part.type === "text")
+      : undefined;
   const raw = text?.type === "text" ? text.text : "";
   const tag = raw.indexOf(ANSWER_TAG);
   return rewriteFileRefs(
@@ -139,6 +143,15 @@ export function ReplyBody({ answer }: { answer: Answer }) {
     </>
   );
 }
+/** Asks the server to end the answer, once more if the first call fails; false when it could not. */
+const stopOnServer = async (productId: string, threadId: string) => {
+  for (let attempt = 0; attempt < 2; attempt++)
+    try {
+      await api.stopThread(productId, threadId);
+      return true;
+    } catch {}
+  return false;
+};
 /** A stopped or failed turn leaves a half-written assistant message; it is not an answer. */
 const dropIncomplete = (messages: UIMessage[]) => {
   const last = messages.at(-1);
@@ -187,7 +200,7 @@ function ChatSession({
   threadId?: string;
   thread?: Thread;
   status: Status;
-  refreshThread: () => Promise<unknown>;
+  refreshThread: () => Promise<Thread | undefined>;
 }) {
   const { product } = useWorkspace();
   const { mutate } = useSWRConfig();
@@ -216,14 +229,44 @@ function ChatSession({
     [],
   );
   const transport = useMemo(() => chatTransport(product.id), [product.id]);
+  const onError = useRef<(error: Error) => void>(undefined);
   const chat = useChat({
     id: threadId ?? "new-thread",
     messages: initial,
     transport,
+    // A page opened on a thread whose answer is still being written picks it up.
+    resume: !!threadId,
+    onError: (error) => onError.current?.(error),
     onFinish: (done) => finished.current?.(done),
   });
+  // A dropped connection does not end the answer: the watchdog resumes it until it ends or Stop.
+  const watch = useResumeWatchdog({
+    resume: () => chat.resumeStream({ body: { threadId: target.current } }),
+    drop: () => chat.setMessages(dropIncomplete(chat.messages)),
+    answers: () =>
+      messagesToAnswers(product.id, dropIncomplete(chat.messages)).length,
+    settle: (before) =>
+      settleThread(
+        () => api.thread(keys.thread(product.id, target.current!)),
+        before,
+        (messages) => {
+          chat.setMessages(messages);
+          chat.clearError();
+          finished.current?.({ messages, isAbort: false, isError: false });
+        },
+      ),
+    giveUp: () =>
+      finished.current?.({
+        messages: dropIncomplete(chat.messages),
+        isAbort: false,
+        isError: true,
+      }),
+  });
   useEffect(() => {
+    onError.current = watch.error;
     finished.current = ({ messages, isAbort, isError }) => {
+      if (!isError && !isAbort) watch.finish();
+      if (isError && !isAbort && watch.active()) return;
       // A stopped turn keeps its question on the server: this thread is no longer disposable.
       if (isAbort) created.current = false;
       if (isError && discardable(created.current, messages)) {
@@ -240,7 +283,13 @@ function ChatSession({
       if (isAbort || isError) return chat.setMessages(dropIncomplete(messages));
       setPendingQuestion("");
       void mutate(keys.threads(product.id));
-      void refreshThread();
+      const reloaded = refreshThread();
+      // A resumed page holds the answer without its question: show the stored thread.
+      if (messages.at(-2)?.role !== "user")
+        void reloaded.then(
+          (t) =>
+            t && chat.setMessages(answersToMessages(t.answers) as UIMessage[]),
+        );
       if (!threadId && target.current)
         router.replace(`/${product.id}/chat/${target.current}`);
     };
@@ -249,11 +298,17 @@ function ChatSession({
   const inFlight = chat.status === "submitted" || chat.status === "streaming";
   const arrived = hasAnswer(lastMessage);
   // Working: asking, or waiting for the answer parts, which arrive just before the stream ends.
-  const working = (creating || inFlight) && !arrived;
-  const busy = creating || inFlight;
+  const working = (creating || inFlight || watch.reconnecting) && !arrived;
+  const busy = creating || inFlight || watch.reconnecting;
   const settled =
     inFlight && !arrived
-      ? chat.messages.slice(0, lastMessage?.role === "assistant" ? -2 : -1)
+      ? chat.messages.slice(
+          0,
+          lastMessage?.role === "assistant" &&
+            chat.messages.at(-2)?.role === "user"
+            ? -2
+            : -1,
+        )
       : chat.messages;
   const answers = useMemo(
     () => messagesToAnswers(product.id, settled),
@@ -264,14 +319,16 @@ function ChatSession({
     working && lastMessage?.role === "assistant"
       ? lastMessage.parts.filter((part) => part.type === "data-source").length
       : 0;
-  const error = stopped
-    ? "Answer stopped. Your question is kept; retry when ready."
-    : notice ||
-      (chat.error
-        ? chat.error instanceof ApiError
-          ? chat.error.message
-          : "The answer didn’t arrive. Your question is kept; try again."
-        : "");
+  const error = watch.reconnecting
+    ? ""
+    : stopped
+      ? "Answer stopped. Your question is kept; retry when ready."
+      : notice ||
+        (chat.error
+          ? chat.error instanceof ApiError
+            ? chat.error.message
+            : "The answer didn’t arrive. Your question is kept; try again."
+          : "");
   useEffect(() => {
     if (working && threadArea.current)
       threadArea.current.scrollTop = threadArea.current.scrollHeight;
@@ -462,9 +519,9 @@ function ChatSession({
               ))}
             </article>
           ))}
-          {pendingQuestion && (working || !!error) && (
+          {(working || (pendingQuestion && error)) && (
             <article className="answer-turn">
-              <div className="q">{pendingQuestion}</div>
+              {pendingQuestion && <div className="q">{pendingQuestion}</div>}
               {working && (
                 <>
                   <div className="working">
@@ -561,6 +618,17 @@ function ChatSession({
                 aria-label="Stop answer"
                 onClick={() => {
                   setStopped(true);
+                  watch.cancel();
+                  // The server keeps writing unless told: Stop ends it, keeping the question only.
+                  created.current = false;
+                  if (target.current)
+                    void stopOnServer(product.id, target.current).then((ok) => {
+                      if (ok) return;
+                      setStopped(false);
+                      setNotice(
+                        "Couldn’t stop the answer; it may still finish in this thread.",
+                      );
+                    });
                   void chat.stop();
                 }}
               >

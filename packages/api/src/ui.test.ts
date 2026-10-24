@@ -179,17 +179,17 @@ test("create validation: unknown connection, repo outside the listing, duplicate
   assert.equal((await call("GET", "/ui/products", undefined, false)).status, 401);
 });
 
-test("route enumeration: the admin listener has exactly the S20a routes, the six /ui/products routes and the five thread routes", () => {
+test("route enumeration: the admin listener has exactly the S20a routes, the six /ui/products routes and the seven thread routes", () => {
   const router = (admin.getHttpAdapter().getInstance() as { router: { stack: { route?: { path: string; methods: Record<string, boolean> } }[] } }).router;
   const routes = router.stack.flatMap((l) => (l.route ? Object.keys(l.route.methods).map((m) => `${m.toUpperCase()} ${l.route!.path}`) : [])).sort();
   assert.deepEqual(routes, [
     "DELETE /connections/:id", "DELETE /products/:slug", "DELETE /ui/products/:slug/threads/:id",
     "GET /connections", "GET /connections/:id/repositories", "GET /products", "GET /products/:slug",
     "GET /ui/products", "GET /ui/products/:slug", "GET /ui/products/:slug/status",
-    "GET /ui/products/:slug/threads", "GET /ui/products/:slug/threads/:id",
+    "GET /ui/products/:slug/threads", "GET /ui/products/:slug/threads/:id", "GET /ui/products/:slug/threads/:id/stream",
     "PATCH /ui/products/:slug",
     "POST /connections", "POST /products", "POST /ui/products", "POST /ui/products/:slug/sync",
-    "POST /ui/products/:slug/threads", "POST /ui/products/:slug/threads/:id/messages",
+    "POST /ui/products/:slug/threads", "POST /ui/products/:slug/threads/:id/messages", "POST /ui/products/:slug/threads/:id/stop",
     "PUT /connections/:id/token", "PUT /products/:slug",
   ].sort());
 });
