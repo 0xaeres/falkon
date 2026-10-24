@@ -202,6 +202,10 @@ const threadRoute =
   await import("../src/app/api/products/[productId]/threads/[threadId]/route");
 const messages =
   await import("../src/app/api/products/[productId]/threads/[threadId]/messages/route");
+const stream =
+  await import("../src/app/api/products/[productId]/threads/[threadId]/stream/route");
+const stop =
+  await import("../src/app/api/products/[productId]/threads/[threadId]/stop/route");
 
 test("thread routes forward to /ui/products/:slug/threads in engine mode", async () => {
   process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
@@ -223,6 +227,38 @@ test("thread routes forward to /ui/products/:slug/threads in engine mode", async
   );
   delete process.env.ENGINE_URL;
   assert.equal((await threads.GET(get(), ctx("alpha"))).status, 503);
+});
+
+test("resume and stop forward to the thread's stream and stop routes; a 204 (nothing running) passes through", async () => {
+  process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
+  reply = { status: 204, body: null };
+  const before = seen.length;
+  const resumed = await stream.GET(
+    new Request("http://localhost/api/x"),
+    threadCtx("alpha", "t 1"),
+  );
+  const stopped = await stop.POST(
+    new Request("http://localhost/api/x", { method: "POST" }),
+    threadCtx("alpha", "t 1"),
+  );
+  assert.deepEqual([resumed.status, stopped.status], [204, 204]);
+  assert.deepEqual(
+    seen.slice(before).map((c) => [c.method, c.url]),
+    [
+      ["GET", "/ui/products/alpha/threads/t%201/stream"],
+      ["POST", "/ui/products/alpha/threads/t%201/stop"],
+    ],
+  );
+  reply = { status: 404, body: { message: "Thread not found." } };
+  const missing = await stream.GET(
+    new Request("http://localhost/api/x"),
+    threadCtx("alpha", "t1"),
+  );
+  assert.deepEqual(
+    [missing.status, await missing.json()],
+    [404, { error: "Thread not found." }],
+  );
+  delete process.env.ENGINE_URL;
 });
 
 test("chat messages: 503 without the engine; the engine's stream passes through unbuffered; its errors become { error }", async () => {

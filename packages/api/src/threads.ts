@@ -8,6 +8,7 @@ import type { PrismaClient } from "@falkon/db";
 import { noneAccessPolicy, scopeFor } from "@falkon/shared";
 import { AskError } from "./engine/ask/errors";
 import { sendJson } from "./http";
+import { LiveAnswers } from "./liveAnswers";
 import { isProductName } from "./product";
 import { body, error } from "./request";
 import { UiProductService } from "./ui";
@@ -27,7 +28,7 @@ const title = (name: string | null) => name ?? "New thread";
 const messagesOf = (json: unknown) => (Array.isArray(json) ? (json as (ChatMessageLike & { role: "user" | "assistant" | "system" })[]) : []);
 
 export class ThreadService {
-  constructor(private readonly db: Db, private readonly products: Pick<UiProductService, "status">) {}
+  constructor(private readonly db: Db, private readonly products: Pick<UiProductService, "status">, private readonly live = new LiveAnswers()) {}
 
   private async product(slug: string) {
     const p = isProductName(slug) ? await this.db.product.findUnique({ where: { slug }, select: { repoNames: true } }) : null;
@@ -69,8 +70,11 @@ export class ThreadService {
     if (count === 0) throw threadNotFound();
   }
 
-  /** One turn. Resolves to the response to stream, or throws an HttpException; Ask errors become JSON in the controller. */
-  async message(slug: string, id: string, input: { text: string; languageModel?: { provider: string; model: string } }, signal: AbortSignal): Promise<Response> {
+  /**
+   * One turn. Resolves to the response to stream, or throws an HttpException; Ask errors become JSON in the controller.
+   * The turn runs to its end whether or not the client stays (`resume` reads it again); only `stop` ends it early.
+   */
+  async message(slug: string, id: string, input: { text: string; languageModel?: { provider: string; model: string } }): Promise<Response> {
     const { repoNames } = await this.product(slug);
     const chat = await this.thread(slug, id);
     const { generation } = await this.products.status(slug);
@@ -81,7 +85,7 @@ export class ThreadService {
     // The Product's repositories exactly (the same intersection the MCP path uses), whatever the caller sent.
     const effective = noneAccessPolicy().effectiveScope({ ...scopeFor(["*"]), principal: UI_PRINCIPAL }, repoNames)!;
     const { uiChatResponse } = await import("./engine/ask/uiChat");
-    return uiChatResponse({
+    const response = await this.live.start(id, (signal) => uiChatResponse({
       messages: [...history, user] as never,
       selectedRepos: effective.repos,
       scope: effective.scope,
@@ -100,7 +104,23 @@ export class ThreadService {
           if (e?.code !== "P2025") throw e;
         });
       },
-    });
+    }));
+    if (!response) throw error(409, "ANSWER_RUNNING", "An answer is still being written in this thread.");
+    return response;
+  }
+
+  /** The answer being written in the thread, from its first chunk; undefined when none is. */
+  async resume(slug: string, id: string): Promise<Response | undefined> {
+    await this.product(slug);
+    await this.thread(slug, id);
+    return this.live.read(id);
+  }
+
+  /** Stops the answer being written in the thread: the question stays stored, the answer is not. */
+  async stop(slug: string, id: string): Promise<void> {
+    await this.product(slug);
+    await this.thread(slug, id);
+    this.live.stop(id);
   }
 }
 
@@ -133,16 +153,29 @@ export class ThreadsController {
   async message(@Param("slug") slug: string, @Param("id") id: string, @Req() req: IncomingMessage, @Res() res: ServerResponse) {
     if (!isProductName(slug)) throw notFound();
     const input = await body(req, chatMessageRequestSchema);
-    const stop = new AbortController();
-    res.on("close", () => stop.abort());
     let response: Response;
     try {
-      response = await this.threads.message(slug, id, input, stop.signal);
+      response = await this.threads.message(slug, id, input);
     } catch (e) {
       // Ask errors (no model configured, unknown model) keep the shape the web Ask routes use.
       if (e instanceof AskError) return sendJson(res, e.statusCode, { statusCode: e.statusCode, errorCode: e.errorCode, message: e.message });
       throw e;
     }
     await sendWebResponse(res, response);
+  }
+
+  /** Resumes the answer being written (204 when none is): a client that lost its connection reads it again from the start. */
+  @Get(":slug/threads/:id/stream")
+  async stream(@Param("slug") slug: string, @Param("id") id: string, @Res() res: ServerResponse) {
+    if (!isProductName(slug)) throw notFound();
+    const response = await this.threads.resume(slug, id);
+    if (!response) return void res.writeHead(204).end();
+    await sendWebResponse(res, response);
+  }
+
+  @Post(":slug/threads/:id/stop")
+  @HttpCode(204)
+  stop(@Param("slug") slug: string, @Param("id") id: string) {
+    return this.threads.stop(slug, id);
   }
 }
