@@ -32,8 +32,6 @@ export function stackFiles({ o3Dir, repoRoot, port, project, instructions, recip
       // --prs on: the backend imports the pull request snapshot (S47) after indexing each repository.
       backend: { ...app, ...(prs ? { environment: { ...environment, DISCUSSIONS_SNAPSHOT_DIR: "/discussions", DISCUSSION_TICKET_KEYS: "TRUNK,RESTWS,O3" }, volumes: [...app.volumes, `${o3Dir}/github-snapshot:/discussions:ro`] } : {}), build: { context: repoRoot, dockerfile: "docker/Dockerfile" }, command: ["sh", "-c", "pnpm --filter @falkon/db push && pnpm --filter @falkon/backend start"], depends_on: { postgres: { condition: "service_healthy" }, redis: { condition: "service_healthy" } } },
       zoekt: { ...app, command: ["zoekt-webserver", "-index", "/data/index", "-rpc", "-listen", ":6070"], depends_on: ["backend"] },
-      // Kept until S70 deletes it; nothing in the eval depends on it, so it publishes no port.
-      web: { ...app, command: ["pnpm", "--filter", "@falkon/web", "start"], depends_on: ["backend", "zoekt"] },
       api: { ...app, environment: apiEnvironment, command: ["node", "packages/api/dist/main.js"], ports: [`127.0.0.1:${port}:3001`, `127.0.0.1:${adminPort}:3002`], depends_on: ["backend", "zoekt"] },
     },
     volumes: { pgdata: {}, data: {} },

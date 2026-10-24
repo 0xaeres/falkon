@@ -38,7 +38,7 @@ export interface ToolDeps {
   getRepo(name: string): Promise<ToolRepo | undefined>;
   /** Every code repo whose name contains `query` (case-insensitive), in the requested order. The tool applies scope and paging. */
   listRepos(o: { query?: string; sort: "name" | "pushed"; direction: "asc" | "desc" }): Promise<ToolRepo[]>;
-  /** The web app's public base URL (the AUTH_URL setting). */
+  /** Base URL the engine prefixes to repository browse links (the AUTH_URL setting). */
   baseUrl: string;
   /** Pull request provenance (the history tools, registered only with MCP_HISTORY_TOOLS=on). */
   history?: ProvenanceStore;

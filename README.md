@@ -45,6 +45,7 @@ For example, you ask your agent where API keys are validated. The agent calls `g
 - [Ask and the knowledge base](#ask-and-the-knowledge-base)
 - [Security](#security)
 - [Project layout](#project-layout)
+- [Upgrading from the web app](#upgrading-from-the-web-app)
 - [Known limits](#known-limits)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
@@ -77,7 +78,7 @@ Falkon is a weaker fit when your questions contain no identifiers or phrases to 
 | Index revision | The commit of a repository that the search index was built from. Every result names it. |
 | Coverage gap | A part of a repository that Falkon could not see at that commit, for example a file that failed to parse. Results list gaps so that an empty answer is not read as "nothing there". |
 | Knowledge base | Optional architecture documents that a language model writes about each repository. Falkon checks every citation in them against the code. |
-| Ask | A chat in the web app that answers questions about one Product with the same tools an MCP client uses. |
+| Ask | A chat in the Falkon UI that answers questions about one Product with the same tools an MCP client uses. |
 ## What Falkon does
 
 - **Searches every repository in a Product at once.** Zoekt indexes each repository's default branch, plus any branches and tags you list. It answers literal and regular-expression queries.
@@ -96,13 +97,12 @@ Falkon has four main parts. The engine API answers MCP calls and admin requests.
 
 The diagram shows every service in the Docker Compose stack and the outside systems it talks to. Select it to open the full-size image.
 
-[![Falkon system components: MCP clients and browsers reach the engine API, UI and web app, which use Zoekt, Postgres, Redis and the data volume](docs/diagrams/falkon-system-components.svg)](docs/diagrams/falkon-system-components.svg)
+[![Falkon system components: MCP clients and browsers reach the engine API and the Falkon UI, which use Zoekt, Postgres, Redis and the data volume](docs/diagrams/falkon-system-components.svg)](docs/diagrams/falkon-system-components.svg)
 
 | Part | What it does |
 | --- | --- |
 | Engine API (NestJS), ports 3001 and 3002 | Serves MCP at `/mcp/<product>` on port 3001 and the admin API on port 3002. |
-| Falkon UI (Next.js), port 3100 | Browser UI for Products, index status, connect snippets and settings. |
-| Web app (Next.js), port 3000 | Search page, Ask chat and the older MCP route `/api/mcp`. |
+| Falkon UI (Next.js), port 3100 | Browser UI for Products, search, Ask chat, index status, connect snippets and settings. |
 | Backend worker | Fetches from code hosts, writes git mirrors, runs `zoekt-git-index` and runs knowledge base scans. |
 | `zoekt-webserver`, port 6070 | Search server. It reads shards from the data volume and is reachable only inside the stack. |
 | Postgres | Registry of repositories and Products, chat history and the knowledge base index. |
@@ -298,8 +298,7 @@ Then open:
 
 | URL | What it is |
 | --- | --- |
-| http://localhost:3000 | Web app: search, repositories, Ask |
-| http://127.0.0.1:3100 | Falkon UI: Products, status, connect page, settings |
+| http://127.0.0.1:3100 | Falkon UI: Products, search, Ask, status, connect page, settings |
 | http://127.0.0.1:3001/mcp/`<product>` | MCP endpoint for one Product |
 | http://127.0.0.1:3002 | Admin API. Needs the admin token |
 
@@ -318,10 +317,9 @@ scripts/admin-token.sh reset
 pnpm install && pnpm db:generate && pnpm db:push
 pnpm dev:backend                                          # terminal 1
 zoekt-webserver -index ./data/index -rpc -listen :6070    # terminal 2
-pnpm dev:web                                              # terminal 3
 ```
 
-To run the Falkon UI and the NestJS engine API as well:
+To run the NestJS engine API and the Falkon UI:
 
 ```bash
 pnpm --filter @falkon/api start
@@ -346,8 +344,6 @@ Falkon serves MCP over Streamable HTTP. Point the client at the Product path:
 ```
 
 When `AUTH_MODE=apiKey`, add `"headers": { "Authorization": "Bearer <key>" }`. The UI's Connect page shows the exact snippet for each Product.
-
-The web app also serves an MCP route at `/api/mcp` on port 3000. It covers every repository the web app can see. Prefer the Product path, because it scopes every call.
 
 ## Configuration
 
@@ -374,7 +370,7 @@ A GitHub connection syncs pull requests only when it sets `"discussions": true` 
 | `settings.discussionSyncIntervalMs` | 900000 (15 minutes) | Gap between syncs of a repository. A tick every 30 seconds enqueues at most 20 due repositories, oldest first |
 | `settings.discussionReconcileIntervalMs` | 604800000 (7 days) | Gap between full reconciles, which re-read every pull request updated in the last 30 days |
 | `settings.discussionBackfillMonths` | 24 | How far back a repository's first sync reads |
-| `DISCUSSION_SYNC_INTERVAL_MS` (web) | 900000 | Set it to the same value as `discussionSyncIntervalMs`: the history tools call a repository stale after twice this |
+| `DISCUSSION_SYNC_INTERVAL_MS` (api) | 900000 | Set it to the same value as `discussionSyncIntervalMs`: the history tools call a repository stale after twice this |
 
 **Turn it on.** In the GitHub connection of `config.json` set `"discussions": true`. The connection's own token does the reading, so it needs these permissions:
 
@@ -398,10 +394,10 @@ scripts/sync-smoke.sh
 
 | Variable | Default | Effect |
 | --- | --- | --- |
-| `FALKON_API_KEY` | unset | Requires `Authorization: Bearer <key>` on `/api/*` in the web app |
 | `AUTH_MODE` | `none` | `none` admits every caller to a Product. `apiKey` requires a key from `ACCESS_FILE` |
 | `ACCESS_FILE` | unset | JSON file of per-key repository scopes. With `apiKey`, a missing or malformed file denies everyone |
 | `FALKON_UI_URL` | `http://127.0.0.1:3100` | Base URL of the Falkon UI; `ask_codebase` returns `<base>/<product>/chat/<thread id>`. Set it when agents or people open the UI from another address |
+| `AUTH_URL` | `http://localhost:3000` | Prefix of the repository browse links in `list_repos` results and portable Ask answers. The Falkon UI has no browse pages, so these links open nothing unless you serve them yourself |
 | `ADMIN_TOKEN` | generated | Admin bearer, at least 32 characters. Otherwise stored in `${DATA_DIR}/secrets/admin.token` |
 | `FALKON_SECRET_KEY` | generated | Base64 of 32 bytes. Encrypts stored code-host tokens |
 | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | unset | OpenAI-compatible model for Ask and the knowledge base |
@@ -473,13 +469,21 @@ To report a vulnerability, do not open a public issue. See [CONTRIBUTING.md](CON
 | `packages/db` | Prisma schema for repositories, connections, Products, chats and knowledge scans |
 | `packages/shared` | Config schema, query parser and IR, Zoekt gRPC client, git readers, access policy, tool registry and knowledge base pipeline |
 | `packages/backend` | Connection sync, clone and fetch, `zoekt-git-index`, reindex and resync jobs, knowledge base scans |
-| `packages/web` | Next.js web app with search, repositories, Ask and `/api/mcp` |
 | `packages/api` | NestJS engine API with `/mcp/<product>` and the admin API |
 | `packages/contracts` | Zod schemas shared by the API and the UI |
 | `packages/ui` | Falkon UI (Next.js) |
 | `docker/` | Image build, including Zoekt |
 | `scripts/` | Admin token helper, config converter, smoke test |
 | `tests/` | Contract, golden, eval and originality checks |
+
+## Upgrading from the web app
+
+The old Next.js web app (port 3000) is removed; the Falkon UI on `127.0.0.1:3100` is the only web surface. What changed for an existing install:
+
+- The `web` compose service and host port 3000 are gone. Search, repositories, the knowledge base actions and Ask moved into the Falkon UI.
+- The plain HTTP endpoints `/api/ask`, `/api/chat`, `/api/chats`, `/api/search`, `/api/repos` and `/api/knowledge` are gone, and so is the older MCP route `/api/mcp`. Point MCP clients at `http://127.0.0.1:3001/mcp/<product>`; use the Falkon UI for the rest. Agents that need an answer from the Ask model call `ask_codebase` on that path.
+- `FALKON_API_KEY` and the `falkon_key` cookie are gone. A leftover `FALKON_API_KEY` in `.env` is ignored. To require keys, set `AUTH_MODE=apiKey` and `ACCESS_FILE`.
+- The eval harness and `scripts/ops-smoke.sh` use the `api` service; the smoke and eval stacks run five services (Postgres, Redis, backend, Zoekt, `api`).
 
 ## Known limits
 

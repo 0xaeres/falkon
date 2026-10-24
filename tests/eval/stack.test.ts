@@ -28,12 +28,10 @@ test("the stack uses its own project and port, binds loopback only and sets no k
   const { compose, project } = files();
   assert.equal(project, "falkon-eval");
   assert.deepEqual(compose.services.api.ports, ["127.0.0.1:3400:3001", "127.0.0.1:3500:3002"]);
-  assert.deepEqual(compose.services.web.command, ["pnpm", "--filter", "@falkon/web", "start"]);
-  assert.ok(!JSON.stringify(compose.services.web).includes("MCP_"));
-  assert.ok(!("ports" in compose.services.web), "nothing depends on web, so it publishes nothing");
+  assert.deepEqual(Object.keys(compose.services), ["postgres", "redis", "backend", "zoekt", "api"]);
   assert.ok(!JSON.stringify(compose).match(/:3000:3000|3300/));
   assert.ok(!JSON.stringify(compose).includes("API_KEY"));
-  for (const s of ["backend", "zoekt", "web", "api"] as const) assert.equal(compose.services[s].image, "falkon-eval-app");
+  for (const s of ["backend", "zoekt", "api"] as const) assert.equal(compose.services[s].image, "falkon-eval-app");
   assert.deepEqual(compose.services.backend.build, { context: "/repo", dockerfile: "docker/Dockerfile" });
 });
 
@@ -43,7 +41,7 @@ test("--recipe on sets MCP_IMPACT_RECIPE on the api service only, in its own pro
   assert.deepEqual(on.compose.services.api.ports, ["127.0.0.1:3402:3001", "127.0.0.1:3502:3002"]);
   assert.equal(on.compose.services.api.environment.MCP_IMPACT_RECIPE, "on");
   assert.ok(!("MCP_INSTRUCTIONS" in on.compose.services.api.environment));
-  for (const s of ["backend", "zoekt", "web"] as const) assert.ok(!("MCP_IMPACT_RECIPE" in on.compose.services[s].environment), s);
+  for (const s of ["backend", "zoekt"] as const) assert.ok(!("MCP_IMPACT_RECIPE" in on.compose.services[s].environment), s);
   assert.ok(!JSON.stringify(files().compose).includes("MCP_IMPACT_RECIPE"));
 });
 
@@ -52,7 +50,7 @@ test("--instructions off sets MCP_INSTRUCTIONS on the api service only, in its o
   assert.equal(off.compose.name, "falkon-eval-noinstr");
   assert.deepEqual(off.compose.services.api.ports, ["127.0.0.1:3401:3001", "127.0.0.1:3501:3002"]);
   assert.equal(off.compose.services.api.environment.MCP_INSTRUCTIONS, "off");
-  for (const s of ["backend", "zoekt", "web"] as const) assert.ok(!("MCP_INSTRUCTIONS" in off.compose.services[s].environment), s);
+  for (const s of ["backend", "zoekt"] as const) assert.ok(!("MCP_INSTRUCTIONS" in off.compose.services[s].environment), s);
   assert.equal(off.compose.services.api.environment.AUTH_URL, "http://127.0.0.1:3401");
   assert.ok(!JSON.stringify(files().compose).includes("MCP_INSTRUCTIONS"));
 });
@@ -66,11 +64,10 @@ test("--prs on mounts the pull request snapshot read-only into the backend only 
   assert.equal(backend.environment.DISCUSSION_TICKET_KEYS, "TRUNK,RESTWS,O3");
   assert.ok(backend.volumes.includes("/corpus/github-snapshot:/discussions:ro"));
   assert.equal(backend.volumes.length, files().compose.services.backend.volumes.length + 1);
-  for (const s of ["web", "zoekt", "api"] as const) assert.ok(!JSON.stringify(on.compose.services[s]).includes("discussions"), s);
+  for (const s of ["zoekt", "api"] as const) assert.ok(!JSON.stringify(on.compose.services[s]).includes("discussions"), s);
   assert.ok(!JSON.stringify(files().compose).includes("discussions"));
   // The api service must expose the pull request tools, or the arm silently equals clone-tools-git.
   assert.equal(on.compose.services.api.environment.MCP_HISTORY_TOOLS, "on");
-  assert.ok(!("MCP_HISTORY_TOOLS" in (on.compose.services.web as { environment: Record<string, string> }).environment));
   assert.ok(!JSON.stringify(files().compose).includes("MCP_HISTORY_TOOLS"));
 });
 
