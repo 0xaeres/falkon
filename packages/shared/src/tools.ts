@@ -80,7 +80,18 @@ export const define = <S extends z.ZodRawShape>(d: ToolDefinition<S>) => d;
 
 // ---- service errors ----
 
-const notFound = (repo: string) => new Error(`Repository "${repo}" not found.`);
+const notFound = (repo: string, hint?: string) => new Error(`Repository "${repo}" not found.${hint ? ` Did you mean "${hint}"?` : ""}`);
+
+/** The one in-scope repository whose last path segment is the bare `name` (P12: only names the caller may see). */
+async function nameHint(ctx: ToolContext, name: string): Promise<string | undefined> {
+  if (!name || name.includes("/")) return undefined;
+  try {
+    const hits = (await ctx.deps.listRepos({ query: name, sort: "name", direction: "asc" })).filter((r) => ctx.scope.allows(r.name) && r.name.split("/").pop() === name);
+    return hits.length === 1 ? hits[0]!.name : undefined;
+  } catch {
+    return undefined; // the hint is best effort; never mask the not-found error
+  }
+}
 export const fileNotFound = (path: string, repo: string) => new Error(`File "${path}" not found in repository "${repo}"`);
 const invalidGitRef = (ref: string) => new Error(`Invalid git reference: "${ref}". Git refs cannot start with '-'.`);
 const unresolvedGitRef = (ref: string) => new Error(`Git reference "${ref}" could not be resolved.`);
@@ -91,7 +102,7 @@ export const isPathValid = (path: string) => !(path.split("/").some((s) => s ===
 /** Repo by name, invisible (same error as missing) when the caller's scope excludes it. */
 export async function repoOrThrow(ctx: ToolContext, name: string) {
   const r = ctx.scope.allows(name) ? await ctx.deps.getRepo(name) : undefined;
-  if (!r) throw notFound(name);
+  if (!r) throw notFound(name, await nameHint(ctx, name));
   return r;
 }
 

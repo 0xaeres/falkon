@@ -123,3 +123,31 @@ test("list_repos shows only scoped repos and pages over the visible set", async 
   const all = JSON.parse(await run("list_repos", {}, scopeFor(["*"]))) as { repos: unknown[] };
   assert.equal(all.repos.length, 2);
 });
+
+// S60: a bare name that is the last segment of exactly one in-scope repository gets a hint.
+const hintRows = ["github.com/openmrs/esm-core", "github.com/acme/dup", "gitlab.com/other/dup", "github.com/acme/Mixed", "github.com/acme/hidden"].map((name) => ({ ...rows[0]!, name }));
+const hintRun = createToolRunner({ getRepo: async (n) => hintRows.find((r) => r.name === n), listRepos: async () => hintRows, baseUrl: "http://localhost:3000" });
+const notFoundFor = (repo: string, s = scopeFor(["*"])) => hintRun("read_file", { repo, path: "x" }, s).then(() => assert.fail("resolved"), (e: Error) => e.message);
+
+test("a bare name matching one in-scope repository suggests the full name", async () => {
+  assert.equal(await notFoundFor("esm-core"), 'Repository "esm-core" not found. Did you mean "github.com/openmrs/esm-core"?');
+});
+
+test("no hint when the name is ambiguous, unknown, differently cased, empty, path-like or already full", async () => {
+  for (const n of ["dup", "nothing", "mixed", "", "a/b/c", "github.com/openmrs/nope"]) {
+    assert.equal(await notFoundFor(n), `Repository "${n}" not found.`, n);
+  }
+});
+
+test("a repository outside the caller's scope is never suggested", async () => {
+  const s = scopeFor(["github.com/acme/dup"]);
+  assert.equal(await notFoundFor("hidden", s), 'Repository "hidden" not found.');
+  assert.equal(await notFoundFor("esm-core", s), 'Repository "esm-core" not found.');
+  // out-of-scope twin does not make an in-scope name ambiguous
+  assert.equal(await notFoundFor("dup", s), 'Repository "dup" not found. Did you mean "github.com/acme/dup"?');
+});
+
+test("a failing listRepos leaves the plain not-found text", async () => {
+  const boom = createToolRunner({ getRepo: async () => undefined, listRepos: async () => { throw new Error("db down"); }, baseUrl: "http://localhost:3000" });
+  await assert.rejects(boom("read_file", { repo: "esm-core", path: "x" }, scopeFor(["*"])), { message: 'Repository "esm-core" not found.' });
+});
