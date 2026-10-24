@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { chatMessageRequestSchema, messagesToAnswers, type ChatMessageLike, type Thread, type ThreadSummary } from "@falkon/contracts";
 import type { PrismaClient } from "@falkon/db";
-import { noneAccessPolicy, scopeFor } from "@falkon/shared";
+import { memorySignals, noneAccessPolicy, scopeFor, type Signals } from "@falkon/shared";
 import { AskError } from "./engine/ask/errors";
 import { sendJson } from "./http";
 import { isProductName } from "./product";
@@ -27,7 +27,7 @@ const title = (name: string | null) => name ?? "New thread";
 const messagesOf = (json: unknown) => (Array.isArray(json) ? (json as (ChatMessageLike & { role: "user" | "assistant" | "system" })[]) : []);
 
 export class ThreadService {
-  constructor(private readonly db: Db, private readonly products: Pick<UiProductService, "status">) {}
+  constructor(private readonly db: Db, private readonly products: Pick<UiProductService, "status">, private readonly signals: Signals = memorySignals()) {}
 
   private async product(slug: string) {
     const p = isProductName(slug) ? await this.db.product.findUnique({ where: { slug }, select: { repoNames: true } }) : null;
@@ -50,6 +50,7 @@ export class ThreadService {
   async create(slug: string): Promise<Thread> {
     await this.product(slug);
     const c = await this.db.chat.create({ data: { id: randomUUID(), productId: slug, createdBy: UI_PRINCIPAL, visibility: "PRIVATE", messages: [] } });
+    this.signals.changed();
     return { id: c.id, productId: slug, title: title(c.name), updatedAt: c.updatedAt.getTime(), answers: [] };
   }
 
@@ -67,6 +68,7 @@ export class ThreadService {
     // Only the row as it was read (same Product, same updatedAt): a turn that stored anything since keeps the thread.
     const { count } = await this.db.chat.deleteMany({ where: { id, productId: slug, updatedAt: c.updatedAt } });
     if (count === 0) throw threadNotFound();
+    this.signals.changed();
   }
 
   /** One turn. Resolves to the response to stream, or throws an HttpException; Ask errors become JSON in the controller. */

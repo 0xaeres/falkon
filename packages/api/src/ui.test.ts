@@ -5,7 +5,7 @@ import path from "node:path";
 import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
-import { knowledgeBaseSchema } from "@falkon/shared";
+import { knowledgeBaseSchema, memorySignals } from "@falkon/shared";
 import { createAdminApp } from "./admin";
 import { ConnectionService, type CodeHost } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";
@@ -29,13 +29,17 @@ const host: CodeHost = {
 };
 
 const engine = fakeEngineDb();
+const signals = memorySignals();
+const sent = { changed: 0, request: 0 };
+signals.onChanged(() => sent.changed++);
+signals.onRequest(() => sent.request++);
 let clock = 0; // the service's knowledge-config cache clock; tests advance it past the 30 s TTL to re-read the config file
 let admin: INestApplication;
 let base: string;
 before(async () => {
   const connections = new ConnectionService(engine.db as never, host);
-  const ui = new UiProductService(engine.db, connections, () => clock);
-  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never), TOKEN, {}, connections, ui, new ThreadService(engine.db, ui));
+  const ui = new UiProductService(engine.db, connections, () => clock, undefined, signals);
+  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never, signals), TOKEN, {}, connections, ui, new ThreadService(engine.db, ui, signals));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
 });
@@ -292,4 +296,31 @@ test("a member the connection's clean sync did not return is Skipped; before tha
   const s = (await call("GET", "/ui/products/skp/status")).json;
   assert.deepEqual([s.scenario, s.sentence, s.gaps], ["current", `Answers use ${s.generation}, published just now from the latest revision of all 1 repository.`, [{ count: 1, title: "Repository skipped", detail: GONE }]]);
   connectionRow(cid).syncedAt = null;
+});
+
+test("writes publish: request for what the worker claims, changed for what a status or list shows, nothing for reads or refused writes", async () => {
+  const seen = () => [sent.changed, sent.request];
+  const step = async (run: () => Promise<unknown>) => {
+    const [c, r] = seen();
+    await run();
+    return [sent.changed - c, sent.request - r];
+  };
+  assert.deepEqual(await step(() => call("POST", "/ui/products", setup(cid, "sig", [APP]))), [1, 1], "create");
+  assert.deepEqual(await step(() => call("PATCH", "/ui/products/sig", { name: "sig 2", repositories: pick(APP, LIB) })), [1, 1], "edit");
+  assert.deepEqual(await step(() => call("POST", "/ui/products/sig/sync", { action: "retry" })), [1, 1], "sync");
+  assert.deepEqual(await step(() => call("PATCH", "/ui/products/sig", { name: "x", repositories: pick("github.com/acme/missing") })), [0, 0], "refused edit");
+  assert.deepEqual(await step(() => call("GET", "/ui/products/sig/status")), [0, 0], "read");
+  let id = "";
+  assert.deepEqual(await step(async () => (id = (await call("POST", "/ui/products/sig/threads")).json.id)), [1, 0], "thread created");
+  assert.deepEqual(await step(() => call("DELETE", "/ui/products/sig/threads/nope")), [0, 0], "unknown thread");
+  assert.deepEqual(await step(() => call("DELETE", `/ui/products/sig/threads/${id}`)), [1, 0], "thread deleted");
+  assert.deepEqual(await step(() => call("POST", "/products", { slug: "reg", name: "Reg", definition: { include: [APP] } })), [1, 0], "registry create");
+  assert.deepEqual(await step(() => call("PUT", "/products/reg", { name: "Reg 2", definition: { include: [APP] } })), [1, 0], "registry update");
+  assert.deepEqual(await step(() => call("DELETE", "/products/reg")), [1, 0], "registry delete");
+  assert.deepEqual(await step(() => call("DELETE", "/products/reg")), [0, 0], "registry delete of a missing Product");
+});
+
+test("with no signal transport wired, writes still succeed (the default signals reach nobody)", async () => {
+  const svc = new UiProductService(engine.db, new ConnectionService(engine.db as never, host), () => 0);
+  await assert.doesNotReject(svc.sync("sig"));
 });

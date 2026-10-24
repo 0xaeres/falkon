@@ -86,16 +86,6 @@
           "minimum": 1,
           "description": "Gap between re-listing a connection's repos."
         },
-        "resyncConnectionPollingIntervalMs": {
-          "type": "number",
-          "minimum": 1,
-          "description": "How often the backend looks for connections due to resync."
-        },
-        "reindexRepoPollingIntervalMs": {
-          "type": "number",
-          "minimum": 1,
-          "description": "How often the backend looks for repos due to reindex."
-        },
         "maxConnectionSyncJobConcurrency": {
           "type": "number",
           "minimum": 1,

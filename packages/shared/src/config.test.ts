@@ -105,3 +105,10 @@ test("discussion settings and the connection flag validate", () => {
   assert.throws(() => parseConfig(JSON.stringify({ connections: { g: { type: "github", discussions: "yes" } } })), /invalid/);
   assert.throws(() => parseConfig(JSON.stringify({ settings: { discussionBackfillMonths: 0 } })), /invalid/);
 });
+
+test("a config still naming the removed polling settings loads and ignores them", () => {
+  const c = parseConfig(JSON.stringify({ settings: { maxFileSize: 10, resyncConnectionPollingIntervalMs: 500, reindexRepoPollingIntervalMs: 500 } }));
+  assert.equal(c.settings.maxFileSize, 10);
+  assert.equal("resyncConnectionPollingIntervalMs" in c.settings, false);
+  assert.equal("reindexRepoPollingIntervalMs" in c.settings, false);
+});

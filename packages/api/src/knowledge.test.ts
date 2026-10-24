@@ -5,6 +5,7 @@ import type { INestApplication } from "@nestjs/common";
 import { createAdminApp } from "./admin";
 import { ConnectionService } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";
+import { memorySignals } from "@falkon/shared";
 import { KnowledgeService } from "./knowledge";
 import { PrismaProductRegistry } from "./product";
 import { UiProductService } from "./ui";
@@ -18,6 +19,10 @@ const TWO = "github.com/acme/two";
 const DOCS = "github.com/acme/one-knowledge";
 const GHOST = "github.com/acme/ghost"; // a member with no Repo row yet
 const engine = fakeEngineDb();
+const signals = memorySignals();
+const sent = { changed: 0, request: 0 };
+signals.onChanged(() => sent.changed++);
+signals.onRequest(() => sent.request++);
 let enabled = true;
 let clock = 0; // the config is cached for 30 s: moving the clock past it makes the next request re-read the flag
 let admin: INestApplication;
@@ -31,7 +36,7 @@ before(async () => {
     await engine.product.create({ data: { slug, name: slug, source: "api", definition: { include: repos }, repoNames: repos } });
   }
   const ui = new UiProductService(engine.db, new ConnectionService(engine.db as never), () => clock, async () => ({ enabled, repos: "all" }) as never);
-  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never), TOKEN, {}, undefined, ui, undefined, undefined, new KnowledgeService(engine.db, ui));
+  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never), TOKEN, {}, undefined, ui, undefined, undefined, new KnowledgeService(engine.db, ui, signals));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
 });
@@ -109,4 +114,13 @@ test("a member with no CODE Repo row and a KNOWLEDGE-kind repo are refused with 
   assert.deepEqual(await post("alpha", { repo: GHOST, action: "scan" }), unknown);
   assert.deepEqual(await post("alpha", { repo: DOCS, action: "scan" }), unknown);
   assert.equal(row(DOCS).kbRequest ?? null, null);
+});
+
+test("an accepted action publishes request and changed; a refused one publishes nothing", async () => {
+  clear();
+  const [c, r] = [sent.changed, sent.request];
+  assert.equal((await post("alpha", { repo: ONE, action: "scan" })).status, 201);
+  assert.deepEqual([sent.changed - c, sent.request - r], [1, 1]);
+  assert.equal((await post("alpha", { repo: TWO, action: "scan" })).status, 404);
+  assert.deepEqual([sent.changed - c, sent.request - r], [1, 1]);
 });
