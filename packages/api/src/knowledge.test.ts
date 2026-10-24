@@ -15,6 +15,8 @@ process.env.LLM_MODEL = "m";
 const TOKEN = "t".repeat(40);
 const ONE = "github.com/acme/one";
 const TWO = "github.com/acme/two";
+const DOCS = "github.com/acme/one-knowledge";
+const GHOST = "github.com/acme/ghost"; // a member with no Repo row yet
 const engine = fakeEngineDb();
 let enabled = true;
 let clock = 0; // the config is cached for 30 s: moving the clock past it makes the next request re-read the flag
@@ -24,7 +26,8 @@ before(async () => {
   const indexed = { status: "INDEXED", headCommit: "abc1234567" };
   engine.addRepo(ONE, indexed);
   engine.addRepo(TWO, indexed);
-  for (const [slug, repos] of [["alpha", [ONE]], ["beta", [TWO]], ["both", [ONE, TWO]]] as [string, string[]][]) {
+  engine.addRepo(DOCS, { kind: "KNOWLEDGE" });
+  for (const [slug, repos] of [["alpha", [ONE, DOCS, GHOST]], ["beta", [TWO]], ["both", [ONE, TWO]]] as [string, string[]][]) {
     await engine.product.create({ data: { slug, name: slug, source: "api", definition: { include: repos }, repoNames: repos } });
   }
   const ui = new UiProductService(engine.db, new ConnectionService(engine.db as never), () => clock, async () => ({ enabled, repos: "all" }) as never);
@@ -97,4 +100,13 @@ test("knowledge base disabled in config: refused with a clear message, nothing w
   assert.equal(r.json.errorCode, "KNOWLEDGE_BASE_DISABLED");
   assert.match(r.json.message, /turned off/);
   assert.equal(row(ONE).kbRequest ?? null, null);
+});
+
+test("a member with no CODE Repo row and a KNOWLEDGE-kind repo are refused with the same body as an unknown one", async () => {
+  clear();
+  const unknown = await post("alpha", { repo: "github.com/acme/nope", action: "scan" });
+  assert.equal(unknown.status, 404);
+  assert.deepEqual(await post("alpha", { repo: GHOST, action: "scan" }), unknown);
+  assert.deepEqual(await post("alpha", { repo: DOCS, action: "scan" }), unknown);
+  assert.equal(row(DOCS).kbRequest ?? null, null);
 });

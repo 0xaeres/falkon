@@ -13,14 +13,29 @@ const ACTIONS = [
   ["include", "Include"],
 ] as const;
 
+/** Delete destroys generated docs (regenerating costs model tokens): its first press only arms a confirmation. */
+export function press(
+  armed: string,
+  repo: string,
+  action: KnowledgeActionRequest["action"],
+) {
+  return action === "delete" && armed !== repo
+    ? { armed: repo, send: false }
+    : { armed: "", send: true };
+}
+
 export function SettingsView() {
   const { product, status, refresh } = useWorkspace();
   const [busy, setBusy] = useState("");
+  const [armed, setArmed] = useState("");
   const [actionError, setActionError] = useState("");
   const kb = status?.knowledge;
   const kbLine = knowledgeLine(kb);
   // One request at a time: a double click cannot send the same action twice.
   async function ask(repo: string, action: KnowledgeActionRequest["action"]) {
+    const step = press(armed, repo, action);
+    setArmed(step.armed);
+    if (!step.send) return;
     setBusy(repo);
     setActionError("");
     try {
@@ -78,9 +93,14 @@ export function SettingsView() {
                             busy={busy === repo.id}
                             onClick={() => void ask(repo.id, action)}
                           >
-                            {label}
+                            {armed === repo.id && action === "delete"
+                              ? "Confirm delete"
+                              : label}
                           </Button>
                         ))}
+                        {armed === repo.id && (
+                          <Button onClick={() => setArmed("")}>Cancel</Button>
+                        )}
                       </td>
                     </tr>
                   ))}

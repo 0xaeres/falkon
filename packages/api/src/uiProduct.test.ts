@@ -165,10 +165,28 @@ test("toUiProduct gives each repository a state; a skipped one has state skipped
   assert.ok(!("reason" in p.repositories[4]!));
 });
 
-test("knowledge: a request not yet picked up by the backend shows as pending, below scanning and above failed", () => {
-  const asked = kb("a", "SUCCEEDED", { kbRequest: "scan" });
-  assert.equal(know([asked]).state, "pending");
-  assert.equal(know([asked, kb("b", "FAILED")]).state, "pending");
-  assert.equal(know([asked, kb("b", "RUNNING")]).state, "scanning");
-  assert.equal(know([kb("a", "SUCCEEDED", { kbRequest: "include", kbExcluded: true })]).state, "pending");
+test("knowledge: a request that leads to a scan on a never-scanned selected repo is pending, below scanning, failed and budget-exhausted", () => {
+  const asked = (over: Partial<RepoFacts> = {}) => kb("a", null, { kbScannedCommit: null, kbRequest: "scan", ...over });
+  assert.equal(know([asked()]).state, "pending");
+  assert.equal(know([asked({ kbRequest: "include" })]).state, "pending");
+  assert.equal(know([asked(), kb("b", "RUNNING")]).state, "scanning");
+  assert.equal(know([asked(), kb("b", "FAILED")]).state, "failed");
+  assert.equal(know([asked(), kb("b", "BUDGET_EXHAUSTED")]).state, "budget-exhausted");
+});
+
+test("knowledge: a delete request on a scanned repo is not 'waiting for first scan'", () => {
+  assert.equal(know([kb("a", "SUCCEEDED", { kbRequest: "delete" })]).state, "ready");
+});
+
+test("knowledge: a request on an excluded or unselected repo does not make the Product pending", () => {
+  const ex = kb("a", null, { kbScannedCommit: null, kbRequest: "include", kbExcluded: true });
+  assert.equal(know([ex]).state, "ready");
+  const un = kb("b", null, { kbScannedCommit: null, kbRequest: "scan" });
+  assert.equal(deriveKnowledge(true, true, [un], () => false).state, "ready");
+});
+
+test("knowledge: model not ready or knowledge off wins over a pending request", () => {
+  const asked = kb("a", null, { kbScannedCommit: null, kbRequest: "scan" });
+  assert.equal(know([asked], true, false).state, "no-model");
+  assert.equal(know([asked], false, true).state, "off");
 });

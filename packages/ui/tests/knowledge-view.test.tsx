@@ -9,7 +9,7 @@ import {
 import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 import type { Status } from "@falkon/contracts";
 import { WorkspaceShell } from "../src/components/layout/workspace-shell";
-import { SettingsView } from "../src/features/status/settings-view";
+import { press, SettingsView } from "../src/features/status/settings-view";
 import { keys } from "../src/lib/api/client";
 import { seedProducts } from "./mock-fixtures";
 
@@ -79,4 +79,13 @@ test("settings: knowledge base off in config says so and shows no buttons", () =
 
 test("settings: no knowledge facts (not loaded) shows no controls", () => {
   assert.equal(count(main(render(undefined)), "Scan"), 0);
+});
+
+test("Delete sends nothing until confirmed; Scan and Include send at once", () => {
+  assert.deepEqual(press("", "r", "delete"), { armed: "r", send: false });
+  assert.deepEqual(press("r", "r", "delete"), { armed: "", send: true });
+  assert.deepEqual(press("other", "r", "delete"), { armed: "r", send: false });
+  assert.deepEqual(press("", "r", "scan"), { armed: "", send: true });
+  assert.deepEqual(press("", "r", "include"), { armed: "", send: true });
+  assert.ok(!main(render({ state: "ready" })).includes("Confirm"));
 });

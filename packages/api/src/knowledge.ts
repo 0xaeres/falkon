@@ -22,6 +22,7 @@ export class KnowledgeService {
     // One body for a repository outside the Product and for an unknown one, so the response is no oracle (P12).
     if (!memberNames(row).includes(input.repo)) throw error(404, "NOT_FOUND", "Repository not found.");
     if (!(await this.ui.knowledge()).enabled) throw error(409, "KNOWLEDGE_BASE_DISABLED", "The knowledge base is turned off in the config.");
+    // ponytail: the Product read and this write are not atomic (a transaction at read committed would not lock the row); a repo removed in between still gets the request, which is harmless: the same two fields, admin-only listener.
     const { count } = await this.db.repo.updateMany({ where: { name: input.repo, kind: RepoKind.CODE }, data: { kbRequest: input.action, kbRequestedAt: new Date() } });
     if (!count) throw error(404, "NOT_FOUND", "Repository not found.");
     return this.ui.status(slug);
