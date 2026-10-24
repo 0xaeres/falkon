@@ -34,7 +34,7 @@ export function execute(launch: Launch, task: Task, arm: Arm, cap: number, lineC
       const parsed = parseAnswer(out.result ?? "", lineCount);
       const failed = timedOut || status !== 0 || out.is_error === true || typeof out.result !== "string";
       resolve({
-        taskId: task.id, repository: task.dataset, split: task.split, arm, result: out.result, answer: failed ? [] : parsed.answer, malformed: parsed.malformed, is_error: failed,
+        taskId: task.id, repository: task.dataset, split: task.split, arm, result: out.result, answer: failed ? [] : parsed.answer, malformed: parsed.malformed, droppedSpans: parsed.dropped, is_error: failed,
         total_cost_usd: timedOut || typeof out.total_cost_usd !== "number" ? cap : out.total_cost_usd, usage: out.usage, toolCalls: out.toolCalls, firstTool: out.firstTool, leak: out.leak, deniedAttempts: out.deniedAttempts,
         num_turns: out.num_turns ?? 0, wallClockMs: Date.now() - start, stdout, stderr,
       });
