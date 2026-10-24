@@ -417,6 +417,102 @@ Nothing in `packages/` changes, so registration snapshots and existing datasets 
 
 Fuzzy or word-form matching in `search_discussions` (D134), further prompt iteration after D133, any second pass or extra runs per cell (would need a new spend approval), Phase 1 git history tools.
 
+## Cycle 17 plan: retire `packages/web` (planned 2026-10-24; gate 1 pending)
+
+Goal: one web surface. The Falkon UI (`packages/ui`, Next 16, host port 3100) and the Nest `api` service take over everything the inherited Next 15 app `packages/web` (host port 3000) still does, and `packages/web` is deleted. This fulfils MVP spec D16 and D61 (retire the engine's own pages after the Falkon UI reaches parity) and ADR 4.6 (the old Next.js routes are removed once contract and golden tests pass against the Nest boundary). It is not a history-phase cycle; it was taken up at the human's request after the human found two Next.js apps running and the inherited UI on port 3000.
+
+Base `main` at the commit that holds this plan. Cycle branch `loop/falkon-enterprise-c17`. Roles: Opus plans, Sonnet decides and commits after gate 1, Claude implements, a different Sonnet reviewer checks each slice. Codex is not used.
+
+### Inventory (2026-10-24, read from the tree)
+
+`packages/web` holds two different things:
+- Retire-able Next.js pages and routes: pages `/` (code search, 68 lines), `/repos`, `/ask`, `/chat/[id]`, `/knowledge`; routes `/api/search` (GET and POST), `/api/search/stream`, `/api/repos`, `/api/chat`, `/api/chat/blocking`, `/api/ask`, `/api/chats`, `/api/knowledge` (GET status, POST scan, delete, include) and the unscoped `/api/mcp`.
+- Engine core that must move, not be deleted: `src/lib/mcp.ts` (the MCP server, tool registration, server instructions, `ask_codebase`, `research_codebase`, `list_language_models`), `src/lib/tools.ts` and `repos.ts` (tool dependencies), `src/lib/ask/*` (the Ask agent, prompts, evidence, UI chat stream). The Nest `api` already imports these by relative path (`packages/api/src/main.ts`, `threads.ts`, `tsconfig.json`, three test files), so `/mcp/<product>` and the Falkon UI chat already run this code.
+
+Already covered by the Falkon UI and the Nest `api`: Products (list, create, edit, delete), connections and their repositories, status and sync, chat threads per Product (Ask), connect page, settings, setup, Product-scoped MCP at `/mcp/<product>`, and authentication through `AUTH_MODE` (`none`, or `apiKey` reading the same `ACCESS_FILE`).
+
+Gaps, and what this cycle does with each (decisions below): code search page and API; knowledge base actions; plain HTTP Ask and chat history; the `ask_codebase` link to `/chat/<id>`; the eval harness, eval stack and `scripts/ops-smoke.sh`, which use `/api/mcp` and the `web` service; and other references to `packages/web` (Dockerfile build line, root `dev:web` script, `tests/originality/originality.ts` paths, a comment in `packages/contracts/src/chat.ts`, a source read in `packages/shared/src/historyTools.test.ts`, README, ADR 2.3, 4.6 and section 9 check 4, which counts six services).
+
+### Decisions (grilled 2026-10-24 with the human unless marked default)
+
+| # | Decision |
+|---|---|
+| D135 | Search: the Falkon UI gains a Product-scoped search page with the same features as web's page (query box with the full query syntax, regex and case toggles, results grouped by file with highlighted lines and the match summary); no streaming, no code-host links, no file viewer. A new Nest route serves it, scoped to the Product's repositories. Web's `/api/search` and `/api/search/stream` are removed with web. |
+| D136 | Plain HTTP Ask and chat endpoints (`/api/chat/blocking`, `/api/ask`, `/api/chat`, `/api/chats`) are dropped, not ported. Ask stays reachable through the Falkon UI chat and the MCP tool `ask_codebase`. The README says so. |
+| D137 | The unscoped `/api/mcp` is removed. The eval stack and `scripts/ops-smoke.sh` use `/mcp/<product>` on the `api` service, with a Product holding all 42 O3 repositories; the MCP flags (`MCP_INSTRUCTIONS`, `MCP_IMPACT_RECIPE`, `MCP_HISTORY_TOOLS`) are set on the `api` service. |
+| D138 | Knowledge base: the Falkon UI settings page gains a per-repository scan, delete and re-include control, through a Product-scoped Nest route that sets `kbRequest` as web's route does; only repositories of that Product can be targeted (P12). Web's document list page is dropped (documents stay reachable through search and the read tools). |
+| D139 | `ask_codebase`: chats it creates through `/mcp/<product>` are saved as that Product's threads, and its link opens `/<product>/chat/<thread>` in the Falkon UI. The base URL comes from a setting (default `http://127.0.0.1:3100`). The tool description's sentence about the link changes; that is a reviewed wording change under regression check 1, and the input schema does not change. |
+| D140 | No paid eval run. Regression check 3 is shown by free checks: registration snapshots byte-identical (except the D139 sentence), the contract and golden search tests passing on the new paths, and the eval preflight passing against `/mcp/<product>` on a disposable stack. |
+| D141 (default) | The engine core moves from `packages/web/src/lib` into `packages/api/src/engine/` (its only consumer once web is gone), with its tests. Its dependencies (`ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/openai-compatible`, `@modelcontextprotocol/sdk`, `dedent`) move to `packages/api/package.json` at the same versions; no new dependency, no version change. During the cycle web imports the moved code from the new place, so the build stays green until web is deleted. |
+| D142 (default) | `FALKON_API_KEY` (web's single shared key) and the `falkon_key` cookie are dropped with web; `AUTH_MODE=apiKey` with `ACCESS_FILE` is the remaining key mechanism. The README's upgrade note says so. |
+| D143 (default) | Gate 2 fires when S70 is kept or on any other trigger; the loop's "three slices finished" trigger is set aside for this cycle, as cycle 15 did, because S65 to S69 are each small and S70 needs all of them. |
+
+### Slices
+
+**S65. Move the engine core out of `packages/web`.** Tier standard. Agent claude.
+- Goal: D141.
+- Scope: `packages/web/src/lib/{mcp.ts,tools.ts,repos.ts,serviceError.ts,ask/}` and their tests move to `packages/api/src/engine/`; imports in `packages/api` (`main.ts`, `threads.ts`, tests, `tsconfig.json`, `build.mjs` if needed) and in `packages/web` updated; `packages/api/package.json` and `packages/web/package.json` dependency lists; `tests/originality/originality.ts` paths; the comment in `packages/contracts/src/chat.ts`; the source read in `packages/shared/src/historyTools.test.ts`. No behaviour change.
+- Done: `git log --follow` shows the moves as renames; the MCP registration snapshots (flag off and on) are byte-identical; every moved test passes from its new place; the api esbuild bundle builds and starts; web still builds and its routes still work through the new imports; `pnpm originality` exits 0 where it ran before.
+- Verify: `pnpm install && pnpm db:generate && pnpm typecheck && pnpm test`; `pnpm --filter @falkon/api build`; `pnpm --filter @falkon/web build`.
+- Adversarial cases: a test that resolves fixtures by relative path; the lazy child-process test (`lazy.child.ts`) whose path is computed at run time; the api bundle missing a dynamic import (`uiChat`); a dependency version drifting during the move.
+- Blocked by: none.
+
+**S66. Eval harness and ops smoke on the Product path.** Tier standard. Agent claude. Needs Docker (disposable `falkon-eval*` projects only); no model spend.
+- Goal: D137.
+- Scope: `tests/eval/stack.ts`, `tests/eval/cli.ts`, `tests/eval/preflight.ts` if needed, their tests, `scripts/ops-smoke.sh`, the eval section of `README.md`.
+- Done: `stack up` creates a Product (for example `o3`) holding all 42 repositories and prints `http://127.0.0.1:<port>/mcp/o3`; the MCP flags are set on the `api` service; `preflight` passes against it with and without `--prs on`; reporting stored runs prints the same numbers as before (nothing about scoring changes); `scripts/ops-smoke.sh` talks to the api service. The `web` service is still defined until S70, but nothing in the eval or the smoke depends on it.
+- Verify: `pnpm typecheck && pnpm test`; `pnpm eval -- stack up` then `pnpm eval -- preflight`, then `stack down` (and `stack down --prs on` for the pull request stack); the stored cycle 15 report rescored and diffed.
+- Adversarial cases: a Product created twice on a re-used stack; an API key set (`AUTH_MODE=apiKey`) and missing; the v6 reference arm, which keeps its own external URL; a stack started before the Product exists (preflight names the cause).
+- Blocked by: none.
+
+**S67. Search in the Falkon UI.** Tier standard. Agent claude.
+- Goal: D135.
+- Scope: `packages/contracts` (search request and response schemas), `packages/api/src/` (a Product-scoped search route on the listener the UI uses, delegating to `search` from `@falkon/shared` with the Product's repository filter), `packages/ui` (a route handler, a page under `(workspace)/[productId]/search`, a navigation entry, the mock used when `ENGINE_URL` is unset), tests.
+- Done: the page runs a query and shows results grouped by file with highlighted lines, match and file counts, `+` when not exhaustive, and query-syntax errors as messages; a repository outside the Product never appears (P12, test with two Products); the golden search query set (regression check 2) returns identical results through the new route as through `@falkon/shared` directly; regex and case toggles work.
+- Verify: `pnpm typecheck && pnpm test`; `pnpm --filter @falkon/ui build`.
+- Adversarial cases: an empty query; a query naming `repo:` outside the Product; a search context (`context:`) that spans two Products; a huge result (capped like web's 500 default and 5000 maximum); a Zoekt timeout; an unknown Product slug.
+- Blocked by: none.
+
+**S68. Knowledge base actions in the Falkon UI settings.** Tier standard. Agent claude.
+- Goal: D138.
+- Scope: `packages/contracts`, `packages/api/src/ui.ts` (or a sibling) with a Product-scoped action route, `packages/ui` settings page and route handler, tests.
+- Done: per repository of the Product, scan, delete and re-include buttons set `kbRequest` and `kbRequestedAt` exactly as web's `/api/knowledge` POST does, and the status shown afterwards reflects the pending request; a repository outside the Product is refused (P12); an unknown repository is a 404.
+- Verify: `pnpm typecheck && pnpm test`; `pnpm --filter @falkon/ui build`.
+- Adversarial cases: a repository in two Products; delete on a repository with no knowledge base; double click (idempotent); knowledge base disabled in config (controls hidden or refused with a clear message).
+- Blocked by: none.
+
+**S69. `ask_codebase` links to the Falkon UI thread.** Tier standard. Agent claude.
+- Goal: D139.
+- Scope: `packages/api/src/engine/` (after S65: `mcp.ts`, `ask/chat.ts`), `packages/api/src/main.ts` or `app.ts` (pass the Product slug into the MCP server), `packages/shared/src/config.ts` or env for the UI base URL, README, tests.
+- Done: an `ask_codebase` call through `/mcp/<product>` saves a chat with that `productId`, which then appears in the Falkon UI's thread list for the Product, and the returned link is `<ui base>/<product>/chat/<id>`; the registration snapshot differs only in the one description sentence, which the reviewer checks by hand; the input schema is unchanged.
+- Verify: `pnpm typecheck && pnpm test`.
+- Adversarial cases: a public chat (`visibility: PUBLIC`) and how the UI shows it; a Product slug with characters that need encoding; the UI base URL unset (the default is used); a chat created under `AUTH_MODE=apiKey` by a key that is not the UI principal (thread list rule decided in the slice and tested).
+- Blocked by: S65.
+
+**S70. Delete `packages/web`.** Tier standard. Agent claude.
+- Goal: one web surface.
+- Scope: delete `packages/web`; `docker-compose.yml` (remove the `web` service; the backend and other services keep working), `docker/Dockerfile` (drop the web build), root `package.json` (`dev:web`), `pnpm-lock.yaml` (by `pnpm install`), `tests/eval/stack.ts` (drop the web service), `scripts/ops-smoke.sh` (five services; the six-service check and its memory line updated), `README.md` (ports, services table, upgrade notes for D136, D137 and D142), `docs/adr/0001-falkon-architecture.md` amended in place (2.3, 3, 4.6 "the old routes are removed", section 9 check 4's service count), `CONTEXT.md` only if a term changes. Whether the Falkon UI moves to host port 3000 is not part of this slice (the human may ask at gate 2).
+- Done: `grep -rn "@falkon/web\|packages/web" --exclude-dir=node_modules --exclude-dir=.scratch .` finds nothing; `docker compose up --build` comes up cold with no `web` service; `scripts/ops-smoke.sh` passes (cold start, index, resync on push, delete a repository, memory printed for five services); the Falkon UI's chat, search, settings, status and connect pages work against the stack; `/mcp/<product>` answers the eval preflight.
+- Verify: `pnpm install && pnpm typecheck && pnpm test`; `docker compose -p falkon-eval-c17 up --build -d` then `scripts/ops-smoke.sh` (disposable project; never the human's `falkon` project); the eval preflight from S66.
+- Adversarial cases: a lingering import of a deleted file (caught by typecheck); the Dockerfile still copying `packages/web`; an operator's existing `config.json` or `.env` naming `FALKON_API_KEY` (documented, ignored, no crash); the old `falkon_key` cookie arriving at the UI (ignored).
+- Blocked by: S65, S66, S67, S68, S69.
+
+### Regression gate
+
+Check 1: registration snapshots byte-identical except the one `ask_codebase` sentence of D139, reviewed by hand. Check 2: the golden search set passes through `@falkon/shared` and through the new search route. Check 3: no paid run (D140); preflight on `/mcp/<product>` and the unchanged report of stored runs stand in. Check 4: `scripts/ops-smoke.sh` on five services. `pnpm typecheck && pnpm test` pass after every slice.
+
+### Order, limits, budget
+
+- Wave 1: S65, S66, S67 in parallel (S66 touches only `tests/eval` and `scripts`; S67 adds new files beside S65's moves and must not edit moved files). Wave 2: S68 and S69 (S69 after S65). Wave 3: S70.
+- The loop may decide alone: details inside each slice's scope, file names under `packages/api/src/engine/`, the UI layout of the new page and controls within the existing design, fix rounds, one rerun of a failed verify.
+- It stops for: any new dependency or version change; any change to the MCP tool registration beyond the D139 sentence; any change to how existing datasets score; a schema change (none planned); ADR or glossary changes beyond the S70 amendment; any paid model call; any push or pull request; Docker beyond disposable `falkon-eval*` projects.
+- Docker: one stack at a time, only disposable `falkon-eval*` projects; never the human's `falkon` project or the `falcon-sourcebot-*` containers.
+- Budget: 1.6M subagent tokens and 360 minutes (recent cycles used 0.26M to 1.05M for three to four slices; six slices here, none hard).
+
+### Not in this cycle
+
+Moving the Falkon UI to host port 3000; a file viewer or code-host links in search; streaming search; a knowledge base document list; porting plain HTTP Ask.
+
 ## Next
 
 Phase 1: shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
