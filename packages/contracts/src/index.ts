@@ -56,7 +56,7 @@ export const statusSchema = z.object({
   verdict: z.string(),
   sentence: z.string(),
   generation: z.string().nullable(),
-  generationAge: z.string(),
+  generationAt: z.number().nullable(), // epoch ms of the newest indexed repository; the page renders the age
   nextGeneration: z.string().nullable(),
   build: z.enum(["idle", "building", "failed"]),
   stage: z.number().min(0).max(4),

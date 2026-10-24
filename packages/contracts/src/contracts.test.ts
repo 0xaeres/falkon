@@ -180,7 +180,7 @@ test("editRequestSchema takes name and repositories only; setup-only fields are 
 });
 
 test("status knowledge is optional and its state is a closed set", () => {
-  const base = { productId: "p", verdict: "v", sentence: "s", generation: null, generationAge: "not yet", nextGeneration: null, build: "idle", stage: 0, progress: 0, sync: "current", gaps: [], scenario: "building" };
+  const base = { productId: "p", verdict: "v", sentence: "s", generation: null, generationAt: null, nextGeneration: null, build: "idle", stage: 0, progress: 0, sync: "current", gaps: [], scenario: "building" };
   assert(statusSchema.safeParse(base).success);
   assert(statusSchema.safeParse({ ...base, knowledge: { state: "no-model", detail: "No model configured" } }).success);
   assert(statusSchema.safeParse({ ...base, knowledge: { state: "ready" } }).success);

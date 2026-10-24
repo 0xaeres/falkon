@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/primitives";
 import { api } from "@/lib/api/client";
 import { knowledgeLine } from "@/lib/knowledge";
+import { generationAge } from "@/lib/format";
+import { useMinute } from "@/lib/use-minute";
 import { repoState } from "./repo-state";
 
 export function StatusView() {
@@ -18,6 +20,7 @@ export function StatusView() {
     useWorkspace();
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
+  useMinute(); // re-renders each minute; the age itself reads the real clock
   if (statusError)
     return (
       <ErrorState error={statusError} retry={() => void refreshStatus()} />
@@ -49,8 +52,8 @@ export function StatusView() {
           <p className="vs">
             {status.generation ? (
               <>
-                <span className="mono">{status.generation}</span> · published{" "}
-                {status.generationAge}
+                <span className="mono">{status.generation}</span>{status.generationAt !== null &&
+                  ` · published ${generationAge(status.generationAt)}`}
               </>
             ) : (
               "No generation published yet"
