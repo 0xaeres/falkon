@@ -9,6 +9,7 @@ import { ConnectionService } from "./connections";
 import { PrismaProductRegistry } from "./product";
 import { KnowledgeService } from "./knowledge";
 import { SearchService } from "./search";
+import { ProductEvents } from "./events";
 import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
 
@@ -30,4 +31,5 @@ console.log(`api listening on ${host}:${port} (AUTH_MODE=${process.env.AUTH_MODE
 const connections = new ConnectionService(prisma);
 const ui = new UiProductService(prisma, connections, Date.now, undefined, signals);
 productDeps.generation = async (slug) => (await ui.status(slug)).generation ?? "";
-await startAdmin(registry, process.env, connections, ui, new ThreadService(prisma, ui, signals), new SearchService(prisma), new KnowledgeService(prisma, ui, signals));
+const threads = new ThreadService(prisma, ui, signals);
+await startAdmin(registry, process.env, connections, ui, threads, new SearchService(prisma), new KnowledgeService(prisma, ui, signals), new ProductEvents(ui, threads, signals));

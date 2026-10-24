@@ -12,6 +12,7 @@ import { ConnectionsController, ConnectionService } from "./connections";
 import { allowedHosts, restrict, sendJson } from "./http";
 import { body, error } from "./request";
 import { isProductName, PRODUCT_REGISTRY, type ProductRegistry } from "./product";
+import { ProductEvents, ProductEventsController } from "./events";
 import { KnowledgeController, KnowledgeService } from "./knowledge";
 import { SearchController, SearchService } from "./search";
 import { ThreadService, ThreadsController } from "./threads";
@@ -138,13 +139,13 @@ function requireBearer(app: INestApplication, token: () => string) {
  * The admin listener: `GET/POST /products`, `GET/PUT/DELETE /products/:slug` and, when a ConnectionService is given,
  * `POST|GET /connections`, `DELETE /connections/:id`, `PUT /connections/:id/token`, `GET /connections/:id/repositories`
  * and, when a UiProductService is given, the six UI-shaped routes under `/ui/products` and, when a ThreadService is given too,
- * the thread routes (including resume and stop) under `/ui/products/:slug/threads` and, when a SearchService is given, `GET /ui/products/:slug/search` and, when a KnowledgeService is given, `POST /ui/products/:slug/knowledge`.
+ * the thread routes (including resume and stop) under `/ui/products/:slug/threads` and, when a SearchService is given, `GET /ui/products/:slug/search` and, when a KnowledgeService is given, `POST /ui/products/:slug/knowledge` and, when a ProductEvents is given, the event stream `GET /ui/products/:slug/events`.
  * Everything else is 404, all behind `Authorization: Bearer <token>`. It must still listen on loopback only
  * (API_ADMIN_HOST, default 127.0.0.1).
  */
-export async function createAdminApp(registry: ProductRegistry, token: string | (() => string), env: Record<string, string | undefined> = process.env, connections?: ConnectionService, ui?: UiProductService, threads?: ThreadService, searches?: SearchService, knowledge?: KnowledgeService) {
+export async function createAdminApp(registry: ProductRegistry, token: string | (() => string), env: Record<string, string | undefined> = process.env, connections?: ConnectionService, ui?: UiProductService, threads?: ThreadService, searches?: SearchService, knowledge?: KnowledgeService, events?: ProductEvents) {
   @Module({
-    controllers: [ProductsController, ...(connections ? [ConnectionsController] : []), ...(ui ? [UiProductsController] : []), ...(threads ? [ThreadsController] : []), ...(searches ? [SearchController] : []), ...(knowledge ? [KnowledgeController] : [])],
+    controllers: [ProductsController, ...(connections ? [ConnectionsController] : []), ...(ui ? [UiProductsController] : []), ...(threads ? [ThreadsController] : []), ...(searches ? [SearchController] : []), ...(knowledge ? [KnowledgeController] : []), ...(events ? [ProductEventsController] : [])],
     providers: [
       { provide: PRODUCT_REGISTRY, useValue: registry },
       ...(connections ? [{ provide: ConnectionService, useValue: connections }] : []),
@@ -152,6 +153,7 @@ export async function createAdminApp(registry: ProductRegistry, token: string | 
       ...(threads ? [{ provide: ThreadService, useValue: threads }] : []),
       ...(searches ? [{ provide: SearchService, useValue: searches }] : []),
       ...(knowledge ? [{ provide: KnowledgeService, useValue: knowledge }] : []),
+      ...(events ? [{ provide: ProductEvents, useValue: events }] : []),
     ],
   })
   class AdminModule {}
@@ -162,11 +164,11 @@ export async function createAdminApp(registry: ProductRegistry, token: string | 
 }
 
 /** Starts the admin listener (always on: a token always exists). Throws on a short ADMIN_TOKEN. */
-export async function startAdmin(registry: ProductRegistry, env: Record<string, string | undefined> = process.env, connections?: ConnectionService, ui?: UiProductService, threads?: ThreadService, searches?: SearchService, knowledge?: KnowledgeService) {
+export async function startAdmin(registry: ProductRegistry, env: Record<string, string | undefined> = process.env, connections?: ConnectionService, ui?: UiProductService, threads?: ThreadService, searches?: SearchService, knowledge?: KnowledgeService, events?: ProductEvents) {
   const token = adminToken(env);
   const host = env.API_ADMIN_HOST ?? "127.0.0.1";
   const port = Number(env.API_ADMIN_PORT ?? 3002);
-  const admin = await createAdminApp(registry, token, env, connections, ui, threads, searches, knowledge);
+  const admin = await createAdminApp(registry, token, env, connections, ui, threads, searches, knowledge, events);
   admin.enableShutdownHooks();
   await admin.listen(port, host);
   console.log(`api admin listening on ${host}:${port}`);

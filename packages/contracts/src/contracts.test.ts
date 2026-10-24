@@ -8,6 +8,7 @@ import {
   editRequestSchema,
   evidencePartSchema,
   evidenceSchema,
+  productEventSchemas,
   productIdSchema,
   repositoriesQuery,
   repositorySchema,
@@ -192,4 +193,13 @@ test("a repository's state is optional and a closed set that includes skipped", 
   assert(repositorySchema.safeParse(base).success);
   for (const state of ["pending", "indexing", "indexed", "failed", "skipped"]) assert(repositorySchema.safeParse({ ...base, state }).success, state);
   assert(!repositorySchema.safeParse({ ...base, state: "weird" }).success);
+});
+
+test("productEventSchemas: status is a status, threads is a list of summaries", () => {
+  const thread = { id: "t1", productId: "alpha", title: "Q", updatedAt: 1 };
+  assert.deepEqual(Object.keys(productEventSchemas).sort(), ["status", "threads"]);
+  assert(productEventSchemas.threads.safeParse([thread]).success);
+  assert(productEventSchemas.threads.safeParse([]).success);
+  assert(!productEventSchemas.threads.safeParse([{ ...thread, updatedAt: "x" }]).success);
+  assert(!productEventSchemas.status.safeParse({ productId: "alpha" }).success);
 });

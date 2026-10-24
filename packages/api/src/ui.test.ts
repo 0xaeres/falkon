@@ -9,6 +9,7 @@ import { knowledgeBaseSchema, memorySignals } from "@falkon/shared";
 import { createAdminApp } from "./admin";
 import { ConnectionService, type CodeHost } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";
+import { ProductEvents } from "./events";
 import { PrismaProductRegistry } from "./product";
 import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
@@ -39,7 +40,8 @@ let base: string;
 before(async () => {
   const connections = new ConnectionService(engine.db as never, host);
   const ui = new UiProductService(engine.db, connections, () => clock, undefined, signals);
-  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never, signals), TOKEN, {}, connections, ui, new ThreadService(engine.db, ui, signals));
+  const threads = new ThreadService(engine.db, ui, signals);
+  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never, signals), TOKEN, {}, connections, ui, threads, undefined, undefined, new ProductEvents(ui, threads, signals));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
 });
@@ -179,13 +181,13 @@ test("create validation: unknown connection, repo outside the listing, duplicate
   assert.equal((await call("GET", "/ui/products", undefined, false)).status, 401);
 });
 
-test("route enumeration: the admin listener has exactly the S20a routes, the six /ui/products routes and the seven thread routes", () => {
+test("route enumeration: the admin listener has exactly the S20a routes, the six /ui/products routes, the event stream and the seven thread routes", () => {
   const router = (admin.getHttpAdapter().getInstance() as { router: { stack: { route?: { path: string; methods: Record<string, boolean> } }[] } }).router;
   const routes = router.stack.flatMap((l) => (l.route ? Object.keys(l.route.methods).map((m) => `${m.toUpperCase()} ${l.route!.path}`) : [])).sort();
   assert.deepEqual(routes, [
     "DELETE /connections/:id", "DELETE /products/:slug", "DELETE /ui/products/:slug/threads/:id",
     "GET /connections", "GET /connections/:id/repositories", "GET /products", "GET /products/:slug",
-    "GET /ui/products", "GET /ui/products/:slug", "GET /ui/products/:slug/status",
+    "GET /ui/products", "GET /ui/products/:slug", "GET /ui/products/:slug/events", "GET /ui/products/:slug/status",
     "GET /ui/products/:slug/threads", "GET /ui/products/:slug/threads/:id", "GET /ui/products/:slug/threads/:id/stream",
     "PATCH /ui/products/:slug",
     "POST /connections", "POST /products", "POST /ui/products", "POST /ui/products/:slug/sync",

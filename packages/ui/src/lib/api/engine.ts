@@ -76,7 +76,13 @@ export async function forward(
           : "application/json",
         "cache-control": "no-store",
         ...(init.stream
-          ? { "x-vercel-ai-ui-message-stream": "v1", "x-accel-buffering": "no" }
+          ? {
+              "x-accel-buffering": "no",
+              // only the engine's chat streams carry the marker; the event stream does not
+              ...(res.headers.get("x-vercel-ai-ui-message-stream")
+                ? { "x-vercel-ai-ui-message-stream": "v1" }
+                : {}),
+            }
           : {}),
       },
     });

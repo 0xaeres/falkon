@@ -181,6 +181,9 @@ export const syncRequestSchema = z.object({ action: z.literal("retry") });
 // Body of POST /ui/products/:slug/knowledge: what the backend is asked to do to one member repository's knowledge base.
 export const knowledgeActionRequestSchema = z.object({ repo: z.string().min(1).max(500), action: z.enum(["scan", "delete", "include"]) });
 export type KnowledgeActionRequest = z.infer<typeof knowledgeActionRequestSchema>;
+// The Product event stream (GET /ui/products/:slug/events): server-sent events named by key, each `data` one JSON value of the schema.
+export const productEventSchemas = { status: statusSchema, threads: z.array(threadSummarySchema) };
+export type ProductEventName = keyof typeof productEventSchemas;
 export type Provider = z.infer<typeof providerSchema>;
 export type Repository = z.infer<typeof repositorySchema>;
 export type Product = z.infer<typeof productSchema>;

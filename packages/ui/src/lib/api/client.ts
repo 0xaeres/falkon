@@ -21,6 +21,7 @@ export const keys = {
     `${base}/repositories?connection=${encodeURIComponent(connectionId)}&q=${encodeURIComponent(q)}`,
   product: (id: string) => `${base}/products/${encodeURIComponent(id)}`,
   status: (id: string) => `${base}/products/${encodeURIComponent(id)}/status`,
+  events: (id: string) => `${base}/products/${encodeURIComponent(id)}/events`,
   threads: (id: string) => `${base}/products/${encodeURIComponent(id)}/threads`,
   thread: (productId: string, threadId: string) =>
     `${base}/products/${encodeURIComponent(productId)}/threads/${encodeURIComponent(threadId)}`,
