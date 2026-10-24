@@ -1,0 +1,102 @@
+{
+  "rest": [
+    {
+      "file": "dataentrystatistics-issues",
+      "request": "GET repos/openmrs/openmrs-module-dataentrystatistics/issues?state=all&sort=updated&direction=asc&since=2017-01-01T00:00:00Z&per_page=100",
+      "status": "HTTP/2.0 200 OK",
+      "rateLimitHeaders": {
+        "x-ratelimit-limit": "5000",
+        "x-ratelimit-remaining": "4954",
+        "x-ratelimit-reset": "1792811421",
+        "x-ratelimit-resource": "core",
+        "x-ratelimit-used": "46"
+      }
+    },
+    {
+      "file": "dataentrystatistics-probe",
+      "request": "GET repos/openmrs/openmrs-module-dataentrystatistics/pulls?per_page=1",
+      "status": "HTTP/2.0 200 OK",
+      "rateLimitHeaders": {
+        "x-ratelimit-limit": "5000",
+        "x-ratelimit-remaining": "4953",
+        "x-ratelimit-reset": "1792811421",
+        "x-ratelimit-resource": "core",
+        "x-ratelimit-used": "47"
+      }
+    },
+    {
+      "file": "keycloak-smart-auth-issues",
+      "request": "GET repos/openmrs/openmrs-contrib-keycloak-smart-auth/issues?state=all&sort=updated&direction=asc&since=2017-01-01T00:00:00Z&per_page=100",
+      "status": "HTTP/2.0 200 OK",
+      "rateLimitHeaders": {
+        "x-ratelimit-limit": "5000",
+        "x-ratelimit-remaining": "4952",
+        "x-ratelimit-reset": "1792811421",
+        "x-ratelimit-resource": "core",
+        "x-ratelimit-used": "48"
+      }
+    },
+    {
+      "file": "keycloak-smart-auth-probe",
+      "request": "GET repos/openmrs/openmrs-contrib-keycloak-smart-auth/pulls?per_page=1",
+      "status": "HTTP/2.0 200 OK",
+      "rateLimitHeaders": {
+        "x-ratelimit-limit": "5000",
+        "x-ratelimit-remaining": "4951",
+        "x-ratelimit-reset": "1792811421",
+        "x-ratelimit-resource": "core",
+        "x-ratelimit-used": "49"
+      }
+    },
+    {
+      "file": "querystore-issues",
+      "request": "GET repos/openmrs/openmrs-module-querystore/issues?state=all&sort=updated&direction=asc&since=2017-01-01T00:00:00Z&per_page=100",
+      "status": "HTTP/2.0 200 OK",
+      "rateLimitHeaders": {
+        "x-ratelimit-limit": "5000",
+        "x-ratelimit-remaining": "4950",
+        "x-ratelimit-reset": "1792811421",
+        "x-ratelimit-resource": "core",
+        "x-ratelimit-used": "50"
+      }
+    },
+    {
+      "file": "dataentrystatistics-commit-pulls",
+      "request": "GET repos/openmrs/openmrs-module-dataentrystatistics/commits/bd64dafb4351de34629e3d2d343a29196e168dae/pulls",
+      "status": "HTTP/2.0 200 OK",
+      "rateLimitHeaders": {
+        "x-ratelimit-limit": "5000",
+        "x-ratelimit-remaining": "4949",
+        "x-ratelimit-reset": "1792811421",
+        "x-ratelimit-resource": "core",
+        "x-ratelimit-used": "51"
+      }
+    }
+  ],
+  "graphql": [
+    {
+      "file": "dataentrystatistics-pulls.json",
+      "rateLimit": {
+        "cost": 1,
+        "remaining": 4924,
+        "resetAt": "2026-10-24T03:32:49Z"
+      }
+    },
+    {
+      "file": "keycloak-smart-auth-pulls.json",
+      "rateLimit": {
+        "cost": 1,
+        "remaining": 4923,
+        "resetAt": "2026-10-24T03:32:49Z"
+      }
+    },
+    {
+      "file": "openmrs-core-pulls.json",
+      "rateLimit": {
+        "cost": 1,
+        "remaining": 4954,
+        "resetAt": "2026-10-24T03:32:50Z"
+      }
+    }
+  ]
+}
