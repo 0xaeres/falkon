@@ -374,6 +374,24 @@ A GitHub connection syncs pull requests only when it sets `"discussions": true` 
 | `settings.discussionBackfillMonths` | 24 | How far back a repository's first sync reads |
 | `DISCUSSION_SYNC_INTERVAL_MS` (web) | 900000 | Set it to the same value as `discussionSyncIntervalMs`: the history tools call a repository stale after twice this |
 
+**Turn it on.** In the GitHub connection of `config.json` set `"discussions": true`. The connection's own token does the reading, so it needs these permissions:
+
+- Fine-grained token: Pull requests: Read, Issues: Read (a pull request's conversation comments come from the issues API) and Contents: Read (cloning).
+- Classic token: scope `repo` (private repositories) or `public_repo` (public only).
+
+Every run of a repository starts by probing its pull requests and issue comments with one small read each. A refusal marks the repository `no-access`; the history tools then report a coverage gap that names the missing permissions, and other repositories keep syncing.
+
+**Prove it with a real token.** The smoke script syncs two small public repositories (default `openmrs/openmrs-module-dataentrystatistics` and `openmrs/openmrs-contrib-keycloak-smart-auth`; pass `owner/name` arguments to change them) into a throwaway Postgres container named `falkon-eval-sync-pg`. It needs Docker, git and pnpm, and removes the container on exit. It reads the token from your shell's environment (or prompts for it when unset in a terminal) and never prints or stores it. It prints repositories synced, pull requests stored, commit links (rule and api), requests used and remaining budget, the permission probe result per repository, and `PASS` or `FAIL` with the first failing reason. It pulls `postgres:17-alpine` over the network and clones the repositories from github.com. Any token that can read public repositories works for the test (a fine-grained token limited to the owner's own repositories may not). Type the token yourself, never paste it into a chat or an agent session:
+
+```sh
+read -rs GITHUB_TOKEN && export GITHUB_TOKEN
+scripts/sync-smoke.sh
+```
+
+**Freshness.** With `MCP_HISTORY_TOOLS=on`, every history tool result lists, for each repository it read, `lastSyncedAt` and `stale`. `stale: true` (with a `reason`) means the last success is older than twice the sync interval, the last run failed, the sync is waiting for the rate limit, or the token cannot read the repository. The data is still served from what was stored; an agent should treat it as possibly behind GitHub and say so. The tools read only Postgres and never call GitHub.
+
+**Limits.** Polling only: no webhooks, so a change shows after the next run (15 minutes by default). Pull requests only: issues are not synced. A first sync reads the last 24 months of pull requests; older history stays reachable through git. A pull request with more than 100 comments, reviews or files, or 30 review threads, is stored with those parts cut and flagged `truncated`. When the rate-limit budget falls below 10% the sync stops, saves its progress and resumes after GitHub's reset time.
+
 ### Environment variables
 
 | Variable | Default | Effect |
