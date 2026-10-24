@@ -326,6 +326,30 @@ Check 1 (registration snapshots with `MCP_HISTORY_TOOLS` off) stays byte-identic
 
 - Issues, webhooks, Jira, the git-only history tools of Phase 1, visibility synced from GitHub (Phase 6).
 
+## Cycle 15 results: the live GitHub sync (waiting at gate 2)
+
+Built on the cycle branch `loop/falkon-enterprise-c15` (base `a87c380`): S51 recorded GitHub responses; S52 sync state (rate-limit yield, no-access); S53 the GitHub adapter; S54 scheduler, queue and settings; S55 freshness in the history tools; S56 unlinked-commit fallback; S57 smoke script, README and ADR 4.11 amendment; S58 eval prompt, parser and rescore fixes; S59 search hint; S60 repository-name hint; S61 the paid rerun. Claude agents built them; a separate Sonnet reviewer checked every slice. Seven of the ten reviewed slices needed one fix round, each for a real defect found by review: S59 (an unparenthesised OR in the new SQL would have escaped the repository scope, a Product-isolation breach), S60 (the hint lookup could replace the not-found error), S53 (a rate-limit 403 was recorded as no-access, the probe skipped the issues-comments permission, the cursor could skip unread items), S54 (repositories failing before any state was saved starved the others; a running backfill could be queued twice), S56 (one commit GitHub does not know blocked every older commit), S57 (a Postgres readiness race, a cleanup that could remove another run's container, ADR wording). S51, S52, S55 and S58 passed review without blocking findings.
+
+Not yet verified: the new SQL and the live path against a real Postgres and a real GitHub. The Postgres variants of the contract tests skip without `PROVENANCE_TEST_DATABASE_URL`; the real-token smoke run (`scripts/sync-smoke.sh`) is the human's step at this gate.
+
+Rerun (S61, D128; Haiku, one run per question, same day, fresh stacks, 40 of 40 per arm; raw runs `eval-runs-c15/`, report `baseline-c15-report.md`; `--reference clone-tools-git`). Spend $2.7108 of the new $5 cap.
+
+| | clone-tools-git | clone-tools-git-prs |
+|---|---|---|
+| recall, all 40 (cycle 14) | 0.745 (0.691) | 0.844 (0.849) |
+| precision, all 40 (cycle 14) | 0.563 (0.544) | 0.576 (0.544) |
+| "why" recall / precision (cycle 14) | 0.531 / 0.349 (0.531 / 0.336) | 0.844 / 0.498 (0.854 / 0.276) |
+| "what changed and when" recall / precision | 0.843 / 0.640 (0.823 / 0.788) | 0.764 / 0.610 (0.828 / 0.772) |
+| "ticket to code" recall / precision | 0.931 / 0.773 (0.771 / 0.576) | 0.924 / 0.648 (0.861 / 0.673) |
+
+Difference, new arm minus git arm: recall +0.099 [0.012, 0.188] (14 wins, 6 losses, 20 ties); dev +0.047 [-0.056, 0.158]; hidden +0.177 [0.021, 0.318]. The printed verdict is "withheld", not a pass or fail, because the git arm has one leak flag: hist-b-09 used the built-in Grep on the Claude CLI's own tool-result spill folder for an oversized diff (the harness path pattern does not recognise the folder itself; same class as the cycle 13 flag on hist-a-05; no corpus data was read). Without the flag the lower bound is above zero.
+
+What the numbers say. (1) The prompt and parser fixes (S58) worked: the three questions lost to them in cycle 14 recovered on the new arm (the repository-name example hist-b-05, the span-prefix cases hist-c-01 and hist-c-09), the search-usability question hist-a-09 also recovered, dropped spans are 0 in both arms, and the git arm improved on kind "ticket to code" (0.771 to 0.931) from the same fixes. (2) "Why" precision of the new arm rose from 0.276 to 0.498, as predicted. (3) The new arm's recall did not rise, so the gap over the git arm shrank from +0.158 to +0.099, because the git arm benefited from S58 too; the new arm lost recall on other questions (hist-a-14 0.67 to 0.00, hist-a-07 1.00 to 0.50, hist-b-12 0.83 to 0.33 and others), at one run per cell this is within noise of the kind seen in cycle 13 to 14, but it is not proven noise. (4) "What changed and when" precision fell in both arms (about -0.15), which the S58 instruction to list only the answering change probably causes (fewer spans listed, so fewer sure hits); to be checked before the prompt is frozen. (5) "Repository not found" errors fell only modestly (like-for-like count of tool results: git arm 82 to 68, new arm 88 to 68; 66 and 68 of them carried the "Did you mean" hint). The 164 and 176 quoted in the cycle 14 analysis counted each error twice, so the earlier "about four wasted calls per run" is really about two. (6) The search hint was returned twice in 28 `search_discussions` calls. (7) Tool use in the new arm: get_pull_request 80, search_discussions 28, get_provenance 39.
+
+Note for the runner: with concurrency 3 and a $1 per-run reservation, the runner stops new runs when ledger spend plus the reservation passes the cap even though real spend is lower; the dev split needed seven reruns of the same command. Also `stack down` leaves the `--prs on` stack up (`stack down --prs on` is needed).
+
+Decisions waiting for the human at gate 2: see the gate 2 digest in the session; recorded here when answered.
+
 ## Next
 
 Phase 1: shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
