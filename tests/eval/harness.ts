@@ -15,7 +15,7 @@ const mcp = (name: string) => `mcp__${SERVER}__${name}`;
 const toolsFor = (arm: Arm) => arm === "clone-research" ? [...TOOLS, "research_codebase"] : arm === "clone-tools-git" ? [...TOOLS, ...GIT_TOOLS] : arm === "clone-tools-git-prs" ? [...TOOLS, ...GIT_TOOLS, ...PR_TOOLS] : TOOLS;
 const deniedFor = (arm: Arm) => [...(arm === "clone-research" ? [] : ["research_codebase"]), ...(arm === "clone-tools-git" || arm === "clone-tools-git-prs" ? [] : GIT_TOOLS), ...(arm === "clone-tools-git-prs" ? [] : PR_TOOLS)];
 
-const historyCommon = (question: string) => `Answer the repository question by listing every piece of evidence that answers it (all of them, since scoring is by recall), best first. End with one fenced json array of at most 20 items, each one of: {"path": "repo-relative path", "startLine": 1, "endLine": 1} for a source span (inclusive, 1-based); {"repo": "openmrs-core", "commit": "<sha>"} for a commit; {"repo": "openmrs-core", "pr": 123} for a pull request; {"ticket": "TRUNK-1234"} for a ticket. Repo names are bare repository names, for example "openmrs-core", without a host prefix; commits are SHAs of at least 7 characters; PRs are numbers; tickets are keys like TRUNK-1234. Ignore any citation format the server describes; end only with the json array described here. Do not modify files.\n\nQuestion:\n${question}`;
+const historyCommon = (question: string) => `Answer the repository question by listing every piece of evidence that answers it (all of them, since scoring is by recall), best first. End with one fenced json array of at most 20 items, each one of: {"path": "<repository-name>/<path inside the repository>", "startLine": 1, "endLine": 1} for a source span (inclusive, 1-based); {"repo": "<repository-name>", "commit": "<sha>"} for a commit; {"repo": "<repository-name>", "pr": 123} for a pull request; {"ticket": "TRUNK-1234"} for a ticket. Repo names are bare repository names, as in the placeholders, without a host prefix; for questions about why or when something changed, put only the answering change (its commit or pull request) and its ticket in the array, and describe related changes and code locations in prose; commits are SHAs of at least 7 characters; PRs are numbers; tickets are keys like TRUNK-1234. Ignore any citation format the server describes; end only with the json array described here. Do not modify files.\n\nQuestion:\n${question}`;
 
 /** `history` selects the answer format of the commit-history questions; the text for the other datasets is unchanged. */
 export function prompt(arm: Arm, question: string, history = false): string {
@@ -97,12 +97,13 @@ export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] 
 const sha = z.string().regex(/^[0-9a-fA-F]{7,40}$/), repo = z.string().min(1);
 const answerSpan = z.object({ path: z.string().min(1), startLine: z.int().positive(), endLine: z.int().positive() }).refine((s) => s.endLine >= s.startLine);
 const typed = [z.object({ repo, commit: sha }), z.object({ repo, pr: z.int().positive() }), z.object({ ticket: z.string().trim().min(1) })];
-/** The last json fence is the answer: spans, commits, pull requests and tickets. `lineCount` is the file's line count, or undefined when the file is not in the corpus. Malformed items are dropped. */
-export function parseAnswer(text: string, lineCount: (path: string) => number | undefined): { answer: Evidence[]; malformed: boolean } {
+/** The last json fence is the answer: spans, commits, pull requests and tickets. `lineCount` is the file's line count, or undefined when the file is not in the corpus. Malformed items are dropped; `dropped` counts the spans dropped because the file is not in the corpus. */
+export function parseAnswer(text: string, lineCount: (path: string) => number | undefined): { answer: Evidence[]; malformed: boolean; dropped: number } {
   const json = [...text.matchAll(/```json\s*\n?([\s\S]*?)```/g)].at(-1)?.[1];
   let values: unknown;
-  try { values = JSON.parse(json ?? ""); if (!Array.isArray(values)) throw new Error(); } catch { return { answer: [], malformed: true }; }
+  try { values = JSON.parse(json ?? ""); if (!Array.isArray(values)) throw new Error(); } catch { return { answer: [], malformed: true, dropped: 0 }; }
   const answer: Evidence[] = [];
+  let dropped = 0;
   for (const value of values) {
     const parsed = answerSpan.safeParse(value);
     if (!parsed.success) {
@@ -112,10 +113,10 @@ export function parseAnswer(text: string, lineCount: (path: string) => number | 
     }
     const path = parsed.data.path.replace(/^(\.\/)+/, "");
     const lines = lineCount(path);
-    if (!lines) continue;
+    if (!lines) { dropped++; continue; }
     const clamp = (n: number) => Math.max(1, Math.min(lines, n));
     answer.push({ path, startLine: clamp(parsed.data.startLine), endLine: clamp(parsed.data.endLine) });
     if (answer.length === 20) break;
   }
-  return { answer: answer.filter((s) => !("path" in s) || s.path.includes("/")), malformed: false };
+  return { answer: answer.filter((s) => !("path" in s) || s.path.includes("/")), malformed: false, dropped };
 }

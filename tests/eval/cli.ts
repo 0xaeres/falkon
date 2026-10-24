@@ -42,7 +42,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ALL_ARMS, ARMS, DATASETS, EVAL_DIR, HISTORY_DATASETS, IMPACT_DATASETS, FLOOR_DIR, REPO_ROOT, hasRaw, goldOf, loadAccepted, loadDataset, loadProduct, modelDir, readRaw, resolveModel, type Arm, type Dataset, type Raw } from "./data.js";
 import { MANIFEST, checkSnapshot, fetchSnapshot, goldPrs, realDeps, verifySnapshot } from "./discussions.js";
-import { buildCommand } from "./harness.js";
+import { buildCommand, parseAnswer } from "./harness.js";
 import { assertFullHistory, deepenCheckouts, expectedRepos, goldPaths, preflight, readKey } from "./preflight.js";
 import { report } from "./report.js";
 import { execute, runTasks, spentSoFar, type Task } from "./runner.js";
@@ -211,7 +211,9 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     const referenceArm = (referenceFlag as Arm | undefined) ?? (model.alias === "sonnet" ? undefined : "v6-tools" as const);
     return report({
       datasets: datasets.map((dataset) => {
-        const runs = readRaw(dirOf(dataset.id));
+        // Stored runs from before droppedSpans existed: re-parse the final text against the corpus (in memory only; scoring is untouched).
+        const count = datasetFlag === "history" && existsSync(cfg.o3Dir) ? lineCounter(cfg.o3Dir) : undefined;
+        const runs = readRaw(dirOf(dataset.id)).map((r) => count && r.droppedSpans === undefined && r.result ? { ...r, droppedSpans: parseAnswer(r.result, count).dropped } : r);
         return { dataset, floor: referenceArm ? runs.filter((r) => r.arm === referenceArm) : readRaw(join(FLOOR_DIR, dataset.id)), runs };
       }),
       accepted: loadAccepted(), split: splitFlag as "dev" | "hidden" | undefined, arms, model: `${model.alias} (${model.id})`, referenceArm,

@@ -122,6 +122,16 @@ test("the report shows the plain arm's denied research_codebase attempts and mal
   assert.match(text, /Denied tool attempts \(research_codebase, list_commits, get_diff, list_branches\): 3\./);
 });
 
+test("the report prints dropped spans per arm; runs without the field count as unknown, not zero", () => {
+  const input = floorInput();
+  cloneRuns(input, "clone-tools", (_q, f) => f.answer);
+  assert.match(dev(input), /Dropped spans clone-tools: 0 \(unknown for 48 of 48 runs\)\./);
+  input[0]!.runs[0]!.droppedSpans = 4; input[0]!.runs[1]!.droppedSpans = 0;
+  assert.match(dev(input), /Dropped spans clone-tools: 4 \(unknown for 46 of 48 runs\)\./);
+  for (const r of input.flatMap((d) => d.runs)) r.droppedSpans = 1;
+  assert.match(dev(input), /Dropped spans clone-tools: 48\./);
+});
+
 test("a history run scores commits, PRs and tickets against typed gold, with accepted extras for precision", () => {
   const sha = "a".repeat(40);
   const dataset = datasetSchema.parse({

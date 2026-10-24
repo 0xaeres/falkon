@@ -59,7 +59,7 @@ export const stackRepoName = (name: string) => `github.com/openmrs/${name}`;
 export type Raw = {
   taskId: string; repository: string; split?: "dev" | "hidden"; arm: string; answer: Evidence[]; malformed: boolean; is_error: boolean;
   total_cost_usd: number; usage: Record<string, unknown>; num_turns: number; wallClockMs: number; leak?: boolean;
-  toolCalls?: Record<string, number>; firstTool?: string; deniedAttempts?: number; result?: string; stdout?: string; stderr?: string;
+  toolCalls?: Record<string, number>; firstTool?: string; deniedAttempts?: number; droppedSpans?: number; result?: string; stdout?: string; stderr?: string;
 };
 const rawPath = (dir: string, arm: string, id: string) => join(dir, "raw", arm, encodeURIComponent(id) + ".json");
 export const hasRaw = (dir: string, arm: string, id: string) => existsSync(rawPath(dir, arm, id));

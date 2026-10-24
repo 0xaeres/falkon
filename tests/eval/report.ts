@@ -44,6 +44,9 @@ export function report({ datasets, accepted, split, arms, model = "sonnet", refe
     const totals: Record<string, number> = {};
     for (const r of runs) for (const [tool, n] of Object.entries(r.toolCalls ?? {})) totals[tool] = (totals[tool] ?? 0) + n;
     lines.push(`Tool calls ${arm}: ${Object.entries(totals).sort().map(([k, v]) => `${k} ${v}`).join(", ") || "none"}.`);
+    // Spans dropped because their path is not in the corpus; stored runs from before the field exist are unknown, not zero.
+    const unknown = runs.filter((r) => r.droppedSpans === undefined).length;
+    lines.push(`Dropped spans ${arm}: ${runs.reduce((n, r) => n + (r.droppedSpans ?? 0), 0)}${unknown ? ` (unknown for ${unknown} of ${runs.length} runs)` : ""}.`);
     // The history set names its question kinds in the id: hist-a-* why, hist-b-* what-when, hist-c-* ticket-to-code.
     for (const [infix, kind] of [["a", "why"], ["b", "what-when"], ["c", "ticket-to-code"]] as const) {
       const qs = questions(s), scored = rows.flatMap((r, i) => r.score && qs[i]!.q.id.includes(`-${infix}-`) ? [r.score] : []);
