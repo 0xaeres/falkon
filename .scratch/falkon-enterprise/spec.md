@@ -319,7 +319,7 @@ Check 1 (registration snapshots with `MCP_HISTORY_TOOLS` off) stays byte-identic
 - The loop may decide alone: details inside each slice's scope, fix rounds, a rerun of a failed verify once.
 - It stops for: any new dependency; any change to the tool registration with the flag off; any step that needs a real token or the human's `gh` login beyond S51; ADR or glossary changes beyond the planned 4.11 amendment; a change to how existing datasets score; a schema change beyond the additive ones named above; any push or pull request; spend over the D128 cap of $5.
 - Docker: one stack at a time, only disposable `falkon-eval*` projects; never the human's `falkon` project or the `falcon-sourcebot-*` containers.
-- Budget: 1.6M subagent tokens and 360 minutes (the last four cycles used 0.26M to 1.05M; S53 is hard).
+- Budget: 2.0M subagent tokens and 420 minutes (the last four cycles used 0.26M to 1.05M; S53 is hard; S58 to S61 add about 0.4M and an hour).
 - Gate 2 fires when S57 is kept and the human has the smoke result, or on any trigger.
 
 ### Not in this cycle
