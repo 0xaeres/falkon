@@ -11,6 +11,6 @@ test("verdict: the first failing reason, as a fixed message", () => {
   assert.match(verdict([{ ...ok, failed: true }])!, /^sync failed: GitHub request failed/);
 });
 test("verdict: nothing stored or nothing linked fails", () => {
-  assert.equal(verdict([{ ...ok, prs: 0, rule: 0 }]), "no pull requests stored");
+  assert.equal(verdict([{ ...ok, prs: 0, rule: 0 }]), "no pull requests inside the backfill window");
   assert.equal(verdict([{ ...ok, rule: 0 }]), "no commit links");
 });
