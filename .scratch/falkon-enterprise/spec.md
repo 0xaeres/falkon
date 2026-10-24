@@ -629,6 +629,21 @@ Check 1: the MCP registration snapshots are unchanged (no tool changes). Check 2
 
 Moving the worker's time schedules to queue-delayed jobs (D157); a pending question shown during a resumed answer (D147); running more than one `api` instance; live updates for the product list and Product settings (D154).
 
+## Cycle 18 results: live connections, no polling (awaiting gate 2, 2026-10-25)
+
+Built on `loop/falkon-enterprise-c18` (base `5a4c2d9`). Claude agents built each slice and a different Sonnet reviewer checked each; every slice needed one fix round. Checks on the tip: `pnpm typecheck` exit 0; `pnpm test` exit 0 with 0 failures (contracts 24, tests/eval 114, shared 183, ui 34 and 62, backend 79 passed and 18 skipped, api 236 passed and 14 skipped; skips are the Postgres-gated tests); api and UI builds exit 0; no `refreshInterval` in the UI and `setInterval` only in the local age timer.
+
+| Slice | Outcome |
+|---|---|
+| S71 resumable chat answers | kept; fix round: the reviewer's blocking gap was untested adversarial cases (failed start, mid-answer error, reader cancel, thread deleted mid-answer), now covered; a resume sent while the turn is starting now waits instead of getting 204; a failed Stop no longer claims the answer stopped |
+| S72 change signal and instant worker requests | kept; fix round: a subscription made while Redis is down is now sent when Redis returns (it was lost after 20 retries); `ioredis` lives in `shared` only |
+| S73 generation time in the page | kept; fix round: mock sentences left ungrammatical, age now computed from the real clock |
+| S74 Product event stream | kept; fix round: a refused first connect is now retried with backoff, throwing and stalled writes drop the stream, chat-only header no longer on the events stream |
+
+Decided without the human: the in-memory buffer instead of Redis for running answers (D144, per the plan); the model failure mid-answer is stored as the existing fixed abstention answer and shown after a resume (the slice text said nothing stored; this matches how a model that stops without an answer already behaved); SWR stays the page's store and the event stream writes into its cache, with the first load still one fetch; with `ENGINE_URL` unset the events route answers a silent open stream so mock mode neither errors nor retries; a request signal also runs one claim pass at worker start; the registry (operator Product create, update, delete) also publishes a change.
+
+Not verified: the manual check (start an answer, turn the network off and on, see it continue) and the status page on the live compose stack; Redis down then back with a real Redis (tested only with a fake server and a dead port); the Postgres variants of the tests; `docker compose up --build` with the new `REDIS_URL` on the api service.
+
 ## Next
 
 Phase 1: shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
