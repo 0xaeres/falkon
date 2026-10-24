@@ -2460,3 +2460,45 @@ body > .loading-mark {
   background: var(--amber-soft);
   color: var(--amber);
 }
+.archify-diagram {
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  background: var(--s2);
+  max-width: 100%;
+  overflow: hidden;
+}
+.archify-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--line2);
+}
+.archify-title {
+  flex: 1;
+  font-size: 11px;
+  color: var(--muted, inherit);
+}
+.archify-frame {
+  display: block;
+  width: 100%;
+  min-height: 360px;
+  max-height: 720px;
+  border: 0;
+  background: #0a0a0a;
+}
+.archify-full {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #0a0a0a;
+}
+.archify-full .archify-frame {
+  max-height: none;
+}
+.archify-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
