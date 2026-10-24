@@ -144,6 +144,9 @@ const getPullRequest = define({
 // ---- search_discussions ----
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const TIMED_OUT = "the search timed out; narrow the query";
+/** Partial matches offered when an all-words search finds nothing. */
+const PARTIALS = 5;
 const KEY_QUERY = /^[A-Za-z][A-Za-z0-9_]*-\d+$/;
 
 /** A window of at most SNIPPET_CHARS characters around the first word found in `text`, or undefined. */
@@ -250,7 +253,7 @@ const searchDiscussions = define({
         total = res.total;
         totalCapped = res.totalCapped;
         hasMore = res.hasMore;
-        if (res.timedOut) truncated.add("the search timed out; narrow the query");
+        if (res.timedOut) truncated.add(TIMED_OUT);
         const loaded = await Promise.all(res.hits.map((x) => h.getDiscussion(names, x.repo, x.number)));
         hits = res.hits.map((x, i) => {
           const d = loaded[i];
@@ -260,8 +263,23 @@ const searchDiscussions = define({
         });
       }
     }
+    // All words are required: with none found, say so and offer the pull requests that have some of them.
+    let hint: string | undefined, partialMatches: object[] | undefined;
+    const searched = words.slice(0, MAX_WORDS).map((w) => w.slice(0, MAX_WORD));
+    if (searched.length > 1 && total === 0 && offset < MAX_OFFSET && !truncated.has(TIMED_OUT)) {
+      hint = "all words are required; try fewer or the title words";
+      const res = await h.search(names, { words: searched, any: true, repo, limit: PARTIALS, ...filters });
+      if (res.timedOut) truncated.add("the any-word search for partialMatches timed out");
+      const found = await Promise.all(res.hits.slice(0, PARTIALS).map((x) => h.getDiscussion(names, x.repo, x.number)));
+      partialMatches = res.hits.slice(0, PARTIALS).map((x, i) => {
+        const d = found[i];
+        const full = d && !("gap" in d) ? d : undefined;
+        const matchedWords = searched.filter((w) => [x.title, full?.body, full?.headRef, ...(full?.comments.map((c) => c.body) ?? [])].some((s) => s?.toLowerCase().includes(w.toLowerCase())));
+        return { repo: x.repo, number: x.number, title: clip(x.title, TITLE_CHARS).text, state: x.state, mergedAt: x.mergedAt, matchedWords };
+      });
+    }
     if (totalCapped) truncated.add(`totalCount stops at ${MAX_OFFSET}`);
-    const result = () => ({ totalCount: total, totalCapped, page, perPage, hasMore, hits, coverageGaps: gaps, truncated: [...truncated] });
+    const result = () => ({ totalCount: total, totalCapped, page, perPage, hasMore, hits, hint, partialMatches, coverageGaps: gaps, truncated: [...truncated] });
     // Keep the answer inside the size bound by dropping snippets, last hit first.
     for (let i = hits.length - 1; bytes(result()) > MAX_BYTES && i >= 0; ) {
       if (hits[i]!.snippets.length) {

@@ -116,6 +116,8 @@ export type Anchor = { kind: "commit"; sha: string } | { kind: "pr"; repo: strin
 
 export interface SearchQuery {
   words: string[];
+  /** Match a discussion that has any word, not all of them (the hint fallback of search_discussions). */
+  any?: boolean;
   repo?: string;
   limit?: number;
   offset?: number;
@@ -351,11 +353,11 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
       const gaps = gapsOf(rows);
       const none = { hits: [], hasMore: false, gaps, timedOut: false, total: 0, totalCapped: false };
       if (!words.length || !ids.length) return none;
-      // Each word must appear (case-insensitively) in the title, body, head branch or any comment: words are ANDed.
+      // Each word must appear (case-insensitively) in the title, body, head branch or any comment: words are ANDed (ORed with `any`).
       const where = words
         .map((_, i) => `(d.title ILIKE $${i + 2} OR d.body ILIKE $${i + 2} OR d."headRef" ILIKE $${i + 2}
           OR EXISTS (SELECT 1 FROM "DiscussionComment" c WHERE c."discussionId" = d.id AND c.body ILIKE $${i + 2}))`)
-        .join(" AND ");
+        .join(q.any ? " OR " : " AND ");
       // Optional filters take the parameters after the words'.
       const extra: { sql: string; value: unknown }[] = [
         ...(q.kind ? [{ sql: `d.kind = $N::"DiscussionKind"`, value: q.kind }] : []),
@@ -370,11 +372,11 @@ export function postgresProvenanceStore(db: SqlClient): ProvenanceStore {
           await tx.$executeRawUnsafe(`SET LOCAL statement_timeout = ${SEARCH_TIMEOUT_MS}`);
           const hits = await tx.$queryRawUnsafe<SearchHit[]>(
             `SELECT r.name AS repo, d.number, d.title, d.state, d."mergedAt", d."updatedAt", d.url FROM "Discussion" d JOIN "Repo" r ON r.id = d."repoId"
-             WHERE d."repoId" = ANY($1::int[]) AND ${where}${filters} ORDER BY d."updatedAt" DESC, r.name, d.number LIMIT ${limit + 1} OFFSET ${offset}`,
+             WHERE d."repoId" = ANY($1::int[]) AND (${where})${filters} ORDER BY d."updatedAt" DESC, r.name, d.number LIMIT ${limit + 1} OFFSET ${offset}`,
             ...params,
           );
           const [{ n }] = await tx.$queryRawUnsafe<[{ n: number }]>(
-            `SELECT count(*)::int AS n FROM (SELECT 1 FROM "Discussion" d WHERE d."repoId" = ANY($1::int[]) AND ${where}${filters} LIMIT ${MAX_OFFSET + 1}) x`,
+            `SELECT count(*)::int AS n FROM (SELECT 1 FROM "Discussion" d WHERE d."repoId" = ANY($1::int[]) AND (${where})${filters} LIMIT ${MAX_OFFSET + 1}) x`,
             ...params,
           );
           return { hits, n };

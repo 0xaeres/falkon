@@ -228,6 +228,55 @@ test("search_discussions: LIKE characters, quotes and a long query are literal a
   assert.match(long.truncated.join("\n"), /query .*8 words/);
 });
 
+test("search_discussions: a multi-word query with no all-words hit gets a hint and up to 5 partial matches", async () => {
+  await seed();
+  await store.replaceDiscussion(ids[APP], pr(1, { title: "Patient search should bypass service worker caching", updatedAt: t("2025-03-01T00:00:00Z") }), []);
+  await store.replaceDiscussion(ids[LIB], pr(2, { title: "slow render", updatedAt: t("2025-04-01T00:00:00Z") }), []);
+  await store.replaceDiscussion(ids[SECRET], pr(3, { title: "service worker slow" }), []);
+  const { json } = await run("search_discussions", { query: "service worker patient search slow" });
+  assert.equal(json.totalCount, 0);
+  assert.deepEqual(json.hits, []);
+  assert.match(json.hint, /all words are required/);
+  assert.deepEqual(json.partialMatches.map((m: any) => [m.repo, m.number, m.title, m.matchedWords]), [
+    [LIB, 2, "slow render", ["slow"]],
+    [APP, 1, "Patient search should bypass service worker caching", ["service", "worker", "patient", "search"]],
+  ], "newest first, outside repository never shown");
+  const scoped = (await run("search_discussions", { query: "service worker patient search slow", repo: APP })).json;
+  assert.deepEqual(scoped.partialMatches.map((m: any) => m.repo), [APP]);
+});
+
+test("search_discussions: no hint for one word, for a hit, or for ticket and #N shapes", async () => {
+  await seedSearch();
+  for (const query of ["zzzz", "TRUNK-1", "#99"]) {
+    const j = (await run("search_discussions", { query })).json;
+    assert.deepEqual([j.hint, j.partialMatches], [undefined, undefined], query);
+  }
+  const hit = (await run("search_discussions", { query: "login redirect" })).json;
+  assert.deepEqual([hit.hint, hit.partialMatches], [undefined, undefined]);
+});
+
+test("search_discussions: partial matches cap at 5, words cap at 8, every word matching a different pull request", async () => {
+  await seed();
+  const ws = ["aa", "bb", "cc", "dd", "ee", "ff", "gg", "hh", "ii"];
+  for (const [i, w] of ws.entries()) await store.replaceDiscussion(ids[APP], pr(i + 1, { title: w }), []);
+  const j = (await run("search_discussions", { query: ws.join(" ") })).json;
+  assert.equal(j.partialMatches.length, 5);
+  assert.ok(j.partialMatches.every((m: any) => m.matchedWords.length === 1));
+  assert.match(j.truncated.join("\n"), /8 words/);
+  assert.ok(!j.partialMatches.some((m: any) => m.title === "ii"), "the ninth word is cut");
+});
+
+test("search_discussions: a timeout in the fallback keeps the hint and says so in truncated", async () => {
+  await seed();
+  const real = store;
+  store = { ...real, search: async (n, q) => (q.any ? { hits: [], hasMore: false, gaps: [], timedOut: true, total: 0, totalCapped: false } : real.search(n, q)) };
+  const j = (await run("search_discussions", { query: "alpha beta" })).json;
+  store = real;
+  assert.match(j.hint, /all words are required/);
+  assert.deepEqual(j.partialMatches, []);
+  assert.match(j.truncated.join("\n"), /timed out/);
+});
+
 test("search_discussions: empty or blank queries and out-of-range paging are rejected", async () => {
   await seedSearch();
   await rejects("search_discussions", { query: "" });
