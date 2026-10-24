@@ -352,11 +352,15 @@ Real-token smoke (human, 2026-10-24, classic token with repo scope, `scripts/syn
 
 Gate 2 decisions (human, 2026-10-24): approve and merge; the ADR section 8 failure rows and the P12 gap-text edit are accepted; `CONTEXT.md` stays unchanged for now (drafts kept: Discussion, a pull request of one repository with its comments, reviews and changed files as stored at its last sync, third-party text, visible exactly where its repository is; Provenance link, a stored directed relationship from a commit or a Discussion to a Discussion or a ticket key, with the rule that found it); the permission probe stays on every run as built (this departs from the wording of D115: probe before the first sync and on token change; the ADR says so); the runner quirks (the $1 per-run reservation stopping runs early, `stack down` not stopping the `--prs on` stack) are left as they are.
 
-## Cycle 16 plan: settle the history answer prompt (planned 2026-10-24; gate 1 pending)
+## Cycle 16 plan: settle the history answer prompt (planned 2026-10-24; stopped at gate 1, analysis only)
 
 Goal: freeze the history answer prompt on evidence, with the smallest work that can do it. Evidence: [`c15-rerun-analysis.md`](c15-rerun-analysis.md) (read-only analysis of the stored cycle 14 and 15 runs; no spend). Two findings: (1) the S58 prompt line makes agents add a ticket to "what changed and when" answers whose gold has only pull requests, which explains the precision fall (0.886 and 0.950 without the ticket items); it also did not remove source spans from "why" answers; (2) two of the pull request arm's recall losses (hist-a-14, hist-c-03) were runs that started before the pull request import finished (33 to 41 repositories reported "not ingested" against the usual 30), and the rest are within one-run noise; the "why" lead is unchanged (+0.323, +0.312). This cycle is deliberately small and is not a priority over the roadmap: the human asked at the grilling why it is being worked on at all, and the plan below is the minimum that closes the prompt question; gate 1 may also choose to stop with the analysis alone.
 
 Base `main` at the commit that holds this plan. Cycle branch `loop/falkon-enterprise-c16`. Roles: Opus plans, Sonnet decides and commits after gate 1, Claude implements (Sonnet), a different Sonnet reviewer checks each slice. Codex is not used.
+
+### Gate 1 outcome (human, 2026-10-24)
+
+Stopped with the analysis only: S62, S63 and S64 are not built and nothing is spent (the $5 cap of D132 is unused and lapses with the cycle). The history answer prompt stays as cycle 15 left it, and it is not frozen. Known and left as is: the S58 line adds non-scoring ticket items to "what changed and when" answers (precision 0.640 and 0.610 against 0.886 and 0.950 without them), spans still appear in "why" answers, and the eval runner does not wait for the pull request import (two contaminated cycle 15 runs, hist-a-14 and hist-c-03). The human's priority is the roadmap. If prompt or runner work is picked up later, start from [`c15-rerun-analysis.md`](c15-rerun-analysis.md) and the slices above.
 
 ### Decisions (grilled 2026-10-24 with the human unless marked default)
 
