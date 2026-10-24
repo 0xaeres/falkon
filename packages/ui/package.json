@@ -22,7 +22,7 @@
     "geist": "^1.7.2",
     "lucide-react": "^1.55.0",
     "mermaid": "^12.2.0",
-    "next": "16.4.0",
+    "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-markdown": "^10.1.0",
@@ -36,7 +36,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.4.0",
+    "eslint-config-next": "16.4.3",
     "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "^5"
