@@ -352,6 +352,67 @@ Real-token smoke (human, 2026-10-24, classic token with repo scope, `scripts/syn
 
 Gate 2 decisions (human, 2026-10-24): approve and merge; the ADR section 8 failure rows and the P12 gap-text edit are accepted; `CONTEXT.md` stays unchanged for now (drafts kept: Discussion, a pull request of one repository with its comments, reviews and changed files as stored at its last sync, third-party text, visible exactly where its repository is; Provenance link, a stored directed relationship from a commit or a Discussion to a Discussion or a ticket key, with the rule that found it); the permission probe stays on every run as built (this departs from the wording of D115: probe before the first sync and on token change; the ADR says so); the runner quirks (the $1 per-run reservation stopping runs early, `stack down` not stopping the `--prs on` stack) are left as they are.
 
+## Cycle 16 plan: settle the history answer prompt (planned 2026-10-24; gate 1 pending)
+
+Goal: freeze the history answer prompt on evidence, with the smallest work that can do it. Evidence: [`c15-rerun-analysis.md`](c15-rerun-analysis.md) (read-only analysis of the stored cycle 14 and 15 runs; no spend). Two findings: (1) the S58 prompt line makes agents add a ticket to "what changed and when" answers whose gold has only pull requests, which explains the precision fall (0.886 and 0.950 without the ticket items); it also did not remove source spans from "why" answers; (2) two of the pull request arm's recall losses (hist-a-14, hist-c-03) were runs that started before the pull request import finished (33 to 41 repositories reported "not ingested" against the usual 30), and the rest are within one-run noise; the "why" lead is unchanged (+0.323, +0.312). This cycle is deliberately small and is not a priority over the roadmap: the human asked at the grilling why it is being worked on at all, and the plan below is the minimum that closes the prompt question; gate 1 may also choose to stop with the analysis alone.
+
+Base `main` at the commit that holds this plan. Cycle branch `loop/falkon-enterprise-c16`. Roles: Opus plans, Sonnet decides and commits after gate 1, Claude implements (Sonnet), a different Sonnet reviewer checks each slice. Codex is not used.
+
+### Decisions (grilled 2026-10-24 with the human unless marked default)
+
+| # | Decision |
+|---|---|
+| D129 | Scope and priority (human): work on this only as far as it is necessary; it is not a high priority against the roadmap (Phase 1 git history tools next). The cycle is two no-spend slices and one capped paid pass, then stops at gate 2; no further prompt iteration after it. Gate 1 may instead end the cycle with the analysis. |
+| D130 (default, proposed by the planner, open to strike at gate 1) | Prompt: the history answer prompt says a ticket goes in the array only when the question asks which ticket or names one, and a source span only when the question asks which lines or where in the code. Pull requests and commits stay as in cycle 15. The prompt text of the non-history datasets stays byte-identical. |
+| D131 (default) | Runner: with the pull request tools on, the eval preflight waits (bounded, default 20 minutes) until none of the 12 repositories in `github-snapshot.manifest.json` is reported as "not ingested", and fails with their names if it never happens. A run record keeps `importGaps`: the snapshot repositories reported "not ingested" in its tool results; the report lists such runs as contaminated and withholds the verdict, as it does for a leak. |
+| D132 | Spend (human, 2026-10-24): a cap of $5 "if it is necessary to work on this any further". One pass of both arms costs about $2.7, so the cap pays for one pass and part of a second. The loop runs one pass and stops; it never starts a second without a new approval. The cycle 15 cap ($5, $2.71 spent) is closed. |
+| D133 | Freeze rule (human): the prompt is frozen when the one pass shows (a) "what changed and when" precision at least 0.77 in both arms, (b) the lower bound of the pull request arm's recall lead over the git arm above zero, (c) no contaminated run, zero failed or malformed runs, and (d) no fall in "ticket to code" recall below 0.90 in either arm (cycle 15: 0.931 and 0.924), so the new rule did not cost ticket or span hits. If any fails, the loop stops and reports; it does not iterate on the prompt. With one pass the lead interval is wide: a lower bound at or below zero is reported as "not shown", and the human decides whether to spend more. |
+| D134 | Search matching (human asked whether fuzzy search should exist): yes in principle (it is a real usability gap, exact words only), but it is a product change with its own measurement. Parked as a roadmap candidate, not in this cycle, so the paid pass measures only the prompt. |
+
+### Slices
+
+**S62. Eval runner waits for the pull request import and flags contaminated runs.** Tier standard. Agent claude. No spend.
+- Goal: D131.
+- Scope: `tests/eval/preflight.ts`, `tests/eval/cli.ts`, `tests/eval/report.ts`, `tests/eval/runner.ts` or the run record writer as needed, their tests. No product code.
+- Done: with a fake MCP client whose `search_discussions` first reports snapshot repositories as not ingested and later does not, the preflight polls and then passes; if it never clears within the bound, the error names the repositories still missing; with the pull request tools off (git arm) nothing changes and no call to `search_discussions` is made; a run whose tool results name a snapshot repository as not ingested gets `importGaps` set, the report lists it as contaminated and the verdict is withheld; rescoring the stored cycle 15 runs prints the same recall and precision as `baseline-c15-report.md` plus the contaminated list (expected: hist-a-14 and hist-c-03 in the pull request arm).
+- Verify: `pnpm typecheck && pnpm test`; `pnpm eval -- report --dataset history --model haiku --arms clone-tools-git,clone-tools-git-prs --reference clone-tools-git` with `EVAL_RUNS_DIR=.scratch/falkon-enterprise/eval-runs-c15`, diffed against the recorded numbers.
+- Adversarial cases: a stack with all 12 repositories already imported (no wait); a repository outside the manifest reported as not ingested (not contamination, it is expected); the poll hitting an MCP error (fixed error, not an endless loop); the bound reached; a tool result that is not JSON.
+- Blocked by: none.
+
+**S63. History prompt: tickets and spans only when asked.** Tier standard. Agent claude. No spend.
+- Goal: D130.
+- Scope: `tests/eval/harness.ts` (history prompt only) and `tests/eval/harness.test.ts`.
+- Done: a test pins the old non-history prompt text byte for byte; the history prompt contains the new rule and no literal repository example; a test over the 40 dataset questions classifies by relation and checks that the instruction does not forbid what that relation's gold needs (the 12 "ticket to code" questions name a ticket and their gold counts it; 8 of them ask which lines); scoring code is unchanged.
+- Verify: `pnpm typecheck && pnpm test`.
+- Adversarial cases: a question that names a ticket and asks for the change (ticket to code); a "why" question that also asks "which lines" (span allowed); wording that a Haiku agent could read as "never list a ticket" (reviewer reads the final text for that).
+- Blocked by: none.
+
+**S64. One paid pass of both arms and the freeze decision.** Tier standard. Agent claude (verifier runs the commands). Costs money, under D132.
+- Goal: measure D130 and D131 on the 40 history questions, Haiku, both arms, same day, fresh stacks.
+- Scope: eval runs only (`.scratch/falkon-enterprise/eval-runs-c16/`, `baseline-c16-report.md`, a results note in this spec). No product code.
+- Done: both arms complete 40 of 40 with zero failed, malformed or contaminated runs; per-kind recall and precision against cycle 15 (git 0.745 and 0.563, prs 0.844 and 0.576; "what changed" precision 0.640 and 0.610; "why" precision 0.349 and 0.498; "ticket to code" recall 0.931 and 0.924); ticket and span items listed per kind; the D133 verdict written plainly as frozen, not frozen, or not shown; spend within D132.
+- Verify: `pnpm eval -- run --dataset history --model haiku --arms clone-tools-git,clone-tools-git-prs` on a disposable `falkon-eval*` stack (`stack down --prs on` to stop it), then `pnpm eval -- report --dataset history --model haiku --reference clone-tools-git`.
+- Stops and asks the human if: `EVAL_O3_DIR` or the snapshot is unavailable, the preflight cannot clear the import, or projected spend passes $5.
+- Blocked by: S62, S63.
+
+### Regression gate
+
+Nothing in `packages/` changes, so registration snapshots and existing datasets are untouched; `pnpm typecheck && pnpm test` pass; the non-history prompt stays byte-identical; scoring (`score.ts`) is unchanged.
+
+### Order, limits, budget
+
+- Wave 1: S62 and S63 in parallel (disjoint files except `tests/eval`; S62 does not touch `harness.ts`). Wave 2: S64.
+- The loop may decide alone: wording inside D130 as long as the done condition holds, fix rounds, one rerun of a failed verify.
+- It stops for: any product code change; any change to scoring or datasets; spend over $5; a second paid pass; push or pull request; ADR or glossary changes (none planned: this cycle touches eval tooling only).
+- Docker: one stack at a time, only disposable `falkon-eval*` projects; never the human's `falkon` project or the `falcon-sourcebot-*` containers.
+- Budget: 0.6M subagent tokens and 150 minutes (cycle 15 used 0.26M to 1.05M for larger slices; S62 and S63 are small).
+- Gate 2 fires when S64 is done, or on any trigger.
+- A dependency install in the cycle worktree is needed for `pnpm test` (the main checkout currently has no `node_modules`); install there, never symlink.
+
+### Not in this cycle
+
+Fuzzy or word-form matching in `search_discussions` (D134), further prompt iteration after D133, any second pass or extra runs per cell (would need a new spend approval), Phase 1 git history tools.
+
 ## Next
 
 Phase 1: shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
