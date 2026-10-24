@@ -26,7 +26,8 @@ const path = require('node:path');
 const command = path.basename(process.argv[1]);
 const args = process.argv.slice(2);
 const scenario = process.env.SMOKE_SCENARIO;
-fs.appendFileSync(process.env.SMOKE_EVENTS, JSON.stringify({ command, args }) + '\\n');
+const auth = args.map((a, i) => args[i - 1] === '--header' ? (a.startsWith('@') ? fs.readFileSync(a.slice(1), 'utf8').trim() : a) : '').find((a) => a.startsWith('authorization:'));
+fs.appendFileSync(process.env.SMOKE_EVENTS, JSON.stringify({ command, args, auth }) + '\\n');
 if (command === 'date') {
   const tick = process.env.SMOKE_EVENTS + '.tick';
   const next = fs.existsSync(tick) ? Number(fs.readFileSync(tick, 'utf8')) + 1 : 0;
@@ -54,8 +55,7 @@ if (command === 'date') {
   const method = args.includes('--request') ? args[args.indexOf('--request') + 1] : 'GET';
   const registry = process.env.SMOKE_EVENTS + '.registry';
   let code = scenario === 'api-down' ? '000' : '200';
-  const header = args.map((a, i) => args[i - 1] === '--header' && a.startsWith('authorization:') ? a : '').find(Boolean);
-  const authed = scenario === 'admin-open' || /^authorization: Bearer [0-9a-f]{48}$/.test(header || '');
+  const authed = scenario === 'admin-open' || /^authorization: Bearer [0-9a-f]{48}$/.test(auth || '');
   if (url.includes(':3302/') && !authed) code = '401';
   else if (url.endsWith('/mcp/no-such-product')) code = '404';
   else if (url.endsWith('/products')) code = method === 'POST' ? (fs.writeFileSync(registry, '1'), '201') : scenario === 'admin-exposed' ? '200' : '404';
@@ -88,7 +88,7 @@ if (command === 'date') {
     assert.ifError(result.error);
     return { status: result.status, output: result.stdout + result.stderr,
       baseline: fs.existsSync(baseline) ? JSON.parse(fs.readFileSync(baseline, "utf8")) : undefined,
-      events: fs.readFileSync(path.join(temp, "events"), "utf8").trim().split("\n").map(line => JSON.parse(line) as { command: string; args: string[] }),
+      events: fs.readFileSync(path.join(temp, "events"), "utf8").trim().split("\n").map(line => JSON.parse(line) as { command: string; args: string[]; auth?: string }),
     };
   } finally { fs.rmSync(temp, { recursive: true, force: true }); }
 }
@@ -165,7 +165,7 @@ test("smoke runs the whole stack as five services in a falkon-eval project and s
   assert.ok(searches.length > 0);
   for (const event of searches) {
     assert.ok(event.args.includes("http://127.0.0.1:3302/ui/products/fixtures/search"));
-    assert.ok(event.args.some((arg) => /^authorization: Bearer [0-9a-f]{48}$/.test(arg)));
+    assert.match(event.auth ?? "", /^authorization: Bearer [0-9a-f]{48}$/);
   }
   const down = smoke({ scenario: "api-down" });
   assert.equal(down.status, 1, down.output);
@@ -181,13 +181,15 @@ test("smoke round-trips an api Product through the admin port and proves the adm
   const session = ok.events.find((event) => event.command === "curl" && event.args.includes("mcp-session-id: smoke-session"));
   assert.ok(session, "tools/list carries the session id from initialize");
   const admin = ok.events.filter((event) => event.command === "curl" && event.args.at(-1)!.includes(":3302/"));
-  const headers = admin.map((event) => event.args.find((arg, i) => event.args[i - 1] === "--header" && arg.startsWith("authorization:")));
+  const headers = admin.map((event) => event.auth);
   const tokens = new Set(headers.filter((h) => h?.startsWith("authorization: Bearer ") && h !== "authorization: Bearer wrong-token"));
   assert.equal(tokens.size, 1, "one random token is used for every authorised admin call");
   assert.match([...tokens][0]!, /^authorization: Bearer [0-9a-f]{48}$/);
   assert.ok(headers.includes(undefined), "a tokenless admin call is made");
   assert.ok(headers.includes("authorization: Bearer wrong-token"), "a wrong-token admin call is made");
-  assert.equal(JSON.stringify(ok.events.filter((event) => event.command === "docker")).includes([...tokens][0]!.slice(22)), false, "the token never reaches a docker argument");
+  const token = [...tokens][0]!.slice(22);
+  assert.equal(JSON.stringify(ok.events.map((event) => event.args)).includes(token), false, "the token never reaches any command line, only a header file");
+  assert.ok(admin.some((event) => event.args.some((arg) => /^@.*admin\.header$/.test(arg))), "curl reads the token from a header file");
   for (const [scenario, message] of [["admin-open", /FAIL registry: a tokenless admin call is not 401/], ["admin-exposed", /FAIL registry: admin routes answer on the product port/], ["registry-tools", /FAIL registry: tools\/list on the new Product failed/], ["registry-kept", /FAIL registry: a deleted Product is still served/]] as const) {
     const result = smoke({ scenario });
     assert.equal(result.status, 1, result.output);

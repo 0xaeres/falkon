@@ -19,7 +19,7 @@ api_base="http://127.0.0.1:$api_port"
 admin_port=${SMOKE_ADMIN_PORT:-3302}
 admin_base="http://127.0.0.1:$admin_port"
 timeout=${SMOKE_TIMEOUT:-300}
-# A random admin token for this disposable stack only; it reaches the compose file through the environment, not argv.
+# A random admin token for this disposable stack only. It reaches the compose file and the golden runner through the environment and curl through a mode-600 header file, never through argv.
 admin_token=$(node -e "process.stdout.write(require('node:crypto').randomBytes(24).toString('hex'))")
 compose() { docker compose -p "$project" -f "$temp/compose.json" "$@"; }
 cleanup() {
@@ -43,6 +43,7 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' HUP INT TERM
 step=fixtures
+(umask 077; printf 'authorization: Bearer %s\n' "$admin_token" > "$temp/admin.header")
 sh "$root/tests/fixtures/build.sh" "$temp" >/dev/null
 ADMIN_TOKEN="$admin_token" node - "$root" "$temp" "$api_port" "$admin_port" docker/Dockerfile <<'JS'
 const fs = require('node:fs');
@@ -66,7 +67,7 @@ pass "$step"
 # The fixtures Product (config context "fixtures") searched through the api's Product-scoped route on the admin listener.
 search_path=/ui/products/fixtures/search
 search() {
-    curl --silent --show-error --fail --max-time 10 --get --header "authorization: Bearer $admin_token" --data-urlencode "q=$1" --data-urlencode 'limit=1000' "$admin_base$search_path" -o "$temp/search.json" 2>/dev/null
+    curl --silent --show-error --fail --max-time 10 --get --header "@$temp/admin.header" --data-urlencode "q=$1" --data-urlencode 'limit=1000' "$admin_base$search_path" -o "$temp/search.json" 2>/dev/null
 }
 wait_for() {
     query=$1
@@ -112,7 +113,7 @@ step=registry
 # An api Product created on the admin port (with the token) is served at /mcp/<slug> at once, and is gone once deleted.
 # The admin routes do not exist on the product port, and the admin port refuses a missing or wrong token.
 status() { curl --silent --show-error --max-time 10 --output /dev/null --write-out '%{http_code}' "$@" 2>/dev/null || :; }
-auth="authorization: Bearer $admin_token"
+auth="@$temp/admin.header"
 product_json='{"slug":"smoke-registry","name":"Smoke registry","definition":{"include":["fixtures.test/*"]}}'
 [ "$(status "$api_base/products")" = 404 ] || fail 'registry: admin routes answer on the product port'
 [ "$(status "$admin_base/products")" = 401 ] || fail 'registry: a tokenless admin call is not 401'
