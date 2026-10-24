@@ -37,7 +37,7 @@ The engine already does locate and read (Zoekt search, git readers, the eleven M
 | 2 | Relate and trace | What calls, uses, extends, or implements X; how does control reach B from A? | Deferred (D28). Served meanwhile by the ctags-backed tools and the impact-and-change recipe |
 | 3 | Impact | What could a change to X affect? | MVP via the impact-and-change recipe over the shipped tools (D28); graph-based potential impact deferred |
 | 4 | Overview | How does the Product fit together; where does a newcomer start? | Existing knowledge base documents; the deterministic map is deferred (D28) |
-| 5 | Why and history | Why is it built this way; what changed and when? | Target (D82, 2026-10-22): git history first, then pull requests and issues, then tickets; measured on its own stratum first (Phase 0). Raw access exists today: `list_commits`, `list_branches`, `get_diff` |
+| 5 | Why and history | Why is it built this way; what changed and when? | Target (D82, 2026-10-22): git history first, then pull requests and issues, then tickets; measured on its own stratum first (Phase 0). Raw access exists today: `list_commits`, `list_branches`, `get_diff`. Pull requests are stored and linked to commits and tickets ([4.11](#411-provenance-store-and-pull-request-import-d106-d107-d110-to-d114), S48); their tools are S49 |
 | 6 | Effort | How large is this change likely to be? | Later: needs history |
 
 Each capability ships only after it beats the engine without it on its own question stratum (D8, [9](#9-regression-gate)).
@@ -54,6 +54,7 @@ Each capability ships only after it beats the engine without it on its own quest
 | [4.8](#48-originality-rewrite-and-rename-d9) | Rewrite inherited text originally and remove the predecessor's names; tool names and input schemas stay. |
 | [4.9](#49-zoekt-upstream-probe-d10) | Probe upstream Zoekt before forking. |
 | [4.10](#410-no-regression-d11) | A slice lands only when the four-check regression gate passes. |
+| [4.11](#411-provenance-store-and-pull-request-import-d106-d107-d110-to-d114) | Pull requests in Postgres behind `ProvenanceStore`, loaded through `DiscussionSource`, commits linked and checked against the clone. |
 
 ---
 
@@ -141,6 +142,8 @@ Ports and their adapters. Domain and use cases depend only on ports; a backend c
 | `StructuralIndexer` | `scip-typescript`, `scip-java` run as external processes | SCIP ingestion job |
 | Search and git readers | Existing `zoekt.ts` and `git.ts` | Tool runners (unchanged) |
 | LLM | Existing `kb/llm.ts`, OpenAI-compatible | Knowledge base scans only |
+| `ProvenanceStore` | Postgres tables of [4.11](#411-provenance-store-and-pull-request-import-d106-d107-d110-to-d114) (raw SQL in `packages/shared/src/provenance.ts`); the graph database later (4.1 amendment) | Pull request import job, history tools |
+| `DiscussionSource` | Recorded snapshot (`packages/backend/src/discussions.ts`); live GitHub next (D107) | Pull request import job |
 
 ---
 
@@ -283,6 +286,17 @@ Edge vocabulary and derivation follow *earlier ADR* 4.4: `CALLS` (an AST call ex
 ### 4.10 No regression (D11)
 
 **Decision.** A slice lands only if all four checks in [9](#9-regression-gate) pass. Anything the reference v6 release does that the checks do not cover is a named non-goal ([10](#10-non-goals)), never a silent gap.
+
+### 4.11 Provenance store and pull request import (D106, D107, D110 to D114)
+
+**Decision (S48, 2026-10-23).** Pull requests, their comments, reviews, review comments and changed files live in Postgres (`Discussion`, `DiscussionComment`, `DiscussionFile`), with `ProvenanceLink` rows and one `DiscussionSyncState` row per repository, all keyed by repository and deleted with it. Writers and readers go through the `ProvenanceStore` port; its Postgres adapter is the only one until the provenance links move to the graph database (4.1 amendment). Data enters through the `DiscussionSource` port: the recorded snapshot of S47 now (`DISCUSSIONS_SNAPSHOT_DIR`, imported by the backend after each repository's index job), the live GitHub API next cycle, through the same mapper, linker and writer. Issues reuse the tables through `kind` (D110).
+
+- **Import.** One transaction per pull request upserts it by (repository, number) and replaces its comments, files and outgoing links as a set, so an edited or deleted comment is replaced and re-import is idempotent. Only pull requests updated at or after the repository's cursor are read again. Text is stored without NUL characters and with lone surrogates replaced; bodies are cut at 64K characters on a code-point boundary, and every cut (by the source or on import) is named in `truncated`. An item the source cannot read (malformed JSON, an invalid date or number) is skipped and counted in `skippedCount`, and the cursor stays put until it reads cleanly; the rest of the repository still imports. Author logins are stored, never emails (D114); a failed run stores a fixed error string, never provider text.
+- **Commit links, first match wins.** (1) a pull request's merge commit sha; (2) a subject ending `(#N)` (squash); (3) a `Merge pull request #N from` subject. Rules 2 and 3 only name pull requests the store holds. A link is verified when its commit is in the local clone and reachable from the indexed default-branch head (the commits `git log <head>` lists); an unverified link is stored and hidden unless asked for. Head-branch shas are never stored, so a force push cannot leave provenance behind. The `commits/{sha}/pulls` API fallback is not built.
+- **Pull request text links.** Ticket keys from the title, body and head branch name, for the operator's project keys (`DISCUSSION_TICKET_KEYS`) and Jira browse links only (D112); `#N` and `owner/repo#N` in the body as references, the second named `<host>/<owner>/<repo>`.
+- **Reads** take the caller's effective set and are bounded: at most 500 comments, files or links per call (the tools must say when a cap was reached); search ANDs at most 8 words as literal case-insensitive substrings (plain `ILIKE`, no extension) over title, body, head branch and comments, at most 20 hits a page, under a 2 s statement timeout. They read only Postgres; the tools that use them may add the local clone, never the code host. Isolation is P12 ([7](#7-product-isolation-enforcement-points)).
+
+**Why.** D106 keeps one store and its transactions; the port keeps the planned move to the graph database an adapter change. Checking every commit against the clone means a link never points at a commit the Product cannot read.
 
 ---
 
@@ -456,6 +470,7 @@ A Product path must not read, search, list, or diff outside its repository set. 
 | P9 | Ask | `ask_codebase` and the chat routes | Selected repositories are intersected with the effective set before the agent loop runs. | Tested: `ask_codebase` receives the session scope (`isolation.test.ts`); the UI chat route sets `selectedRepos` and the `Scope` to the Product's repositories, a scripted model that asks a tool to read another Product's repository gets the missing-repository error and none of its content, and a thread of one Product is 404 under another on GET and on POST messages (`packages/api/src/threads.test.ts`). The older web chat routes (`/api/chat`) keep their own scope and are not on the Product path |
 | P10 | Admin operations | Admin listener | Scan, delete, include, rebuild, and resync are not reachable on the Product listener. | Tested over real sockets: `app.test.ts`, `admin.test.ts` (neither listener serves the other's routes); `adminAuth.test.ts` (admin always on, bearer required, generated token file, fail closed on a short file); KB scan and resync are not moved yet and have no token |
 | P11 | MCP sessions and continuation state | Session store in the NestJS boundary (today `sessions` in [`packages/web/src/lib/mcp.ts`](../../packages/web/src/lib/mcp.ts), keyed by principal only) | A session and any continuation state are bound to the `productId` and a fingerprint of the effective scope at creation. A request that presents the session under another Product path, or with a different effective scope, is rejected, and starts no new session in its place. Under `none` every caller shares one principal, so the principal alone cannot serve as the binding. | Tested: `app.test.ts` (binding, replay, fingerprint, cap), `isolation.test.ts` (real MCP handlers, two Products at once) |
+| P12 | Discussions and provenance links | `ProvenanceStore` adapter (`packages/shared/src/provenance.ts`) | Rows are keyed by repository, so a discussion is visible exactly when its repository is. Every read takes the effective set and filters by repository in SQL; a repository outside it reads like a missing one; a link whose other end is a repository outside it is dropped; a repository in it that was never imported is a coverage gap (`pull requests not ingested for <repo>`), never an empty result. | Tested: `packages/shared/src/provenance.test.ts` (in-memory store) and `packages/api/src/provenanceIsolation.test.ts` (Postgres, when `PROVENANCE_TEST_DATABASE_URL` names a disposable database), the same cases from `provenance.contract.ts` |
 
 ### 7.1 Knowledge base isolation
 
@@ -487,6 +502,7 @@ Under `none`, rule 1 guarantees rule 2 for every Product reader. Rule 2 is the b
 | File fails to parse | `parse-failed` coverage for that path. |
 | Extraction loss: units of the previous complete build missing from files that still exist at the new revision exceed 10% of the previous build's units | Build marked `failed`; previous head keeps serving; results carry `graph-behind`. Units of deleted or renamed files do not count, so intentional deletion never trips the guard. An operator can accept the build through a rebuild on the admin listener. |
 | Build fails for another reason | Retried as in [5.2](#52-per-revision-replace-deduplication-and-retry); previous head keeps serving; results carry `graph-behind`. |
+| Pull requests never imported for a repository | History reads return a coverage gap naming it, not an empty result (P12). |
 | No graph yet for a repository | Structural tools return no relationships and a coverage gap saying the repository has no graph. |
 | Traversal hits its hop, count, or deadline limit | Partial result with the limit named; never silently truncated. |
 | Postgres unavailable | Product resolution reads the `Repo` registry, so every request fails closed at P1. Beneath that, every tool that resolves a repository goes through Prisma (`getRepo` and `listRepos` in [`packages/web/src/lib/tools.ts`](../../packages/web/src/lib/tools.ts)), so these fail too: `read_file`, `list_tree`, `list_commits`, `list_branches`, `get_diff`, `list_repos`, and any search tool given a repository argument. Only a search with no repository argument reaches Zoekt without Postgres, and it is served only while P1 can resolve the Product. Structural tools fail closed. |
@@ -533,7 +549,7 @@ New capabilities also pass the D8 rule ([4.7](#47-capabilities-earn-their-place-
 | Hidden relationships (Spring DI, Angular templates) | High | Medium | Reported as coverage, never inferred (*earlier ADR* 7) |
 | Memory budget breached by indexer containers | Medium | Medium | Indexers run as jobs, not resident services; check 4 measures core memory without them |
 | Structural tools do not beat lexical tools on their strata (as in cycles 12 and 13) | Medium | Medium | D8: they stay behind a flag; no default change |
-| Product isolation bug in a new path | Low | High | P1 to P11 with tests per point |
+| Product isolation bug in a new path | Low | High | P1 to P12 with tests per point |
 | Long `REPEATABLE READ` snapshots delay vacuum of deleted builds | Low | Low | `statement_timeout` and bounded traversals keep snapshots short |
 
 Open questions:

@@ -41,6 +41,14 @@ export function report({ datasets, accepted, split, arms, model = "sonnet", refe
   const section = (arm: Arm, s: string | undefined) => {
     const rows = rowsFor(arm, s), paired = pairedOf(rows), { runs, failed, malformed, leaks } = counts(rows);
     lines.push(`Coverage ${arm}: ${paired.length}/${rows.length} paired; failed ${failed}; malformed ${malformed}; leaks ${leaks}.`, `Denied tool attempts (research_codebase, list_commits, get_diff, list_branches): ${runs.reduce((n, r) => n + (r.deniedAttempts ?? 0), 0)}.`);
+    const totals: Record<string, number> = {};
+    for (const r of runs) for (const [tool, n] of Object.entries(r.toolCalls ?? {})) totals[tool] = (totals[tool] ?? 0) + n;
+    lines.push(`Tool calls ${arm}: ${Object.entries(totals).sort().map(([k, v]) => `${k} ${v}`).join(", ") || "none"}.`);
+    // The history set names its question kinds in the id: hist-a-* why, hist-b-* what-when, hist-c-* ticket-to-code.
+    for (const [infix, kind] of [["a", "why"], ["b", "what-when"], ["c", "ticket-to-code"]] as const) {
+      const qs = questions(s), scored = rows.flatMap((r, i) => r.score && qs[i]!.q.id.includes(`-${infix}-`) ? [r.score] : []);
+      if (scored.length) lines.push(`Kind ${kind} (n ${scored.length}): recall ${f4(mean(scored.map((x) => x.recall)))}; precision ${f4(mean(scored.map((x) => x.precision)))}.`);
+    }
     if (paired.length) {
       lines.push("", "| Metric | Arm mean | Reference mean | n | Difference [95% CI] |", "| --- | ---: | ---: | ---: | --- |");
       const metrics = { recall: [(r: Paired) => r.score.recall, (r: Paired) => r.floorScore.recall], precision: [(r: Paired) => r.score.precision, (r: Paired) => r.floorScore.precision], cost: [(r: Paired) => r.run.total_cost_usd, (r: Paired) => r.floor.total_cost_usd] } as const;

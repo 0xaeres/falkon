@@ -135,6 +135,9 @@ model Repo {
   lastIndexedAt         DateTime?
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
+  discussions           Discussion[]
+  provenanceLinks       ProvenanceLink[]
+  discussionSync        DiscussionSyncState?
 
   @@unique([external_id, external_codeHostUrl])
 }
@@ -221,4 +224,103 @@ model KnowledgeDoc {
   updatedAt         DateTime @updatedAt
 
   @@unique([repoId, path])
+}
+
+// ---- Pull request provenance (ADR 0001, 4.11; P12) ----------------------------------------------------------------
+// Rows are keyed by repository, so they are visible exactly when the repository is. Written by the backend import job
+// through the ProvenanceStore port (packages/shared/src/provenance.ts, raw SQL), read by the tools through the same port.
+
+enum DiscussionKind {
+  PR
+  ISSUE
+}
+
+/// A pull request (later an issue) of one repository. Third-party text; author logins only, never emails.
+model Discussion {
+  id             Int                 @id @default(autoincrement())
+  repo           Repo                @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  repoId         Int
+  number         Int
+  kind           DiscussionKind      @default(PR)
+  title          String
+  body           String // at most 64K characters; "body" in `truncated` when cut
+  state          String // open | closed | merged
+  authorLogin    String?
+  createdAt      DateTime
+  updatedAt      DateTime // the provider's, not ours
+  mergedAt       DateTime?
+  closedAt       DateTime?
+  mergeCommitSha String?
+  headRef        String?
+  baseRef        String?
+  url            String?
+  labels         String[]
+  /// Parts cut short: comments, reviews, reviewComments, files (by the source), body, commentBodies (on import).
+  truncated      String[]
+  comments       DiscussionComment[]
+  files          DiscussionFile[]
+
+  @@unique([repoId, number])
+  @@index([repoId, mergedAt])
+}
+
+/// A comment, review or review comment; replaced with its discussion as a set.
+model DiscussionComment {
+  id           Int        @id @default(autoincrement())
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  discussionId Int
+  externalId   String
+  kind         String // issue_comment | review | review_comment
+  authorLogin  String?
+  body         String
+  state        String? // a review's verdict
+  path         String?
+  line         Int?
+  createdAt    DateTime
+  updatedAt    DateTime?
+
+  @@index([discussionId])
+}
+
+model DiscussionFile {
+  id           Int        @id @default(autoincrement())
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  discussionId Int
+  path         String
+  additions    Int
+  deletions    Int
+
+  @@index([discussionId])
+}
+
+/// commit -> pr (merge-commit-sha, squash-subject, merge-subject), pr -> ticket (ticket-pattern), pr -> pr (body-ref).
+/// Commit links are verified against the local clone; unverified ones are hidden by default. Head-branch SHAs are never stored.
+model ProvenanceLink {
+  id       Int     @id @default(autoincrement())
+  repo     Repo    @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  repoId   Int
+  fromKind String // commit | pr
+  fromRef  String // full sha or pull request number
+  toKind   String // pr | ticket
+  toRef    String // pull request number or ticket key
+  toRepo   String? // repository name of a pr target elsewhere; null for this repository
+  source   String
+  verified Boolean
+
+  @@index([repoId, fromKind, fromRef])
+  @@index([toKind, toRef])
+}
+
+/// Per repository: where the last import got to. A repository without a successful import is a coverage gap.
+model DiscussionSyncState {
+  repo            Repo      @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  repoId          Int       @id
+  cursorUpdatedAt DateTime?
+  lastRunAt       DateTime?
+  lastSuccessAt   DateTime?
+  headCommit      String? // the head the commit links were computed against
+  status          String // running | ok | failed
+  error           String? // fixed strings only, never provider text
+  importedCount   Int       @default(0)
+  skippedCount    Int       @default(0) // malformed source items in the last run; the cursor waits for them
 }

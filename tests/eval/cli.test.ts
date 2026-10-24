@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { EVAL_DIR, datasetSchema, loadDataset, loadProduct, readRaw, writeRaw, type Raw } from "./data.js";
 import { existsSync } from "node:fs";
-import { lineCounter, main, pilotIds } from "./cli.js";
+import { backendOf, config, lineCounter, main, pilotIds } from "./cli.js";
 import { goldPaths } from "./preflight.js";
 
 // Pointing the checkouts at a missing directory proves the listing never touches them (or the network or the model).
@@ -93,6 +93,8 @@ test("stack takes --instructions off only", async () => {
 test("stack takes --recipe on only, and not together with --instructions off", async () => {
   await assert.rejects(main(["stack", "up", "--recipe", "off"], {}), /--recipe must be on/);
   await assert.rejects(main(["stack", "up", "--recipe", "on", "--instructions", "off"], {}), /separate stacks/);
+  await assert.rejects(main(["stack", "up", "--prs", "on", "--recipe", "on"], {}), /separate stacks/);
+  await assert.rejects(main(["stack", "up", "--prs", "off"], {}), /--prs must be on/);
 });
 
 test("the impact set: 11 questions, 6 dev and 5 hidden, with 3 to 8 gold spans each, and a pilot of all the dev ones", async () => {
@@ -269,5 +271,16 @@ test("clone-tools-git is a valid arm that lists the git tools; --dataset history
     const out = await main(["pilot", "--list", "--arms", "clone-tools-git"], env(runs));
     assert.match(out, /clone-tools-git: .*mcp__falkon__list_commits,mcp__falkon__get_diff,mcp__falkon__list_branches/);
     if (!existsSync(join(EVAL_DIR, "datasets/o3-history.json"))) await assert.rejects(main(["pilot", "--dataset", "history", "--list"], env(runs)), /o3-history\.json/);
+  });
+});
+
+test("clone-tools-git-prs routes to the --prs on stack and lists the pull request tools", async () => {
+  const cfg = config({ EVAL_PRS_PORT: "4403" });
+  assert.deepEqual(backendOf("clone-tools-git-prs", cfg, {}), { id: "prs", url: "http://127.0.0.1:4403/api/mcp", key: undefined, kind: "clone", instructions: true });
+  assert.equal(backendOf("clone-tools-git-prs", config({}), {}).url, "http://127.0.0.1:3403/api/mcp");
+  assert.equal(backendOf("clone-tools-git", config({}), {}).url, "http://127.0.0.1:3400/api/mcp");
+  await assert.rejects(main(["bogus"], {}), /clone-tools-git-prs/);
+  await withRuns(async (runs) => {
+    assert.match(await main(["pilot", "--list", "--arms", "clone-tools-git-prs"], env(runs)), /clone-tools-git-prs: .*mcp__falkon__get_pull_request,mcp__falkon__search_discussions,mcp__falkon__get_provenance/);
   });
 });

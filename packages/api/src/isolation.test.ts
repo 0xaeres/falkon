@@ -261,3 +261,69 @@ test("P11: a membership change rejects the open session (no widening through an 
     assert.equal((await send("fx", { jsonrpc: "2.0", id: ++rpcId, method: "tools/list" }, fresh)).status, 404, "narrowing rejects too");
   } finally { products.fx!.repoNames = [IN]; }
 });
+
+// ---- P12: the pull request history tools (MCP_HISTORY_TOOLS=on) through the real Product listener ----
+
+test("P12: history tools exist only with the flag, and the Product's repository set bounds every read", async () => {
+  const { toolDeps } = await import("../../web/src/lib/tools");
+  const { fakeProvenanceStore } = await import("../../shared/src/provenance.fake");
+  const store = fakeProvenanceStore({ [IN]: 1, [OUT]: 2 });
+  const ok = { cursorUpdatedAt: null, lastRunAt: null, lastSuccessAt: new Date("2025-02-01T00:00:00Z"), headCommit: null, status: "ok" as const, error: null, importedCount: 1, skippedCount: 0 };
+  const d = (title: string) => ({ kind: "PR" as const, number: 7, title, body: SECRET_TEXT, state: "merged" as const, authorLogin: "dev", createdAt: new Date("2025-01-01"), updatedAt: new Date("2025-01-02"), mergedAt: null, closedAt: null, mergeCommitSha: null, headRef: null, baseRef: null, url: null, labels: [], truncated: [], comments: [], files: [] });
+  await store.saveSyncState(1, ok);
+  await store.saveSyncState(2, ok);
+  await store.replaceDiscussion(1, d("in-set seven"), [{ fromKind: "pr", fromRef: "7", toKind: "pr", toRef: "7", toRepo: OUT, source: "body-ref", verified: true }, { fromKind: "pr", fromRef: "7", toKind: "ticket", toRef: "TRUNK-1", toRepo: null, source: "ticket-pattern", verified: true }]);
+  await store.replaceDiscussion(2, d("outside seven"), [{ fromKind: "pr", fromRef: "7", toKind: "ticket", toRef: "TRUNK-1", toRepo: null, source: "ticket-pattern", verified: true }]);
+  const before = toolDeps.history, flag = process.env.MCP_HISTORY_TOOLS;
+  toolDeps.history = store;
+  try {
+    delete process.env.MCP_HISTORY_TOOLS;
+    const off = await openSession("fx");
+    const names = async (session: string) => ((await payload(await send("fx", { jsonrpc: "2.0", id: ++rpcId, method: "tools/list" }, session))).result.tools as { name: string }[]).map((t) => t.name);
+    assert.ok(!(await names(off)).includes("get_pull_request"), "flag off: not listed");
+    assert.equal((await call(off, "get_pull_request", { repo: IN, number: 7 })).isError, true, "flag off: not callable");
+
+    process.env.MCP_HISTORY_TOOLS = "on";
+    const on = await openSession("fx");
+    assert.deepEqual((await names(on)).slice(-3), ["get_pull_request", "search_discussions", "get_provenance"]);
+
+    // an out-of-set repository gives exactly what a missing one gives, for every history tool and anchor
+    const pairs: [string, (repo: string) => Record<string, unknown>][] = [
+      ["get_pull_request", (repo) => ({ repo, number: 7 })],
+      ["search_discussions", (repo) => ({ query: "seven", repo })],
+      ["get_provenance", (repo) => ({ repo, pr: 7 })],
+      ["get_provenance", (repo) => ({ repo, ticket: "TRUNK-1" })],
+      ["get_provenance", (repo) => ({ repo, path: "src/hello.ts" })],
+    ];
+    for (const [name, args] of pairs) {
+      const out = await call(on, name, args(OUT));
+      const missing = await call(on, name, args(MISSING));
+      assert.equal(out.isError, true, name);
+      assert.equal(out.text.replaceAll(OUT, "<repo>"), missing.text.replaceAll(MISSING, "<repo>"), name);
+      assert.doesNotMatch(out.text, new RegExp(`${SECRET_TEXT}|outside seven`), name);
+    }
+
+    // unrestricted reads never carry the other Product's rows or links
+    const everything = [
+      await call(on, "search_discussions", { query: "seven" }),
+      await call(on, "search_discussions", { query: "TRUNK-1" }),
+      await call(on, "search_discussions", { query: "#7" }),
+      await call(on, "get_provenance", { ticket: "TRUNK-1" }),
+      await call(on, "get_provenance", { repo: IN, pr: 7 }),
+      await call(on, "get_pull_request", { repo: IN, number: 7 }),
+    ];
+    for (const r of everything) {
+      assert.equal(r.isError, false, r.text);
+      assert.doesNotMatch(r.text, new RegExp(`${OUT}|outside seven`), r.text);
+    }
+    assert.deepEqual(JSON.parse(everything[0]!.text).hits.map((h: { repo: string }) => h.repo), [IN]);
+    assert.deepEqual(JSON.parse(everything[4]!.text).pullRequests, [], "the link into the other Product is dropped");
+
+    // the other Product sees only its own
+    const other = await openSession("other");
+    assert.deepEqual(JSON.parse((await call(other, "search_discussions", { query: "seven" }, "other")).text).hits.map((h: { repo: string }) => h.repo), [OUT]);
+  } finally {
+    toolDeps.history = before;
+    if (flag === undefined) delete process.env.MCP_HISTORY_TOOLS; else process.env.MCP_HISTORY_TOOLS = flag;
+  }
+});
