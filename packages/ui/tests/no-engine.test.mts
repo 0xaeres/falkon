@@ -11,11 +11,20 @@ test("UI routes without ENGINE_URL answer 503 'ENGINE_URL is not set', never moc
   const products = await import("../src/app/api/products/route");
   const status =
     await import("../src/app/api/products/[productId]/status/route");
+  const knowledge =
+    await import("../src/app/api/products/[productId]/knowledge/route");
   const repositories = await import("../src/app/api/repositories/route");
   const connections = await import("../src/app/api/connections/route");
   const calls = [
     products.GET(),
     status.GET(get(), ctx),
+    knowledge.POST(
+      new Request("http://localhost/api/x", {
+        method: "POST",
+        body: JSON.stringify({ repo: "github.com/a/b", action: "scan" }),
+      }),
+      ctx,
+    ),
     repositories.GET(
       new Request("http://localhost/api/repositories?connection=c1"),
     ),

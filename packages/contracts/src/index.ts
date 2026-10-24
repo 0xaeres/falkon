@@ -178,6 +178,9 @@ export const answerPartSchema = answerSchema.pick({
   suggestions: true,
 });
 export const syncRequestSchema = z.object({ action: z.literal("retry") });
+// Body of POST /ui/products/:slug/knowledge: what the backend is asked to do to one member repository's knowledge base.
+export const knowledgeActionRequestSchema = z.object({ repo: z.string().min(1).max(500), action: z.enum(["scan", "delete", "include"]) });
+export type KnowledgeActionRequest = z.infer<typeof knowledgeActionRequestSchema>;
 export type Provider = z.infer<typeof providerSchema>;
 export type Repository = z.infer<typeof repositorySchema>;
 export type Product = z.infer<typeof productSchema>;
