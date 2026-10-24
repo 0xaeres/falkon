@@ -217,6 +217,7 @@ Base `main` at the commit that holds this plan. Cycle branch `loop/falkon-enterp
 | D124 (default) | Fetch design: incremental discovery with the REST issues listing (`state=all`, `sort=updated`, `direction=asc`, `since=cursor`), keeping the items that carry `pull_request`; detail for each number by GraphQL in batches (the fragment, page caps and `truncated` flags of the S47 snapshot, reused so both sources store the same shape). The cursor is the newest `updatedAt` processed per repository (the existing `DiscussionSyncState.cursorUpdatedAt`); ascending order means an interrupted run resumes without skipping. Transport is Octokit already in the backend (`@octokit/rest` includes the GraphQL client): no new dependency. GitHub Enterprise uses the connection's `url`. |
 | D125 (default) | Head-branch shas are never stored (ADR 4.11 stays). The `commits/{sha}/pulls` fallback links default-branch commits that no merge sha or `(#N)` subject names (rebase and merge-queue merges), at most 50 probes per run, results (including "none") remembered so a commit is asked once. |
 | D126 (default) | Errors store fixed strings only, never GitHub text; the token is never logged; GitHub error bodies are not stored. Pull request text stays untrusted (decision D114). |
+| D128 | Eval spend: a new cap of $5 for cycle 15 (human, 2026-10-24); the earlier Phase 2 cap ($3.69 of $5 used) is closed. It pays for the S61 rerun of both arms. |
 | D127 (default) | Live sync reads happen only in the backend worker. A test pins that the history tool module and the web tools import no network client. ADR 4.11 is amended in place in S57 (live adapter, permissions, freshness; "polling only"); isolation point P12 is unchanged because rows stay keyed by repository. |
 
 ### Slices
@@ -284,22 +285,45 @@ Base `main` at the commit that holds this plan. Cycle branch `loop/falkon-enterp
 - Adversarial cases: a span path with and without the prefix; a path in two repositories; a malformed fence; 21 items.
 - Blocked by: none. A rerun of the arms with the new prompt needs a new spend approval and is not part of this cycle.
 
+**S59. Search hint when a multi-word search finds nothing.** Tier standard. Agent claude. Added by the human after gate 1 (2026-10-24).
+- Goal: an agent whose all-words-required `search_discussions` query finds nothing learns what to do (cause of the hist-a-09 loss in `c14-followup-analysis.md`).
+- Scope: `packages/shared/src/historyTools.ts`, `historyToolText.json`, tests. Only the flag-gated `search_discussions`; reads Postgres only.
+- Done: with more than one word and `totalCount` 0, the result carries `hint` ("all words are required; try fewer or the title words") and up to 5 `partialMatches` (newest first, each naming `matchedWords`) from a bounded any-word search under the same 2 s timeout and repository filter; one word, or any hit, adds neither; with the flag off the registration snapshots are byte-identical; an out-of-Product repository never appears in `partialMatches` (P12).
+- Verify: `pnpm typecheck && pnpm test`.
+- Adversarial cases: 8 words (the cap); every word matching a different pull request; a query of only ticket-key or `#N` shape (exact lookups stay exact, no hint); the timeout firing during the fallback (hint kept, `truncated` names it).
+- Blocked by: none.
+
+**S60. Repository-name hint on "not found".** Tier standard. Agent claude. Added by the human after gate 1.
+- Goal: a bare repository name (`openmrs-esm-core`) that the server rejects tells the agent the spelling that works, saving the roughly four wasted calls per run seen in cycle 14.
+- Scope: the shared repository-not-found error in the tool runner (`packages/shared/src/tools.ts` or where the graph shows it) and its tests. Error text only: no tool schema, description or registration changes.
+- Done: when a bare name matches exactly one repository in the caller's effective set, the error says `Repository "x" not found. Did you mean "github.com/openmrs/x"?`; no match or several matches keep today's text unchanged; a repository outside the effective set is never suggested (P12); registration snapshots are byte-identical with the flag off; tests that pin the old text are updated and listed in the slice report.
+- Verify: `pnpm typecheck && pnpm test`.
+- Adversarial cases: a name matching two repositories in different hosts; a name matching only an out-of-Product repository; case differences; empty and path-like input.
+- Blocked by: none.
+
+**S61. Rerun of both arms with the fixes.** Tier standard. Agent claude (verifier runs the commands). Costs money, under D128.
+- Goal: measure the effect of S58, S59 and S60 on the 40 history questions, Haiku, same day, both arms.
+- Scope: eval runs only (`.scratch/falkon-enterprise/eval-runs-c15/`, a short report `baseline-c15-report.md` and a results note in this spec). No product code.
+- Done: both arms complete 40 of 40 with zero failed or malformed runs; `report --reference clone-tools-git`; per-kind recall and precision against the cycle 14 numbers (new arm 0.849 recall, 0.544 precision, "why" precision 0.276), the dropped-span count, and the count of "repository not found" errors per run (cycle 14: 164 and 176 in 40 runs); cost within D128.
+- Verify: `pnpm eval -- run --dataset history --model haiku --arms clone-tools-git,clone-tools-git-prs` on a disposable `falkon-eval*` stack, then `pnpm eval -- report --dataset history --model haiku --reference clone-tools-git`.
+- Stops and asks the human if: `EVAL_O3_DIR` or the snapshot is not available, or projected spend exceeds D128.
+- Blocked by: S58, S59, S60.
+
 ### Regression gate
 
-Check 1 (registration snapshots with `MCP_HISTORY_TOOLS` off) stays byte-identical; nothing in this cycle changes how existing datasets score; `pnpm typecheck && pnpm test` pass; the cycle 14 pull request eval stack still imports the snapshot (S54 keeps `DISCUSSIONS_SNAPSHOT_DIR` working). No paid eval run is planned.
+Check 1 (registration snapshots with `MCP_HISTORY_TOOLS` off) stays byte-identical; nothing in this cycle changes how existing datasets score; `pnpm typecheck && pnpm test` pass; the cycle 14 pull request eval stack still imports the snapshot (S54 keeps `DISCUSSIONS_SNAPSHOT_DIR` working). The only paid run is S61, inside the D128 cap.
 
 ### Order, limits, budget
 
-- Wave 1: S51 and S52 in parallel. Wave 2: S53 and S55 in parallel. Wave 3: S54. Wave 4: S56. Wave 5: S57. S58 runs in wave 1 beside S51 and S52 (it touches only `tests/eval`). Gate 2 also needs the human's real-token smoke run.
+- Wave 1: S51 and S52 in parallel. Wave 2: S53 and S55 in parallel. Wave 3: S54. Wave 4: S56. Wave 5: S57. S58, S59 and S60 run in wave 1 beside S51 and S52 (three parallel at a time, the rest as slots free; S58 touches only `tests/eval`). S61 runs after S58 to S60 land, before gate 2. Gate 2 also needs the human's real-token smoke run.
 - The loop may decide alone: details inside each slice's scope, fix rounds, a rerun of a failed verify once.
-- It stops for: any new dependency; any change to the tool registration with the flag off; any step that needs a real token or the human's `gh` login beyond S51; ADR or glossary changes beyond the planned 4.11 amendment; a change to how existing datasets score; a schema change beyond the additive ones named above; any push or pull request; any eval run that costs money (Phase 2 cap $5, $3.69 used; a new approval is required).
+- It stops for: any new dependency; any change to the tool registration with the flag off; any step that needs a real token or the human's `gh` login beyond S51; ADR or glossary changes beyond the planned 4.11 amendment; a change to how existing datasets score; a schema change beyond the additive ones named above; any push or pull request; spend over the D128 cap of $5.
 - Docker: one stack at a time, only disposable `falkon-eval*` projects; never the human's `falkon` project or the `falcon-sourcebot-*` containers.
 - Budget: 1.6M subagent tokens and 360 minutes (the last four cycles used 0.26M to 1.05M; S53 is hard).
 - Gate 2 fires when S57 is kept and the human has the smoke result, or on any trigger.
 
 ### Not in this cycle
 
-- The search-hint fix for multi-word searches that find nothing and the bare-repository-name error hint (they touch the tools, flag-gated; later).
 - Issues, webhooks, Jira, the git-only history tools of Phase 1, visibility synced from GitHub (Phase 6).
 
 ## Next
