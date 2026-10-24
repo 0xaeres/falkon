@@ -125,7 +125,7 @@ test("a saved thread seeds useChat and renders its answers with citations", () =
   assert.ok(html.includes('aria-label="Read source 1"'));
 });
 
-test("main navigation: Status, Chat, Connect, Settings, each resolving to a route; no Docs or Account", () => {
+test("main navigation: Status, Chat, Search, Connect, Settings, each resolving to a route; no Docs or Account", () => {
   const product = seedProducts[0];
   const html = renderToStaticMarkup(
     <AppRouterContext.Provider value={router}>
@@ -146,7 +146,7 @@ test("main navigation: Status, Chat, Connect, Settings, each resolving to a rout
   ].map((m) => m[1] ?? m[2]);
   assert.deepEqual(
     hrefs,
-    ["status", "chat", "connect", "settings"].map((n) => `/${product.id}/${n}`),
+    ["status", "chat", "search", "connect", "settings"].map((n) => `/${product.id}/${n}`),
   );
   for (const href of hrefs)
     assert.ok(

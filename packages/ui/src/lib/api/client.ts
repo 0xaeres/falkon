@@ -4,6 +4,7 @@ import {
   connectionSchema,
   productSchema,
   repositorySchema,
+  searchResponseSchema,
   statusSchema,
   threadSchema,
   threadSummarySchema,
@@ -22,6 +23,8 @@ export const keys = {
   threads: (id: string) => `${base}/products/${encodeURIComponent(id)}/threads`,
   thread: (productId: string, threadId: string) =>
     `${base}/products/${encodeURIComponent(productId)}/threads/${encodeURIComponent(threadId)}`,
+  search: (id: string, params: URLSearchParams) =>
+    `${base}/products/${encodeURIComponent(id)}/search?${params}`,
   messages: (productId: string, threadId: string) =>
     `${keys.thread(productId, threadId)}/messages`,
 };
@@ -77,6 +80,7 @@ export const api = {
     return all;
   },
   status: (url: string) => request(url, statusSchema),
+  search: (url: string) => request(url, searchResponseSchema),
   threads: (url: string) => request(url, z.array(threadSummarySchema)),
   thread: (url: string) => request(url, threadSchema),
   connect: (input: unknown) =>
