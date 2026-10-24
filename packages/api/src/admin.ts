@@ -137,7 +137,7 @@ function requireBearer(app: INestApplication, token: () => string) {
  * The admin listener: `GET/POST /products`, `GET/PUT/DELETE /products/:slug` and, when a ConnectionService is given,
  * `POST|GET /connections`, `DELETE /connections/:id`, `PUT /connections/:id/token`, `GET /connections/:id/repositories`
  * and, when a UiProductService is given, the six UI-shaped routes under `/ui/products` and, when a ThreadService is given too,
- * the four thread routes under `/ui/products/:slug/threads`.
+ * the four thread routes under `/ui/products/:slug/threads` and, when a SearchService is given, `GET /ui/products/:slug/search`.
  * Everything else is 404, all behind `Authorization: Bearer <token>`. It must still listen on loopback only
  * (API_ADMIN_HOST, default 127.0.0.1).
  */

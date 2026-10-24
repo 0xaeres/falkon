@@ -9,8 +9,40 @@ import { error } from "./request";
 
 type Db = Pick<PrismaClient, "product" | "searchContext">;
 
+const CONTEXTS_TTL_MS = 30_000;
+const CONTEXTS_LOAD_MS = 2_000;
+
 export class SearchService {
-  constructor(private readonly db: Db) {}
+  private cache?: { at: number; contexts: Record<string, string[]> };
+
+  constructor(
+    private readonly db: Db,
+    private readonly now: () => number = Date.now,
+  ) {}
+
+  /**
+   * Search contexts by name, cached for 30 s. A failed or slow (2 s) load keeps the last known value (none: no contexts,
+   * so `context:` is a 404) and is retried after the next TTL, so a slow database never stalls a search.
+   */
+  private async contexts(): Promise<Record<string, string[]>> {
+    const t = this.now();
+    if (this.cache && t - this.cache.at < CONTEXTS_TTL_MS) return this.cache.contexts;
+    let contexts = this.cache?.contexts ?? {};
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const rows = await Promise.race([
+        this.db.searchContext.findMany({ select: { name: true, repoNames: true } }),
+        new Promise<never>((_, no) => (timer = setTimeout(() => no(new Error("contexts load timed out")), CONTEXTS_LOAD_MS))),
+      ]);
+      contexts = Object.fromEntries(rows.map((c) => [c.name, c.repoNames]));
+    } catch {
+      // keep contexts
+    } finally {
+      clearTimeout(timer);
+    }
+    this.cache = { at: t, contexts };
+    return contexts;
+  }
 
   async search(slug: string, params: z.infer<typeof searchQuerySchema>) {
     const row = isProductName(slug) ? await this.db.product.findUnique({ where: { slug }, select: { repoNames: true } }) : null;
@@ -19,14 +51,13 @@ export class SearchService {
     // The Product's repositories exactly (the same intersection the MCP path uses).
     const policy = noneAccessPolicy();
     const { scope } = policy.effectiveScope(policy.authenticate(undefined)!, row.repoNames)!;
-    const contexts = Object.fromEntries((await this.db.searchContext.findMany({ select: { name: true, repoNames: true } })).map((c) => [c.name, c.repoNames]));
     try {
       const r = await search(params.q, {
         regex: params.regex === "1",
         caseSensitive: params.case === "1",
         matches: params.limit,
         scope: scope.repoFilter ? [qRepo(scope.repoFilter)] : [],
-        contexts,
+        contexts: await this.contexts(),
       });
       // The scope node narrows the query; filtering the hits is the guarantee (P12).
       const files = r.files.filter((f) => scope.allows(f.repo));

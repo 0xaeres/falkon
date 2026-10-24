@@ -4,7 +4,7 @@ import fs from "node:fs";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
 import { searchResponseSchema } from "@falkon/contracts";
-import { search, setZoektTransport, type WSearchRequest, type WSearchResponse } from "@falkon/shared";
+import { QuerySyntaxError, scopeFor, search, SearchContextNotFoundError, setZoektTransport, type WSearchRequest, type WSearchResponse } from "@falkon/shared";
 import { normalize } from "../../../tests/golden/normalize";
 import { createAdminApp } from "./admin";
 import { SearchService } from "./search";
@@ -105,17 +105,70 @@ test("limit defaults to 500, is capped at 5000, and regex and case reach the que
   assert.match(JSON.stringify(requests[0]!.query), /"case_sensitive":true/);
 });
 
-test("the golden search set returns identical results through the route and through @falkon/shared", async () => {
+test("isolation holds for negated repo:, regex, rev:-only and sym:-only queries", async () => {
+  const cases: [string, Record<string, string>][] = [
+    ["-repo:one needle", {}],
+    ["ne+dle", { regex: "1" }],
+    ["rev:main", {}],
+    ["sym:Handler", {}],
+  ];
+  const scope = scopeFor([ONE]).repoFilter;
+  for (const [q, extra] of cases) {
+    requests = [];
+    const r = await get("alpha", { q, ...extra });
+    assert.equal(r.status, 200, q);
+    assert.equal(repos(r.json).includes(TWO), false, q);
+    assert.deepEqual((requests[0]!.query as any).and.children.at(-1), { repo: { regexp: scope } }, q);
+  }
+});
+
+test("the golden search set: same request plus one AND-ed scope node, same results, exact errors", async () => {
   const queries = JSON.parse(fs.readFileSync(new URL("../../../tests/golden/queries.json", import.meta.url), "utf8")) as { id: string; query: string; regex?: boolean; case?: boolean; limit?: number; repos?: string[] }[];
   const ctx = Object.fromEntries(contexts.map((c) => [c.name, c.repoNames]));
+  const scope = { repo: { regexp: scopeFor([ONE, TWO]).repoFilter } };
+  let ok = 0;
   for (const q of queries) {
     const text = q.repos?.length ? `(${q.query}) reposet:${q.repos.join(",")}` : q.query;
+    requests = [];
     const direct = await (async () => search(text, { regex: q.regex, caseSensitive: q.case, matches: q.limit ?? 500, contexts: ctx }))().catch((e) => e);
+    const directRequests = requests;
+    requests = [];
     const routed = await get("both", { q: text, regex: q.regex ? "1" : "0", case: q.case ? "1" : "0", limit: String(q.limit ?? 500) });
-    if (direct instanceof Error) assert.ok(routed.status >= 400, q.id);
-    else assert.deepEqual(normalize(routed.json), normalize(direct), q.id);
+    if (direct instanceof QuerySyntaxError) {
+      assert.deepEqual([routed.status, routed.json.errorCode, requests.length], [400, "FAILED_TO_PARSE_QUERY", 0], q.id);
+    } else if (direct instanceof SearchContextNotFoundError) {
+      assert.deepEqual([routed.status, routed.json.errorCode, requests.length], [404, "SEARCH_CONTEXT_NOT_FOUND", 0], q.id);
+    } else {
+      assert.ok(!(direct instanceof Error), q.id);
+      ok++;
+      assert.equal(routed.status, 200, q.id);
+      assert.equal(requests.length, 1, q.id);
+      const [d, r] = [directRequests[0]!, requests[0]!];
+      assert.deepEqual(r.opts, d.opts, q.id);
+      assert.deepEqual(r.query, { and: { children: [...(d.query as any).and.children, scope] } }, q.id);
+      assert.deepEqual(normalize(routed.json), normalize(direct), q.id);
+    }
   }
-  assert.ok(queries.length >= 40);
+  assert.ok(queries.length >= 40 && ok >= 40, `${ok} of ${queries.length} golden queries compared`);
+});
+
+test("search contexts are cached for 30 s, reloaded after, and a failed reload keeps the last value", async () => {
+  let loads = 0;
+  let broken = false;
+  let clock = 0;
+  const counting = { ...db, searchContext: { findMany: async () => (loads++, broken ? Promise.reject(new Error("db down")) : contexts) } };
+  const service = new SearchService(counting as never, () => clock);
+  const run = () => service.search("both", { q: "context:fixtures needle", limit: 500 });
+  await run();
+  await run();
+  assert.equal(loads, 1);
+  clock = 30_001;
+  await run();
+  assert.equal(loads, 2);
+  broken = true;
+  clock = 60_002;
+  assert.equal((await run()).files.length, 2); // `fixtures` still known
+  assert.equal(loads, 3);
 });
 
 test("the route's body parses as the UI search contract", async () => {

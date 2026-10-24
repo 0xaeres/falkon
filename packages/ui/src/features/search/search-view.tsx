@@ -14,18 +14,25 @@ function Highlighted({
   ranges: [number, number][];
 }) {
   let at = 0;
+  // Sorted, clamped to the text and to the end of the previous mark, so no character is shown twice.
+  const marks = [...ranges]
+    .sort((x, y) => x[0] - y[0])
+    .flatMap(([from, to]) => {
+      const start = Math.max(from, at, 0);
+      const end = Math.min(to, text.length);
+      if (end <= start) return [];
+      const mark = (
+        <Fragment key={start}>
+          {text.slice(at, start)}
+          <mark>{text.slice(start, end)}</mark>
+        </Fragment>
+      );
+      at = end;
+      return [mark];
+    });
   return (
     <>
-      {ranges.map(([start, end], i) => {
-        const before = text.slice(at, start);
-        at = end;
-        return (
-          <Fragment key={i}>
-            {before}
-            <mark>{text.slice(start, end)}</mark>
-          </Fragment>
-        );
-      })}
+      {marks}
       {text.slice(at)}
     </>
   );
@@ -42,7 +49,7 @@ export function SearchResults({ result }: { result: SearchResponse }) {
         · {durationMs} ms
       </p>
       {result.files.map((file) => (
-        <section className="search-file" key={file.repo + file.path}>
+        <section className="search-file" key={`${file.repo}\0${file.path}`}>
           <h2>
             {file.repo} / {file.path}{" "}
             <span className="muted">{file.branches.join(", ")}</span>
