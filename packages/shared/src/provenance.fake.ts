@@ -48,7 +48,7 @@ export function fakeProvenanceStore(repos: Record<string, number>) {
       const has = (text: string | null, w: string) => (text ?? "").toLowerCase().includes(w.toLowerCase());
       const hits: SearchHit[] = words.length
         ? [...discussions.values()]
-            .filter((d) => ids.has(d.repoId) && (!kind || d.kind === kind) && (!state || d.state === state) && (!since || d.createdAt >= since) && (!until || d.createdAt <= until) && words.every((w) => has(d.title, w) || has(d.body, w) || has(d.headRef, w) || d.comments.some((c) => has(c.body, w))))
+            .filter((d) => ids.has(d.repoId) && (!kind || d.kind === kind) && (!state || d.state === state) && (!since || d.createdAt >= since) && (!until || d.createdAt <= until) && (q.any ? words.some.bind(words) : words.every.bind(words))((w: string) => has(d.title, w) || has(d.body, w) || has(d.headRef, w) || d.comments.some((c) => has(c.body, w))))
             .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || nameOf(a.repoId).localeCompare(nameOf(b.repoId)) || a.number - b.number)
             .map((d) => ({ repo: nameOf(d.repoId), number: d.number, title: d.title, state: d.state, mergedAt: d.mergedAt, updatedAt: d.updatedAt, url: d.url }))
         : [];

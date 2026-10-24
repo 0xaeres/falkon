@@ -137,6 +137,25 @@ export function provenanceStoreContract(label: string, make: MakeStore, skip: bo
     assert.deepEqual([next.hits.map((h) => h.number), next.hasMore], [[2], false]);
   });
 
+  it("search: any=true matches a discussion with any word, keeps the repo filter and the scope", async () => {
+    const { store, id } = await seeded(make);
+    await store.replaceDiscussion(id(APP), pr(1, { title: "alpha", updatedAt: t("2025-03-01T00:00:00Z") }), []);
+    await store.replaceDiscussion(id(APP), pr(2, { title: "beta", updatedAt: t("2025-02-01T00:00:00Z") }), []);
+    await store.replaceDiscussion(id(LIB), pr(3, { title: "alpha beta", updatedAt: t("2025-04-01T00:00:00Z") }), []);
+    const nums = async (o = {}) => (await store.search(SET, { words: ["alpha", "beta", "zzz"], any: true, ...o })).hits.map((h) => h.number);
+    assert.deepEqual(await nums(), [3, 1, 2]);
+    assert.deepEqual(await nums({ repo: APP }), [1, 2]);
+    assert.deepEqual(await nums({ limit: 2 }), [3, 1]);
+    assert.deepEqual((await store.search(SET, { words: ["alpha", "beta", "zzz"] })).hits, [], "default stays ANDed");
+    // P12 and filters must bind tighter than the ORed words: an out-of-set repository and a wrong state never leak through a later word.
+    await store.replaceDiscussion(id(SECRET), pr(4, { title: "beta outside", updatedAt: t("2025-05-01T00:00:00Z") }), []);
+    await store.replaceDiscussion(id(APP), pr(5, { title: "beta open", state: "open", mergedAt: null, updatedAt: t("2025-01-01T00:00:00Z") }), []);
+    assert.deepEqual(await nums(), [3, 1, 2, 5], "SECRET#4 never appears");
+    assert.deepEqual(await nums({ state: "open" }), [5], "state filter applies to every ORed word");
+    const r = await store.search(SET, { words: ["alpha", "beta"], any: true, state: "open" });
+    assert.deepEqual([r.total, r.hits.length], [1, 1]);
+  });
+
   it("search: kind, state and created-date filters; total counts every match, capped", async () => {
     const { store, id } = await seeded(make);
     await store.replaceDiscussion(id(APP), pr(1, { title: "widget one", state: "merged", createdAt: t("2025-01-01T00:00:00Z") }), []);
