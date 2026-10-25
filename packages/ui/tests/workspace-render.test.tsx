@@ -75,9 +75,9 @@ test("saved conversations render outside the main page navigation", () => {
       </PathnameContext.Provider>
     </AppRouterContext.Provider>,
   );
-  const navigation = html.match(
-    /<nav[^>]*aria-label="Main"[^>]*>[\s\S]*?<\/nav>/,
-  )?.[0];
+  const navigation = [...html.matchAll(/<nav[^>]*>[\s\S]*?<\/nav>/g)]
+    .map((m) => m[0])
+    .join("");
   const history = html.match(
     /<aside[^>]*aria-label="Chat history"[^>]*>[\s\S]*?<\/aside>/,
   )?.[0];
@@ -125,7 +125,7 @@ test("a saved thread seeds useChat and renders its answers with citations", () =
   assert.ok(html.includes('aria-label="Read source 1"'));
 });
 
-test("main navigation: Status, Chat, Search, Connect, Settings, each resolving to a route; no Docs or Account", () => {
+test("rail navigation: Status, Chat, Search, Connect, then Settings, each resolving to a route; no Docs or Account", () => {
   const product = seedProducts[0];
   const html = renderToStaticMarkup(
     <AppRouterContext.Provider value={router}>
@@ -138,15 +138,15 @@ test("main navigation: Status, Chat, Search, Connect, Settings, each resolving t
       </PathnameContext.Provider>
     </AppRouterContext.Provider>,
   );
-  const nav = html.match(/<nav[^>]*aria-label="Main"[^>]*>[\s\S]*?<\/nav>/)![0];
-  const hrefs = [
-    ...nav.matchAll(
-      /class="nv[^"]*"[^>]*href="([^"]+)"|href="([^"]+)"[^>]*class="nv[^"]*"/g,
-    ),
-  ].map((m) => m[1] ?? m[2]);
+  const nav = [...html.matchAll(/<nav[^>]*>[\s\S]*?<\/nav>/g)]
+    .map((m) => m[0])
+    .join("");
+  const hrefs = [...nav.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(
     hrefs,
-    ["status", "chat", "search", "connect", "settings"].map((n) => `/${product.id}/${n}`),
+    ["status", "chat", "search", "connect", "settings"].map(
+      (n) => `/${product.id}/${n}`,
+    ),
   );
   for (const href of hrefs)
     assert.ok(

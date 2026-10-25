@@ -59,23 +59,24 @@ const main = (html: string) => html.match(/<main[\s\S]*<\/main>/)![0];
 test("current Product: one verdict line with generation and age, Sync now, the repositories table", () => {
   const html = main(render({ ...base, knowledge: { state: "ready" } }));
   assert.match(html, /<h1[^>]*>Current<\/h1>/);
-  assert.match(html, /g-1/);
+  // The generation id means nothing to a person: only its age shows.
+  assert.ok(!html.includes("g-1"));
   assert.match(html, /6 min ago/);
   assert.match(html, />Sync now</);
   for (const head of ["Repository", "Branch", "State"])
     assert.match(html, new RegExp(`<th[^>]*>${head}<`));
   assert.equal(
-    (html.match(/<tbody>[\s\S]*<\/tbody>/)![0].match(/<tr/g) ?? []).length,
+    (html.match(/<tbody[\s\S]*<\/tbody>/)![0].match(/<tr/g) ?? []).length,
     seedProducts[0].repositories.length,
   );
-  assert.match(html, /Knowledge base: ready/);
+  assert.match(html, /Knowledge base<\/div>[\s\S]*?Ready/);
   // Removed in D70: no section nav, layer cards, stage bar, progress, gaps heading.
   for (const gone of [
     "status-nav",
     "Evidence Generation",
     "Freshness target",
     "Acquire",
-    "<progress",
+    'role="progressbar"',
     "Coverage gaps",
     "Open chat",
     "Edit repositories",
@@ -92,7 +93,7 @@ test("building shows a progress line; gaps and errors appear only when present",
     progress: 25,
     scenario: "updating",
   });
-  assert.match(building, /<progress/);
+  assert.match(building, /role="progressbar"/);
   const failed = render({
     ...base,
     verdict: "Needs attention",

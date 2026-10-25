@@ -5,19 +5,42 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR, { useSWRConfig } from "swr";
-import { Check, Clock, Info, LockKeyhole } from "lucide-react";
-import { Logo, ProviderLogo } from "@/components/ui/brand";
+import { Check, Clock, GitBranch, Info, LockKeyhole } from "lucide-react";
+import { Mark, ProviderLogo } from "@/components/ui/brand";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Alert,
-  Badge,
-  Button,
-  ErrorState,
-  LoadingMark,
-} from "@/components/ui/primitives";
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldTitle,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
+import { ErrorState, LoadingMark, Notice } from "@/components/ui/primitives";
 import { api, keys } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 import type { Product, Provider } from "@falkon/contracts";
+import { RepositoryPickerSkeleton } from "./repository-picker";
 const RepositoryPicker = dynamic(() => import("./repository-picker"), {
-  loading: () => <LoadingMark label="Loading repository picker" />,
+  loading: () => <RepositoryPickerSkeleton />,
 });
 const providers: {
   id: Provider;
@@ -39,6 +62,12 @@ const providers: {
   },
 ];
 const steps = ["Connect", "Name", "Repositories", "Review"];
+const stepNotes = [
+  "Code host and token",
+  "How teams refer to it",
+  "What Falkon reads",
+  "Confirm and index",
+];
 const titles = [
   "Connect a code host",
   "Name the Product",
@@ -55,7 +84,7 @@ function slug(name: string) {
   return name
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 64)
@@ -189,289 +218,427 @@ function Wizard({ edit }: { edit?: Product }) {
       }
     }
   }
+  const providerName = providers.find((item) => item.id === provider)?.name;
   return (
-    <>
-      <header className="top">
-        <Link href="/" aria-label="Falkon home">
-          <Logo />
+    <div className="flex min-h-dvh flex-col">
+      <header className="flex h-12 shrink-0 items-center gap-2 border-b bg-sidebar px-4">
+        <Link
+          href="/"
+          aria-label="Falkon home"
+          className="grid size-8 place-items-center text-foreground"
+        >
+          <Mark size={22} />
         </Link>
-        <span className="slash">/</span>
-        <span className="crumb">
+        <span className="text-input" aria-hidden="true">
+          /
+        </span>
+        <span className="text-[0.8125rem] font-medium">
           {edit ? "Edit repositories" : "New Product"}
         </span>
         {name && (
           <>
-            <span className="slash product-crumb">/</span>
-            <span className="crumb product-crumb">{name}</span>
+            <span className="hidden text-input sm:inline" aria-hidden="true">
+              /
+            </span>
+            <span className="hidden truncate text-[0.8125rem] text-muted-foreground sm:inline">
+              {name}
+            </span>
           </>
         )}
       </header>
-      <main id="main" className="setup-body">
-        <div className={`setup-wrap ${step === 2 ? "wide" : ""}`}>
-          <div className="mobile-stepper">
-            <div>
+      <main
+        id="main"
+        className="flex-1 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,#16161a,transparent)]"
+      >
+        <div className="mx-auto grid w-full max-w-[1120px] grid-cols-12 gap-x-6 gap-y-6 px-4 py-6 md:px-8 md:py-12">
+          <div className="col-span-12 flex flex-col gap-2 lg:hidden">
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>
                 Step {step + 1} of {steps.length}
               </span>
-              <span>{steps[step]}</span>
+              <span className="font-medium text-foreground">{steps[step]}</span>
             </div>
-            <progress
-              max={steps.length}
-              value={step + 1}
+            <Progress
+              value={((step + 1) / steps.length) * 100}
               aria-label={`Step ${step + 1} of ${steps.length}`}
+              className="h-1"
             />
           </div>
-          <ol className="stepper" aria-label="Product setup steps">
-            {steps.map((label, index) => (
-              <li
-                className={index < step ? "done" : index === step ? "now" : ""}
-                key={label}
-                aria-current={index === step ? "step" : undefined}
-              >
-                <span className="n">
-                  {index < step ? <Check size={12} /> : index + 1}
-                </span>
-                <span className="step-label">{label}</span>
-              </li>
-            ))}
-          </ol>
-          <form className="card" onSubmit={(event) => void submit(event)}>
-            <header className="card-h">
-              <h1 ref={heading} tabIndex={-1} key={step}>
-                {titles[step]}
-              </h1>
-              <p className="desktop-description">{descriptions[step]}</p>
-              <p className="mobile-description">
-                {step === 2
-                  ? "Pinned at the head of each branch."
-                  : descriptions[step]}
-              </p>
-            </header>
-            <div className="card-b">
-              {step === 0 && (
-                <>
-                  <div className="prov" role="group" aria-label="Code host">
-                    {providers.map((item) => (
-                      <button
-                        type="button"
-                        key={item.id}
-                        className={`pv ${provider === item.id ? "on" : ""}`}
-                        aria-pressed={provider === item.id}
-                        onClick={() => {
-                          setProvider(item.id);
-                          setHost(item.host);
+          <aside className="col-span-3 hidden lg:block">
+            <div className="sticky top-12 flex flex-col gap-6">
+              <div>
+                <h2 className="text-[0.9375rem] font-semibold tracking-[-0.01em]">
+                  {edit ? `Edit ${edit.name}` : "Set up a Product"}
+                </h2>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {edit
+                    ? "Change which repositories and branches it reads."
+                    : "Four steps. Indexing starts when you confirm."}
+                </p>
+              </div>
+              <ol aria-label="Product setup steps" className="flex flex-col">
+                {steps.map((label, index) => {
+                  const done = index < step;
+                  const now = index === step;
+                  return (
+                    <li
+                      key={label}
+                      aria-current={now ? "step" : undefined}
+                      className="relative grid grid-cols-[24px_1fr] gap-x-3 pb-6 last:pb-0"
+                    >
+                      {index < steps.length - 1 && (
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "absolute top-7 bottom-1 left-[11.5px] w-px bg-border",
+                            done && "bg-foreground/40",
+                          )}
+                        />
+                      )}
+                      <span
+                        className={cn(
+                          "z-10 grid size-6 place-items-center rounded-full border bg-background font-mono text-[0.6875rem] text-faint transition-colors",
+                          now &&
+                            "border-foreground bg-foreground text-background",
+                          done &&
+                            "border-foreground/40 bg-secondary text-foreground",
+                        )}
+                      >
+                        {done ? <Check className="size-3" /> : index + 1}
+                      </span>
+                      <div className="pt-0.5">
+                        <div
+                          className={cn(
+                            "text-[0.8125rem] font-medium",
+                            !now && !done && "text-muted-foreground",
+                          )}
+                        >
+                          {label}
+                        </div>
+                        <div className="text-xs text-faint">
+                          {stepNotes[index]}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          </aside>
+          <form
+            className="col-span-12 lg:col-span-9"
+            onSubmit={(event) => void submit(event)}
+          >
+            <Card>
+              <CardHeader className="border-b px-6 pt-6 pb-5">
+                <h1
+                  ref={heading}
+                  tabIndex={-1}
+                  key={step}
+                  className="text-xl font-semibold tracking-[-0.015em] outline-none"
+                >
+                  {titles[step]}
+                </h1>
+                <CardDescription className="max-w-[62ch] text-[0.8125rem] leading-relaxed">
+                  {descriptions[step]}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-6 py-6">
+                {step === 0 && (
+                  <FieldGroup>
+                    <RadioGroup
+                      aria-label="Code host"
+                      value={provider}
+                      onValueChange={(value) => {
+                        const item = providers.find(
+                          (entry) => entry.id === value,
+                        )!;
+                        setProvider(item.id);
+                        setHost(item.host);
+                        setError("");
+                      }}
+                      className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                    >
+                      {providers.map((item) => (
+                        <FieldLabel
+                          key={item.id}
+                          htmlFor={`provider-${item.id}`}
+                          className="has-data-[state=checked]:border-foreground/50 has-data-[state=checked]:bg-accent/40"
+                        >
+                          <Field
+                            orientation="horizontal"
+                            className="items-center"
+                          >
+                            <ProviderLogo provider={item.id} size={18} />
+                            <FieldContent>
+                              <FieldTitle>{item.name}</FieldTitle>
+                              <FieldDescription className="text-xs">
+                                {item.description}
+                              </FieldDescription>
+                            </FieldContent>
+                            <RadioGroupItem
+                              value={item.id}
+                              id={`provider-${item.id}`}
+                            />
+                          </Field>
+                        </FieldLabel>
+                      ))}
+                    </RadioGroup>
+                    <Field>
+                      <FieldLabel htmlFor="server-url">Server URL</FieldLabel>
+                      <Input
+                        id="server-url"
+                        autoFocus
+                        type="url"
+                        required
+                        value={host}
+                        placeholder="https://github.example.com"
+                        onChange={(event) => setHost(event.target.value)}
+                      />
+                    </Field>
+                    <Field data-invalid={!!error || undefined}>
+                      <FieldLabel htmlFor="token">
+                        Personal access token
+                      </FieldLabel>
+                      <Input
+                        id="token"
+                        type="password"
+                        autoComplete="off"
+                        value={token}
+                        aria-invalid={!!error}
+                        aria-describedby="token-help"
+                        onChange={(event) => {
+                          setToken(event.target.value);
                           setError("");
                         }}
-                      >
-                        <span className="radio" />
-                        <ProviderLogo provider={item.id} />
-                        <strong>{item.name}</strong>
-                        <small>{item.description}</small>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="field">
-                    <label htmlFor="server-url">Server URL</label>
-                    <input
-                      className="input"
-                      id="server-url"
-                      autoFocus
-                      type="url"
-                      required
-                      value={host}
-                      placeholder="https://github.example.com"
-                      onChange={(event) => setHost(event.target.value)}
-                    />
-                  </div>
-                  <div className="field token-field">
-                    <label htmlFor="token">Personal access token</label>
-                    <input
-                      className={`input ${error ? "err" : ""}`}
-                      id="token"
-                      type="password"
-                      autoComplete="off"
-                      value={token}
-                      aria-invalid={!!error}
-                      aria-describedby="token-help"
-                      onChange={(event) => {
-                        setToken(event.target.value);
-                        setError("");
-                      }}
-                    />
-                    <p className="help" id="token-help">
-                      Read-only access is enough. Falkon stores the token
-                      encrypted.
-                    </p>
-                  </div>
-                </>
-              )}
-              {step === 1 && (
-                <>
-                  <div className="field">
-                    <label htmlFor="product-name">Product name</label>
-                    <input
-                      className="input"
-                      id="product-name"
-                      autoFocus
-                      placeholder="Payments Platform"
-                      required
-                      maxLength={80}
-                      value={name}
-                      onChange={(event) => {
-                        setName(event.target.value);
-                        setError("");
-                      }}
-                    />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="product-id">productId</label>
-                    <div className="id-field input">
-                      <input
-                        id="product-id"
-                        className="mono"
-                        value={id}
-                        readOnly
                       />
-                      <Badge tone={id ? (available ? "green" : "red") : ""}>
-                        {id
-                          ? available
-                            ? "Available"
-                            : "Already in use"
-                          : "Enter a name"}
-                      </Badge>
-                    </div>
-                    <span className="help">
-                      Used in API calls and by coding agents. It can’t be
-                      changed after setup.
-                    </span>
-                  </div>
-                  <div className="field last">
-                    <span className="field-label">Connected as</span>
-                    <div className="connected input">
-                      <ProviderLogo provider={provider} size={14} />
-                      <span>
-                        Token connection on <strong>{connection?.host}</strong>
-                      </span>
-                      <Badge tone="green">
-                        <Check size={12} />
-                        Connected
-                      </Badge>
-                    </div>
-                  </div>
-                </>
-              )}
-              {step === 2 &&
-                (repoError ? (
-                  <ErrorState
-                    error={repoError}
-                    retry={() => void reloadRepos()}
-                  />
-                ) : catalog ? (
-                  <RepositoryPicker
-                    repositories={repositories}
-                    selected={selected}
-                    onChange={setSelected}
-                  />
-                ) : (
-                  <LoadingMark label="Loading repositories" />
-                ))}
-              {step === 3 && (
-                <dl className="review-dl">
-                  <dt>Product</dt>
-                  <dd>
-                    <strong>{name}</strong>{" "}
-                    <span className="mono muted">{id}</span>
-                  </dd>
-                  <dt>Code host</dt>
-                  <dd className="review-host">
-                    <ProviderLogo provider={provider} size={14} />
-                    {
-                      providers.find((item) => item.id === provider)?.name
-                    } · {connection?.host}
-                  </dd>
-                  <dt>Repositories</dt>
-                  <dd className="review-repos">
-                    {picked.map((repo) => (
-                      <div key={repo.id}>
-                        <span>{repo.name} </span>
-                        <span className="mono">
-                          {selected[repo.id]} · {repo.revision}
+                      <FieldDescription id="token-help">
+                        Read-only access is enough. Falkon stores the token
+                        encrypted.
+                      </FieldDescription>
+                    </Field>
+                  </FieldGroup>
+                )}
+                {step === 1 && (
+                  <FieldGroup>
+                    <Field>
+                      <FieldLabel htmlFor="product-name">
+                        Product name
+                      </FieldLabel>
+                      <Input
+                        id="product-name"
+                        autoFocus
+                        placeholder="Payments Platform"
+                        required
+                        maxLength={80}
+                        value={name}
+                        onChange={(event) => {
+                          setName(event.target.value);
+                          setError("");
+                        }}
+                      />
+                    </Field>
+                    <Field data-invalid={(!!id && !available) || undefined}>
+                      <FieldLabel htmlFor="product-id">productId</FieldLabel>
+                      <InputGroup>
+                        <InputGroupInput
+                          id="product-id"
+                          className="font-mono"
+                          value={id}
+                          readOnly
+                          aria-invalid={!!id && !available}
+                        />
+                        <InputGroupAddon align="inline-end">
+                          <Badge
+                            variant={
+                              id ? (available ? "success" : "danger") : "muted"
+                            }
+                          >
+                            {id
+                              ? available
+                                ? "Available"
+                                : "Already in use"
+                              : "Enter a name"}
+                          </Badge>
+                        </InputGroupAddon>
+                      </InputGroup>
+                      <FieldDescription>
+                        Used in API calls and by coding agents. It can’t be
+                        changed after setup.
+                      </FieldDescription>
+                    </Field>
+                    <Field>
+                      <FieldTitle>Connected as</FieldTitle>
+                      <div className="flex items-center gap-3 rounded-md border bg-secondary/40 px-3 py-2.5">
+                        <ProviderLogo provider={provider} size={14} />
+                        <span className="flex-1 text-[0.8125rem] text-muted-foreground">
+                          Token connection on{" "}
+                          <strong className="font-medium text-foreground">
+                            {connection?.host}
+                          </strong>
                         </span>
+                        <Badge variant="success">
+                          <Check />
+                          Connected
+                        </Badge>
                       </div>
-                    ))}
-                  </dd>
-                </dl>
-              )}
-              {error && (
-                <div className="setup-error">
-                  <Alert tone="err">
-                    <strong>
-                      {step === 3
+                    </Field>
+                  </FieldGroup>
+                )}
+                {step === 2 &&
+                  (repoError ? (
+                    <ErrorState
+                      error={repoError}
+                      retry={() => void reloadRepos()}
+                    />
+                  ) : catalog ? (
+                    <RepositoryPicker
+                      repositories={repositories}
+                      selected={selected}
+                      onChange={setSelected}
+                    />
+                  ) : (
+                    <RepositoryPickerSkeleton />
+                  ))}
+                {step === 3 && (
+                  <div className="flex flex-col gap-5">
+                    <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-2">
+                      <div className="bg-card px-4 py-3">
+                        <dt className="text-xs text-muted-foreground">
+                          Product
+                        </dt>
+                        <dd className="mt-1 flex items-baseline gap-2">
+                          <strong className="font-medium">{name}</strong>
+                          <span className="font-mono text-xs text-faint">
+                            {id}
+                          </span>
+                        </dd>
+                      </div>
+                      <div className="bg-card px-4 py-3">
+                        <dt className="text-xs text-muted-foreground">
+                          Code host
+                        </dt>
+                        <dd className="mt-1 flex items-center gap-2 text-[0.8125rem]">
+                          <ProviderLogo
+                            provider={provider}
+                            size={12}
+                            className="p-1"
+                          />
+                          {providerName} · {connection?.host}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div>
+                      <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+                        Repositories
+                        <Badge variant="muted" className="font-mono">
+                          {picked.length}
+                        </Badge>
+                      </div>
+                      <ul className="divide-y overflow-hidden rounded-lg border">
+                        {picked.map((repo) => (
+                          <li
+                            key={repo.id}
+                            className="flex items-center gap-3 bg-card px-4 py-2.5"
+                          >
+                            <span className="min-w-0 flex-1 truncate text-[0.8125rem] font-medium">
+                              {repo.name}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+                              <GitBranch
+                                className="size-3.5"
+                                aria-hidden="true"
+                              />
+                              {selected[repo.id]}
+                            </span>
+                            <Separator
+                              orientation="vertical"
+                              className="h-3.5"
+                            />
+                            <span className="font-mono text-xs text-faint">
+                              {repo.revision}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+                {error && (
+                  <Notice
+                    tone="err"
+                    className="mt-5"
+                    title={
+                      step === 3
                         ? "Indexing wasn’t started."
-                        : "Connection not confirmed."}
-                    </strong>
+                        : "Connection not confirmed."
+                    }
+                  >
                     <p>{error}</p>
-                  </Alert>
-                </div>
-              )}
-            </div>
-            <footer className="card-f">
-              <span className={`hint ${step === 2 ? "repository-hint" : ""}`}>
-                {step === 0 ? (
-                  <>
-                    <LockKeyhole size={16} />
-                    Falkon only reads from your code host.
-                  </>
-                ) : step === 2 ? (
-                  <>
-                    <Info size={16} className="amber" />
-                    Each repository is read at the head of its chosen branch.
-                  </>
-                ) : step === 3 ? (
-                  <>
-                    <Clock size={16} />
-                    Revisions are pinned when indexing starts.
-                  </>
-                ) : null}
-              </span>
-              {step === 2 && (
-                <span className="mobile-selected">
-                  {picked.length} selected
+                  </Notice>
+                )}
+              </CardContent>
+              <CardFooter className="flex-wrap gap-3 bg-background/40 px-6 py-4">
+                <span className="flex flex-1 items-center gap-2 text-xs text-muted-foreground [&_svg]:size-3.5 [&_svg]:shrink-0">
+                  {step === 0 ? (
+                    <>
+                      <LockKeyhole aria-hidden="true" />
+                      Falkon only reads from your code host.
+                    </>
+                  ) : step === 2 ? (
+                    <>
+                      <Info className="text-warning" aria-hidden="true" />
+                      <span className="hidden sm:inline">
+                        Each repository is read at the head of its chosen
+                        branch.
+                      </span>
+                      <span className="font-medium text-foreground sm:hidden">
+                        {picked.length} selected
+                      </span>
+                    </>
+                  ) : step === 3 ? (
+                    <>
+                      <Clock aria-hidden="true" />
+                      Revisions are pinned when indexing starts.
+                    </>
+                  ) : null}
                 </span>
-              )}
-              {step > (edit ? 2 : 0) && (
+                {step > (edit ? 2 : 0) && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() => nextStep(step - 1)}
+                  >
+                    Back
+                  </Button>
+                )}
+                {edit && step === 2 && (
+                  <Button asChild variant="ghost">
+                    <Link href={`/${edit.id}/settings`}>Cancel</Link>
+                  </Button>
+                )}
                 <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={busy}
-                  onClick={() => nextStep(step - 1)}
+                  type="submit"
+                  disabled={disabled}
+                  aria-busy={busy || undefined}
                 >
-                  Back
+                  {busy && <Spinner data-icon="inline-start" />}
+                  {step === 0
+                    ? "Check connection"
+                    : step === 3
+                      ? edit
+                        ? "Save and re-index"
+                        : "Start indexing"
+                      : step === 2 && picked.length
+                        ? `Continue with ${picked.length}`
+                        : "Continue"}
                 </Button>
-              )}
-              {edit && step === 2 && (
-                <Link href={`/${edit.id}/settings`} className="btn ghost">
-                  Cancel
-                </Link>
-              )}
-              <Button
-                variant="primary"
-                type="submit"
-                busy={busy}
-                disabled={disabled}
-              >
-                {step === 0
-                  ? "Check connection"
-                  : step === 3
-                    ? edit
-                      ? "Save and re-index"
-                      : "Start indexing"
-                    : "Continue"}
-              </Button>
-            </footer>
+              </CardFooter>
+            </Card>
           </form>
         </div>
       </main>
-    </>
+    </div>
   );
 }

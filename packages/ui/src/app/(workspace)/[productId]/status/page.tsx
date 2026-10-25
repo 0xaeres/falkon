@@ -1,11 +1,10 @@
 import { Suspense } from "react";
-import { LoadingMark } from "@/components/ui/primitives";
 import type { Metadata } from "next";
-import { StatusView } from "@/features/status/status-view";
+import { StatusSkeleton, StatusView } from "@/features/status/status-view";
 export const metadata: Metadata = { title: "Status" };
 export default function StatusPage() {
   return (
-    <Suspense fallback={<LoadingMark />}>
+    <Suspense fallback={<StatusSkeleton />}>
       <StatusView />
     </Suspense>
   );

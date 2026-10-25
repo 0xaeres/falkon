@@ -8,6 +8,7 @@ import {
   answerLabel,
   answerText,
   discardable,
+  isCapNote,
 } from "../src/features/chat/chat-view";
 
 const reply: Answer = {
@@ -39,13 +40,22 @@ test("labels and copy text per kind", () => {
   );
   assert.equal(answerText(reply), "Hi! I can **search** this Product.");
   assert.equal(
-    answerText({ ...reply, kind: "abstention", paragraphs: [], abstention: "None." }),
+    answerText({
+      ...reply,
+      kind: "abstention",
+      paragraphs: [],
+      abstention: "None.",
+    }),
     "None.",
   );
 });
 
 test("a thread made for a first message that failed is discarded; one with an answer or an older thread is not", () => {
-  const user: UIMessage = { id: "u", role: "user", parts: [{ type: "text", text: "q" }] };
+  const user: UIMessage = {
+    id: "u",
+    role: "user",
+    parts: [{ type: "text", text: "q" }],
+  };
   const answered: UIMessage = {
     id: "a",
     role: "assistant",
@@ -64,5 +74,17 @@ test("a thread made for a first message that failed is discarded; one with an an
     discardable(true, [user, partial]),
     false,
     "the server accepted the question: the thread holds it",
+  );
+});
+
+test("the evidence display cap is a note; unverified references and the step cap stay warnings", () => {
+  assert.equal(isCapNote("1 reference was not shown (limit 12)."), true);
+  assert.equal(isCapNote("8 references were not shown (limit 12)."), true);
+  assert.equal(isCapNote("2 references could not be verified."), false);
+  assert.equal(
+    isCapNote(
+      "The agent stopped at its step limit, so the answer may be incomplete.",
+    ),
+    false,
   );
 });

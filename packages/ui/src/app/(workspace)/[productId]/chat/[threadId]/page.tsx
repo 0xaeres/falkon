@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { LoadingMark } from "@/components/ui/primitives";
 import type { Metadata } from "next";
-import { ChatView } from "@/features/chat/chat-view";
+import { ChatSkeleton, ChatView } from "@/features/chat/chat-view";
 export const metadata: Metadata = { title: "Chat" };
 async function Thread({ params }: { params: Promise<{ threadId: string }> }) {
   const { threadId } = await params;
@@ -12,7 +11,7 @@ export default function ThreadPage(props: {
   params: Promise<{ threadId: string }>;
 }) {
   return (
-    <Suspense fallback={<LoadingMark label="Loading chat" />}>
+    <Suspense fallback={<ChatSkeleton />}>
       <Thread {...props} />
     </Suspense>
   );

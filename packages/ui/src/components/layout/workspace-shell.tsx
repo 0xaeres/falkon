@@ -3,7 +3,6 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useState,
   useSyncExternalStore,
   type ReactNode,
@@ -11,26 +10,39 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR, { useSWRConfig } from "swr";
-import * as Dialog from "@radix-ui/react-dialog";
-import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import {
   Check,
-  ChevronDown,
-  History,
+  ChevronsUpDown,
   Layers,
-  Plug,
   Menu,
   MessageCircle,
-  PanelRight,
+  PanelLeft,
+  Plug,
   Plus,
   Search,
   Settings,
-  X,
+  type LucideIcon,
 } from "lucide-react";
 import { api, keys } from "@/lib/api/client";
 import type { Product, Status, ThreadSummary } from "@falkon/contracts";
-import { Logo } from "../ui/brand";
-import { ErrorState, LoadingMark } from "../ui/primitives";
+import { cn } from "@/lib/utils";
+import { Logo, Mark } from "../ui/brand";
+import { Button } from "../ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "../ui/sheet";
+import { Skeleton } from "../ui/skeleton";
+import { Spinner } from "../ui/spinner";
+import { ErrorState, LoadingMark, StateDot, type Tone } from "../ui/primitives";
 
 type Workspace = {
   product: Product;
@@ -46,6 +58,32 @@ export function useWorkspace() {
   if (!context) throw new Error("Workspace context is required.");
   return context;
 }
+
+const PAGES = [
+  { name: "Status", icon: Layers },
+  { name: "Chat", icon: MessageCircle },
+  { name: "Search", icon: Search },
+  { name: "Connect", icon: Plug },
+] as const;
+type PageName = (typeof PAGES)[number]["name"] | "Settings";
+
+/** The colour of a Product's state, wherever the Product is named. */
+export const scenarioTone = (scenario: Product["scenario"]): Tone =>
+  scenario === "current"
+    ? "green"
+    : scenario === "updating" || scenario === "building"
+      ? "blue"
+      : scenario === "failed"
+        ? "red"
+        : "amber";
+
+// How the rail behaves, the operator's choice: always open, always closed, or closed and widening over the page on hover.
+type RailMode = "expanded" | "collapsed" | "hover";
+const RAIL_MODES: [RailMode, string][] = [
+  ["expanded", "Expanded"],
+  ["collapsed", "Collapsed"],
+  ["hover", "Expand on hover"],
+];
 const subscribe = (listener: () => void) => {
   window.addEventListener("storage", listener);
   window.addEventListener("sidebar-change", listener);
@@ -54,14 +92,22 @@ const subscribe = (listener: () => void) => {
     window.removeEventListener("sidebar-change", listener);
   };
 };
-function sidebarPreference() {
+function railPreference(): RailMode {
   try {
-    return localStorage.getItem("falkon.sidebar") ?? "auto";
+    const stored = localStorage.getItem("falkon.sidebar");
+    return stored === "expanded" || stored === "collapsed" ? stored : "hover";
   } catch {
-    return "auto";
+    return "hover";
   }
 }
-const serverPreference = () => "auto";
+function setRailMode(mode: RailMode) {
+  try {
+    localStorage.setItem("falkon.sidebar", mode);
+  } catch {
+    /* Without storage the rail keeps expanding on hover. */
+  }
+  window.dispatchEvent(new Event("sidebar-change"));
+}
 
 export function WorkspaceShell({
   productId,
@@ -97,14 +143,14 @@ export function WorkspaceShell({
   } = useSWR(keys.threads(productId), api.threads);
   const mode = useSyncExternalStore(
     subscribe,
-    sidebarPreference,
-    serverPreference,
+    railPreference,
+    () => "hover" as RailMode,
   );
+  const [railMenu, setRailMenu] = useState(false);
   const [drawer, setDrawer] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [actionError, setActionError] = useState("");
-  const active = pathname.includes("/chat")
+  const active: PageName = pathname.includes("/chat")
     ? "Chat"
     : pathname.endsWith("/search")
       ? "Search"
@@ -113,36 +159,6 @@ export function WorkspaceShell({
         : pathname.endsWith("/connect")
           ? "Connect"
           : "Status";
-  function toggleSidebar() {
-    const collapsed =
-      mode === "collapsed" || (mode === "auto" && window.innerWidth < 1280);
-    try {
-      localStorage.setItem(
-        "falkon.sidebar",
-        collapsed ? "expanded" : "collapsed",
-      );
-    } catch {
-      /* The control still works in storage-enabled browsers. */
-    }
-    window.dispatchEvent(new Event("sidebar-change"));
-  }
-  useEffect(() => {
-    const key = (event: KeyboardEvent) => {
-      const target = event.target;
-      if (
-        event.key === "[" &&
-        target instanceof HTMLElement &&
-        !target.closest("input,textarea,select,[contenteditable=true]") &&
-        !event.metaKey &&
-        !event.ctrlKey
-      ) {
-        event.preventDefault();
-        toggleSidebar();
-      }
-    };
-    window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
-  });
   async function newThread() {
     setCreating(true);
     setActionError("");
@@ -150,7 +166,6 @@ export function WorkspaceShell({
       const thread = await api.newThread(productId);
       await mutate(keys.threads(productId));
       setDrawer(false);
-      setHistoryOpen(false);
       router.push(`/${productId}/chat/${thread.id}`);
     } catch (error) {
       setActionError(
@@ -180,140 +195,100 @@ export function WorkspaceShell({
       ]);
     },
   };
-  const dot =
+  const dot: Tone =
     status?.sync === "failed" || status?.verdict === "Behind"
       ? "amber"
       : status?.build === "building"
         ? "blue"
         : "green";
-  const navigation = (mobile = false) => (
-    <nav
-      className={`side ${mobile ? "mobile-side" : ""}`}
-      data-mode={mobile ? "expanded" : mode}
-      aria-label="Main"
-    >
-      <div className="sidebar-heading">
-        <Link
-          className="sidebar-brand"
-          href={`/${productId}/status`}
-          aria-label="Falkon status"
-        >
-          <Logo />
-        </Link>
-        {mobile ? (
-          <Dialog.Close className="icon-btn" aria-label="Close navigation">
-            <X size={16} />
-          </Dialog.Close>
-        ) : (
-          <button
-            className="icon-btn sidebar-toggle"
-            onClick={toggleSidebar}
-            aria-label="Toggle sidebar"
-            title="Toggle sidebar ([)"
-          >
-            <PanelRight size={16} />
-          </button>
+
+  // In the rail, labels stay in the DOM and the `rail-open` variant reveals them; in the mobile sheet they always show.
+  const label = (mobile: boolean) =>
+    cn(
+      "flex-1 truncate",
+      !mobile &&
+        "opacity-0 transition-opacity duration-150 rail-open:opacity-100",
+    );
+  const item = (name: PageName, Icon: LucideIcon, mobile: boolean) => {
+    const on = active === name;
+    return (
+      <Link
+        key={name}
+        href={`/${productId}/${name.toLowerCase()}`}
+        aria-current={on ? "page" : undefined}
+        aria-label={name}
+        title={mobile ? undefined : name}
+        onClick={() => setDrawer(false)}
+        className={cn(
+          "relative flex h-9 shrink-0 items-center gap-3 rounded-md px-[11px] text-[0.8125rem] font-medium whitespace-nowrap text-sidebar-foreground transition-colors duration-150 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+          on &&
+            "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_var(--border)]",
+          mobile && "h-11",
         )}
-      </div>
-      <Dropdown.Root>
-        <Dropdown.Trigger className="pswitch" aria-label="Switch Product">
-          <span className="pav">{product.initials}</span>
-          <span className="pn">{product.name}</span>
-          <ChevronDown size={14} className="hide-collapsed" />
-        </Dropdown.Trigger>
-        <Dropdown.Portal>
-          <Dropdown.Content
-            className="product-menu"
-            side="bottom"
-            align="start"
-            sideOffset={6}
-          >
-            <Dropdown.Label className="dropdown-label">Products</Dropdown.Label>
-            {products?.map((item) => (
-              <Dropdown.Item
-                key={item.id}
-                className="product-item"
-                onSelect={() => {
-                  setDrawer(false);
-                  router.push(`/${item.id}/${active.toLowerCase()}`);
-                }}
-              >
-                <span className="pav">{item.initials}</span>
-                <span className="product-menu-name">{item.name}</span>
-                <span
-                  className={`pdot ${item.scenario === "current" ? "green" : item.scenario === "updating" ? "blue" : "amber"}`}
-                />
-                {item.id === productId && <Check size={14} />}
-              </Dropdown.Item>
-            ))}
-            <Dropdown.Separator className="menu-separator" />
-            <Dropdown.Item asChild>
-              <Link
-                className="product-item"
-                href="/setup"
-                onClick={() => setDrawer(false)}
-              >
-                <Plus size={16} />
-                New Product
-              </Link>
-            </Dropdown.Item>
-          </Dropdown.Content>
-        </Dropdown.Portal>
-      </Dropdown.Root>
-      <div className="nvl">
-        {[
-          { name: "Status", icon: Layers },
-          { name: "Chat", icon: MessageCircle },
-          { name: "Search", icon: Search },
-          { name: "Connect", icon: Plug },
-          { name: "Settings", icon: Settings },
-        ].map(({ name, icon: Icon }) => (
-          <Link
-            key={name}
-            className={`nv ${active === name ? "on" : ""}`}
-            href={`/${productId}/${name.toLowerCase()}`}
-            aria-current={active === name ? "page" : undefined}
-            aria-label={name}
-            title={name}
-            onClick={() => setDrawer(false)}
-          >
-            <Icon size={17} />
-            <span className="lb">{name}</span>
-            {name === "Status" && <span className={`pdot ${dot}`} />}
-          </Link>
-        ))}
-      </div>
-    </nav>
-  );
-  const history = (mobile = false) => (
-    <aside className="chat-history" aria-label="Chat history">
-      <header className="chat-history-header">
-        <h2>Chat history</h2>
-        <span className="sp" />
-        <button
-          className="icon-btn"
+      >
+        <Icon className="size-[17px] shrink-0" aria-hidden="true" />
+        <span className={label(mobile)}>{name}</span>
+        {name === "Status" && (
+          <StateDot
+            tone={dot}
+            className={cn(
+              !mobile &&
+                "absolute top-2 left-[26px] size-[7px] ring-2 ring-sidebar rail-open:static rail-open:ring-0",
+            )}
+          />
+        )}
+      </Link>
+    );
+  };
+
+  const history = (mobile: boolean) => (
+    <aside
+      aria-label="Chat history"
+      className={cn(
+        "flex min-h-0 flex-1 flex-col border-t border-sidebar-border",
+        !mobile &&
+          "invisible opacity-0 transition-opacity duration-150 rail-open:visible rail-open:opacity-100",
+      )}
+    >
+      <header className="flex h-10 shrink-0 items-center gap-2 pr-2 pl-4">
+        <h2 className="flex-1 text-xs font-medium whitespace-nowrap text-faint">
+          Chat history
+        </h2>
+        <Button
+          variant="ghost"
+          size="icon-xs"
           onClick={() => void newThread()}
           aria-label="New thread"
+          title="New thread"
           disabled={creating}
         >
-          <Plus size={16} />
-        </button>
-        {mobile && (
-          <Dialog.Close className="icon-btn" aria-label="Close chat history">
-            <X size={16} />
-          </Dialog.Close>
-        )}
+          {creating ? <Spinner /> : <Plus />}
+        </Button>
       </header>
-      <div className="sthreads">
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2 pb-2">
         {threadsError ? (
           <ErrorState
             error={threadsError}
             retry={() => void refreshThreads()}
           />
         ) : !threads ? (
-          <LoadingMark label="Loading chat history" />
+          <div
+            role="status"
+            aria-label="Loading chat history"
+            className="flex flex-col gap-1 p-2"
+          >
+            {[80, 64, 72, 52].map((width) => (
+              <Skeleton
+                key={width}
+                className="h-6"
+                style={{ width: `${width}%` }}
+              />
+            ))}
+          </div>
         ) : threads.length === 0 ? (
-          <p className="history-empty">No conversations yet.</p>
+          <p className="px-2 py-3 text-xs whitespace-normal text-muted-foreground">
+            Questions you ask about {product.name} are kept here.
+          </p>
         ) : (
           ["Today", "Yesterday", "Previous"].map((day, group) => {
             const items = threads.filter((thread) => {
@@ -326,21 +301,27 @@ export function WorkspaceShell({
             });
             return (
               items.length > 0 && (
-                <div key={day}>
-                  <div className="grp">{day}</div>
-                  {items.map((thread) => (
-                    <Link
-                      key={thread.id}
-                      href={`/${productId}/chat/${thread.id}`}
-                      aria-current={
-                        pathname.endsWith(`/${thread.id}`) ? "page" : undefined
-                      }
-                      className={`thread-item ${pathname.endsWith(`/${thread.id}`) ? "on" : ""}`}
-                      onClick={() => setHistoryOpen(false)}
-                    >
-                      {thread.title}
-                    </Link>
-                  ))}
+                <div key={day} className="mb-2">
+                  <div className="px-2 pt-2 pb-1 text-[0.6875rem] text-faint">
+                    {day}
+                  </div>
+                  {items.map((thread) => {
+                    const current = pathname.endsWith(`/${thread.id}`);
+                    return (
+                      <Link
+                        key={thread.id}
+                        href={`/${productId}/chat/${thread.id}`}
+                        aria-current={current ? "page" : undefined}
+                        onClick={() => setDrawer(false)}
+                        className={cn(
+                          "block truncate rounded-md px-2 py-1.5 text-[0.8125rem] text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
+                          current && "bg-sidebar-accent text-foreground",
+                        )}
+                      >
+                        {thread.title}
+                      </Link>
+                    );
+                  })}
                 </div>
               )
             );
@@ -348,69 +329,201 @@ export function WorkspaceShell({
         )}
       </div>
       {actionError && (
-        <p className="sidebar-error" role="alert">
+        <p
+          className="border-t px-4 py-3 text-xs whitespace-normal text-destructive"
+          role="alert"
+        >
           {actionError}
         </p>
       )}
     </aside>
   );
+
+  const rail = (mobile = false) => (
+    <>
+      <nav aria-label="Main" className="flex shrink-0 flex-col gap-0.5 p-2">
+        {PAGES.map(({ name, icon }) => item(name, icon, mobile))}
+      </nav>
+      {history(mobile)}
+      <nav
+        aria-label="Product"
+        className="flex shrink-0 flex-col gap-0.5 border-t border-sidebar-border p-2"
+      >
+        {item("Settings", Settings, mobile)}
+      </nav>
+    </>
+  );
+
   return (
     <WorkspaceContext.Provider value={context}>
-      <div className="shell">
-        <div className="desktop-sidebar">{navigation()}</div>
-        {active === "Chat" && (
-          <div className="desktop-history">{history()}</div>
-        )}
-        <Dialog.Root open={drawer} onOpenChange={setDrawer}>
-          <header className="mobile-top">
-            <Dialog.Trigger className="icon-btn" aria-label="Open navigation">
-              <Menu size={18} />
-            </Dialog.Trigger>
-            <span>{active}</span>
-            <span className="sp" />
-            {active === "Chat" && (
-              <button
-                className="icon-btn"
-                aria-label="Open chat history"
-                onClick={() => setHistoryOpen(true)}
-              >
-                <History size={18} />
-              </button>
+      <div className="flex h-dvh flex-col overflow-hidden">
+        <header className="flex h-12 shrink-0 items-center gap-1 border-b bg-sidebar pr-3 md:gap-2 md:pr-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="ml-1.5 md:hidden"
+            aria-label="Open navigation"
+            onClick={() => setDrawer(true)}
+          >
+            <Menu />
+          </Button>
+          <Link
+            href={`/${productId}/status`}
+            aria-label="Falkon status"
+            className="hidden h-12 w-14 shrink-0 place-items-center text-foreground md:grid"
+          >
+            <Mark size={22} />
+          </Link>
+          <span className="hidden text-input md:inline" aria-hidden="true">
+            /
+          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label="Switch Product"
+              className="flex h-8 min-w-0 items-center gap-2 rounded-md px-2 text-[0.8125rem] font-medium outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60 data-[state=open]:bg-accent"
+            >
+              <span className="grid size-5 shrink-0 place-items-center rounded-[5px] bg-[#2a2a30] text-[0.625rem] font-semibold tracking-wide text-foreground">
+                {product.initials}
+              </span>
+              <span className="truncate">{product.name}</span>
+              <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" sideOffset={6} className="w-64">
+              <DropdownMenuLabel className="text-xs font-normal text-faint">
+                Products
+              </DropdownMenuLabel>
+              {products?.map((entry) => (
+                <DropdownMenuItem
+                  key={entry.id}
+                  onSelect={() =>
+                    router.push(`/${entry.id}/${active.toLowerCase()}`)
+                  }
+                  className="gap-2.5"
+                >
+                  <span className="grid size-5 shrink-0 place-items-center rounded-[5px] bg-[#2a2a30] text-[0.625rem] font-semibold">
+                    {entry.initials}
+                  </span>
+                  <span className="flex-1 truncate">{entry.name}</span>
+                  <StateDot tone={scenarioTone(entry.scenario)} />
+                  {entry.id === productId ? (
+                    <Check className="size-3.5" />
+                  ) : (
+                    <span className="w-3.5" aria-hidden="true" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="gap-2.5">
+                <Link href="/setup">
+                  <Plus className="size-4" />
+                  New Product
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <span className="text-input" aria-hidden="true">
+            /
+          </span>
+          <span className="truncate px-1 text-[0.8125rem] text-muted-foreground">
+            {active}
+          </span>
+          <span className="flex-1" />
+          {status && (
+            <Link
+              href={`/${productId}/status`}
+              className="hidden h-7 items-center gap-2 rounded-full border px-2.5 text-xs text-muted-foreground transition-colors hover:border-input hover:text-foreground sm:flex"
+            >
+              <StateDot tone={dot} />
+              {status.verdict}
+            </Link>
+          )}
+          {active !== "Connect" && (
+            <Button asChild size="sm" className="h-7 rounded-md px-2.5 text-xs">
+              <Link href={`/${productId}/connect`}>
+                <Plug className="size-3.5" />
+                Connect
+              </Link>
+            </Button>
+          )}
+        </header>
+        <div className="flex min-h-0 flex-1">
+          {/* The slot holds the rail's width in the layout: 256px when expanded, else 56px; in hover mode the panel widens over the page. */}
+          <div
+            className={cn(
+              "relative hidden shrink-0 transition-[width] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] md:block",
+              mode === "expanded" ? "w-64" : "w-14",
             )}
-            <span className="pav">{product.initials}</span>
-          </header>
-          <Dialog.Portal>
-            <Dialog.Overlay className="drawer-overlay" />
-            <Dialog.Content className="drawer">
-              <Dialog.Title className="sr-only">
-                Product navigation
-              </Dialog.Title>
-              <Dialog.Description className="sr-only">
-                Switch Product or navigate to status, chat, connect, and
-                settings.
-              </Dialog.Description>
-              {navigation(true)}
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-        {active === "Chat" && (
-          <Dialog.Root open={historyOpen} onOpenChange={setHistoryOpen}>
-            <Dialog.Portal>
-              <Dialog.Overlay className="drawer-overlay" />
-              <Dialog.Content className="drawer history-drawer">
-                <Dialog.Title className="sr-only">Chat history</Dialog.Title>
-                <Dialog.Description className="sr-only">
-                  Open a saved conversation or start a new thread for this
-                  Product.
-                </Dialog.Description>
-                {history(true)}
-              </Dialog.Content>
-            </Dialog.Portal>
-          </Dialog.Root>
-        )}
-        <main id="main" className="main">
-          {children}
-        </main>
+          >
+            <div
+              data-mode={mode}
+              data-menu={railMenu ? "open" : "closed"}
+              className="group/rail absolute inset-y-0 left-0 z-40 flex w-14 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar transition-[width,box-shadow] delay-0 duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] data-[mode=expanded]:w-64 data-[mode=hover]:hover:w-64 data-[mode=hover]:hover:delay-100 data-[mode=hover]:hover:shadow-[12px_0_32px_-12px_rgba(0,0,0,0.7)] data-[mode=hover]:has-[:focus-visible]:w-64 data-[mode=hover]:has-[:focus-visible]:shadow-[12px_0_32px_-12px_rgba(0,0,0,0.7)] data-[mode=hover]:data-[menu=open]:w-64"
+            >
+              {rail()}
+              <div className="shrink-0 border-t border-sidebar-border p-2">
+                <DropdownMenu open={railMenu} onOpenChange={setRailMenu}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Sidebar control"
+                      title="Sidebar control"
+                      className="ml-[3px] text-faint"
+                    >
+                      <PanelLeft />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    side="top"
+                    align="start"
+                    sideOffset={6}
+                    className="w-52"
+                  >
+                    <DropdownMenuLabel className="text-xs font-normal text-faint">
+                      Sidebar control
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                      <DropdownMenuRadioGroup
+                        value={mode}
+                        onValueChange={(value) =>
+                          setRailMode(value as RailMode)
+                        }
+                      >
+                        {RAIL_MODES.map(([value, text]) => (
+                          <DropdownMenuRadioItem key={value} value={value}>
+                            {text}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </div>
+          <main
+            id="main"
+            className="flex min-w-0 flex-1 flex-col overflow-y-auto"
+          >
+            {children}
+          </main>
+        </div>
+        <Sheet open={drawer} onOpenChange={setDrawer}>
+          <SheetContent
+            side="left"
+            className="w-[300px] gap-0 border-sidebar-border bg-sidebar p-0 sm:max-w-[300px]"
+          >
+            <SheetTitle className="flex h-12 shrink-0 items-center border-b border-sidebar-border px-4">
+              <Logo />
+            </SheetTitle>
+            <SheetDescription className="sr-only">
+              Navigate to status, chat, search, connect, and settings, or open a
+              saved conversation.
+            </SheetDescription>
+            {drawer && rail(true)}
+          </SheetContent>
+        </Sheet>
       </div>
     </WorkspaceContext.Provider>
   );

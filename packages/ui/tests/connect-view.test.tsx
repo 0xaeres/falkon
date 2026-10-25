@@ -33,6 +33,7 @@ const render = (apiKey: boolean, isDefault = true) => {
             <ConnectView
               isDefault={isDefault}
               apiKey={apiKey}
+              url={url}
               snippets={connectSnippets(
                 product.id,
                 url,
@@ -47,12 +48,12 @@ const render = (apiKey: boolean, isDefault = true) => {
 };
 const main = (html: string) => html.match(/<main[\s\S]*<\/main>/)![0];
 
-test("Connect: three stacked snippets, each with its own copy button; tool names in one line", () => {
+test("Connect: one tab panel per client, each with its own copy button; the tool list", () => {
   const html = main(render(false));
   for (const title of ["Claude Code", "Codex", "Copilot (VS Code)"])
     assert.match(
       html,
-      new RegExp(`<h2>${title.replace(/[()]/g, "\\$&")}</h2>`),
+      new RegExp(`<h2[^>]*>${title.replace(/[()]/g, "\\$&")}</h2>`),
     );
   assert.equal(
     (html.match(/aria-label="Copy [^"]+ command"/g) ?? []).length,
@@ -67,10 +68,9 @@ test("Connect: three stacked snippets, each with its own copy button; tool names
     html,
     /claude mcp add --transport http falkon-payments-platform http:\/\/127\.0\.0\.1:3001\/mcp\/payments-platform/,
   );
-  assert.match(
-    html,
-    /Tools: <span class="mono">grep, glob,[^<]*research_codebase<\/span>/,
-  );
+  const tools = html.match(/<ul aria-label="Tools"[\s\S]*?<\/ul>/)![0];
+  for (const tool of ["grep", "glob", "research_codebase"])
+    assert.match(tools, new RegExp(`>${tool}<`));
   assert.ok(
     !html.includes("Reading an answer") &&
       !html.includes("FALKON_API_KEY before"),

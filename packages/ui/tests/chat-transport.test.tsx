@@ -59,13 +59,11 @@ const engine = http.createServer(async (req, res) => {
   seen = { url: req.url, body: "" };
   for await (const chunk of req) seen.body += chunk;
   if (fail)
-    return void res
-      .writeHead(409, { "content-type": "application/json" })
-      .end(
-        JSON.stringify({
-          error: "Chat opens when the first Evidence Generation publishes.",
-        }),
-      );
+    return void res.writeHead(409, { "content-type": "application/json" }).end(
+      JSON.stringify({
+        error: "Chat opens when the first Evidence Generation publishes.",
+      }),
+    );
   res
     .writeHead(200, {
       "content-type": "text/event-stream",

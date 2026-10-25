@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Markdown, componentsFor } from "../src/features/chat/markdown";
 import {
   MERMAID_MAX_CHARS,
+  viewBoxOf,
   MermaidView,
   drawMermaid,
 } from "../src/features/chat/mermaid-block";
@@ -36,7 +37,7 @@ test("renders heading, nested list, table and task list as GFM", () => {
 test("fenced code is a pre with language label, copy button and no highlighter markup", () => {
   const html = render("```ts\nconst a = 1;\n```");
   assert.match(html, /<pre/);
-  assert.match(html, /class="code-lang">ts</);
+  assert.match(html, /class="code-lang[^"]*">ts</);
   assert.match(html, /aria-label="Copy code"/);
   assert.match(html, /const a = 1;/);
 });
@@ -170,4 +171,12 @@ test("streaming partials do not throw", () => {
     "1. one\n2.",
   ])
     assert.doesNotThrow(() => render(partial, false), partial);
+});
+
+test("viewBoxOf reads a rendered diagram's natural size, zero when absent", () => {
+  assert.deepEqual(viewBoxOf('<svg viewBox="0 0 640.5 1200">'), {
+    width: 640.5,
+    height: 1200,
+  });
+  assert.deepEqual(viewBoxOf("<svg>ok</svg>"), { width: 0, height: 0 });
 });

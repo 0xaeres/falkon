@@ -167,13 +167,13 @@ Geist is the UI and prose family, with a sans-serif fallback. Geist Mono is the 
 
 The frontmatter records the shared headline, title, body, label, and mono roles. Page headings use headline; setup card headings use title. Evidence pane headings and section labels use smaller semibold UI text. Answer prose increases line height and stays within 66 characters per line. Source excerpts use tabular numerals, persistent whitespace, line numbers, and restrained syntax color.
 
-**The Source Type Rule.** Paths, product identifiers, generation identifiers, revisions, citation numbers, and source excerpts use Geist Mono. Interface sentences use Geist.
+**The Source Type Rule.** Paths, product identifiers, revisions, citation numbers, and source excerpts use Geist Mono. Generation identifiers are internal and never shown; the UI names the index by its age. Interface sentences use Geist.
 
 ## Layout
 
-The desktop workspace uses a 240px sidebar, collapsible to a 56px rail. Automatic mode selects the rail below 1280px. Below 768px, navigation becomes a 300px drawer beneath a 52px mobile header. The setup header is 56px high.
+A 48px top bar spans the workspace: the Falkon mark, the Product switcher, and the current page as a breadcrumb, with the verdict pill and a Connect action on the right. Below it, desktop navigation is a rail with three modes chosen from its bottom "Sidebar control" menu and remembered per browser: Expanded (256px, in the layout), Collapsed (56px icons with titles), and Expand on hover (the default: 56px, widening to 256px over the page after a 100ms intent delay or on keyboard focus, never pushing content). The rail holds Status, Chat, Search and Connect, then the chat history (visible while open), then Settings at the bottom. Below 768px, navigation becomes a 300px sheet opened from the top bar. The setup header is 48px high.
 
-Setup centers a 760px column, widened to 880px for repository selection. Cards separate heading, body, and footer. Status, Connect and Settings share one column, capped at 850px, padded 28px 32px (20px 16px below 768px). Status leads with the verdict line and Sync now, then the repositories table; gaps appear only when present. Connect shows three client tabs with a copy button on the snippet, then the tool list and answer help. Chat adds a dedicated 240px history column beside global navigation, with a flexible conversation center and a 440px evidence pane. At 768–1279px history narrows to 220px and evidence opens in a sheet. The thread is capped at 700px and the composer at 644px. Mobile history has its own drawer; evidence opens in a sheet.
+Every workspace page sits on one 12-column grid, capped at 1200px, with 24px gutters and 32px side padding (16px below 768px). Status leads with the verdict line and Sync now across all 12 columns, then six fact tiles (last indexed, repositories, code host, sync, build, knowledge base) in 8 columns beside a 4-column card of next actions, then gaps when present and the repositories table across 12. Connect puts the client tabs with numbered steps in 8 columns beside 4 columns of endpoint and tool cards. Setup uses the same grid at 1120px: a 3-column step rail beside a 9-column card; below 1024px the rail becomes a step count with a progress track. Chat has a flexible conversation beside a resizable evidence pane (34% by default, at least 340px, at most 65%) from 1280px; narrower, evidence opens in a sheet. Diagrams draw on a dark dotted canvas with pan, zoom, fit, full screen, copy and SVG download. The thread and composer are capped at 740px. Mobile history has its own drawer; evidence opens in a sheet.
 
 Spacing follows the observed steps in the frontmatter. Use tighter gaps inside controls and wider padding between sections. Mobile setup removes the outer card boundary and uses a step count with a 3px progress track. The body scrolls within the available viewport while the footer stays pinned with safe-area padding. The repository footer shows a selected count beside the primary action. Primary buttons and regular inputs have 44px targets; branch selectors remain 38px high. Repository tables become stacked rows with inline language and revision metadata, while the separate desktop columns disappear. The verified [mobile setup screenshot](.impeccable/review/setup-mobile.jpg) records this approved responsive composition.
 
@@ -181,7 +181,7 @@ Spacing follows the observed steps in the frontmatter. Use tighter gaps inside c
 
 Tonal layering and one-pixel borders define everyday depth. Cards and static panes have no drop shadows. Focused fields gain soft blue rings. Global navigation uses an inset boundary. Dropdown overlays follow the supplied macOS glass reference: smoked charcoal glass with a subtle cool-to-neutral tint, 28px backdrop blur, 16px corners, a luminous boundary and inner top-edge highlight, and a deep soft offset shadow. Option highlights and separators use translucent white. Browsers without backdrop filtering retain the opaque dark surface. Shadows also belong to the mobile drawer and queued-result toasts. Their exact values are recorded in the sidecar.
 
-Background transitions run for 150ms with ease. The evidence sheet enters over 180ms. Streaming indicators pulse. Loading states show only the approved Falkon mark, centered within the loading region, with its three wing bars sweeping in sequence over 1.4 seconds. The mark retains its geometry; no placeholder cards, visible loading copy, or artificial delay appear. Accessible status labels remain available. Reduced-motion settings show a static mark. Keep motion tied to state changes.
+Background transitions run for 150ms with ease. The evidence sheet enters over 180ms. Streaming indicators pulse. Route-level boot shows only the approved Falkon mark, centered, with its three wing bars sweeping in sequence over 1.4 seconds. Containers that load their own data (status, connect, chat, chat history, evidence, the repository picker, search results) show content-shaped skeletons that mirror the loaded layout, so nothing jumps when data arrives. No visible loading copy or artificial delay. Accessible status labels remain available. Reduced-motion settings show a static mark and still skeletons. Keep motion tied to state changes.
 
 **The Flat Surface Rule.** Keep resting cards flat. Reserve shadows for overlays and use borders or selection rings for ordinary hierarchy.
 
@@ -201,7 +201,7 @@ Fields sit on the page background with a stronger border. Focus uses the muted n
 
 ### Navigation
 
-The selected destination uses a dark tonal fill, light text, and an inset boundary. Hover brightens the same plane. The Product switcher remains above primary navigation; Status, Chat, Connect, and Settings follow. Chat history occupies a separate column and remains visible when global navigation collapses. On mobile, history and page navigation have independent drawers. Keyboard and drawer controls preserve the implemented collapse behavior.
+The selected destination uses a dark tonal fill, light text, and an inset boundary. Hover brightens the same plane. The Product switcher lives in the top bar. The rail lists Status, Chat, Search and Connect, the chat history, and Settings last, with the Status state dot riding on its icon while closed. Labels stay in the DOM and are revealed when the rail opens. On mobile the same rail content opens as a 300px sheet from the top bar.
 
 ### Chips / Tags
 
@@ -209,7 +209,7 @@ Badges use a quiet outline, pill silhouette, and optional state dot. Semantic va
 
 ### Cards / Containers
 
-Setup cards use s1 with a subtle boundary. Status and Connect sections sit directly in the page, with dividers between them. Header, body, footer, and detail sections have distinct padding and dividers. No decorative shadows. Alerts use inline icon, title, and explanation; error and warning variants apply the corresponding soft fill.
+Components are shadcn/ui (new-york, Radix) themed through the CSS variables in `src/app/globals.css`; chat structure uses AI Elements (Conversation, Message, PromptInput, ChainOfThought, Shimmer). Cards use s1 with a subtle boundary, a bordered header strip, and no shadow; fact tiles share one hairline grid rather than floating as separate cards. Header, body, footer, and detail sections have distinct padding and dividers. No decorative shadows. Alerts use inline icon, title, and explanation; error and warning variants apply the corresponding soft fill.
 
 ### Evidence
 

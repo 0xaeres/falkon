@@ -14,8 +14,7 @@ const mono = localFont({
 });
 export const metadata: Metadata = {
   title: { default: "Falkon", template: "%s · Falkon" },
-  description:
-    "Product-scoped code context, backed by source evidence.",
+  description: "Product-scoped code context, backed by source evidence.",
   icons: { icon: "/brand/falkon-app-icon.svg" },
 };
 export default function RootLayout({
@@ -24,7 +23,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable} ${mono.variable}`}>
       <body>
-        <a className="skip-link" href="#main">
+        <a
+          className="fixed top-2 left-2 z-[100] -translate-y-[150%] rounded-lg bg-primary px-4 py-2.5 text-primary-foreground focus:translate-y-0"
+          href="#main"
+        >
           Skip to content
         </a>
         {children}

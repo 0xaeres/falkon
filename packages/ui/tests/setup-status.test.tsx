@@ -44,7 +44,7 @@ test("picker count line sits above the list, for 0, 1 and 300 repositories", () 
   assert.match(render(many(300)), /300 repositories visible to this token/);
   assert.match(
     render(many(2)),
-    /type="checkbox"[^>]*aria-label="Private only"|aria-label="Private only"[^>]*type="checkbox"/,
+    /role="switch"[^>]*aria-label="Private only"|aria-label="Private only"[^>]*role="switch"/,
   );
 });
 

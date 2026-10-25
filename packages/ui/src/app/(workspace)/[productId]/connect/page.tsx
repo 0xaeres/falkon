@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import type { Metadata } from "next";
-import { ConnectView } from "@/features/connect/connect-view";
-import { LoadingMark } from "@/components/ui/primitives";
+import { ConnectSkeleton, ConnectView } from "@/features/connect/connect-view";
 import { connectSnippets, mcpUrl, type AuthMode } from "@/lib/connect";
 export const metadata: Metadata = { title: "Connect" };
 
@@ -16,6 +15,7 @@ async function Connect({ params }: { params: Promise<{ productId: string }> }) {
     <ConnectView
       isDefault={!process.env.FALKON_MCP_URL}
       apiKey={mode === "apiKey"}
+      url={url}
       snippets={connectSnippets(productId, url, mode)}
     />
   );
@@ -24,7 +24,7 @@ export default function ConnectPage(props: {
   params: Promise<{ productId: string }>;
 }) {
   return (
-    <Suspense fallback={<LoadingMark />}>
+    <Suspense fallback={<ConnectSkeleton />}>
       <Connect {...props} />
     </Suspense>
   );
