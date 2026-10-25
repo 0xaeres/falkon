@@ -8,6 +8,8 @@ import {
 } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import type { Diagram } from "@falkon/contracts";
+import { ArchifyBlock } from "./archify-block";
 import { CodeBlock } from "./code-block";
 import { MermaidBlock } from "./mermaid-block";
 
@@ -55,6 +57,7 @@ const safeHref = (href?: string) =>
   href && /^(https?:|mailto:)/i.test(href) ? href : undefined;
 
 const Citations = createContext<Record<number, ReactNode>>({});
+const Diagrams = createContext<Diagram[]>([]);
 
 function Span(props: { children?: ReactNode }) {
   const citations = useContext(Citations);
@@ -92,6 +95,7 @@ const withPre = (final: boolean): Components => ({
       : undefined;
     const lang = /language-(\S+)/.exec(el?.props.className ?? "")?.[1];
     const code = String(el?.props.children ?? "").replace(/\n$/, "");
+    if (lang === "archify" && final) return <ArchifyFence code={code} />;
     return lang === "mermaid" && final ? (
       <MermaidBlock source={code} />
     ) : (
@@ -99,6 +103,16 @@ const withPre = (final: boolean): Components => ({
     );
   },
 });
+
+/** A finished answer's ```archify fence: the diagram the engine rendered from this exact source, else the code (invalid or beyond the cap). */
+function ArchifyFence({ code }: { code: string }) {
+  const diagram = useContext(Diagrams).find((d) => d.source === code.trim());
+  return diagram ? (
+    <ArchifyBlock diagram={diagram} />
+  ) : (
+    <CodeBlock lang="archify" code={code} />
+  );
+}
 const finalComponents = withPre(true);
 const streamingComponents = withPre(false);
 /** The stable components object for a render mode (exported so a test can pin its identity). */
@@ -110,22 +124,27 @@ export function Markdown({
   text,
   citations = {},
   final = true,
+  diagrams = [],
 }: {
   text: string;
   citations?: Record<number, ReactNode>;
   final?: boolean;
+  /** The answer's rendered archify diagrams; a finished ```archify fence with a matching source shows as one. */
+  diagrams?: Diagram[];
 }) {
   return (
     <Citations.Provider value={citations}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[
-          [rehypeCitations, new Set(Object.keys(citations).map(Number))],
-        ]}
-        components={componentsFor(final)}
-      >
-        {text}
-      </ReactMarkdown>
+      <Diagrams.Provider value={diagrams}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[
+            [rehypeCitations, new Set(Object.keys(citations).map(Number))],
+          ]}
+          components={componentsFor(final)}
+        >
+          {text}
+        </ReactMarkdown>
+      </Diagrams.Provider>
     </Citations.Provider>
   );
 }

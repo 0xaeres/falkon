@@ -21,6 +21,7 @@ export const keys = {
     `${base}/repositories?connection=${encodeURIComponent(connectionId)}&q=${encodeURIComponent(q)}`,
   product: (id: string) => `${base}/products/${encodeURIComponent(id)}`,
   status: (id: string) => `${base}/products/${encodeURIComponent(id)}/status`,
+  events: (id: string) => `${base}/products/${encodeURIComponent(id)}/events`,
   threads: (id: string) => `${base}/products/${encodeURIComponent(id)}/threads`,
   thread: (productId: string, threadId: string) =>
     `${base}/products/${encodeURIComponent(productId)}/threads/${encodeURIComponent(threadId)}`,
@@ -28,6 +29,10 @@ export const keys = {
     `${base}/products/${encodeURIComponent(id)}/search?${params}`,
   messages: (productId: string, threadId: string) =>
     `${keys.thread(productId, threadId)}/messages`,
+  stream: (productId: string, threadId: string) =>
+    `${keys.thread(productId, threadId)}/stream`,
+  stop: (productId: string, threadId: string) =>
+    `${keys.thread(productId, threadId)}/stop`,
 };
 export class ApiError extends Error {
   constructor(
@@ -95,6 +100,14 @@ export const api = {
   knowledge: (id: string, input: KnowledgeActionRequest) =>
     request(`${keys.product(id)}/knowledge`, statusSchema, "POST", input),
   newThread: (id: string) => request(keys.threads(id), threadSchema, "POST"),
+  /** Ends the answer being written; the engine keeps the question. */
+  stopThread: async (productId: string, threadId: string) =>
+    void (await check(
+      await fetch(keys.stop(productId, threadId), {
+        method: "POST",
+        signal: AbortSignal.timeout(15000),
+      }),
+    )),
   /** Best effort: the engine refuses a thread that has answers. */
   deleteThread: async (productId: string, threadId: string) =>
     void (await check(

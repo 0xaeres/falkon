@@ -56,7 +56,7 @@ export const statusSchema = z.object({
   verdict: z.string(),
   sentence: z.string(),
   generation: z.string().nullable(),
-  generationAge: z.string(),
+  generationAt: z.number().nullable(), // epoch ms of the newest indexed repository; the page renders the age
   nextGeneration: z.string().nullable(),
   build: z.enum(["idle", "building", "failed"]),
   stage: z.number().min(0).max(4),
@@ -99,6 +99,12 @@ export const paragraphSchema = z
       }
     }
   });
+// One archify diagram the engine rendered from a ```archify block: standalone HTML to show in a sandboxed iframe, and the JSON it came from.
+export const diagramSchema = z.object({
+  type: z.enum(["architecture", "workflow", "sequence", "dataflow", "lifecycle"]),
+  html: z.string().max(2_000_000),
+  source: z.string().max(32_000),
+});
 export const answerSchema = z.object({
   id: z.string(),
   productId: productIdSchema,
@@ -107,6 +113,7 @@ export const answerSchema = z.object({
   kind: z.enum(["grounded", "partial", "abstention", "reply"]),
   paragraphs: z.array(paragraphSchema),
   evidence: z.array(evidenceSchema),
+  diagrams: z.array(diagramSchema).optional(),
   gaps: z.array(z.string()),
   partialReasons: z.array(z.string()),
   abstention: z.string().nullable(),
@@ -168,6 +175,7 @@ export const setupRequestSchema = z.object({
 export const editRequestSchema = setupRequestSchema.pick({ name: true, repositories: true });
 // Persisted chat parts (CONTEXT.md Evidence): data-evidence is one Evidence, data-answer the answer shape without ids or evidence.
 export const evidencePartSchema = evidenceSchema;
+export const diagramPartSchema = diagramSchema;
 export const answerPartSchema = answerSchema.pick({
   kind: true,
   generation: true,
@@ -181,12 +189,16 @@ export const syncRequestSchema = z.object({ action: z.literal("retry") });
 // Body of POST /ui/products/:slug/knowledge: what the backend is asked to do to one member repository's knowledge base.
 export const knowledgeActionRequestSchema = z.object({ repo: z.string().min(1).max(500), action: z.enum(["scan", "delete", "include"]) });
 export type KnowledgeActionRequest = z.infer<typeof knowledgeActionRequestSchema>;
+// The Product event stream (GET /ui/products/:slug/events): server-sent events named by key, each `data` one JSON value of the schema.
+export const productEventSchemas = { status: statusSchema, threads: z.array(threadSummarySchema) };
+export type ProductEventName = keyof typeof productEventSchemas;
 export type Provider = z.infer<typeof providerSchema>;
 export type Repository = z.infer<typeof repositorySchema>;
 export type Product = z.infer<typeof productSchema>;
 export type Status = z.infer<typeof statusSchema>;
 export type Scenario = z.infer<typeof scenarioSchema>;
 export type Evidence = z.infer<typeof evidenceSchema>;
+export type Diagram = z.infer<typeof diagramSchema>;
 export type Answer = z.infer<typeof answerSchema>;
 export type Thread = z.infer<typeof threadSchema>;
 export type ThreadSummary = z.infer<typeof threadSummarySchema>;

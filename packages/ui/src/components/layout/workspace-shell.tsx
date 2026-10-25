@@ -43,6 +43,8 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "../ui/sheet";
 import { Skeleton } from "../ui/skeleton";
 import { Spinner } from "../ui/spinner";
 import { ErrorState, LoadingMark, StateDot, type Tone } from "../ui/primitives";
+import { useProductEvents, visibleStatusError } from "@/lib/use-product-events";
+import { ReconnectingNotice } from "./reconnecting-notice";
 
 type Workspace = {
   product: Product;
@@ -133,9 +135,8 @@ export function WorkspaceShell({
     data: status,
     error: statusError,
     mutate: refreshStatus,
-  } = useSWR(keys.status(productId), api.status, {
-    refreshInterval: (data) => (data?.scenario === "building" ? 2000 : 30000),
-  });
+  } = useSWR(keys.status(productId), api.status); // loaded once; the event stream below keeps it and the threads current
+  const { reconnecting } = useProductEvents(productId);
   const {
     data: threads,
     error: threadsError,
@@ -184,7 +185,7 @@ export function WorkspaceShell({
     product,
     status,
     threads: threads ?? [],
-    statusError,
+    statusError: visibleStatusError(status, statusError),
     refreshStatus,
     refresh: async () => {
       await Promise.all([
@@ -266,7 +267,7 @@ export function WorkspaceShell({
         </Button>
       </header>
       <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2 pb-2">
-        {threadsError ? (
+        {threadsError && !threads ? (
           <ErrorState
             error={threadsError}
             retry={() => void refreshThreads()}
@@ -506,6 +507,7 @@ export function WorkspaceShell({
             id="main"
             className="flex min-w-0 flex-1 flex-col overflow-y-auto"
           >
+            {reconnecting && status && <ReconnectingNotice />}
             {children}
           </main>
         </div>

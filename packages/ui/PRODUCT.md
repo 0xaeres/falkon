@@ -43,7 +43,7 @@ Every answer is scoped to one Product and cites source at a recorded revision. F
 ## Capabilities and Constraints
 
 - Surfaces: Product setup (`/setup`), Status, Chat, Connect, Settings, all scoped to one Product under `/<productId>/`.
-- Status stays state, not telemetry. Generation ids (`g-…`) never appear in the UI; people see the index age instead. Status shows the verdict line with Sync now, six state facts (when the index was last published, indexed repositories, code host, sync, build, knowledge base), shortcuts to chat, search and connect, a repositories table, and gaps or errors only when present. No telemetry or charts.
+- Status stays state, not telemetry. Generation ids (`g-…`) never appear in the UI; people see the index age instead (rendered locally from the publish time, refreshed each minute). Status stays current from the Product event stream, with no polling. Status shows the verdict line with Sync now, six state facts (when the index was last published, indexed repositories, code host, sync, build, knowledge base), shortcuts to chat, search and connect, a repositories table, and gaps or errors only when present. No telemetry or charts.
 - Chat centers on a grounded answer with citations; unresolved targets, gaps, partial reasons and abstentions show when present.
 - Connect shows one command or config per client (Claude Code, Codex, VS Code Copilot), the tool list, and how to read an answer. It never shows a token: in apiKey mode the snippet refers to `FALKON_API_KEY` or a prompt.
 - A repository the connector skipped shows state Skipped.

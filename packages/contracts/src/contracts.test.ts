@@ -8,6 +8,7 @@ import {
   editRequestSchema,
   evidencePartSchema,
   evidenceSchema,
+  productEventSchemas,
   productIdSchema,
   repositoriesQuery,
   repositorySchema,
@@ -180,7 +181,7 @@ test("editRequestSchema takes name and repositories only; setup-only fields are 
 });
 
 test("status knowledge is optional and its state is a closed set", () => {
-  const base = { productId: "p", verdict: "v", sentence: "s", generation: null, generationAge: "not yet", nextGeneration: null, build: "idle", stage: 0, progress: 0, sync: "current", gaps: [], scenario: "building" };
+  const base = { productId: "p", verdict: "v", sentence: "s", generation: null, generationAt: null, nextGeneration: null, build: "idle", stage: 0, progress: 0, sync: "current", gaps: [], scenario: "building" };
   assert(statusSchema.safeParse(base).success);
   assert(statusSchema.safeParse({ ...base, knowledge: { state: "no-model", detail: "No model configured" } }).success);
   assert(statusSchema.safeParse({ ...base, knowledge: { state: "ready" } }).success);
@@ -192,4 +193,13 @@ test("a repository's state is optional and a closed set that includes skipped", 
   assert(repositorySchema.safeParse(base).success);
   for (const state of ["pending", "indexing", "indexed", "failed", "skipped"]) assert(repositorySchema.safeParse({ ...base, state }).success, state);
   assert(!repositorySchema.safeParse({ ...base, state: "weird" }).success);
+});
+
+test("productEventSchemas: status is a status, threads is a list of summaries", () => {
+  const thread = { id: "t1", productId: "alpha", title: "Q", updatedAt: 1 };
+  assert.deepEqual(Object.keys(productEventSchemas).sort(), ["status", "threads"]);
+  assert(productEventSchemas.threads.safeParse([thread]).success);
+  assert(productEventSchemas.threads.safeParse([]).success);
+  assert(!productEventSchemas.threads.safeParse([{ ...thread, updatedAt: "x" }]).success);
+  assert(!productEventSchemas.status.safeParse({ productId: "alpha" }).success);
 });

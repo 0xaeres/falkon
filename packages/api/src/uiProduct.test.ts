@@ -11,12 +11,12 @@ const repo = (name: string, over: Partial<RepoFacts> = {}): RepoFacts => ({
 });
 const conn = (over: Partial<ConnectionFacts> = {}): ConnectionFacts => ({ credentialId: "c".repeat(22), host: "github.com", syncError: null, syncRequestedAt: null, ...over });
 const pending = (name: string) => repo(name, { status: "PENDING", headCommit: null, lastIndexedAt: null });
-const status = (repos: RepoFacts[], c: ConnectionFacts | null = conn()) => deriveStatus("p", repos, c, NOW);
+const status = (repos: RepoFacts[], c: ConnectionFacts | null = conn()) => deriveStatus("p", repos, c);
 
 test("no repo indexed yet: building, nothing active", () => {
   const s = status([pending("a"), repo("b", { status: "SYNCING" })]);
   assert.deepEqual([s.scenario, s.build, s.sync, s.generation, s.nextGeneration === null, s.stage, s.progress, s.verdict, s.sentence], ["building", "building", "current", null, false, 2, 0, "Building", "Indexing 0 of 2 repositories."]);
-  assert.equal(s.generationAge, "not yet");
+  assert.equal(s.generationAt, null);
   const empty = status([]);
   assert.deepEqual([empty.scenario, empty.stage, empty.progress, empty.generation], ["building", 0, 0, null]);
 });
@@ -51,7 +51,7 @@ test("every repo indexed and up to date: current, generation is the sha256 of th
   const repos = [repo("b"), repo("a")];
   const s = status(repos);
   const expected = "g-" + createHash("sha256").update("github.com/acme/a@a1234567890\ngithub.com/acme/b@b1234567890").digest("hex").slice(0, 6);
-  assert.deepEqual([s.scenario, s.build, s.sync, s.stage, s.progress, s.generation, s.nextGeneration, s.generationAge, s.verdict], ["current", "idle", "current", 4, 100, expected, null, "10 min ago", "Current"]);
+  assert.deepEqual([s.scenario, s.build, s.sync, s.stage, s.progress, s.generation, s.nextGeneration, s.generationAt, s.verdict], ["current", "idle", "current", 4, 100, expected, null, NOW.getTime() - 10 * 60_000, "Current"]);
   assert.equal(status([...repos].reverse()).generation, expected, "order independent");
   assert.equal(status([repo("a", { headCommit: "other" }), repo("b")]).generation === expected, false);
 });

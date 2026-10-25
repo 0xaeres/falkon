@@ -89,8 +89,29 @@ export const RENDER_PROMPT = `<rendering>\nThe chat renders GFM (GitHub-flavored
 /** Added to every per-chat prompt: how to mark a conversational reply. Only evidence-free replies are read this way. */
 export const REPLY_PROMPT = `<conversational_replies>\nIf the user's message is only conversational (a greeting, thanks, or a question about what you can do) and needs no code lookup, do not use tools. Reply in one or two short sentences, say you can search this Product's code, trace callers and explain how things work, and put \`${REPLY_TAG}\` on its own line right after \`${ANSWER_TAG}\`. Never use \`${REPLY_TAG}\` when the message asks about code, even if it also greets you.\n</conversational_replies>`;
 
+/**
+ * Added to the UI chat's per-chat prompt only (never the MCP or blocking Ask, which render no diagrams): how to write an
+ * ```archify block, which diagram.ts renders into an interactive diagram. Archify JSON is validated against vendored schemas; an invalid block shows as code.
+ */
+export const DIAGRAM_PROMPT = `<archify_diagrams>
+When the user asks for a diagram, or one clearly explains more than text (architecture, agent or request flow, interaction sequence, data pipeline, state machine), draw it in a \`\`\`archify fenced block holding one JSON object, and use \`\`\`mermaid only for diagram kinds archify lacks. At most two archify blocks per answer; each is shown as an interactive diagram.
+
+Rules:
+- Draw only what you read in the code. Never invent components, steps or links; keep node and edge labels short (a few words), put detail in the prose with its @file references, and cite code in prose, not inside the JSON.
+- Always: "schema_version": 2 (workflow) or 1 (others), "diagram_type", "meta": { "title": "..." } (omit "output"), and no fields beyond those below.
+- Node/component "type" is one of frontend, backend, database, cloud, security, messagebus, external. Ids are unique lowercase words with underscores.
+- "workflow" (flows, loops, pipelines): "lanes": [{id,label}], "nodes": [{id,lane,col (0-5, left to right),type,label,sublabel?}], "edges": [{from,to,label?,role?: main|branch|async|return|error}], optional "mainPath": [node ids].
+- "sequence" (calls over time): "participants": [{id,type,label}], "messages": [{from,to,y (increasing numbers, 70 apart),label,variant?: default|return}].
+- "dataflow": "stages": [{label}], "nodes": [{id,type,label,stage (index),row (0-based)}], "flows": [{from,to,label}].
+- "lifecycle" (state machines): "lanes": [{id,label}], "states": [{id,type: start|active|waiting|decision|success|failure|neutral|external,label,lane,col}], "transitions": [{from,to,label?}].
+- "architecture" (components): "components": [{id,type,label,sublabel?,row,col}], "connections": [{from,to,label?}].
+Example: \`\`\`archify
+{"schema_version":2,"diagram_type":"workflow","meta":{"title":"Request flow"},"lanes":[{"id":"api","label":"API"}],"nodes":[{"id":"ask","lane":"api","col":0,"type":"external","label":"Question"},{"id":"agent","lane":"api","col":1,"type":"backend","label":"Agent"}],"edges":[{"from":"ask","to":"agent","label":"asks"}]}
+\`\`\`
+</archify_diagrams>`;
+
 /** Per-chat context: selected repos and files the user mentioned. */
-export function dynamicPrompt({ repos, files, query }: { repos: string[]; files: { path: string; repo: string; language: string; revision: string; source: string }[]; query?: string }) {
+export function dynamicPrompt({ repos, files, query, diagrams }: { repos: string[]; files: { path: string; repo: string; language: string; revision: string; source: string }[]; query?: string; diagrams?: boolean }) {
   const parts: string[] = [];
   if (repos.length > 0) {
     parts.push(d`
@@ -120,6 +141,7 @@ export function dynamicPrompt({ repos, files, query }: { repos: string[]; files:
         `);
   }
   parts.push(RENDER_PROMPT, REPLY_PROMPT);
+  if (diagrams) parts.push(DIAGRAM_PROMPT);
   // The recipe goes in this per-chat part, not STATIC_PROMPT: the static part stays byte-identical and prompt-cached, and only this part can see the question.
   if (query !== undefined && isImpactQuery(query)) parts.push(IMPACT_PROMPT);
   return parts.join("\n\n");

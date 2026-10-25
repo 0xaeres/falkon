@@ -3,7 +3,7 @@ import micromatch from "micromatch";
 import { Queue, Worker } from "bullmq";
 import { Redis } from "ioredis";
 import { prisma, ConnectionSource, RepoKind, RepoStatus, ScanStatus } from "@falkon/db";
-import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, openCredential, parseTicketKeys, postgresProvenanceStore, repoGitDir, repoPath, resolveEnvironmentOverrides, setCredentialResolver, type Config, type SyncState } from "@falkon/shared";
+import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, openCredential, parseTicketKeys, postgresProvenanceStore, redisSignals, repoGitDir, repoPath, resolveEnvironmentOverrides, setCredentialResolver, type Config, type SyncState } from "@falkon/shared";
 import type { RepoMetadata } from "./connectors";
 import { credentialsFor } from "./credentials";
 import { cloneOrFetch, localDefaultBranch, repoStats, sortedRefs, upsertGitConfig } from "./git";
@@ -13,8 +13,11 @@ import { kbModelReady, kbSelected, runKnowledgeScan } from "./kb/scan";
 import { importDiscussions, snapshotSource } from "./discussions";
 import { discussionConnection, planDiscussionSync, runDiscussionJob } from "./discussionSchedule";
 import { githubSource, githubTransport } from "./githubDiscussions";
+import { announceJobs, coalesce } from "./requests";
 
 const connection = new Redis(env.redisUrl, { maxRetriesPerRequest: null });
+// Pings to and from the api (D155): `changed` out after jobs and claims, `request` in when the api wrote a row to claim.
+const signals = redisSignals();
 
 // `{ stored }` tokens (source=api connections) are opened from the Credential table.
 setCredentialResolver(async (id) => openCredential(await prisma.credential.findUniqueOrThrow({ where: { id } })));
@@ -71,6 +74,7 @@ async function afterConnectionJob() {
   } catch (e) {
     console.error("post-sync cleanup failed:", e);
   }
+  signals.changed();
 }
 
 async function syncAllConnections() {
@@ -175,13 +179,28 @@ async function scheduleTick() {
   // source=api connections sync when requested; the config resync below covers config connections only
   const stale = await prisma.connection.findFirst({ where: { source: ConnectionSource.config, OR: [{ syncedAt: null }, { syncedAt: { lt: new Date(now - settings.resyncConnectionIntervalMs) } }] } });
   if (stale && pendingConnections <= 0) await syncAllConnections();
+  claimRequests();
+}
+
+/**
+ * Takes the UI's requests (sync, retry, knowledge base actions) at once. Runs on the api's request signal and on every tick, so a
+ * request written while the signal was lost is still taken; a trigger during a run is folded into one more pass.
+ */
+const claimRequests = coalesce(async () => {
+  let claimed = 0;
   for (const name of await claimSyncRequests()) {
+    claimed++;
     pendingConnections += 1;
     await connQueue.add("sync", { name }, { jobId: `sync-${name}-${Date.now()}` });
   }
   // a requested retry must not be deduped against the failed job of the same minute
-  for (const repoId of await claimIndexRequests()) await indexQueue.add("index", { repoId }, { jobId: `index-${repoId}-retry-${Date.now()}` });
-}
+  for (const repoId of await claimIndexRequests()) {
+    claimed++;
+    await indexQueue.add("index", { repoId }, { jobId: `index-${repoId}-retry-${Date.now()}` });
+  }
+  claimed += await kbRequests();
+  if (claimed) signals.changed();
+}, (e) => console.error("claiming requests failed:", e));
 
 // ---- pull requests (ADR 0001, 4.11) ----------------------------------------------------------------
 
@@ -270,37 +289,47 @@ const kbWorker = new Worker<{ repoId: number; manual: boolean }>(
 );
 kbWorker.on("failed", (job, err) => console.error(`kb job ${job?.id} failed: ${err.message}`));
 
-/** Applies web-app requests (scan now / delete / re-include) and schedules due scans. */
+/** Applies web-app requests (scan now / delete / re-include); returns how many it claimed. */
+async function kbRequests(): Promise<number> {
+  if (!cfg) return 0;
+  const kbCfg = cfg.knowledgeBase;
+  // a disabled knowledge base never logs the no-model line (kbSelected is false for every repo then)
+  const modelReady = !kbCfg.enabled || kbModelReady();
+  let taken = 0;
+  for (const r of await prisma.repo.findMany({ where: { kind: RepoKind.CODE, kbRequest: { not: null } } })) {
+    const req = r.kbRequest!;
+    // keep a scan request until a model exists; delete and include need none
+    if (req === "scan" && !modelReady) continue;
+    // a delete must not race a running scan, which would write the documents straight back
+    if (req === "delete" && (await prisma.knowledgeScan.findFirst({ where: { repoId: r.id, status: ScanStatus.RUNNING }, select: { id: true } }))) continue;
+    // claim exactly the request we read; a newer one written meanwhile stays for the next pass
+    const claimed = await prisma.repo.updateMany({ where: { id: r.id, kbRequest: req }, data: { kbRequest: null, kbRequestedAt: null } });
+    if (claimed.count === 0) continue;
+    taken++;
+    if (req === "delete") {
+      await deleteKnowledge(r.id);
+      await prisma.repo.update({ where: { id: r.id }, data: { kbExcluded: true, kbScannedCommit: null, kbLastFullScanAt: null } });
+    } else if (req === "include") {
+      await prisma.repo.update({ where: { id: r.id }, data: { kbExcluded: false } });
+    } else if (req === "scan" && kbSelected(kbCfg, r)) {
+      await kbQueue.add("scan", { repoId: r.id, manual: true }, { jobId: `kb-${r.id}-manual-${Date.now()}` });
+    }
+  }
+  return taken;
+}
+
+/** Schedules due scans; requests are taken by `claimRequests` (from `scheduleTick`). */
 async function kbTick() {
   if (!cfg) return;
   const kbCfg = cfg.knowledgeBase;
   const now = Date.now();
-  // a disabled knowledge base never logs the no-model line (kbSelected is false for every repo then)
   const modelReady = !kbCfg.enabled || kbModelReady();
   // knowledge repos whose new commits were never indexed (e.g. a crash between a scan and its hand-off)
   for (const k of await prisma.repo.findMany({ where: { kind: RepoKind.KNOWLEDGE, status: RepoStatus.PENDING } })) {
     await enqueueIndex(k.id);
   }
   for (const r of await prisma.repo.findMany({ where: { kind: RepoKind.CODE } })) {
-    if (r.kbRequest) {
-      const req = r.kbRequest;
-      // keep a scan request until a model exists; delete and include need none
-      if (req === "scan" && !modelReady) continue;
-      // a delete must not race a running scan, which would write the documents straight back
-      if (req === "delete" && (await prisma.knowledgeScan.findFirst({ where: { repoId: r.id, status: ScanStatus.RUNNING }, select: { id: true } }))) continue;
-      // claim exactly the request we read; a newer one written meanwhile stays for the next tick
-      const claimed = await prisma.repo.updateMany({ where: { id: r.id, kbRequest: req }, data: { kbRequest: null, kbRequestedAt: null } });
-      if (claimed.count === 0) continue;
-      if (req === "delete") {
-        await deleteKnowledge(r.id);
-        await prisma.repo.update({ where: { id: r.id }, data: { kbExcluded: true, kbScannedCommit: null, kbLastFullScanAt: null } });
-      } else if (req === "include") {
-        await prisma.repo.update({ where: { id: r.id }, data: { kbExcluded: false } });
-      } else if (req === "scan" && kbSelected(kbCfg, r)) {
-        await kbQueue.add("scan", { repoId: r.id, manual: true }, { jobId: `kb-${r.id}-manual-${now}` });
-      }
-      continue;
-    }
+    if (r.kbRequest) continue; // a request held back (no model yet, delete behind a running scan) waits as before
     if (!modelReady || !kbSelected(kbCfg, r) || r.status !== RepoStatus.INDEXED || !r.headCommit || r.kbScannedCommit === r.headCommit) continue;
     const last = await prisma.knowledgeScan.findFirst({ where: { repoId: r.id }, orderBy: { startedAt: "desc" } });
     if (last?.status === ScanStatus.RUNNING) continue;
@@ -327,6 +356,7 @@ syncAllConnections()
   .catch((e) => console.error("initial sync failed:", e))
   .finally(() => {
     watchConfig();
+    claimRequests(); // requests written while the worker was down
     setInterval(() => scheduleTick().catch((e) => console.error("schedule tick failed:", e)), 30_000);
   });
 // a scan interrupted by a crash or restart never finishes; close it out so the scheduler can retry
@@ -335,6 +365,8 @@ prisma.knowledgeScan
   .catch((e) => console.error("scan cleanup failed:", e));
 setInterval(() => discussionTick().catch((e) => console.error("discussion tick failed:", e)), 30_000);
 setInterval(() => kbTick().catch((e) => console.error("kb tick failed:", e)), 30_000);
+announceJobs([connWorker, worker, discussionWorker, syncWorker, kbWorker], signals);
+signals.onRequest(claimRequests);
 
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
   process.on(sig, async () => {
@@ -348,6 +380,7 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
     await syncQueue.close();
     await indexQueue.close();
     await kbQueue.close();
+    signals.close();
     await prisma.$disconnect();
     process.exit(0);
   });

@@ -46,7 +46,8 @@ import {
   type Tone,
 } from "@/components/ui/primitives";
 import { api } from "@/lib/api/client";
-import { relativeTime } from "@/lib/format";
+import { generationAge, relativeTime } from "@/lib/format";
+import { useMinute } from "@/lib/use-minute";
 import { repoState } from "./repo-state";
 
 const KNOWLEDGE: Record<
@@ -140,11 +141,16 @@ export function StatusView() {
     useWorkspace();
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
+  useMinute(); // re-renders each minute; the age itself reads the real clock
   if (statusError)
     return (
       <ErrorState error={statusError} retry={() => void refreshStatus()} />
     );
   if (!status) return <StatusSkeleton />;
+  const age =
+    status.generation && status.generationAt !== null
+      ? generationAge(status.generationAt)
+      : null;
   const building = status.build === "building";
   const states = product.repositories.map((repo) => repoState(repo, status));
   const indexed = states.filter((state) => state.label === "Indexed").length;
@@ -188,7 +194,7 @@ export function StatusView() {
           </div>
           <p className="mt-1.5 text-[0.8125rem] text-muted-foreground">
             {status.generation
-              ? `Answers use the index published ${status.generationAge}, across ${product.repositories.length} ${product.repositories.length === 1 ? "repository" : "repositories"}.`
+              ? `Answers use the index${age ? ` published ${age}` : ""}, across ${product.repositories.length} ${product.repositories.length === 1 ? "repository" : "repositories"}.`
               : "No index is published yet. Chat opens when the first one is ready."}
           </p>
         </div>
@@ -234,7 +240,7 @@ export function StatusView() {
             label="Last indexed"
             detail={building ? "Next index building" : "Latest published index"}
           >
-            {status.generation ? status.generationAge : "Not yet"}
+            {age ?? "Not yet"}
           </Fact>
           <Fact
             icon={<Boxes />}

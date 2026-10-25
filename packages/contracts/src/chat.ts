@@ -1,7 +1,7 @@
 // Chat transport contracts (S21): the request body, the file-reference preview rewrite, and the mapping between
 // stored AI SDK UI messages and `Answer`s. Pure; shared by the engine (GET thread) and the UI (live view, seeding).
 import { z } from "zod";
-import { answerSchema, answerPartSchema, evidencePartSchema, type Answer } from "./index";
+import { answerSchema, answerPartSchema, diagramPartSchema, evidencePartSchema, type Answer } from "./index";
 
 /** POST /ui/products/:slug/threads/:id/messages. The server owns the history: a `messages` key is an unknown key. */
 export const chatMessageRequestSchema = z.strictObject({
@@ -35,6 +35,11 @@ export const ABSTENTION_INCOMPLETE = "This answer did not finish. Ask again to r
 const textOf = (m: ChatMessageLike) => m.parts.map((p) => (p.type === "text" ? (p.text ?? "") : "")).join("");
 
 function toAnswer(productId: string, question: string, m: ChatMessageLike): Answer {
+  // A corrupt diagram part is dropped alone; the answer keeps its text (the fence then shows as code).
+  const diagrams = m.parts.flatMap((p) => {
+    const d = p.type === "data-diagram" ? diagramPartSchema.safeParse(p.data) : undefined;
+    return d?.success ? [d.data] : [];
+  });
   const answerData = m.parts.find((p) => p.type === "data-answer")?.data;
   const parsed = answerSchema.safeParse({
     ...(answerData && typeof answerData === "object" ? answerData : {}),
@@ -42,6 +47,7 @@ function toAnswer(productId: string, question: string, m: ChatMessageLike): Answ
     productId,
     question,
     evidence: m.parts.filter((p) => p.type === "data-evidence").map((p) => p.data),
+    ...(diagrams.length ? { diagrams } : {}),
   });
   if (m.parts.some((p) => p.type === "data-answer") && parsed.success) return parsed.data;
   const generation = (answerData as { generation?: unknown } | undefined)?.generation;
@@ -69,6 +75,7 @@ export function answersToMessages(answers: Answer[]): { id: string; role: "user"
       role: "assistant" as const,
       parts: [
         ...a.evidence.map((e) => ({ type: "data-evidence" as const, data: evidencePartSchema.parse(e) })),
+        ...(a.diagrams ?? []).map((d) => ({ type: "data-diagram" as const, data: diagramPartSchema.parse(d) })),
         { type: "data-answer" as const, data: answerPartSchema.parse(a) },
       ],
     },

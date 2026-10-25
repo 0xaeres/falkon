@@ -12,3 +12,6 @@ export function relativeTime(iso: string, now = Date.now()): string {
   if (days < 60) return `${Math.floor(days / 7)} weeks ago`;
   return `${Math.floor(days / 30)} months ago`;
 }
+
+// Age of a generation from its publish time (epoch ms); null means none yet. A future time (clock skew) reads "just now".
+export const generationAge = (at: number, now = Date.now()) => relativeTime(new Date(at).toISOString(), now);

@@ -2,6 +2,7 @@ import { createUIMessageStreamResponse, type UIMessage } from "ai";
 import { gitRead, type Scope } from "@falkon/shared";
 import { createMessageStream } from "./agent";
 import { chatName, pickModel } from "./chat";
+import { buildDiagrams } from "./diagram";
 import { buildEvidence } from "./evidence";
 import type { LanguageModelInfo } from "./models";
 
@@ -35,7 +36,12 @@ export async function uiChatResponse(o: {
     model,
     abortSignal: o.abortSignal,
     onFinish: async (messages) => o.onFinish(messages, await name),
-    postProcess: (ctx) => buildEvidence({ ...ctx, scopeAllows: o.scope.allows, productId: o.productId, generation: o.generation, readFile: gitRead.readFile }),
+    // Evidence and the answer first, then the rendered diagrams (written, and stored, with the same message).
+    postProcess: async (ctx) => [
+      ...(await buildEvidence({ ...ctx, scopeAllows: o.scope.allows, productId: o.productId, generation: o.generation, readFile: gitRead.readFile })),
+      ...(await buildDiagrams(ctx.text)),
+    ],
+    diagrams: true,
   });
   return createUIMessageStreamResponse({ stream });
 }

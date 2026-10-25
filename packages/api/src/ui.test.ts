@@ -5,10 +5,11 @@ import path from "node:path";
 import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
-import { knowledgeBaseSchema } from "@falkon/shared";
+import { knowledgeBaseSchema, memorySignals } from "@falkon/shared";
 import { createAdminApp } from "./admin";
 import { ConnectionService, type CodeHost } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";
+import { ProductEvents } from "./events";
 import { PrismaProductRegistry } from "./product";
 import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
@@ -29,13 +30,18 @@ const host: CodeHost = {
 };
 
 const engine = fakeEngineDb();
+const signals = memorySignals();
+const sent = { changed: 0, request: 0 };
+signals.onChanged(() => sent.changed++);
+signals.onRequest(() => sent.request++);
 let clock = 0; // the service's knowledge-config cache clock; tests advance it past the 30 s TTL to re-read the config file
 let admin: INestApplication;
 let base: string;
 before(async () => {
   const connections = new ConnectionService(engine.db as never, host);
-  const ui = new UiProductService(engine.db, connections, () => clock);
-  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never), TOKEN, {}, connections, ui, new ThreadService(engine.db, ui));
+  const ui = new UiProductService(engine.db, connections, () => clock, undefined, signals);
+  const threads = new ThreadService(engine.db, ui, signals);
+  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never, signals), TOKEN, {}, connections, ui, threads, undefined, undefined, new ProductEvents(ui, threads, signals));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
 });
@@ -175,17 +181,17 @@ test("create validation: unknown connection, repo outside the listing, duplicate
   assert.equal((await call("GET", "/ui/products", undefined, false)).status, 401);
 });
 
-test("route enumeration: the admin listener has exactly the S20a routes, the six /ui/products routes and the five thread routes", () => {
+test("route enumeration: the admin listener has exactly the S20a routes, the six /ui/products routes, the event stream and the seven thread routes", () => {
   const router = (admin.getHttpAdapter().getInstance() as { router: { stack: { route?: { path: string; methods: Record<string, boolean> } }[] } }).router;
   const routes = router.stack.flatMap((l) => (l.route ? Object.keys(l.route.methods).map((m) => `${m.toUpperCase()} ${l.route!.path}`) : [])).sort();
   assert.deepEqual(routes, [
     "DELETE /connections/:id", "DELETE /products/:slug", "DELETE /ui/products/:slug/threads/:id",
     "GET /connections", "GET /connections/:id/repositories", "GET /products", "GET /products/:slug",
-    "GET /ui/products", "GET /ui/products/:slug", "GET /ui/products/:slug/status",
-    "GET /ui/products/:slug/threads", "GET /ui/products/:slug/threads/:id",
+    "GET /ui/products", "GET /ui/products/:slug", "GET /ui/products/:slug/events", "GET /ui/products/:slug/status",
+    "GET /ui/products/:slug/threads", "GET /ui/products/:slug/threads/:id", "GET /ui/products/:slug/threads/:id/stream",
     "PATCH /ui/products/:slug",
     "POST /connections", "POST /products", "POST /ui/products", "POST /ui/products/:slug/sync",
-    "POST /ui/products/:slug/threads", "POST /ui/products/:slug/threads/:id/messages",
+    "POST /ui/products/:slug/threads", "POST /ui/products/:slug/threads/:id/messages", "POST /ui/products/:slug/threads/:id/stop",
     "PUT /connections/:id/token", "PUT /products/:slug",
   ].sort());
 });
@@ -290,6 +296,33 @@ test("a member the connection's clean sync did not return is Skipped; before tha
   Object.assign(connectionRow(cid), { syncedAt: new Date(Date.now() + 60_000), syncError: null, syncRequestedAt: null });
   assert.deepEqual(await stateOf(), [[APP, "indexed"], [GONE, "skipped"]]);
   const s = (await call("GET", "/ui/products/skp/status")).json;
-  assert.deepEqual([s.scenario, s.sentence, s.gaps], ["current", `Answers use ${s.generation}, published just now from the latest revision of all 1 repository.`, [{ count: 1, title: "Repository skipped", detail: GONE }]]);
+  assert.deepEqual([s.scenario, s.sentence, s.gaps], ["current", `Answers use ${s.generation} from the latest revision of all 1 repository.`, [{ count: 1, title: "Repository skipped", detail: GONE }]]);
   connectionRow(cid).syncedAt = null;
+});
+
+test("writes publish: request for what the worker claims, changed for what a status or list shows, nothing for reads or refused writes", async () => {
+  const seen = () => [sent.changed, sent.request];
+  const step = async (run: () => Promise<unknown>) => {
+    const [c, r] = seen();
+    await run();
+    return [sent.changed - c, sent.request - r];
+  };
+  assert.deepEqual(await step(() => call("POST", "/ui/products", setup(cid, "sig", [APP]))), [1, 1], "create");
+  assert.deepEqual(await step(() => call("PATCH", "/ui/products/sig", { name: "sig 2", repositories: pick(APP, LIB) })), [1, 1], "edit");
+  assert.deepEqual(await step(() => call("POST", "/ui/products/sig/sync", { action: "retry" })), [1, 1], "sync");
+  assert.deepEqual(await step(() => call("PATCH", "/ui/products/sig", { name: "x", repositories: pick("github.com/acme/missing") })), [0, 0], "refused edit");
+  assert.deepEqual(await step(() => call("GET", "/ui/products/sig/status")), [0, 0], "read");
+  let id = "";
+  assert.deepEqual(await step(async () => (id = (await call("POST", "/ui/products/sig/threads")).json.id)), [1, 0], "thread created");
+  assert.deepEqual(await step(() => call("DELETE", "/ui/products/sig/threads/nope")), [0, 0], "unknown thread");
+  assert.deepEqual(await step(() => call("DELETE", `/ui/products/sig/threads/${id}`)), [1, 0], "thread deleted");
+  assert.deepEqual(await step(() => call("POST", "/products", { slug: "reg", name: "Reg", definition: { include: [APP] } })), [1, 0], "registry create");
+  assert.deepEqual(await step(() => call("PUT", "/products/reg", { name: "Reg 2", definition: { include: [APP] } })), [1, 0], "registry update");
+  assert.deepEqual(await step(() => call("DELETE", "/products/reg")), [1, 0], "registry delete");
+  assert.deepEqual(await step(() => call("DELETE", "/products/reg")), [0, 0], "registry delete of a missing Product");
+});
+
+test("with no signal transport wired, writes still succeed (the default signals reach nobody)", async () => {
+  const svc = new UiProductService(engine.db, new ConnectionService(engine.db as never, host), () => 0);
+  await assert.doesNotReject(svc.sync("sig"));
 });
