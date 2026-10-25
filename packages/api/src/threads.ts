@@ -6,6 +6,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { chatMessageRequestSchema, messagesToAnswers, type ChatMessageLike, type Thread, type ThreadSummary } from "@falkon/contracts";
 import type { PrismaClient } from "@falkon/db";
 import { noneAccessPolicy, scopeFor } from "@falkon/shared";
+import { pruneDiagrams } from "./diagramPrune";
 import { AskError } from "./engine/ask/errors";
 import { sendJson } from "./http";
 import { isProductName } from "./product";
@@ -99,6 +100,8 @@ export class ThreadService {
         await this.db.chat.update({ where: { id }, data: { messages: messages as object[], productId: slug, ...(name ? { name } : {}) } }).catch((e: { code?: string }) => {
           if (e?.code !== "P2025") throw e;
         });
+        // Only the Product's newest threads keep their rendered diagram pages.
+        await pruneDiagrams(this.db, slug);
       },
     });
   }

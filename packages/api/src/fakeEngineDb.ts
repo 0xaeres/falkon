@@ -131,7 +131,8 @@ export function fakeEngineDb() {
       async update({ where, data }: { where: Where; data: Row }) {
         const c = chats.find((row) => matches(row, where));
         if (!c) throw Object.assign(new Error("Record to update not found."), { code: "P2025" });
-        Object.assign(c, structuredClone(data), { updatedAt: new Date(Math.max(Date.now(), c.updatedAt.getTime() + 1)) });
+        // Like Prisma's @updatedAt: bumped unless the caller sets it.
+        Object.assign(c, structuredClone(data), { updatedAt: data.updatedAt ?? new Date(Math.max(Date.now(), c.updatedAt.getTime() + 1)) });
         return structuredClone(c);
       },
     },
