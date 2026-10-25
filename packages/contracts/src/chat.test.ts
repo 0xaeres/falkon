@@ -104,3 +104,17 @@ test("a reply answer (no citations, no evidence) round-trips through the stored 
   assert.deepEqual(messagesToAnswers("pay", messages), [reply]);
   assert(answerSchema.safeParse(reply).success);
 });
+
+test("data-diagram parts round trip through answers and messages; a corrupt one is dropped alone", () => {
+  const diagram = { type: "workflow" as const, html: "<!doctype html><svg></svg>", source: '{"diagram_type":"workflow"}' };
+  const msg = (parts: ChatMessageLike["parts"]) => [user("u1", "draw it"), assistant("a1", [{ type: "data-answer", data: answerData }, ...parts])];
+  const [a] = messagesToAnswers("pay", msg([{ type: "data-diagram", data: diagram }]));
+  assert.deepEqual(a!.diagrams, [diagram]);
+  assert(answerSchema.safeParse(a).success);
+  const back = answersToMessages([a!]);
+  assert.deepEqual(back[1]!.parts.filter((p) => p.type === "data-diagram"), [{ type: "data-diagram", data: diagram }]);
+  assert.deepEqual(messagesToAnswers("pay", back)[0], a);
+  const [dropped] = messagesToAnswers("pay", msg([{ type: "data-diagram", data: { ...diagram, type: "pie" } }]));
+  assert.equal(dropped!.kind, "grounded");
+  assert.equal(dropped!.diagrams, undefined);
+});

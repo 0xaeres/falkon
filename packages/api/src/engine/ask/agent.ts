@@ -79,13 +79,15 @@ export async function createMessageStream(o: {
   onFinish?: (messages: UIMessage[]) => Promise<void> | void;
   /** Stops the model run (an explicit Stop). */
   abortSignal?: AbortSignal;
+  /** The UI chat renders ```archify blocks: adds the diagram guidance to the prompt. The MCP and blocking paths leave it off. */
+  diagrams?: boolean;
   /** Extra data parts written (and persisted) once the model stream has ended, before the finish chunk. */
   postProcess?: (ctx: { text: string; sources: ToolSource[]; stepCapHit: boolean; toolCalls: number }) => Promise<{ type: `data-${string}`; data: unknown }[]>;
 }) {
   const { model, temperature } = await aiModel(o.model);
   const repos = [...o.selectedRepos].sort((a, b) => a.localeCompare(b));
   const query = o.messages.findLast((m) => m.role === "user")?.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ");
-  const dyn = dynamicPrompt({ repos, files: await mentionedFiles(o.messages, o.scope), query });
+  const dyn = dynamicPrompt({ repos, files: await mentionedFiles(o.messages, o.scope), query, diagrams: o.diagrams });
   return createUIMessageStream({
     originalMessages: o.messages,
     onFinish: async ({ messages }) => o.onFinish?.(messages),

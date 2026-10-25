@@ -15,3 +15,4 @@ export * from "./accessPolicy";
 export * from "./credentialStore";
 export * from "./provenance";
 export * from "./signals";
+export * from "./archify";

@@ -99,6 +99,12 @@ export const paragraphSchema = z
       }
     }
   });
+// One archify diagram the engine rendered from a ```archify block: standalone HTML to show in a sandboxed iframe, and the JSON it came from.
+export const diagramSchema = z.object({
+  type: z.enum(["architecture", "workflow", "sequence", "dataflow", "lifecycle"]),
+  html: z.string().max(2_000_000),
+  source: z.string().max(32_000),
+});
 export const answerSchema = z.object({
   id: z.string(),
   productId: productIdSchema,
@@ -107,6 +113,7 @@ export const answerSchema = z.object({
   kind: z.enum(["grounded", "partial", "abstention", "reply"]),
   paragraphs: z.array(paragraphSchema),
   evidence: z.array(evidenceSchema),
+  diagrams: z.array(diagramSchema).optional(),
   gaps: z.array(z.string()),
   partialReasons: z.array(z.string()),
   abstention: z.string().nullable(),
@@ -168,6 +175,7 @@ export const setupRequestSchema = z.object({
 export const editRequestSchema = setupRequestSchema.pick({ name: true, repositories: true });
 // Persisted chat parts (CONTEXT.md Evidence): data-evidence is one Evidence, data-answer the answer shape without ids or evidence.
 export const evidencePartSchema = evidenceSchema;
+export const diagramPartSchema = diagramSchema;
 export const answerPartSchema = answerSchema.pick({
   kind: true,
   generation: true,
@@ -190,6 +198,7 @@ export type Product = z.infer<typeof productSchema>;
 export type Status = z.infer<typeof statusSchema>;
 export type Scenario = z.infer<typeof scenarioSchema>;
 export type Evidence = z.infer<typeof evidenceSchema>;
+export type Diagram = z.infer<typeof diagramSchema>;
 export type Answer = z.infer<typeof answerSchema>;
 export type Thread = z.infer<typeof threadSchema>;
 export type ThreadSummary = z.infer<typeof threadSummarySchema>;

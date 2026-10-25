@@ -498,7 +498,11 @@ function ChatSession({
                     );
                     return (
                       <div key={index} className="answer-para">
-                        <Markdown text={paragraph.text} citations={citations} />
+                        <Markdown
+                          text={paragraph.text}
+                          citations={citations}
+                          diagrams={answer.diagrams}
+                        />
                         {paragraph.citations
                           .filter((id) => !paragraph.text.includes(`[${id}]`))
                           .map((id) => citations[id])}
