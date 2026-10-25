@@ -133,12 +133,8 @@ export function makeStatus(product: Product): Status {
       ? nextId
       : product.activeGeneration;
 
-  const generationAge =
-    scenario === "partly-behind"
-      ? "14 min ago"
-      : failed || scenario === "behind"
-        ? "41 min ago"
-        : "6 min ago";
+  const generationMinutes =
+    scenario === "partly-behind" ? 14 : failed || scenario === "behind" ? 41 : 6;
   const count = product.repositories.length;
   const verdict = first
     ? "Building first generation"
@@ -152,20 +148,20 @@ export function makeStatus(product: Product): Status {
   const sentence = first
     ? `${product.name} was just set up. Answers are available once g-0001 publishes.`
     : scenario === "partly-behind"
-      ? `Answers use ${generation}, published 14 min ago. payments-infra hasn’t synced since 09:12.`
+      ? `Answers use ${generation}. Payments-infra hasn’t synced since 09:12.`
       : failed
-        ? `Answers use ${generation}, published 41 min ago. The replacement failed validation, so recent changes aren’t answerable yet.`
+        ? `Answers use ${generation}. The replacement failed validation, so recent changes aren’t answerable yet.`
         : scenario === "behind"
-          ? `Answers use ${generation}, published 41 min ago. Recent changes are waiting to be acquired; the 5 min freshness target has been missed.`
+          ? `Answers use ${generation}. Recent changes are waiting to be acquired; the 5 min freshness target has been missed.`
           : updating
             ? `Answers use ${generation}. g-0043 is building and replaces it when it passes validation.`
-            : `Answers use ${generation}, published ${generationAge} from the latest revision of all ${count} repositories.`;
+            : `Answers use ${generation} from the latest revision of all ${count} repositories.`;
   return {
     productId: product.id,
     verdict,
     sentence,
     generation,
-    generationAge,
+    generationAt: generation ? Date.now() - generationMinutes * 60_000 : null,
     nextGeneration: first ? "g-0001" : updating || failed ? nextId : null,
     build: first || updating ? "building" : failed ? "failed" : "idle",
     stage: first ? Math.min(4, Math.floor(elapsed / 3000)) : failed ? 3 : 2,

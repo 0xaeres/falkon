@@ -3,8 +3,8 @@
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 
-/** One model response: text, a tool call, or text that starts and never ends (for abort tests). */
-export type Turn = { text: string } | { tool: string; args: unknown } | { hang: string };
+/** One model response: text, a tool call, or text that starts and waits: for `rest` to end it, or forever (for abort tests); or text and then an error event (a model failure mid-answer). */
+export type Turn = { text: string } | { tool: string; args: unknown } | { hang: string; rest?: Promise<string> } | { fail: string };
 
 export async function fakeOpenAi(initial: Turn[] = [], title: string | null = "A title") {
   let turns = initial;
@@ -29,8 +29,15 @@ export async function fakeOpenAi(initial: Turn[] = [], title: string | null = "A
     open.add(res);
     res.on("close", () => open.delete(res));
     const send = (delta: object, finish: string | null = null) => res.write(`data: ${JSON.stringify({ ...base, choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
-    if ("hang" in turn) return void send({ role: "assistant", content: turn.hang });
-    if ("text" in turn) {
+    if ("fail" in turn) {
+      send({ role: "assistant", content: turn.fail });
+      return void res.end(`data: ${JSON.stringify({ error: { message: "model failed", type: "server_error" } })}\n\n`);
+    }
+    if ("hang" in turn) {
+      send({ role: "assistant", content: turn.hang });
+      if (!turn.rest) return;
+      send({ content: await turn.rest }, "stop");
+    } else if ("text" in turn) {
       send({ role: "assistant", content: turn.text });
       send({}, "stop");
     } else {

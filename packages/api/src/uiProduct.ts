@@ -90,17 +90,8 @@ export function toUiProduct(row: ProductFacts, repos: RepoFacts[], connection: C
 
 const generationId = (repos: RepoFacts[]) => "g-" + createHash("sha256").update(repos.map((r) => `${r.name}@${r.headCommit ?? ""}`).sort().join("\n")).digest("hex").slice(0, 6);
 
-function age(from: Date | null, now: Date) {
-  if (!from) return "not yet";
-  const min = Math.max(0, Math.floor((now.getTime() - from.getTime()) / 60_000));
-  if (min < 1) return "just now";
-  if (min < 60) return `${min} min ago`;
-  if (min < 24 * 60) return `${Math.floor(min / 60)} h ago`;
-  return `${Math.floor(min / (24 * 60))} d ago`;
-}
-
 /** The status table of ADR 4.5, a pure function of the Product's repos and its connection. */
-export function deriveStatus(slug: string, all: RepoFacts[], connection: ConnectionFacts | null, now = new Date()): Status {
+export function deriveStatus(slug: string, all: RepoFacts[], connection: ConnectionFacts | null): Status {
   const skipped = all.filter((r) => r.status === "SKIPPED");
   const repos = all.filter((r) => r.status !== "SKIPPED"); // a skipped repo is not part of "Indexing N of M"
   const indexed = repos.filter((r) => r.status === "INDEXED");
@@ -113,7 +104,7 @@ export function deriveStatus(slug: string, all: RepoFacts[], connection: Connect
   const scenario: Status["scenario"] = broken ? "failed" : indexed.length === 0 ? "building" : inFlight > 0 ? "updating" : behind.length ? "partly-behind" : "current";
   const build: Status["build"] = inFlight > 0 ? "building" : broken && indexed.length === 0 ? "failed" : "idle";
   const generation = indexed.length ? generationId(indexed) : null;
-  const generationAge = age(indexed.reduce<Date | null>((m, r) => (r.lastIndexedAt && (!m || r.lastIndexedAt > m) ? r.lastIndexedAt : m), null), now);
+  const generationAt = indexed.reduce<number | null>((m, r) => (r.lastIndexedAt && (m === null || r.lastIndexedAt.getTime() > m) ? r.lastIndexedAt.getTime() : m), null);
   const next = build === "building" ? generationId(repos) : null;
   const count = (n: number) => `${n} ${n === 1 ? "repository" : "repositories"}`;
   const [verdict, sentence] = {
@@ -122,7 +113,7 @@ export function deriveStatus(slug: string, all: RepoFacts[], connection: Connect
     // Repo names only, never provider error text.
     failed: nothingIndexable ? ["No repositories could be indexed", "Every repository in this Product was skipped by its connection."] : ["Needs attention", failed.length ? `Sync failed for ${failed.slice(0, 3).map((r) => r.name).join(", ")}${failed.length > 3 ? ` and ${failed.length - 3} more` : ""}.` : "The connection could not sync."],
     "partly-behind": ["Partly behind", `${count(behind.length)} behind the latest push.`],
-    current: ["Current", `Answers use ${generation}, published ${generationAge} from the latest revision of all ${count(total)}.`],
+    current: ["Current", `Answers use ${generation} from the latest revision of all ${count(total)}.`],
     behind: ["", ""],
   }[scenario] as [string, string];
   // stage: connect, clone, index, ready-check, ready
@@ -132,7 +123,7 @@ export function deriveStatus(slug: string, all: RepoFacts[], connection: Connect
     verdict,
     sentence,
     generation,
-    generationAge,
+    generationAt,
     nextGeneration: next && next !== generation ? next : null,
     build,
     stage,

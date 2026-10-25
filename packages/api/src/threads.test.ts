@@ -257,24 +257,65 @@ test("a failure to name the chat does not fail the turn", async () => {
   assert.equal((await call("GET", `/ui/products/alpha/threads/${id}`)).json.title, "New thread");
 });
 
-test("a stopped turn leaves the user message stored without an assistant message; the next turn goes on", async () => {
+test("Stop ends the turn: the user message stays stored without an assistant message; the next turn goes on", async () => {
   const id = await newThread("alpha");
   fake.play([{ hang: "<!--answer-->\npartial" }]);
-  const ac = new AbortController();
-  const res = await fetch(`${base}/ui/products/alpha/threads/${id}/messages`, { method: "POST", headers, body: JSON.stringify({ text: "stop me" }), signal: ac.signal });
+  const res = await fetch(`${base}/ui/products/alpha/threads/${id}/messages`, { method: "POST", headers, body: JSON.stringify({ text: "stop me" }) });
   const reader = res.body!.getReader();
   await reader.read();
-  ac.abort();
-  await reader.read().catch(() => undefined);
+  assert.equal((await call("POST", `/ui/products/alpha/threads/${id}/stop`)).status, 204);
+  while (!(await reader.read()).done);
   await until(() => fake.requests.length === 1);
   await new Promise((r) => setTimeout(r, 200));
   assert.deepEqual((stored(id).messages as J[]).map((m) => m.role), ["user"]);
   assert.deepEqual((await call("GET", `/ui/products/alpha/threads/${id}`)).json.answers, []);
+  assert.equal((await call("POST", `/ui/products/alpha/threads/${id}/stop`)).status, 204, "Stop with nothing running is a no-op");
 
   fake.play([{ text: "<!--answer-->\nRetried." }]);
   assert.equal((await chat("alpha", id, "stop me")).status, 200);
   const answers = (await call("GET", `/ui/products/alpha/threads/${id}`)).json.answers;
   assert.deepEqual(answers.map((a: J) => a.question), ["stop me"]);
+});
+
+test("a dropped connection does not stop the turn: the stream resumes from the start and the answer is stored once", async () => {
+  const id = await newThread("alpha");
+  let release!: (rest: string) => void;
+  fake.play([{ tool: "read_file", args: { repo: IN, path: "src/hello.ts" } }, { hang: "<!--answer-->\nGreeting is ", rest: new Promise<string>((r) => (release = r)) }]);
+  const ac = new AbortController();
+  const res = await fetch(`${base}/ui/products/alpha/threads/${id}/messages`, { method: "POST", headers, body: JSON.stringify({ text: "where is greet?" }), signal: ac.signal });
+  const reader = res.body!.getReader();
+  await reader.read();
+  ac.abort();
+  await reader.read().catch(() => undefined);
+  await new Promise((r) => setTimeout(r, 100));
+  assert.equal((await chat("alpha", id, "again")).status, 409, "a second turn waits for the running one");
+
+  const resumed = await fetch(`${base}/ui/products/alpha/threads/${id}/stream`, { headers });
+  assert.equal(resumed.status, 200);
+  assert.match(resumed.headers.get("content-type") ?? "", /event-stream/);
+  release(`defined here ${ref(IN, "src/hello.ts", 1, 1)}.`);
+  const events = sse(await resumed.text());
+  assert.equal(events[0]!.type, "start", "replayed from the first chunk");
+  assert.equal(events.at(-1)!.type, "finish");
+  assert.equal(events.filter((e) => e.type === "data-answer").length, 1);
+  const text = events.filter((e) => e.type === "text-delta").map((e) => e.delta).join("");
+  assert.match(text, /Greeting is defined here/);
+
+  assert.deepEqual((stored(id).messages as J[]).map((m) => m.role), ["user", "assistant"]);
+  const answers = (await call("GET", `/ui/products/alpha/threads/${id}`)).json.answers;
+  assert.deepEqual([answers.length, answers[0].kind, answers[0].question], [1, "grounded", "where is greet?"]);
+  assert.equal(fake.requests.length, 2, "the model ran once (a tool step and the answer)");
+  assert.equal((await fetch(`${base}/ui/products/alpha/threads/${id}/stream`, { headers })).status, 204, "nothing to resume once it ended");
+});
+
+test("resume with nothing running is 204 and stores nothing; another Product's thread is 404", async () => {
+  const id = await newThread("alpha");
+  const r = await fetch(`${base}/ui/products/alpha/threads/${id}/stream`, { headers });
+  assert.equal(r.status, 204);
+  assert.equal(await r.text(), "");
+  assert.deepEqual(stored(id).messages, []);
+  assert.equal((await fetch(`${base}/ui/products/beta/threads/${id}/stream`, { headers })).status, 404);
+  assert.equal((await call("POST", `/ui/products/beta/threads/${id}/stop`)).status, 404);
 });
 
 test("409 before the first Evidence Generation publishes; nothing is stored or asked", async () => {
@@ -356,4 +397,36 @@ test("a turn that finishes after its thread was deleted does not fail", async ()
   await new Promise((r) => setTimeout(r, 100));
   assert.equal(engine.chats.some((c) => c.id === id), false);
   spy.mock.restore();
+});
+
+test("a thread deleted while its turn runs: the resumed reader still gets the whole answer, nothing is stored, nothing fails", async () => {
+  const id = await newThread("alpha");
+  let release!: (rest: string) => void;
+  fake.play([{ tool: "read_file", args: { repo: IN, path: "src/hello.ts" } }, { hang: "<!--answer-->\nGreeting is ", rest: new Promise<string>((r) => (release = r)) }]);
+  const first = await fetch(`${base}/ui/products/alpha/threads/${id}/messages`, { method: "POST", headers, body: JSON.stringify({ text: "where?" }) });
+  const resumed = await fetch(`${base}/ui/products/alpha/threads/${id}/stream`, { headers });
+  assert.equal(resumed.status, 200);
+  assert.equal((await call("DELETE", `/ui/products/alpha/threads/${id}`)).status, 204);
+  release(`defined here ${ref(IN, "src/hello.ts", 1, 1)}.`);
+  for (const r of [first, resumed]) {
+    const events = sse(await r.text());
+    assert.equal(events.at(-1)!.type, "finish");
+    assert.match(events.filter((e) => e.type === "text-delta").map((e) => e.delta).join(""), /Greeting is defined here/);
+  }
+  await new Promise((r) => setTimeout(r, 100));
+  assert.equal(engine.chats.some((c) => c.id === id), false);
+  assert.equal((await call("POST", `/ui/products/alpha/threads/${id}/stop`)).status, 404);
+});
+
+test("a model that fails mid-answer ends the turn once: the reader gets the end, resume is 204, the fixed abstention is stored, the next turn goes on", async () => {
+  const id = await newThread("alpha");
+  fake.play([{ fail: "<!--answer-->\npart" }]);
+  const res = await fetch(`${base}/ui/products/alpha/threads/${id}/messages`, { method: "POST", headers, body: JSON.stringify({ text: "q" }) });
+  await res.text().catch(() => undefined);
+  await new Promise((r) => setTimeout(r, 200));
+  assert.equal((await fetch(`${base}/ui/products/alpha/threads/${id}/stream`, { headers })).status, 204);
+  assert.equal(fake.requests.length, 1, "no retry of the model");
+  assert.deepEqual((await call("GET", `/ui/products/alpha/threads/${id}`)).json.answers.map((a: J) => a.kind), ["abstention"]);
+  fake.play([{ text: ANSWER }]);
+  assert.equal((await chat("alpha", id, "q2")).status, 200);
 });

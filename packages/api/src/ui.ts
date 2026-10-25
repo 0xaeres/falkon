@@ -3,7 +3,7 @@ import { Controller, Get, Inject, Param, Patch, Post, Req } from "@nestjs/common
 import type { IncomingMessage } from "node:http";
 import { editRequestSchema, setupRequestSchema, syncRequestSchema, type EditRequest, type Product, type Repository, type SetupRequest, type Status } from "@falkon/contracts";
 import { RepoKind, type PrismaClient, type ScanStatus } from "@falkon/db";
-import { env, knowledgeBaseSchema, loadConfig, scopeFor, type KnowledgeBaseConfig } from "@falkon/shared";
+import { env, knowledgeBaseSchema, loadConfig, memorySignals, scopeFor, type KnowledgeBaseConfig, type Signals } from "@falkon/shared";
 import { loadContextResolver } from "../../backend/src/productResolve";
 import { ConnectionService } from "./connections";
 import { body, error } from "./request";
@@ -36,6 +36,7 @@ export class UiProductService {
     private readonly connections: ConnectionService,
     private readonly now: () => number = Date.now,
     private readonly loadKb: () => Promise<KnowledgeBaseConfig> = async () => (await loadConfig(env.configPath)).knowledgeBase,
+    private readonly signals: Signals = memorySignals(),
   ) {}
 
   /**
@@ -149,6 +150,7 @@ export class UiProductService {
       if (isUniqueViolation(e)) throw error(409, "ALREADY_EXISTS", "A Product with this slug exists.");
       throw e;
     }
+    this.announceRequest();
     return this.get(input.id);
   }
 
@@ -164,15 +166,23 @@ export class UiProductService {
       await tx.product.updateMany({ where: { slug, source: "api" }, data: { name: input.name, definition: { include: names }, repoNames } });
       await this.writeUnion(tx, conn.id, slug, names);
     });
+    this.announceRequest();
     return this.get(slug);
   }
 
-  /** Asks the backend tick to sync the connection and re-index this Product's failed repos (a fetch into the existing clone, never a reclone). */
+  /** A row the worker claims was written (`request`), and the status changed (`changed`); best effort, the row is the record. */
+  private announceRequest() {
+    this.signals.request();
+    this.signals.changed();
+  }
+
+  /** Asks the backend to sync the connection and re-index this Product's failed repos (a fetch into the existing clone, never a reclone); the worker claims it at once on the request signal, its tick is the fallback. */
   async sync(slug: string) {
     const row = await this.find(slug);
     const now = new Date();
     if (row.connectionId !== null) await this.db.connection.updateMany({ where: { id: row.connectionId }, data: { syncRequestedAt: now } });
     await this.db.repo.updateMany({ where: { name: { in: memberNames(row) }, kind: RepoKind.CODE, status: "FAILED" }, data: { indexRequestedAt: now } });
+    this.announceRequest();
     return this.status(slug);
   }
 }

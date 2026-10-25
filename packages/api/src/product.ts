@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@falkon/db";
+import { memorySignals, type Signals } from "@falkon/shared";
 import { isProductSlug, loadContextResolver, type ProductDefinition } from "../../backend/src/productResolve";
 
 export { isProductSlug as isProductName, type ProductDefinition };
@@ -43,7 +44,7 @@ const isUniqueViolation = (e: unknown) => (e as { code?: string } | null)?.code 
  * re-resolves them on every sync). Every write is conditioned on `source: api`, so a config row is never changed here.
  */
 export class PrismaProductRegistry implements ProductRegistry {
-  constructor(private readonly db: Pick<PrismaClient, "product" | "repo" | "connection">) {}
+  constructor(private readonly db: Pick<PrismaClient, "product" | "repo" | "connection">, private readonly signals: Signals = memorySignals()) {}
 
   async find(slug: string) {
     const r = await this.db.product.findUnique({ where: { slug }, select: { id: true, repoNames: true } });
@@ -62,7 +63,9 @@ export class PrismaProductRegistry implements ProductRegistry {
   }
   async create(slug: string, input: ProductInput) {
     try {
-      return view(await this.db.product.create({ data: { slug, source: "api", ...(await this.data(input)) } }));
+      const created = view(await this.db.product.create({ data: { slug, source: "api", ...(await this.data(input)) } }));
+      this.signals.changed();
+      return created;
     } catch (e) {
       if (isUniqueViolation(e)) return "conflict" as const;
       throw e;
@@ -71,11 +74,15 @@ export class PrismaProductRegistry implements ProductRegistry {
   async update(slug: string, input: ProductInput) {
     const { count } = await this.db.product.updateMany({ where: { slug, source: "api" }, data: await this.data(input) });
     if (count === 0) return (await this.find(slug)) ? ("conflict" as const) : ("not-found" as const);
+    this.signals.changed();
     return (await this.get(slug)) ?? ("not-found" as const);
   }
   async remove(slug: string) {
     const { count } = await this.db.product.deleteMany({ where: { slug, source: "api" } });
-    if (count > 0) return "ok" as const;
+    if (count > 0) {
+      this.signals.changed();
+      return "ok" as const;
+    }
     return (await this.find(slug)) ? ("conflict" as const) : ("not-found" as const);
   }
 }

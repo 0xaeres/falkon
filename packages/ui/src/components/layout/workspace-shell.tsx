@@ -31,6 +31,8 @@ import { api, keys } from "@/lib/api/client";
 import type { Product, Status, ThreadSummary } from "@falkon/contracts";
 import { Logo } from "../ui/brand";
 import { ErrorState, LoadingMark } from "../ui/primitives";
+import { useProductEvents, visibleStatusError } from "@/lib/use-product-events";
+import { ReconnectingNotice } from "./reconnecting-notice";
 
 type Workspace = {
   product: Product;
@@ -87,9 +89,8 @@ export function WorkspaceShell({
     data: status,
     error: statusError,
     mutate: refreshStatus,
-  } = useSWR(keys.status(productId), api.status, {
-    refreshInterval: (data) => (data?.scenario === "building" ? 2000 : 30000),
-  });
+  } = useSWR(keys.status(productId), api.status); // loaded once; the event stream below keeps it and the threads current
+  const { reconnecting } = useProductEvents(productId);
   const {
     data: threads,
     error: threadsError,
@@ -169,7 +170,7 @@ export function WorkspaceShell({
     product,
     status,
     threads: threads ?? [],
-    statusError,
+    statusError: visibleStatusError(status, statusError),
     refreshStatus,
     refresh: async () => {
       await Promise.all([
@@ -305,7 +306,7 @@ export function WorkspaceShell({
         )}
       </header>
       <div className="sthreads">
-        {threadsError ? (
+        {threadsError && !threads ? (
           <ErrorState
             error={threadsError}
             retry={() => void refreshThreads()}
@@ -409,6 +410,7 @@ export function WorkspaceShell({
           </Dialog.Root>
         )}
         <main id="main" className="main">
+          {reconnecting && status && <ReconnectingNotice />}
           {children}
         </main>
       </div>

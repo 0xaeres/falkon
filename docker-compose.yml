@@ -51,6 +51,8 @@ services:
     env_file: [.env]
     environment:
       DATABASE_URL: postgresql://falkon:falkon@postgres:5432/falkon
+      # Change and request signals (best effort: the api serves with Redis down).
+      REDIS_URL: redis://redis:6379
       DATA_DIR: /data
       ZOEKT_URL: http://zoekt:6070
       CONFIG_PATH: /config/config.json
@@ -66,7 +68,7 @@ services:
       FALKON_SECRET_KEY_FILE: ${FALKON_SECRET_KEY_FILE:-}
     volumes: [data:/data, "./config.json:/config/config.json:ro"]
     ports: ["127.0.0.1:3001:3001", "127.0.0.1:3002:3002"]
-    depends_on: [backend, zoekt]
+    depends_on: { backend: { condition: service_started }, zoekt: { condition: service_started }, redis: { condition: service_healthy } }
 
   # Falkon UI (Next standalone). Connections and repository search go to the engine's admin listener; the other
   # routes stay on the mock until later slices. The admin token is read per request from the api's /data/secrets/admin.token

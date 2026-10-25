@@ -70,8 +70,6 @@ export interface Settings {
   maxTrigramCount: number;
   reindexIntervalMs: number;
   resyncConnectionIntervalMs: number;
-  resyncConnectionPollingIntervalMs: number;
-  reindexRepoPollingIntervalMs: number;
   maxConnectionSyncJobConcurrency: number;
   maxRepoIndexingJobConcurrency: number;
   maxRepoGarbageCollectionJobConcurrency: number;
@@ -91,8 +89,6 @@ export const DEFAULT_SETTINGS: Settings = {
   maxTrigramCount: 20_000,
   reindexIntervalMs: 60 * 60 * 1000,
   resyncConnectionIntervalMs: 24 * 60 * 60 * 1000,
-  resyncConnectionPollingIntervalMs: 1000,
-  reindexRepoPollingIntervalMs: 1000,
   maxConnectionSyncJobConcurrency: 8,
   maxRepoIndexingJobConcurrency: 8,
   maxRepoGarbageCollectionJobConcurrency: 2,
@@ -192,6 +188,12 @@ export function parseConfig(text: string, source = "config"): Config {
   if (unsupported) throw invalid(unsupported);
   // `$schema` is an editor hint. `knowledgeBase` is in the schema for editors; Zod below validates it (and names an unknown key).
   const { $schema: _hint, knowledgeBase: _kb, ...rest } = raw;
+  // Two settings were removed (the worker no longer polls for them); an older file naming them still loads.
+  if (isObject(rest.settings)) {
+    const { resyncConnectionPollingIntervalMs: _a, reindexRepoPollingIntervalMs: _b, ...kept } = rest.settings;
+    rest.settings = kept;
+    raw.settings = kept;
+  }
   if (!validate(rest)) throw invalid(errorsText(validate.errors!));
   return {
     settings: { ...DEFAULT_SETTINGS, ...((raw.settings as Partial<Settings>) ?? {}) },

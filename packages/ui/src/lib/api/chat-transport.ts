@@ -15,6 +15,10 @@ export const chatTransport = (productId: string) =>
       api: keys.messages(productId, String(body?.threadId)),
       body: { text: textOf(messages.findLast((m) => m.role === "user")!) },
     }),
+    // A resume names its thread the same way (a page opened on a thread has it as the chat id).
+    prepareReconnectToStreamRequest: ({ id, body }) => ({
+      api: keys.stream(productId, String(body?.threadId ?? id)),
+    }),
     // Pre-stream engine errors arrive as { error: string }; surface the engine's fixed message.
     fetch: async (input, init) => check(await fetch(input, init)),
   });

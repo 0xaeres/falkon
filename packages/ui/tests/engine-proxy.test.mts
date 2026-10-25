@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
-import { test, before, after } from "node:test";
+import { test, before, after, mock } from "node:test";
 
 const seen: {
   method?: string;
@@ -202,6 +202,10 @@ const threadRoute =
   await import("../src/app/api/products/[productId]/threads/[threadId]/route");
 const messages =
   await import("../src/app/api/products/[productId]/threads/[threadId]/messages/route");
+const stream =
+  await import("../src/app/api/products/[productId]/threads/[threadId]/stream/route");
+const stop =
+  await import("../src/app/api/products/[productId]/threads/[threadId]/stop/route");
 
 test("thread routes forward to /ui/products/:slug/threads in engine mode", async () => {
   process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
@@ -223,6 +227,38 @@ test("thread routes forward to /ui/products/:slug/threads in engine mode", async
   );
   delete process.env.ENGINE_URL;
   assert.equal((await threads.GET(get(), ctx("alpha"))).status, 503);
+});
+
+test("resume and stop forward to the thread's stream and stop routes; a 204 (nothing running) passes through", async () => {
+  process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
+  reply = { status: 204, body: null };
+  const before = seen.length;
+  const resumed = await stream.GET(
+    new Request("http://localhost/api/x"),
+    threadCtx("alpha", "t 1"),
+  );
+  const stopped = await stop.POST(
+    new Request("http://localhost/api/x", { method: "POST" }),
+    threadCtx("alpha", "t 1"),
+  );
+  assert.deepEqual([resumed.status, stopped.status], [204, 204]);
+  assert.deepEqual(
+    seen.slice(before).map((c) => [c.method, c.url]),
+    [
+      ["GET", "/ui/products/alpha/threads/t%201/stream"],
+      ["POST", "/ui/products/alpha/threads/t%201/stop"],
+    ],
+  );
+  reply = { status: 404, body: { message: "Thread not found." } };
+  const missing = await stream.GET(
+    new Request("http://localhost/api/x"),
+    threadCtx("alpha", "t1"),
+  );
+  assert.deepEqual(
+    [missing.status, await missing.json()],
+    [404, { error: "Thread not found." }],
+  );
+  delete process.env.ENGINE_URL;
 });
 
 test("chat messages: 503 without the engine; the engine's stream passes through unbuffered; its errors become { error }", async () => {
@@ -360,6 +396,48 @@ test("a client that goes away aborts the engine call", async () => {
     hanging.closeAllConnections();
     hanging.close();
   }
+});
+
+const events = await import("../src/app/api/products/[productId]/events/route");
+test("the Product event stream passes through as an event stream with no 15 s timeout, and the browser leaving aborts the engine call", async () => {
+  let closed!: () => void;
+  const gone = new Promise<void>((r) => (closed = r));
+  let path = "";
+  const sse = http.createServer((req, res) => {
+    path = req.url ?? "";
+    res.on("close", closed);
+    res.writeHead(200, { "content-type": "text/event-stream" });
+    res.write("event: threads\ndata: []\n\n");
+  });
+  await new Promise<void>((r) => sse.listen(0, "127.0.0.1", r));
+  try {
+    process.env.ENGINE_URL = `http://127.0.0.1:${(sse.address() as AddressInfo).port}`;
+    const abort = new AbortController();
+    const timeout = mock.method(AbortSignal, "timeout");
+    const res = await events.GET(new Request("http://localhost/api/x", { signal: abort.signal }), { params: Promise.resolve({ productId: "al pha" }) });
+    assert.deepEqual([res.status, res.headers.get("content-type"), res.headers.get("cache-control"), res.headers.get("x-accel-buffering"), res.headers.get("x-vercel-ai-ui-message-stream")], [200, "text/event-stream", "no-store", "no", null]);
+    assert.equal(timeout.mock.callCount(), 0, "the 15 s request timeout is not applied");
+    timeout.mock.restore();
+    assert.match(new TextDecoder().decode((await res.body!.getReader().read()).value), /^event: threads/);
+    assert.equal(path, "/ui/products/al%20pha/events");
+    abort.abort();
+    await gone;
+  } finally {
+    delete process.env.ENGINE_URL;
+    sse.closeAllConnections();
+    sse.close();
+  }
+});
+
+test("without ENGINE_URL the event stream is an open, silent 200 that ends when the browser leaves (no retry loop in mock mode)", async () => {
+  delete process.env.ENGINE_URL;
+  const abort = new AbortController();
+  const res = await events.GET(new Request("http://localhost/api/x", { signal: abort.signal }), { params: Promise.resolve({ productId: "alpha" }) });
+  assert.deepEqual([res.status, res.headers.get("content-type")], [200, "text/event-stream"]);
+  const reader = res.body!.getReader();
+  assert.match(new TextDecoder().decode((await reader.read()).value), /^: no engine/);
+  abort.abort();
+  assert.equal((await reader.read()).done, true);
 });
 
 const productBody = {

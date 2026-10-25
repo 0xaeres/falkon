@@ -4,6 +4,7 @@ import { Controller, Inject, Param, Post, Req } from "@nestjs/common";
 import type { IncomingMessage } from "node:http";
 import { knowledgeActionRequestSchema } from "@falkon/contracts";
 import { RepoKind, type PrismaClient } from "@falkon/db";
+import { memorySignals, type Signals } from "@falkon/shared";
 import { isProductName } from "./product";
 import { body, error } from "./request";
 import { UiProductService } from "./ui";
@@ -14,7 +15,7 @@ type Db = Pick<PrismaClient, "product" | "repo">;
 const knowledgeBody = knowledgeActionRequestSchema.strict();
 
 export class KnowledgeService {
-  constructor(private readonly db: Db, private readonly ui: Pick<UiProductService, "knowledge" | "status">) {}
+  constructor(private readonly db: Db, private readonly ui: Pick<UiProductService, "knowledge" | "status">, private readonly signals: Signals = memorySignals()) {}
 
   async act(slug: string, input: { repo: string; action: string }) {
     const row = isProductName(slug) ? await this.db.product.findUnique({ where: { slug } }) : null;
@@ -25,6 +26,8 @@ export class KnowledgeService {
     // ponytail: the Product read and this write are not atomic (a transaction at read committed would not lock the row); a repo removed in between still gets the request, which is harmless: the same two fields, admin-only listener.
     const { count } = await this.db.repo.updateMany({ where: { name: input.repo, kind: RepoKind.CODE }, data: { kbRequest: input.action, kbRequestedAt: new Date() } });
     if (!count) throw error(404, "NOT_FOUND", "Repository not found.");
+    this.signals.request();
+    this.signals.changed();
     return this.ui.status(slug);
   }
 }
