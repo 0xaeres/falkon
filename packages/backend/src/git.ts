@@ -65,7 +65,7 @@ async function remoteDefaultBranch(cloneUrl: string, creds?: GitCredentials, sig
 
 /**
  * Bare clone on first sync (origin URL removed afterwards: it may hold credentials and is never
- * needed), else fetch all heads with prune, then point HEAD at the remote's current default branch.
+ * needed), else fetch all heads and tags with prune (limited to those two namespaces by the refspecs), then point HEAD at the remote's current default branch.
  * A path that exists but is not a repo is wiped first.
  */
 export async function cloneOrFetch(dir: string, cloneUrl: string, creds?: GitCredentials, signal?: AbortSignal) {
@@ -73,7 +73,7 @@ export async function cloneOrFetch(dir: string, cloneUrl: string, creds?: GitCre
   const o = { cloneUrl, creds, signal };
   if (fs.existsSync(dir)) {
     await git(dir, ["config", "--unset-all", "remote.origin.url"]).catch(() => {});
-    await git(dir, ["fetch", "--prune", "--", cloneUrl, "+refs/heads/*:refs/heads/*"], o);
+    await git(dir, ["fetch", "--prune", "--", cloneUrl, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*"], o);
     const head = await remoteDefaultBranch(cloneUrl, creds, signal);
     if (head) await git(dir, ["symbolic-ref", "HEAD", `refs/heads/${head}`]);
   } else {
