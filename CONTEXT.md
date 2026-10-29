@@ -48,6 +48,16 @@ _Avoid_: Actual impact, blast radius
 A disclosed part of a repository that a result could not see at its index revision, such as a project the indexer failed on or a file that did not parse. It keeps an empty result from reading as "no effect".
 _Avoid_: Error, missing data
 
+## Tools
+
+**Vanilla tool**:
+An MCP tool that answers from Falkon's indexes and clones without running a model on the server. Vanilla tools are always available and stay model-free.
+_Avoid_: Basic tool, free tool
+
+**Agent tool**:
+An MCP tool that runs a server model over vanilla tools to do several steps of work, and returns its claims as checked evidence. Agent tools are offered only when the operator enables them and a model is configured.
+_Avoid_: AI tool, smart tool, model tool
+
 ## Overview
 
 **Map**:
