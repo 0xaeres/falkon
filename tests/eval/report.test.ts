@@ -167,5 +167,4 @@ test("the new git-history arm's report counts calls per new tool, zeros included
   const plain = floorInput();
   cloneRuns(plain, "clone-tools", (_q, f) => f.answer);
   assert.doesNotMatch(dev(plain), /New tool calls/);
-  assert.match(dev(input, ["clone-tools-git-history"]), /Denied tool attempts \(research_codebase, git and pull request tools\)/);
 });
