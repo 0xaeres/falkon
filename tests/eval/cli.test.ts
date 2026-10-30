@@ -284,3 +284,25 @@ test("clone-tools-git-prs routes to the --prs on stack and lists the pull reques
     assert.match(await main(["pilot", "--list", "--arms", "clone-tools-git-prs"], env(runs)), /clone-tools-git-prs: .*mcp__falkon__get_pull_request,mcp__falkon__search_discussions,mcp__falkon__get_provenance/);
   });
 });
+
+test("clone-tools-git-history routes to the --git-history on stack and requires the seven new tools in the registration", async () => {
+  const b = backendOf("clone-tools-git-history", config({ EVAL_GITHISTORY_PORT: "4404" }), {});
+  assert.deepEqual([b.id, b.url, b.instructions, b.requireTools?.length], ["githistory", "http://127.0.0.1:4404/mcp/o3", true, 7]);
+  assert.equal(backendOf("clone-tools-git-history", config({}), {}).url, "http://127.0.0.1:3404/mcp/o3");
+  assert.equal(backendOf("clone-tools-git", config({}), {}).requireTools, undefined);
+  await assert.rejects(main(["stack", "up", "--git-history", "on", "--prs", "on"], {}), /separate stacks/);
+  await assert.rejects(main(["stack", "up", "--git-history", "off"], {}), /--git-history must be on/);
+  await withRuns(async (runs) => {
+    assert.match(await main(["pilot", "--list", "--arms", "clone-tools-git-history"], env(runs)), /clone-tools-git-history: .*mcp__falkon__search_commits,mcp__falkon__search_diffs,mcp__falkon__compare_revisions,mcp__falkon__list_refs,mcp__falkon__check_ancestry,mcp__falkon__get_range_history,mcp__falkon__list_contributors/);
+  });
+});
+
+test("the pilot stops when the git-history arm called none of the new tools (the cycle 14 lesson)", async () => {
+  const write = (runs: string, toolCalls: Record<string, number>) => { for (const id of pilotIds(loadDataset("openmrs-xrepo"))) writeRaw(join(runs, "openmrs-xrepo"), run(id, "clone-tools-git-history", { firstTool: "grep", toolCalls })); };
+  await withRuns(async (runs) => {
+    write(runs, { grep: 2, list_commits: 1 });
+    assert.match(await main(["report", "--pilot", "--arms", "clone-tools-git-history"], env(runs)), /STOP: .*new git history tool/);
+    write(runs, { search_commits: 1 });
+    assert.match(await main(["report", "--pilot", "--arms", "clone-tools-git-history"], env(runs)), /PASS: .*new git history tool/);
+  });
+});

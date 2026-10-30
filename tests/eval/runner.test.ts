@@ -115,3 +115,21 @@ test("one ledger caps spend across models: runs of two model directories share i
     assert.equal(spentSoFar(join(root, "none.jsonl")), 0);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test("with the lowered per-run reservation a $2 cap lets two runs in flight start; a reached cap still stops the next one", async () => {
+  const { PER_RUN_CAP } = await import("./cli.js");
+  assert.ok(PER_RUN_CAP * 2 <= 2, String(PER_RUN_CAP));
+  const root = tmp(); let started = 0, release!: () => void;
+  const gate = new Promise<void>((r) => release = r);
+  const held = async (t: Task, arm: string): Promise<Raw> => { started++; if (started === 2) release(); await gate; return fake(0.04)(t, arm); };
+  try {
+    await runTasks([task("a"), task("b")], { runsRoot: root, ledger: join(root, "ledger.jsonl"), arms: ["clone-tools-git-history"], concurrency: 2, perRunCap: PER_RUN_CAP, spendCap: 2, run: held });
+    assert.equal(started, 2);
+    // The cap reached while two runs are in flight: 0.6 allows two reservations of 0.25 but not a third.
+    const small = tmp(); let n = 0;
+    const slow = async (t: Task, arm: string): Promise<Raw> => { n++; await new Promise((r) => setTimeout(r, 20)); return fake(0.04)(t, arm); };
+    await assert.rejects(runTasks([task("a"), task("b"), task("c")], { runsRoot: small, ledger: join(small, "l.jsonl"), arms: ["clone-tools-git-history"], concurrency: 3, perRunCap: 0.25, spendCap: 0.6, run: slow }), /spend cap/i);
+    assert.equal(n, 2);
+    rmSync(small, { recursive: true, force: true });
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

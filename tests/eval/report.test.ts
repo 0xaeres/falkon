@@ -157,3 +157,15 @@ test("the report shows tool calls per tool and recall and precision per history 
   assert.match(text, /Kind what-when \(n 1\): recall 0\.0000/);
   assert.doesNotMatch(text, /Kind ticket-to-code/);
 });
+
+test("the new git-history arm's report counts calls per new tool, zeros included; other arms print no such line", () => {
+  const input = floorInput();
+  cloneRuns(input, "clone-tools-git-history", (_q, f) => f.answer);
+  input[0]!.runs[0]!.toolCalls = { grep: 1, search_commits: 2, list_refs: 1 };
+  input[0]!.runs[1]!.toolCalls = { search_commits: 1 };
+  assert.match(dev(input, ["clone-tools-git-history"]), /New tool calls clone-tools-git-history: search_commits 3, search_diffs 0, compare_revisions 0, list_refs 1, check_ancestry 0, get_range_history 0, list_contributors 0\./);
+  const plain = floorInput();
+  cloneRuns(plain, "clone-tools", (_q, f) => f.answer);
+  assert.doesNotMatch(dev(plain), /New tool calls/);
+  assert.match(dev(input, ["clone-tools-git-history"]), /Denied tool attempts \(research_codebase, git and pull request tools\)/);
+});
