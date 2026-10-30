@@ -49,12 +49,14 @@ const text = (r: Record<string, unknown>) => (r.content as { text?: string }[] |
  * `kind` v6 is the reference instance: no research tool, and a read succeeds only with a `<content>` block or a numbered first line.
  * `instructions` true or false asserts whether the server sends its instructions (undefined skips the check).
  */
-export async function preflight(o: { expectedRepos: string[]; gold: string[]; url?: string; apiKey?: string; kind?: "clone" | "v6"; instructions?: boolean; createClient?: () => Promise<EvalClient> }): Promise<string> {
+export async function preflight(o: { expectedRepos: string[]; gold: string[]; url?: string; apiKey?: string; kind?: "clone" | "v6"; instructions?: boolean; requireTools?: string[]; createClient?: () => Promise<EvalClient> }): Promise<string> {
   const client = await (o.createClient ?? (() => connect(o.url!, o.apiKey)))();
   try {
     const have = (await client.listTools()).tools.map((t) => t.name);
     const missing = (o.kind === "v6" ? TOOLS : [...TOOLS, "research_codebase"]).filter((n) => !have.includes(n));
     if (missing.length) throw new Error(`tools/list is missing: ${missing.join(", ")}.`);
+    const absent = (o.requireTools ?? []).filter((n) => !have.includes(n));
+    if (absent.length) throw new Error(`tools/list is missing the git history tools: ${absent.join(", ")}. The api is older than this arm or runs without MCP_GIT_TOOLS=on; rebuild the image and start the stack with --git-history on.`);
     if (o.kind === "v6" && have.includes("research_codebase")) throw new Error("The server lists research_codebase, so it is not the v6 instance; check EVAL_V6_URL.");
     const sent = !!client.getInstructions?.();
     if (o.instructions === false && sent) throw new Error("The server's instructions are on, but this arm needs them off; start the stack with --instructions off.");
