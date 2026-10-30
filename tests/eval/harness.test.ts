@@ -79,7 +79,7 @@ test("leak checks inspect paths but not Grep or Glob patterns", () => {
     `${home}/.claude/projects/*/s/tool-results/f`, `${home}/.claude/projects/p/?/tool-results/f`, `${home}/.claude/projects/p/s/tool-results/[a-z]`,
     `${spill}/../../../../.env`, `${home}/.claude/projects/p/s/tool-results/f `,
     // another user's spill folder, a spill-looking path with a dot-dot, and scratchpads that are not this checkout's
-    "/Users/someone-else/.claude/projects/p/s/tool-results/f.txt", "/home/someone-else/.claude/projects/p/s/tool-results",
+    "/Users/someone-else/.claude/projects/p/s/tool-results/f.txt", "/Users/someone-else/.claude/projects/p/s/tool-results",
     `${scratch}/../../x`, `${scratch}/..`, `${scratch}/.env`, `${scratch}/sub/../../../other`, `${scratch}/`, `${scratch}/*`,
     "/private/tmp/claude-501/-Users-me-work-falkon/s1/scratchpad/a", "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only/s1/other/a",
     "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only", "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only/s1",
