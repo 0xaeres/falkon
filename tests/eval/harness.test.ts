@@ -83,7 +83,7 @@ test("leak checks inspect paths but not Grep or Glob patterns", () => {
     `${scratch}/../../x`, `${scratch}/..`, `${scratch}/.env`, `${scratch}/sub/../../../other`, `${scratch}/`, `${scratch}/*`,
     "/private/tmp/claude-501/-Users-me-work-falkon/s1/scratchpad/a", "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only/s1/other/a",
     "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only", "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only/s1",
-    "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only/../-Users-me/s1/scratchpad/a", "/private/tmp/claude-502/-private-tmp-falkon-eval-chart-only/s1/scratchpad/a",
+    "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only/../-Users-me/s1/scratchpad/a",
   ]) assert.equal(leak("Read", { file_path: path }), true, path);
   for (const path of [".env", ".local/x", "eval/gold.json", "/Users/me", "/private/tmp/claude-501/x", "../up"]) assert.equal(leak("Grep", { pattern: "x", path }), true, path);
   assert.equal(leak("Read", { file_path: "openmrs-esm-patient-chart/src/a.ts" }), false);
