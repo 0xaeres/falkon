@@ -53,8 +53,10 @@ import { execute, runTasks, spentSoFar, type Task } from "./runner.js";
 import { scoreAnswer } from "./score.js";
 import { PRODUCT, stack } from "./stack.js";
 
-/** Also the runner's per-run reservation (D178): a typical run costs about $0.04, so $0.25 lets a $2 cap start two runs in flight and still bounds a runaway run. */
-export const PER_RUN_CAP = 0.25;
+/** The Claude CLI's budget for one run and the cost recorded for a timed-out run; unchanged since cycle 15, so costlier runs are not cut short and results stay comparable. */
+export const PER_RUN_CAP = 1;
+/** What the runner reserves per run in flight against the ledger cap (D178): a typical run costs about $0.04, so $0.25 lets a $2 cap start two runs at once. A run may still spend up to PER_RUN_CAP. */
+export const RESERVATION = 0.25;
 const hash = (id: string) => createHash("sha256").update("eval|" + id).digest("hex");
 
 /** `count` (default five) dev questions of a set: the first of each relation in a fixed hash order, then the next in that order. */
@@ -237,7 +239,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     ? pilot.map((id) => ({ id, dataset: named.id, split: "dev" as const, question: named.questions.find((q) => q.id === id)!.question }))
     : datasets.flatMap((d) => d.questions.filter((q) => q.split === split).map((q) => ({ id: q.id, dataset: d.id, split, question: q.question })));
   const worst = tasks.length * arms.length;
-  const header = `${worst} runs (${tasks.length} questions x ${arms.length} arms, model ${model.alias}); worst case $${(worst * PER_RUN_CAP).toFixed(2)} at the $${PER_RUN_CAP} per-run cap, ledger cap $${cfg.spendCap} across all models.`;
+  const header = `${worst} runs (${tasks.length} questions x ${arms.length} arms, model ${model.alias}); worst case $${(worst * PER_RUN_CAP).toFixed(2)} at the $${PER_RUN_CAP} per-run cap (the runner reserves $${RESERVATION} per run in flight), ledger cap $${cfg.spendCap} across all models.`;
   const launch = (task: Task, arm: Arm, configPath: string, backend?: Backend) => buildCommand(arm, { question: task.question, tree: join(cfg.workDir, "chart-only"), env: process.env, configPath, url: backend?.url ?? "", model: model.id, perRunCap: PER_RUN_CAP, apiKey: backend?.key, denyPaths: [cfg.o3Dir, REPO_ROOT], history: datasetFlag === "history" });
   if (listing) {
     return [header, ...tasks.flatMap((t) => arms.map((arm) => { const a = launch(t, arm, "/mcp.json").args; return `${t.dataset}/${t.id} ${arm}: ${a[a.indexOf("--allowedTools") + 1]}`; }))].join("\n") + "\n";
@@ -257,7 +259,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
   console.log(header);
   const lineCount = lineCounter(cfg.o3Dir), ledger = join(cfg.runsRoot, "ledger.jsonl");
   await runTasks(tasks, {
-    runsRoot: runsDir, ledger, arms, concurrency: 3, perRunCap: PER_RUN_CAP, spendCap: cfg.spendCap,
+    runsRoot: runsDir, ledger, arms, concurrency: 3, perRunCap: RESERVATION, spendCap: cfg.spendCap,
     run: async (task, arm) => {
       const bin = mkdtempSync(join(cfg.workDir, ".run-")), backend = backends.get(arm)!;
       try {

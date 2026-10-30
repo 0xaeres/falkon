@@ -71,6 +71,11 @@ test("leak checks inspect paths but not Grep or Glob patterns", () => {
     assert.equal(leak("Grep", { pattern: "x", path: ok }), false, `Grep ${ok}`);
   }
   assert.equal(leak("Read", { path: spill }), false);
+  // Glob shares the path check: its pattern and path fields accept the own spill folder and scratchpad, and refuse a dot-dot climb out of them.
+  assert.equal(leak("Glob", { pattern: "*.txt", path: spillDir }), false);
+  assert.equal(leak("Glob", { pattern: `${scratch}/*.md` }), true);
+  assert.equal(leak("Glob", { pattern: "**/*.md", path: scratch }), false);
+  assert.equal(leak("Glob", { pattern: "*.txt", path: `${spillDir}/..` }), true);
   for (const path of [
     `${home}/.claude/settings.json`, `${home}/.claude/projects/p/s/other/toolu_01.txt`, `${home}/.claude/projects/p/tool-results/toolu_01.txt`,
     `${home}/.claude/projects/p/s/tool-results/a/b.txt`, `${home}/.claude/projects/p/s/tool-results/../../secret.json`, `${home}/.claude/projects/p/../q/s/tool-results/f`,
