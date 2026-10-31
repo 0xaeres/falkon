@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { discussionLinks, likePattern, parseTicketKeys, searchBounds, ticketKeys } from "./provenance";
+import { discussionLinks, likePattern, mergePrNumber, parseTicketKeys, searchBounds, squashPrNumber, ticketKeys } from "./provenance";
 import { fakeProvenanceStore } from "./provenance.fake";
 import { CONTRACT_REPOS, provenanceStoreContract } from "./provenance.contract";
 
@@ -41,4 +41,13 @@ test("search bounds: at most 8 words of 100 characters, 1 to 20 hits, offset 0 t
 provenanceStoreContract("fake store", async () => {
   const ids = Object.fromEntries(CONTRACT_REPOS.map((r, i) => [r, i + 1]));
   return { store: fakeProvenanceStore(ids), id: (r) => ids[r]! };
+});
+
+test("commit subject pull request numbers: squash `(#N)` at the end, `Merge pull request #N from` at the start", () => {
+  assert.equal(squashPrNumber("fix scan (#12)"), 12);
+  assert.equal(squashPrNumber("fix scan (#12)  "), 12);
+  assert.equal(squashPrNumber("fix (#12) scan"), undefined);
+  assert.equal(mergePrNumber("Merge pull request #7 from acme/x"), 7);
+  assert.equal(mergePrNumber("see Merge pull request #7 from acme/x"), undefined);
+  assert.equal(mergePrNumber("fix scan (#12)"), undefined);
 });

@@ -42,6 +42,8 @@ export interface ToolDeps {
   history?: ProvenanceStore;
   /** How often the discussion sync runs, in ms; the history tools call a repository stale after twice this. Default 15 minutes. */
   syncIntervalMs?: number;
+  /** The operator's ticket-key projects (DISCUSSION_TICKET_KEYS); the git tools read ticket keys from commit messages with them. */
+  ticketKeys?: string[];
 }
 
 export interface ToolContext {
@@ -523,7 +525,7 @@ const listBranches = define({
 });
 
 /** Relative dates ("3 days ago", "yesterday", "last week") to ISO; anything else is passed through. */
-function parseRelativeDate(s?: string): string | undefined {
+export function parseRelativeDate(s?: string): string | undefined {
   if (!s) return undefined;
   const d = new Date(s);
   if (!Number.isNaN(d.getTime())) return d.toISOString();
@@ -564,7 +566,7 @@ function toGitDate(s?: string): string | undefined {
   for (const r of [/^\d+\s+(second|minute|hour|day|week|month|year)s?\s+ago$/i, /^yesterday$/i, /^last\s+(week|month|year)$/i, /^\d{4}-\d{2}-\d{2}$/, /^\d{4}-\d{2}-\d{2}T/]) if (r.test(s)) return s;
   return parseRelativeDate(s);
 }
-function validateDateRange(since?: string, until?: string): string | null {
+export function validateDateRange(since?: string, until?: string): string | null {
   if (!since || !until) return null;
   const a = parseRelativeDate(since);
   const b = parseRelativeDate(until);

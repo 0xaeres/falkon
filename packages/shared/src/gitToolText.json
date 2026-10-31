@@ -1,0 +1,16 @@
+{
+  "search_commits": {
+    "description": "Finds commits across one or several repositories by who wrote them, what the message says, which files or dates they touch, and what text their changes add or remove. Every filter is optional and filters combine: a commit must satisfy all the kinds you give, and any one value inside a list. Results are newest first and come from the local clones only, so very recent pushes can be missing.\n\nAll terms are plain text, never patterns: `.*` or `(` search for those characters. Matching ignores case.\n\nEach commit lists `ticketKeys` and `pullRequests` that Falkon read from its message. They are marked `source: message` and are unverified: nothing checks that the ticket or pull request exists. Use `get_provenance` for stored, verified links.\n\nBounds, each named in the answer when reached: at most 100 commits (default 50); at most 50 repositories per call; 15 seconds per repository and 40 seconds in all; messages are cut per commit; the whole answer stays under about 24 KB. `coverageGaps` names every repository that was skipped, timed out or could not be read, so an empty or short list is not proof of absence. `filters` echoes what was applied.\n\nSearching changed text (`contentTerms`) reads every diff in range, so it needs a narrowing filter: `after` or `before`, `files`, or an explicit `repos` list.",
+    "params": {
+      "repos": "Repositories to search, by name. Omit to search every repository you can see (the first 50). Names you cannot see are reported as not found.",
+      "revisions": "Branches, tags or commit ids to start from, or globs such as `refs/heads/release-*`. Omit for the clone's default branch. A commit reachable from several of them is listed once. Names starting with `-`, containing `..` or empty are refused.",
+      "authors": "Up to 5 author names or email fragments; a commit matches if its author contains any of them.",
+      "messageTerms": "Up to 10 words or phrases; a commit matches if its message contains any of them.",
+      "contentTerms": "Up to 10 words or phrases; a commit matches if it adds or removes a line containing any of them. Needs `after`, `before`, `files` or `repos`.",
+      "files": "Up to 20 file paths; a commit matches if it touches any of them. Exact paths, no wildcards.",
+      "after": "Only commits on or after this date: ISO 8601 (`2024-02-01`), or `3 days ago`, `yesterday`, `last month`.",
+      "before": "Only commits on or before this date, same forms as `after`.",
+      "count": "How many commits to return, 1 to 100 (default 50)."
+    }
+  }
+}

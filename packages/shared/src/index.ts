@@ -8,6 +8,7 @@ export { setRepoResolver } from "./git";
 export { codeHostFileUrl, toolDefinitions, toolNames, openAiTools, createToolRunner } from "./tools";
 export type { ToolRepo, ToolDeps, ToolContext, ToolSource, ToolResult, ToolName, AnyToolDefinition } from "./tools";
 export { historyToolDefinitions, historyToolNames } from "./historyTools";
+export { gitToolDefinitions, gitToolNames } from "./gitTools";
 export { toolJsonSchema } from "./toolJsonSchema";
 export * from "./access";
 export * as kb from "./kb";

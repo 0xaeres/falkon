@@ -207,6 +207,12 @@ export function searchBounds(q: SearchQuery) {
 /** A word as a literal ILIKE substring pattern (backslash is Postgres's default LIKE escape). */
 export const likePattern = (word: string) => `%${word.replace(/[\\%_]/g, "\\$&")}%`;
 
+const num = (m: RegExpExecArray | null) => (m ? Number(m[1]) : undefined);
+/** The pull request number a squash-merge subject ends with, `(#N)`. */
+export const squashPrNumber = (subject: string) => num(/\(#(\d+)\)\s*$/.exec(subject));
+/** The pull request number a merge-commit subject starts with, `Merge pull request #N from`. */
+export const mergePrNumber = (subject: string) => num(/^Merge pull request #(\d+) from /.exec(subject));
+
 const KEY = /^[A-Z][A-Z0-9_]*$/;
 
 /** Operator-configured Jira project keys (D112), e.g. DISCUSSION_TICKET_KEYS=TRUNK,RESTWS,O3. Invalid entries are dropped. */
