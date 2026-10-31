@@ -29,10 +29,10 @@ export const toolDeps: ToolDeps = {
     });
     return rows.map(toToolRepo);
   },
-  // Read by the history tools only, which register only with MCP_HISTORY_TOOLS=on.
+  // Read by the history tools only, which register unless MCP_HISTORY_TOOLS=off.
   history: postgresProvenanceStore(prisma),
   syncIntervalMs: env.discussionSyncIntervalMs,
-  // Read by the git tools only, which register only with MCP_GIT_TOOLS=on.
+  // Read by the git tools only, which register unless MCP_GIT_TOOLS=off.
   ticketKeys: parseTicketKeys(process.env.DISCUSSION_TICKET_KEYS),
 };
 

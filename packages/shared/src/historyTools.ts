@@ -4,7 +4,7 @@ import { define, fileNotFound, git, isPathValid, repoOrThrow, type ToolContext }
 import text from "./historyToolText.json" with { type: "json" };
 
 /**
- * The pull request history tools (ADR 0001 4.11, D113): registered only with MCP_HISTORY_TOOLS=on, in their own registry so the
+ * The pull request history tools (ADR 0001 4.11, D113): registered unless MCP_HISTORY_TOOLS=off (on by default since cycle 19c), in their own registry so the
  * ten core tools and their contract snapshots stay untouched. They read Postgres through ToolDeps.history and, for a path, the
  * local clone; never the code host. Pull request text is untrusted third-party content.
  */

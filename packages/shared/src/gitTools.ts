@@ -5,7 +5,7 @@ import { GIT_LIMITS, runGit, cutMiddle, type GitRun } from "./gitRun";
 import text from "./gitToolText.json" with { type: "json" };
 
 /**
- * The git history tools (cycle 19, D167): registered only with MCP_GIT_TOOLS=on, in their own registry so the other tools and their
+ * The git history tools (cycle 19, D167): registered unless MCP_GIT_TOOLS=off (on by default since cycle 19c), in their own registry so the other tools and their
  * contract snapshots stay untouched. They read the local bare clones only, never the code host. Commit text is untrusted content.
  * This file also holds the repository fan-out every tool of the group uses; the bounded git runner is in gitRun.ts.
  */

@@ -8,7 +8,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { snapshot } from "../../../../../tests/contract/snapshot";
 
-// MCP_GIT_TOOLS (D167, S75): off keeps today's registration bytes; on appends the git tools after the pull request tools.
+// MCP_GIT_TOOLS (D167, S75; on by default since cycle 19c): off keeps the registration bytes without them; otherwise the git tools follow the pull request tools.
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-git-"));
 process.env.CONFIG_PATH = path.join(dir, "config.json");
 fs.writeFileSync(process.env.CONFIG_PATH, "{}");
@@ -51,9 +51,9 @@ async function connect(git: string | undefined, history?: string, repos = ["*"])
 const contract = (n: string) => JSON.parse(fs.readFileSync(new URL(`../../../../../tests/contract/${n}.json`, import.meta.url), "utf8")) as { name: string }[];
 const core = contract("registration");
 
-test("git flag off (unset, off, ON, 1, empty), with or without the history flag: registrations are the frozen ones", async () => {
-  for (const flag of [undefined, "off", "ON", "1", ""]) {
-    for (const [history, frozen] of [[undefined, core], ["on", [...core, ...contract("registration-history")]]] as const) {
+test("git flag off (off, OFF, ' off '), with either history flag state: registrations are the frozen ones without the git tools", async () => {
+  for (const flag of ["off", "OFF", " off "]) {
+    for (const [history, frozen] of [["off", core], ["on", [...core, ...contract("registration-history")]]] as const) {
       const s = await connect(flag, history);
       try {
         assert.equal(JSON.stringify((await s.client.listTools()).tools), JSON.stringify(frozen), `${flag} ${history}`);
@@ -63,8 +63,25 @@ test("git flag off (unset, off, ON, 1, empty), with or without the history flag:
   }
 });
 
+test("both flags unset: the registration equals the stored both-on snapshot byte for byte; any value but off keeps a family on", async () => {
+  const both = JSON.stringify([...core, ...contract("registration-git-history")]);
+  for (const v of [undefined, "on", "ON", "1", "0", "false", ""]) {
+    const s = await connect(v, v);
+    try { assert.equal(JSON.stringify((await s.client.listTools()).tools), both, String(v)); } finally { await s.close(); }
+  }
+});
+
+test("off on one flag removes only that family", async () => {
+  const names = async (git: string | undefined, history: string | undefined) => {
+    const s = await connect(git, history);
+    try { return (await s.client.listTools()).tools.slice(core.length).map((t) => t.name); } finally { await s.close(); }
+  };
+  assert.deepEqual(await names("off", undefined), ["get_pull_request", "search_discussions", "get_provenance"]);
+  assert.deepEqual(await names(undefined, "off"), ["search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history", "list_contributors"]);
+});
+
 test("git flag on: the seven git tools follow the existing tools; with the history flag they follow the pull request tools", async () => {
-  let s = await connect("on");
+  let s = await connect("on", "off");
   try {
     const tools = (await s.client.listTools()).tools;
     assert.equal(JSON.stringify(tools.slice(0, core.length)), JSON.stringify(core));
@@ -133,7 +150,7 @@ test("git flag on: list_refs and check_ancestry answer from the clone and refuse
   } finally { await s.close(); }
 });
 
-test("research brief: the git recipes appear only with the git flag; with it off the brief is today's, byte for byte", async () => {
+test("research brief: the git recipes follow the git flag; with it off the brief is the cycle 18 one, byte for byte", async () => {
   const brief = async (flag: string | undefined) => {
     const s = await connect(flag, undefined, [REPO]);
     try {
@@ -141,8 +158,9 @@ test("research brief: the git recipes appear only with the git flag; with it off
       return (r.content as { text: string }[])[0]!.text;
     } finally { await s.close(); }
   };
-  const off = await brief(undefined), on = await brief("on");
-  assert.equal(await brief("off"), off);
+  const off = await brief("off"), on = await brief(undefined);
+  assert.equal(await brief("OFF"), off);
+  assert.equal(await brief("on"), on);
   assert.doesNotMatch(off, /list_refs|check_ancestry/);
   assert.match(on, /list_refs[\s\S]*check_ancestry[\s\S]*not proof/);
   assert.equal(on.replace(/\nThe git history tools are on[\s\S]*?\n(?=\nWrite Markdown)/, ""), off);

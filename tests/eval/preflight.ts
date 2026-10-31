@@ -59,8 +59,8 @@ export async function preflight(o: { expectedRepos: string[]; gold: string[]; ur
     const gone = (family: string[]) => absent.filter((n) => family.includes(n)).join(", ");
     const [hist, prs] = [gone(GIT_HISTORY_TOOLS), gone(PR_TOOLS)];
     if (absent.length) throw new Error([
-      prs && `tools/list is missing the pull request tools: ${prs}. The api runs without MCP_HISTORY_TOOLS=on; start the stack with --prs on.`,
-      hist && `tools/list is missing the git history tools: ${hist}. The api is older than this arm or runs without MCP_GIT_TOOLS=on; rebuild the image and start the stack with --git-history on.`,
+      prs && `tools/list is missing the pull request tools: ${prs}. The api runs with MCP_HISTORY_TOOLS=off; start the stack with --prs on.`,
+      hist && `tools/list is missing the git history tools: ${hist}. The api is older than this arm or runs with MCP_GIT_TOOLS=off; rebuild the image and start the stack with --git-history on.`,
     ].filter(Boolean).join(" "));
     if (o.kind === "v6" && have.includes("research_codebase")) throw new Error("The server lists research_codebase, so it is not the v6 instance; check EVAL_V6_URL.");
     const sent = !!client.getInstructions?.();

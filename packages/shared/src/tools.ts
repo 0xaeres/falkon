@@ -39,7 +39,7 @@ export interface ToolDeps {
   getRepo(name: string): Promise<ToolRepo | undefined>;
   /** Every code repo whose name contains `query` (case-insensitive), in the requested order. The tool applies scope and paging. */
   listRepos(o: { query?: string; sort: "name" | "pushed"; direction: "asc" | "desc" }): Promise<ToolRepo[]>;
-  /** Pull request provenance (the history tools, registered only with MCP_HISTORY_TOOLS=on). */
+  /** Pull request provenance (the history tools, registered unless MCP_HISTORY_TOOLS=off). */
   history?: ProvenanceStore;
   /** How often the discussion sync runs, in ms; the history tools call a repository stale after twice this. Default 15 minutes. */
   syncIntervalMs?: number;
