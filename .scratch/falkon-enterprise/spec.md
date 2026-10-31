@@ -780,6 +780,16 @@ Approved by the human on 2026-10-29: slices S75 to S81 as written, the order, li
 - **Cycle 26, `explain_change` and `impact`** (C19, C20).
 - **Standalone, any time after the cycle that needs them:** per-Product exclude globs (C11); the rest of the fetch hardening (C6, D170). **With Phase 5:** the usages ladder and nearest-indexed-commit tables (C8), per-commit symbols (C15). **Later, decided separately:** Phase 3 Jira, Phase 6 identity.
 
+## Cycle 19 results: vanilla git history tools (merged to `docs/cycle19-plan` at `8816bda`; gate 2 approved 2026-10-31)
+
+Built on `loop/falkon-enterprise-c19` (base `52c390d`). Sonnet agents built and a different Sonnet reviewer checked every slice (Codex failed its probe again, as in cycle 12). Kept: S75 `search_commits` with the bounded git runner (one fix round), S76 `search_diffs`, `compare_revisions` and the bounded `get_diff` (30,000 bytes), S76b review follow-ups added by the human, S77 tag gaps in the clones, S78 `list_refs` and `check_ancestry`, S79 `get_range_history` (one fix round), S80 `list_contributors`, recipes and documents (ADR 4.12), S81 the eval arm `clone-tools-git-history`. Checks on the tip: typecheck exit 0; shared 292, backend 86 (18 skipped), api 251 (14 skipped), contracts 25, ui 34 and 68, eval 123 pass, 0 fail; api and ui builds exit 0; flags-off and history-only registration snapshots byte-identical.
+
+Not verified: S82, the paid measurement, was not run (needs a separate go-ahead; about $0.20 pilot, $1.6 to $1.8 full pass, cap about $2); `scripts/ops-smoke.sh` after the tag change (Docker image build fails on npm registry resets, also on the base branch; the human runs it); the full originality scan (`ORIGINALITY_REF_DIR` unset); `packages/shared/src/opsSmoke.test.ts` hangs about 15 minutes per test on the build machine, before and after the cycle, and was excluded from every run. The cycle exceeded its token budget (about 2.5M reported against 1.8M) because the loop did not total tokens at each merge.
+
+Decided without the human: `list_refs` uses `git for-each-ref --contains` for branches and tags; `list_contributors` passes `--use-mailmap`; the research recipes reach `research_codebase` and the `ask_codebase` prompt when `MCP_GIT_TOOLS=on`; the eval arm lists 17 tools (the slice text said fourteen); the ticket keys `TRUNK,RESTWS,O3` are hardcoded in the eval stack.
+
+Known limits left: a host that refuses tag listing fails the whole fetch including branches; `gitRead.diff` in `packages/shared/src/git.ts` has no callers and is uncapped.
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
