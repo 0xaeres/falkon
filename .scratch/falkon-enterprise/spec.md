@@ -790,6 +790,20 @@ Decided without the human: `list_refs` uses `git for-each-ref --contains` for br
 
 Known limits left: a host that refuses tag listing fails the whole fetch including branches; `gitRead.diff` in `packages/shared/src/git.ts` has no callers and is uncapped.
 
+### Cycle 19 paid measurement (S82), run 2026-10-31 with the human's go-ahead
+
+New arm `clone-tools-git-history` only, Haiku, one run per question, 40 questions (dev 24, hidden 16), compared with the stored cycle 15 results of `clone-tools-git` (D178; different day, same model and corpus). Spent $0.34 of the $2 cap (pilot of 6 runs $0.06; the Claude command line bills Anthropic). Full tables: [`baseline-c19-report.md`](baseline-c19-report.md); runs in `eval-runs-c19/` (a copy of the cycle 15 runs plus the new ones, with its own ledger).
+
+| Pooled, 40 questions | New arm | Old arm | Difference [95% CI] |
+|---|---:|---:|---|
+| recall | 0.8250 | 0.7446 | +0.080 [0.027, 0.137] |
+| precision | 0.5749 | 0.5631 | +0.012 [-0.090, 0.109] |
+| cost per question | $0.0085 | $0.0331 | -$0.0246 [-0.044, -0.008] |
+
+Recall wins 10, losses 1, ties 29. No new-arm run failed, was malformed or leaked. By kind (new arm): what-when 1.00, ticket-to-code 0.97, why 0.58 (n 16; the headroom the plan named, and where recall is still lowest). The new tools were used: `search_commits` 57 calls, `search_diffs` 39, `get_range_history` 17, `compare_revisions` 4; `list_refs`, `check_ancestry` and `list_contributors` were never called (as the plan expected: no questions of their own).
+
+Limits: the tool's pooled verdict is withheld because the stored cycle 15 reference has one leaked run in the hidden split (flagged by the cycle 15 leak pattern, since fixed in S81); the arms ran on different days; at 40 questions the interval is about ±0.1 and the old arm already scored 0.84 to 0.93 on two kinds; the cost fall is large and not explained by the tools alone (prompt caching and the day were not controlled), so treat it as indicative. D8 verdict is for the human: recall does not fall (lower bound above -0.1) and rises; whether that meets "beat the engine without it" depends on the leaked reference run. D172 (the pull request flag decision) is the human's, on this evidence.
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
