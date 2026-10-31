@@ -16,7 +16,7 @@ const DENIED_TOOLS = ["ask_codebase", "create_skill", "update_skill", "list_skil
 const mcp = (name: string) => `mcp__${SERVER}__${name}`;
 /** Which tool families an arm has; the combined arm clone-tools-git-history-prs has all three. */
 const hasGit = (arm: Arm) => arm.startsWith("clone-tools-git");
-export const hasPrTools = (arm: Arm) => arm === "clone-tools-git-prs" || arm === "clone-tools-git-history-prs";
+const hasPrTools = (arm: Arm) => arm === "clone-tools-git-prs" || arm === "clone-tools-git-history-prs";
 export const hasHistoryTools = (arm: Arm) => arm === "clone-tools-git-history" || arm === "clone-tools-git-history-prs";
 /** MCP tool names an arm may call; only the research arm has research_codebase, the other arms are denied it. */
 const toolsFor = (arm: Arm) => [...TOOLS, ...(arm === "clone-research" ? ["research_codebase"] : []), ...(hasGit(arm) ? GIT_TOOLS : []), ...(hasPrTools(arm) ? PR_TOOLS : []), ...(hasHistoryTools(arm) ? GIT_HISTORY_TOOLS : [])];
