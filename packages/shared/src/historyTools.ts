@@ -355,6 +355,14 @@ const getProvenance = define({
     const truncated = new Set<string>();
     const lists = { commits: new Map<string, object>(), pullRequests: new Map<string, object>(), tickets: new Map<string, object>() };
     const add = (m: Map<string, object>, key: string, v: object) => void (m.has(key) || m.set(key, v));
+    // The tickets of pull requests (pr -> ticket links), the same ones get_pull_request lists; out-of-scope pull requests give none.
+    const addPrTickets = async (prs: { repo: string; number: number }[]) => {
+      const uniq = [...new Map(prs.map((x) => [`${x.repo} ${x.number}`, x])).values()].slice(0, PER_KIND);
+      const found = await Promise.all(uniq.map((x) => h.links(names, { kind: "pr", ...x })));
+      found.forEach((f, i) => {
+        for (const l of f.links) if (l.toKind === "ticket" && l.fromKind === "pr" && l.repo === uniq[i]!.repo && Number(l.fromRef) === uniq[i]!.number) add(lists.tickets, l.toRef, { key: l.toRef, source: l.source, verified: l.verified });
+      });
+    };
     let anchor: object;
     let gaps: string[];
 
@@ -380,6 +388,7 @@ const getProvenance = define({
         for (const l of f.links) if (l.repo === repo) add(lists.pullRequests, `${l.toRepo ?? l.repo} ${l.toRef} ${rows[i]!.sha}`, { repo: l.toRepo ?? l.repo, number: Number(l.toRef), source: l.source, verified: l.verified, commit: rows[i]!.sha });
         if (f.links.length >= MAX_ROWS) truncated.add(`links: the store returned its cap of ${MAX_ROWS}`);
       });
+      await addPrTickets([...lists.pullRequests.values()] as { repo: string; number: number }[]);
       gaps = await gapsOf(h, names, repo);
       anchor = { repo, path: file, ...(startLine !== undefined ? { startLine, endLine } : {}) };
     } else {
@@ -395,6 +404,8 @@ const getProvenance = define({
         if (l.toKind === "pr") add(lists.pullRequests, `${l.toRepo ?? l.repo} ${l.toRef}`, { repo: l.toRepo ?? l.repo, number: Number(l.toRef), ...meta });
         else add(lists.tickets, l.toRef, { key: l.toRef, ...meta });
       }
+      // A ticket key is a pr -> ticket link, so a commit or ticket anchor needs a second hop to the pull requests it found.
+      if (a.kind !== "pr") await addPrTickets(res.links.filter((l) => !repo || l.repo === repo).flatMap((l) => l.fromKind === "pr" ? [{ repo: l.repo, number: Number(l.fromRef) }] : l.toKind === "pr" ? [{ repo: l.toRepo ?? l.repo, number: Number(l.toRef) }] : []));
       // the anchor is not its own companion
       if (a.kind === "commit") for (const k of lists.commits.keys()) if (k.endsWith(` ${a.sha.toLowerCase()}`)) lists.commits.delete(k);
       if (a.kind === "pr") lists.pullRequests.delete(`${a.repo} ${a.number}`);
