@@ -804,6 +804,34 @@ Recall wins 10, losses 1, ties 29. No new-arm run failed, was malformed or leake
 
 Limits: the tool's pooled verdict is withheld because the stored cycle 15 reference has one leaked run in the hidden split (flagged by the cycle 15 leak pattern, since fixed in S81); the arms ran on different days; at 40 questions the interval is about ±0.1 and the old arm already scored 0.84 to 0.93 on two kinds; the cost fall is large and not explained by the tools alone (prompt caching and the day were not controlled), so treat it as indicative. D8 verdict is for the human: recall does not fall (lower bound above -0.1) and rises; whether that meets "beat the engine without it" depends on the leaked reference run. D172 (the pull request flag decision) is the human's, on this evidence.
 
+## Cycle 19b: ticket recall follow-ups (human, 2026-10-31; loop-planned, built on the trace read in [`why-analysis-c19.md`](why-analysis-c19.md))
+
+Finding: on the 16 "why" questions the git-history arm finds the answering change every time but the ticket on 2 of 16; the key sits in the pull request body, which only `get_pull_request` returns, and `get_provenance` returned an empty ticket list in 18 of 19 calls. Human decision: work the model-free fixes before judging any agent tool.
+
+Decision (loop, to veto): the candidate "join stored pull request tickets into `search_commits` and `list_commits`" is not built. `list_commits` is a core tool (changing it breaks the flags-off snapshots) and `search_commits` is defined as reading only the local clones (cycle 19 intro); the recipe sentence below reaches the same result through a tool call.
+
+**T1. `get_provenance` returns the tickets of pull requests.** Tier standard. Agent claude. Blocked by: none.
+- Goal: find why `get_provenance` returns an empty ticket list where `get_pull_request` holds the key (from the traces: 18 of 19 calls), and fix the cause in `packages/shared/src/historyTools.ts` (and `provenance.ts` if the cause is there).
+- Scope: `historyTools.ts`, `provenance.ts`, their tests, the history snapshots only if the schema or text must change (prefer a code-only fix; the flags-off snapshot never changes).
+- Done: a test built from the real shape of the failing case (a commit whose pull request holds a ticket key in its body or title) fails first and passes; `get_provenance` for a commit, a pull request and a ticket anchor returns the same ticket keys `get_pull_request` returns for that pull request; no change to flags-off output.
+- Verify: `pnpm typecheck`, shared tests (minus `opsSmoke`), api tests, api build.
+- Adversarial cases: a key in a pull request comment only (not in the body: stays out, say so); two pull requests for one commit; a pull request in a repository outside the Product scope; a lower-case key; an empty store; a key of a project the operator did not configure.
+
+**T2. A recipe sentence in the `search_commits` description.** Tier mechanical. Agent claude. Blocked by: none.
+- Goal: when `search_commits` shows a pull request number and no ticket key, its description tells the client to open that pull request (with the pull request tools, when they are registered) before concluding there is no ticket; one sentence, own words (D9), no claim that a missing key proves absence.
+- Scope: `packages/shared/src/gitToolText.json` (the `search_commits` text), the two git registration snapshots, one test that pins the sentence.
+- Done: the flags-off and history-only snapshots stay byte-identical; only `registration-git.json` and `registration-git-history.json` change; the sentence is in the registered description.
+- Verify: common verify (shared minus `opsSmoke`, api tests, typecheck).
+
+**T3. The combined measurement arm.** Tier standard. Agent claude. Blocked by: none (the paid run waits for the human's go).
+- Goal: an arm `clone-tools-git-history-prs` with the clone-tools-git-prs tools plus the seven git history tools, and a stack option that sets both flags (`stack up --prs on --git-history on`: its own project, port and state dir), so the one deciding experiment (both flags on) can run. The deny lists of all other arms name the new arm's difference correctly; preflight requires all ten PR/git tools to be listed; the report counts calls for the new and the PR tools.
+- Scope: `tests/eval/` only.
+- Done: tests show the arm's tool list, the deny lists, the stack env (both flags on the api service, the backend importing the snapshot as in `--prs on`), that the flags do not leak into other stacks, and preflight failing when either tool family is missing. No model call, no Docker in tests.
+- Verify: `cd tests/eval && pnpm test`; `pnpm typecheck`.
+- Adversarial cases: only one flag reaching the api; port clash with the 3403 and 3404 stacks; the PR-tools snapshot mount missing.
+
+Order: T1, T2, T3 in parallel (disjoint files). Then one paid run of the combined arm, new arm only, on the same 40 questions (dev 24, hidden 16), compared with the stored cycle 15 old arm and the cycle 19 git-history arm: estimated $0.35, cap $1.00, pilot first; **needs the human's go-ahead**. Limits as in cycle 19 (no dependency, no push, no snapshot change with the flags off). Budget: 500k subagent tokens.
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
