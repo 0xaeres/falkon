@@ -1,5 +1,5 @@
 import { prisma, RepoKind, type Repo } from "@falkon/db";
-import { createToolRunner, env, gitDirOf, postgresProvenanceStore, repoPath, type ToolDeps, type ToolRepo } from "@falkon/shared";
+import { createToolRunner, env, gitDirOf, parseTicketKeys, postgresProvenanceStore, repoPath, type ToolDeps, type ToolRepo } from "@falkon/shared";
 import "./repos";
 
 const toToolRepo = (r: Repo): ToolRepo => ({
@@ -32,6 +32,8 @@ export const toolDeps: ToolDeps = {
   // Read by the history tools only, which register only with MCP_HISTORY_TOOLS=on.
   history: postgresProvenanceStore(prisma),
   syncIntervalMs: env.discussionSyncIntervalMs,
+  // Read by the git tools only, which register only with MCP_GIT_TOOLS=on.
+  ticketKeys: parseTicketKeys(process.env.DISCUSSION_TICKET_KEYS),
 };
 
 export const runTool = createToolRunner(toolDeps);

@@ -2,7 +2,7 @@ import { McpServer, type RegisteredTool, type ToolCallback } from "@modelcontext
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { historyToolDefinitions, historyToolNames, toolDefinitions, toolNames, toolJsonSchema, type AnyToolDefinition, type Scope } from "@falkon/shared";
+import { gitToolDefinitions, gitToolNames, historyToolDefinitions, historyToolNames, toolDefinitions, toolNames, toolJsonSchema, type AnyToolDefinition, type Scope } from "@falkon/shared";
 import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS } from "./ask/brief";
 import { IMPACT_INSTRUCTIONS } from "./ask/impact";
 import { configuredLanguageModels, languageModelsInfo } from "./ask/models";
@@ -110,6 +110,7 @@ export async function createMcpServer(scope: Scope, product?: string) {
     repos,
     scope,
     impactRecipe,
+    gitRecipes: process.env.MCP_GIT_TOOLS === "on",
     availableRepos: (await toolDeps.listRepos({ sort: "name", direction: "asc" })).map((repo) => repo.name),
   });
   add(
@@ -132,6 +133,8 @@ export async function createMcpServer(scope: Scope, product?: string) {
   );
   // MCP_HISTORY_TOOLS=on adds the pull request history tools after every other tool; anything else keeps today's registration bytes (D113).
   if (process.env.MCP_HISTORY_TOOLS === "on") for (const name of historyToolNames) addDefinition(historyToolDefinitions[name] as unknown as AnyToolDefinition);
+  // MCP_GIT_TOOLS=on adds the git history tools after the pull request tools (D167); the other flag states keep their registration bytes.
+  if (process.env.MCP_GIT_TOOLS === "on") for (const name of gitToolNames) addDefinition(gitToolDefinitions[name] as unknown as AnyToolDefinition);
   // The SDK's native Zod 4 conversion changes schema content and key order.
   // Keep its registrations/validation, but list the same normalized bytes as Ask/KB.
   server.server.setRequestHandler(ListToolsRequestSchema, () => ({

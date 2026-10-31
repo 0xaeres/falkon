@@ -443,6 +443,8 @@ MCP clients and the Ask chat share one tool registry, so they see the same names
 
 Version 0.1.0 has no code graph. Change and impact questions run through the symbol and reference tools, guided by an "impact and change" recipe.
 
+With `MCP_GIT_TOOLS=on` on the `api` service, seven more tools read git history from the clones: `search_commits`, `search_diffs`, `compare_revisions`, `list_refs`, `check_ancestry`, `get_range_history` and `list_contributors`. They are listed after the tools above, each call is bounded in time and size and says what it could not read, and the short history recipes are added to the brief that both `research_codebase` and the `ask_codebase` prompt return. With the flag unset the tool list and the research brief are unchanged.
+
 ## Ask and the knowledge base
 
 **Ask** is a chat over one Product. It calls the same tools, then answers with `@file:{repo::path:a-b}` citations that link to the source. The answer reads evidence from files the tools opened, and Falkon drops any citation that does not match them.

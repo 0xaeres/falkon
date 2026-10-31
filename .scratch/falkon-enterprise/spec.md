@@ -756,6 +756,8 @@ Check 1 (tool contract): flags off, registration snapshots byte-identical; flags
 
 Approved by the human on 2026-10-29: slices S75 to S81 as written, the order, limits and budget below. Choices made at the gate: `GET_DIFF_MAX_BYTES` is 30,000 bytes (about 7,500 tokens); the paid measurement S82 runs only after gate 2, on a separate go-ahead stating its estimated cost (pilot about $0.20, full pass $1.6 to $1.8, cap about $2).
 
+**S76b. Review follow-ups to S76 (added 2026-10-31 at the human's request; scope stays inside S76's files).** Tier standard. Agent claude. Two parts. Part A (can run beside S78): `get_diff` must not list as `sources` the files whose text fell entirely in the cut middle (or the marker must say which files were cut); test it, and test that the Ask agent cannot get a citation source for cut text. Part B (after S78 is merged, because it edits `gitTools.ts`): (1) `search_diffs` parser test for an added line `++ x` and a removed line `-- y` (content, not headers), asserting side and line number; (2) paths that git quotes (tab, double quote, backslash) are unquoted in the `file` label, with a test; (3) a type change in `compare_revisions` (symlink to file, T status) yields both diff sections for the one entry without dropping the whole page's diffs, with a test. Done: each of the four has a test that failed first and passes; the flags-off and history-only snapshots stay byte-identical.
+
 ### Order, limits, budget (cycle 19; approved at gate 1)
 
 - Wave 1: S75, S77 and S81 in parallel (disjoint files). Wave 2, one at a time because they share `gitTools.ts`, its text json, the `mcp.ts` block and the snapshots: S76 after S75 is kept, then S78 (needs S77 kept too), then S79, then S80. S82 last, only on a go-ahead.

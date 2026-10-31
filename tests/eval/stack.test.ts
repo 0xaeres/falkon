@@ -135,3 +135,17 @@ test("the admin token file is mode 600 (also when it already existed) and its va
   assert.equal(readFileSync(join(fresh, "admin.token"), "utf8"), made);
   assert.ok(!JSON.stringify(files().compose).includes(made));
 });
+
+test("--git-history on sets MCP_GIT_TOOLS and the ticket keys on the api service only, in its own project; the other stacks do not", () => {
+  const on = stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3404, project: "falkon-eval-githistory", gitHistory: "on" });
+  assert.equal(on.compose.name, "falkon-eval-githistory");
+  assert.deepEqual(on.compose.services.api.ports, ["127.0.0.1:3404:3001", "127.0.0.1:3504:3002"]);
+  assert.equal(on.compose.services.api.environment.MCP_GIT_TOOLS, "on");
+  assert.equal(on.compose.services.api.environment.DISCUSSION_TICKET_KEYS, "TRUNK,RESTWS,O3");
+  for (const s of ["backend", "zoekt"] as const) assert.ok(!JSON.stringify(on.compose.services[s]).includes("MCP_GIT_TOOLS"), s);
+  // A flag set for one stack must not leak into the next one built in the same process.
+  for (const other of [files(), stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3403, project: "p", prs: "on" }), stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3401, project: "n", instructions: "off" })]) {
+    assert.ok(!JSON.stringify(other.compose).includes("MCP_GIT_TOOLS"));
+    assert.ok(!JSON.stringify(other.compose.services.api).includes("DISCUSSION_TICKET_KEYS"));
+  }
+});

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildCommand, parseAnswer, parseClaudeOutput, prompt } from "./harness.js";
+import { homedir } from "node:os";
 import type { Arm } from "./data.js";
 
 const base = { question: "Where?", tree: "/chart", env: { PATH: "/bin", ANTHROPIC_API_KEY: "model-fixture", EVAL_MCP_KEY: "inherited" } as NodeJS.ProcessEnv, configPath: "/cfg.json", url: "http://127.0.0.1:3400/api/mcp", model: "claude-sonnet-5-5", perRunCap: 1, denyPaths: ["/data/o3"] };
@@ -62,18 +63,34 @@ test("leak checks inspect paths but not Grep or Glob patterns", () => {
   assert.equal(leak("Read", { file_path: "/USERS/me" }), true);
   for (const path of [".env", ".local/x", "eval/gold.json", "/Users/me", "/private/tmp/claude-501/x", "../up", "/data/o3/openmrs-core/a"]) assert.equal(leak("Read", { file_path: path }), true, path);
   assert.equal(leak("Grep", { pattern: "x", path: "/data/o3" }), true);
-  // Claude Code's own spill files for oversized tool results are not a leak, but only that exact shape.
-  const spill = "/Users/me/.claude/projects/-Users-me-work-falkon/0b1c-session/tool-results/toolu_01AB.txt";
-  assert.equal(leak("Read", { file_path: spill }), false);
+  // Claude Code's own spill folder (cycle 15) and scratchpad (cycle 13), of this user and this checkout only.
+  const home = homedir(), spillDir = `${home}/.claude/projects/-Users-me-work-falkon/0b1c-session/tool-results`, spill = `${spillDir}/toolu_01AB.txt`;
+  const scratch = "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only/0b1c-session/scratchpad";
+  for (const ok of [spill, spillDir, scratch, `${scratch}/notes.md`, `${scratch}/sub/a.txt`, "/tmp/claude-501/-private-tmp-falkon-eval-chart-only/s1/tool-results/f.txt"]) {
+    assert.equal(leak("Read", { file_path: ok }), false, ok);
+    assert.equal(leak("Grep", { pattern: "x", path: ok }), false, `Grep ${ok}`);
+  }
   assert.equal(leak("Read", { path: spill }), false);
+  // Glob shares the path check: its pattern and path fields accept the own spill folder and scratchpad, and refuse a dot-dot climb out of them.
+  assert.equal(leak("Glob", { pattern: "*.txt", path: spillDir }), false);
+  assert.equal(leak("Glob", { pattern: `${scratch}/*.md` }), true);
+  assert.equal(leak("Glob", { pattern: "**/*.md", path: scratch }), false);
+  assert.equal(leak("Glob", { pattern: "*.txt", path: `${spillDir}/..` }), true);
   for (const path of [
-    "/Users/me/.claude/settings.json", "/Users/me/.claude/projects/p/s/other/toolu_01.txt", "/Users/me/.claude/projects/p/tool-results/toolu_01.txt",
-    "/Users/me/.claude/projects/p/s/tool-results/a/b.txt", "/Users/me/.claude/projects/p/s/tool-results/../../secret.json", "/Users/me/.claude/projects/p/../q/s/tool-results/f",
-    "/Users/me/x/.claude/projects/p/s/tool-results/f", "/Users/me/.claude/projects/p/s/tool-results/", "/Users/me/.claude/projects/p/s/tool-results",
-    "/Users/me/.claude/projects/p/s/tool-results/.env", "/Users/me/.claude/projects/p/s/tool-results/.local", "/Users/me/.claude/projects/p/s/tool-results/*",
-    "/Users/me/.claude/projects/*/s/tool-results/f", "/Users/me/.claude/projects/p/?/tool-results/f", "/Users/me/.claude/projects/p/s/tool-results/[a-z]",
-    `${spill}/../../../../.env`, "/Users/me/.claude/projects/p/s/tool-results/f ",
+    `${home}/.claude/settings.json`, `${home}/.claude/projects/p/s/other/toolu_01.txt`, `${home}/.claude/projects/p/tool-results/toolu_01.txt`,
+    `${home}/.claude/projects/p/s/tool-results/a/b.txt`, `${home}/.claude/projects/p/s/tool-results/../../secret.json`, `${home}/.claude/projects/p/../q/s/tool-results/f`,
+    `${home}/x/.claude/projects/p/s/tool-results/f`, `${home}/.claude/projects/p/s/tool-results/`, `${spillDir}/..`, `${spillDir}/../..`,
+    `${home}/.claude/projects/p/s/tool-results/.env`, `${home}/.claude/projects/p/s/tool-results/.local`, `${home}/.claude/projects/p/s/tool-results/*`,
+    `${home}/.claude/projects/*/s/tool-results/f`, `${home}/.claude/projects/p/?/tool-results/f`, `${home}/.claude/projects/p/s/tool-results/[a-z]`,
+    `${spill}/../../../../.env`, `${home}/.claude/projects/p/s/tool-results/f `,
+    // another user's spill folder, a spill-looking path with a dot-dot, and scratchpads that are not this checkout's
+    "/Users/someone-else/.claude/projects/p/s/tool-results/f.txt", "/Users/someone-else/.claude/projects/p/s/tool-results",
+    `${scratch}/../../x`, `${scratch}/..`, `${scratch}/.env`, `${scratch}/sub/../../../other`, `${scratch}/`, `${scratch}/*`,
+    "/private/tmp/claude-501/-Users-me-work-falkon/s1/scratchpad/a", "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only/s1/other/a",
+    "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only", "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only/s1",
+    "/private/tmp/claude-501/-private-tmp-falkon-eval-chart-only/../-Users-me/s1/scratchpad/a",
   ]) assert.equal(leak("Read", { file_path: path }), true, path);
+  for (const path of [".env", ".local/x", "eval/gold.json", "/Users/me", "/private/tmp/claude-501/x", "../up"]) assert.equal(leak("Grep", { pattern: "x", path }), true, path);
   assert.equal(leak("Read", { file_path: "openmrs-esm-patient-chart/src/a.ts" }), false);
 });
 
@@ -187,4 +204,31 @@ test("parseAnswer counts spans whose path is not in the corpus: unprefixed, wron
   assert.deepEqual([r.answer.length, r.dropped], [3, 3]);
   assert.equal(parseAnswer("```json\n[{\"path\": \n```", lines).dropped, 0);
   assert.equal(parseAnswer(fence(Array.from({ length: 21 }, () => ({ path: "nope/x.ts", startLine: 1, endLine: 1 }))), lines).dropped, 21);
+});
+
+const newSeven = ["search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history", "list_contributors"];
+const gitThree = ["list_commits", "get_diff", "list_branches"];
+
+test("clone-tools-git-history allows the seven core tools, the three git tools and the seven new ones, and nothing else", () => {
+  const c = buildCommand("clone-tools-git-history", base);
+  const allowed = flag(c.args, "--allowedTools").split(",").slice(3);
+  assert.deepEqual(allowed, [...seven, ...gitThree, ...newSeven].map((n) => `mcp__falkon__${n}`));
+  const denied = flag(c.args, "--disallowedTools").split(",");
+  for (const n of ["research_codebase", "get_pull_request", "search_discussions", "get_provenance"]) assert.ok(denied.includes(`mcp__falkon__${n}`), n);
+  for (const n of newSeven) assert.ok(!denied.includes(`mcp__falkon__${n}`), n);
+  for (const n of newSeven) assert.deepEqual(parseClaudeOutput(stream([`mcp__falkon__${n}`]), "clone-tools-git-history").toolCalls, { [n]: 1 }, n);
+});
+
+test("every other arm denies each of the seven new tools; a call there is a denied attempt, not a leak", () => {
+  for (const arm of ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr", "clone-tools-recipe", "clone-tools-git", "clone-tools-git-prs"] as Arm[]) {
+    const denied = flag(buildCommand(arm, base).args, "--disallowedTools").split(",");
+    for (const n of newSeven) {
+      assert.ok(denied.includes(`mcp__falkon__${n}`), `${arm} ${n}`);
+      assert.deepEqual([parseClaudeOutput(stream([`mcp__falkon__${n}`]), arm).leak, parseClaudeOutput(stream([`mcp__falkon__${n}`]), arm).deniedAttempts], [false, 1], `${arm} ${n}`);
+    }
+  }
+});
+
+test("the new arm shares the git-history prompt with the other history arms", () => {
+  assert.equal(prompt("clone-tools-git-history", "Q", true), prompt("clone-tools-git", "Q", true));
 });
