@@ -45,7 +45,7 @@ The declaration units a change to one unit could affect, inferred from static de
 _Avoid_: Actual impact, blast radius
 
 **Coverage gap**:
-A disclosed part of a repository that a result could not see at its index revision, such as a project the indexer failed on or a file that did not parse. It keeps an empty result from reading as "no effect".
+A disclosed part of a repository, or a whole repository, that a result could not see or read, such as a project the indexer failed on, a file that did not parse, or a repository a tool timed out on, cut short or could not find. It keeps an empty result from reading as "no effect".
 _Avoid_: Error, missing data
 
 ## Tools

@@ -67,5 +67,17 @@
       "commit": "Commit id, branch or tag whose touched declarations are wanted. Give instead of the history parameters.",
       "count": "Most commits to return in history mode, 1 to 50. Default 20."
     }
+  },
+  "list_contributors": {
+    "description": "Counts who wrote the commits of one or several repositories, in the style of `git shortlog -sne`: one row per author name and email pair, most commits first. Narrow it to a path (`files`), a time window (`after`, `before`) or branches and tags (`revisions`, default the clone's default branch). Merge commits count, as they do in git.\n\nGive `authors` to turn the question around: the answer then lists the repositories those authors committed to, with the commit count of each and the name and email identities git saw there. The `authors` text is matched against the name and email after the `.mailmap`, the same ones shown in the rows, so the address a row shows finds its commits and an address the map replaced finds nothing.\n\nCounts are exactly what git prints, after the repository's own `.mailmap`. Falkon does not merge people: one person who used two emails or two spellings of a name appears in separate rows, and the answer says so. Do not add rows together unless you know they are one person.\n\nBounds, each named in the answer when reached: at most 100 rows (default 20); at most 50 repositories per call; 15 seconds and 4 MB of git output per repository, 40 seconds in all; the whole answer stays under about 24 KB. When a bound stops a repository, git has read only its newest commits: the summary then starts with PARTIAL and `coverageGaps` names the repository. Counts from a PARTIAL answer are lower bounds for those repositories and the order may be wrong; never present them as complete. An empty answer means no commit matched in what was read; a path that never existed, a window with no commits and an author who wrote nothing look the same.",
+    "params": {
+      "repos": "Repositories to read, by name. Omit to read every repository you can see (the first 50). Names you cannot see are reported as not found.",
+      "revisions": "Branches, tags or commit ids to count from, or globs such as `refs/heads/release-*`. Omit for the clone's default branch. Names starting with `-`, containing `..` or empty are refused.",
+      "authors": "Up to 5 author names or email fragments, matched as plain text ignoring case against the author name and email after the `.mailmap`, as the rows show them. When given, the answer lists repositories instead of authors.",
+      "files": "Up to 20 file paths; only commits that touch any of them are counted. Exact paths, no wildcards.",
+      "after": "Only commits on or after this date: ISO 8601 (`2024-02-01`), or `3 days ago`, `yesterday`, `last month`.",
+      "before": "Only commits on or before this date, same forms as `after`.",
+      "count": "How many rows to return, 1 to 100 (default 20). The answer says how many existed."
+    }
   }
 }
