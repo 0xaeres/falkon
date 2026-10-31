@@ -77,7 +77,7 @@ const names = (r: { json: any }) => r.json.refs.map((x: any) => x.name).sort();
 const ancestry = (args: Record<string, unknown>, c = ctx()) => call("check_ancestry", { repo: R, ...args }, c);
 
 test("the two tools register after the earlier git tools", () => {
-  assert.deepEqual(gitToolNames.slice(-2), ["list_refs", "check_ancestry"]);
+  assert.deepEqual(gitToolNames.slice(-3), ["list_refs", "check_ancestry", "get_range_history"]);
 });
 
 // ---- list_refs ----
@@ -201,6 +201,21 @@ test("list_refs: asks git for only `count` refs per repository; the total still 
     const newer = commit(many, "y");
     mk(many, "tag", "zzz-newest", newer);
     assert.equal((await refs({ kind: "tags", count: 5 }, c)).json.refs[0].name, "zzz-newest");
+  } finally { fs.rmSync(many, { recursive: true, force: true }); }
+});
+
+test("list_refs: when counting the refs hits the byte limit, the total is a lower bound that never falls below what is shown, and a gap says so", async () => {
+  const many = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-grt-"));
+  try {
+    mk(many, "init", "-q", "-b", "main");
+    const head = commit(many, "x");
+    execFileSync("git", ["update-ref", "--stdin"], { cwd: many, env: ENV, input: Array.from({ length: 3000 }, (_, i) => `create refs/tags/rc-${i} ${head}\n`).join(""), stdio: "pipe" });
+    const c: ToolContext = { deps: { getRepo: async () => row(R, many), listRepos: async () => [row(R, many)], gitLimits: { repoBytes: 1000 } }, scope: scopeFor(["*"]) };
+    const r = await refs({ kind: "tags", count: 5 }, c); // five records fit in 1000 bytes; the empty-line count of 3000 refs does not
+    assert.equal(r.json.refs.length, 5);
+    const shown = /^refs: showing 5 of (\d+) found$/.exec(r.json.truncated[0]);
+    assert.ok(shown && Number(shown[1]) >= 5 && Number(shown[1]) <= 3000, r.json.truncated[0]);
+    assert.deepEqual(r.json.coverageGaps, [`${R}: output cut at 1000 bytes; its refs may be missing`]);
   } finally { fs.rmSync(many, { recursive: true, force: true }); }
 });
 

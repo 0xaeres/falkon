@@ -507,5 +507,71 @@
     "execution": {
       "taskSupport": "forbidden"
     }
+  },
+  {
+    "name": "get_range_history",
+    "description": "Shows how part of one file changed over time in one repository, or which declarations one commit touched.\n\nHistory mode: give `file` and either a line range (`startLine` and `endLine`) or a `function` name. The result lists the commits that changed those lines, newest first, each with its date, author, subject, the path the file had then (history is followed through renames and moves) and the diff of just that range. Lines are counted in the file as it is at `revision` (default HEAD). A function is found by plain text: git starts at the first line of the file that contains the name and follows that declaration to the next one; if the name appears on several lines they are all listed, and the answer says which one was followed. Regular-expression characters in the name mean themselves. A name cannot contain `:`. A range or function that is not in the file at the revision, a path that is not a file there, and a binary file are reported in the summary instead of an error.\n\nCommit mode: give `commit` (and optionally `file`) to list, per changed file, the declaration line git prints at the top of each of that commit's hunks. This is git's own heuristic, the nearest earlier line that looks like a declaration; it is a line of text, not a parsed symbol, and is null when nothing precedes the change. A merge commit is compared with its first parent. At most 100 files are listed.\n\nAt most `count` commits are returned; the answer says when older ones exist. Long diffs are cut in the middle with a marker. Use it to answer what changed in this code and when; use `search_commits` to find commits by message or author.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "description": "Full repository name."
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "Path of the file from the repository root, such as `src/app.ts`. No `..`, no leading `./` or `/`, no `:`. Required in history mode; in commit mode it limits the answer to that file."
+        },
+        "revision": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Branch, tag or commit id at which lines are counted and from which history is read. Default HEAD. Names starting with `-` or containing `..` are refused. History mode only."
+        },
+        "startLine": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "First line of the range, counting from 1. Give with `endLine`, not with `function`."
+        },
+        "endLine": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Last line of the range, not before `startLine`. A value past the end of the file is cut back to the last line and the answer says so."
+        },
+        "function": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Name of a function or other declaration to follow, matched as plain text in the file. Give instead of a line range."
+        },
+        "commit": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Commit id, branch or tag whose touched declarations are wanted. Give instead of the history parameters."
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Most commits to return in history mode, 1 to 50. Default 20.",
+          "default": 20
+        }
+      },
+      "required": [
+        "repo"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "idempotentHint": true
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
   }
 ]
