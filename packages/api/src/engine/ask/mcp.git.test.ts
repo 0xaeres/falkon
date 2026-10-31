@@ -70,6 +70,7 @@ test("git flag on: the seven git tools follow the existing tools; with the histo
     assert.equal(JSON.stringify(tools.slice(0, core.length)), JSON.stringify(core));
     assert.deepEqual(tools.slice(core.length).map((t) => t.name), ["search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history", "list_contributors"]);
     snapshot("registration-git", tools.slice(core.length));
+    assert.match(tools[core.length].description ?? "", /lists a pull request number but no ticket key.*open that pull request.*if a pull request tool is available/s, "recipe sentence for a pull request without a ticket");
     assert.ok(tools.slice(core.length).every((t) => t.annotations?.readOnlyHint === true));
     assert.doesNotMatch(s.client.getInstructions() ?? "", /search_commits|search_diffs|compare_revisions|list_refs|check_ancestry|get_range_history|list_contributors/, "server instructions unchanged");
   } finally { await s.close(); }
