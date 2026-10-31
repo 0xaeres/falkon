@@ -63,14 +63,16 @@ export function runGit(cwd: string, args: string[], o: { maxBytes: number; timeo
 /**
  * Keeps the first 75% and the last 25% of `cap` bytes of `text` and puts a marker between them that states how many bytes were removed.
  * Text within the cap comes back as it is. Cuts fall on character boundaries; the marker says when a line is cut in two.
+ * `note` gets the byte offsets of the removed part (head to tail) and may return one more sentence for the marker.
  */
-export function cutMiddle(text: string, cap: number): string {
+export function cutMiddle(text: string, cap: number, note?: (head: number, tail: number) => string): string {
   const buf = Buffer.from(text, "utf8");
   if (buf.length <= cap) return text;
   let head = Math.floor(cap * 0.75), tail = buf.length - (cap - head);
   while (head > 0 && (buf[head]! & 0xc0) === 0x80) head--; // buf[head] would start the cut part: back up to the lead byte of a split character
   while (tail < buf.length && (buf[tail]! & 0xc0) === 0x80) tail++;
   const partial = (head > 0 && buf[head - 1] !== 0x0a) || (tail < buf.length && buf[tail - 1] !== 0x0a);
-  const marker = `\n[... ${tail - head} bytes removed from the middle${partial ? "; the line before and the line after this marker may be partial" : ""} ...]\n`;
+  const extra = note?.(head, tail);
+  const marker = `\n[... ${tail - head} bytes removed from the middle${partial ? "; the line before and the line after this marker may be partial" : ""}${extra ? `; ${extra}` : ""} ...]\n`;
   return buf.subarray(0, head).toString("utf8") + marker + buf.subarray(tail).toString("utf8");
 }
