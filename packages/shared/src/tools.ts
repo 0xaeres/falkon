@@ -699,8 +699,10 @@ const getDiff = define({
     const read = g.limit === "bytes";
     const raw = read ? g.stdout.replace(/\ufffd$/, "") : g.stdout;
     let out = "";
-    const sources: ToolSource[] = [];
+    let size = 0; // bytes of `out`
+    const files: { start: number; end: number; sources: ToolSource[] }[] = [];
     for (const f of parseDiff(raw)) {
+      const start = size, before = out.length, sources: ToolSource[] = [];
       const oldPath = f.from && f.from !== "/dev/null" ? f.from : null;
       const newPath = f.to && f.to !== "/dev/null" ? f.to : null;
       if (newPath === null) {
@@ -714,9 +716,18 @@ const getDiff = define({
         const body = h.changes.map((c) => c.content).join("\n");
         out += `@@ -${h.oldStart},${h.oldLines} +${h.newStart},${h.newLines} @@${heading ? ` ${heading}` : ""}\n${body}${body.endsWith("\n") ? "" : "\n"}`;
       }
+      size += Buffer.byteLength(out.slice(before));
+      files.push({ start, end: size, sources });
     }
+    // Only files with some text left after the cut are sources, so Ask cannot cite text the model never saw.
+    let visible = files, cutOut = 0;
+    const cut = cutMiddle(out, GET_DIFF_MAX_BYTES, (head, tail) => {
+      visible = files.filter((f) => f.start < head || f.end > tail);
+      cutOut = files.length - visible.length;
+      return cutOut ? `${cutOut} file(s) removed entirely${read ? " (among the files git read before it was stopped)" : ""}` : "";
+    });
     const stopped = read ? `\n[git was stopped after reading ${GET_DIFF_READ_BYTES} bytes of the diff; the rest of the diff was not read]\n` : "";
-    return { output: cutMiddle(out, GET_DIFF_MAX_BYTES) + stopped, sources };
+    return { output: cut + stopped, sources: visible.flatMap((f) => f.sources) };
   },
 });
 

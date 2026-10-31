@@ -37,10 +37,11 @@ async function oldGetDiff(base: string, head: string, p?: string) {
 
 const repo: ToolRepo = { name: REPO, displayName: null, codeHostType: "github", webUrl: null, defaultBranch: "main", isFork: false, isArchived: false, pushedAt: null, indexedAt: null, indexedRevisions: [], path: "" };
 const ctx = (gitLimits?: { repoMs?: number }): ToolContext => ({ deps: { getRepo: async (n) => (n === REPO ? { ...repo, path: dir } : undefined), listRepos: async () => [{ ...repo, path: dir }], gitLimits }, scope: scopeFor([REPO]) });
-const getDiff = async (base: string, head: string, p?: string, c = ctx()) => {
+const getDiffFull = async (base: string, head: string, p?: string, c = ctx()) => {
   const d = toolDefinitions.get_diff;
-  return (await d.execute(d.inputSchema.parse({ repo: REPO, base, head, path: p }), c)).output;
+  return await d.execute(d.inputSchema.parse({ repo: REPO, base, head, path: p }), c);
 };
+const getDiff = async (base: string, head: string, p?: string, c = ctx()) => (await getDiffFull(base, head, p, c)).output;
 const bytes = (s: string) => Buffer.byteLength(s);
 
 before(() => {
@@ -121,6 +122,35 @@ test("get_diff: one line longer than the cap is cut by bytes, never inside a cha
   assert.ok(!cut.includes("�"));
   assert.match(cut, /may be partial/);
   assert.ok(bytes(cut) <= CAP + 300);
+});
+
+test("get_diff: over the cap, sources are exactly the files still visible, and the marker counts the files cut out", async () => {
+  const from = tag("pre-many");
+  const names = Array.from({ length: 40 }, (_, i) => `f${String(i).padStart(2, "0")}x`);
+  for (const n of names) put(`${n}.txt`, Array.from({ length: 150 }, (_, k) => `${n} line ${k}`).join("\n") + "\n");
+  commitAll("many"); tag("many");
+  const full = await oldGetDiff(from, "many");
+  assert.ok(bytes(full) > CAP * 2 && bytes(full) < 120_000);
+  const r = await getDiffFull(from, "many");
+  const visible = names.filter((n) => r.output.includes(n));
+  const listed = (r.sources ?? []).map((s) => (s.type === "file" ? s.path : ""));
+  assert.deepEqual(listed, visible.map((n) => `${n}.txt`));
+  assert.ok(visible.length > 0 && visible.length < names.length);
+  assert.ok(listed.includes("f00x.txt") && listed.includes("f39x.txt") && !listed.includes("f20x.txt"));
+  assert.match(r.output, new RegExp(`${names.length - visible.length} file\\(s\\) removed entirely`));
+  // a file split by the cut keeps its source
+  const split = visible.filter((n) => full.split(`--- /dev/null\n+++ b/${n}.txt\n`)[1]!.split("--- /dev/null\n")[0]!.split("\n").some((l, i, a) => i < a.length - 1 && !r.output.includes(l + "\n")));
+  assert.ok(split.length >= 1);
+  for (const n of split) assert.ok(listed.includes(`${n}.txt`));
+});
+
+test("get_diff: when git was stopped early, the removed-file count says it covers only the part git read", async () => {
+  const from = tag("pre-many2");
+  for (let i = 0; i < 200; i++) put(`g${i}.txt`, Array.from({ length: 60 }, (_, k) => `g${i} line ${k}`).join("\n") + "\n");
+  commitAll("many2"); tag("many2");
+  const r = await getDiffFull(from, "many2");
+  assert.match(r.output, /\d+ file\(s\) removed entirely \(among the files git read before it was stopped\)/);
+  assert.ok((r.sources ?? []).length < 200);
 });
 
 test("get_diff: a git timeout is reported as a timeout, not a hang", async () => {

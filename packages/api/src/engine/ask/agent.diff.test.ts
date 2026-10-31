@@ -20,6 +20,9 @@ before(() => {
   git("add", "."); git("commit", "-qm", "one");
   fs.writeFileSync(path.join(dir, "big.txt"), Array.from({ length: 2000 }, (_, i) => `generated line ${i} with some padding text`).join("\n") + "\n");
   git("add", "."); git("commit", "-qm", "two");
+  fs.writeFileSync(path.join(dir, "mid.txt"), Array.from({ length: 100 }, (_, i) => `mid row ${i} padding padding`).join("\n") + "\n");
+  fs.writeFileSync(path.join(dir, "zlast.txt"), Array.from({ length: 600 }, (_, i) => `last row ${i} padding`).join("\n") + "\n");
+  git("add", "."); git("commit", "-qm", "three");
   mock.method(toolDeps, "getRepo", async (name: string) => (name === REPO ? { name, displayName: null, codeHostType: "genericGitHost", webUrl: null, defaultBranch: "main", isFork: false, isArchived: false, pushedAt: null, indexedAt: null, indexedRevisions: [], path: dir } : undefined));
 });
 after(() => { mock.restoreAll(); fs.rmSync(dir, { recursive: true, force: true }); });
@@ -30,13 +33,30 @@ test("Ask: an over-cap get_diff result reaches the model with the removed-bytes 
   let call = 0;
   const model = new MockLanguageModelV3({
     doGenerate: async () => ++call === 1
-      ? { content: [{ type: "tool-call", toolCallId: "t1", toolName: "get_diff", input: JSON.stringify({ repo: REPO, base: "HEAD~1", head: "HEAD" }) }], finishReason: { unified: "tool-calls", raw: "tool_calls" }, usage, warnings: [] }
+      ? { content: [{ type: "tool-call", toolCallId: "t1", toolName: "get_diff", input: JSON.stringify({ repo: REPO, base: "HEAD~2", head: "HEAD" }) }], finishReason: { unified: "tool-calls", raw: "tool_calls" }, usage, warnings: [] }
       : { content: [{ type: "text", text: "done" }], finishReason: { unified: "stop", raw: "stop" }, usage, warnings: [] },
   });
   await generateText({ model, prompt: "What changed?", tools: agentTools(scopeFor(["*"]), [], () => {}), stopWhen: stepCountIs(3) });
   const seen = JSON.stringify(model.doGenerateCalls[1]!.prompt);
   assert.match(seen, /bytes removed from the middle/);
   assert.ok(seen.includes("generated line 0 "), "the first part of the diff is kept");
-  assert.ok(seen.includes("generated line 1999 "), "the last part of the diff is kept");
+  assert.ok(seen.includes("last row 599 "), "the last part of the diff is kept");
   assert.ok(!seen.includes("generated line 1000 "), "the middle is gone");
+});
+
+test("Ask: a file cut out of a get_diff result is not offered as a source, a visible one is", async () => {
+  const sources: { path?: string }[] = [];
+  let call = 0;
+  const model = new MockLanguageModelV3({
+    doGenerate: async () => ++call === 1
+      ? { content: [{ type: "tool-call", toolCallId: "t2", toolName: "get_diff", input: JSON.stringify({ repo: REPO, base: "HEAD~2", head: "HEAD" }) }], finishReason: { unified: "tool-calls", raw: "tool_calls" }, usage, warnings: [] }
+      : { content: [{ type: "text", text: "done" }], finishReason: { unified: "stop", raw: "stop" }, usage, warnings: [] },
+  });
+  await generateText({ model, prompt: "What changed?", tools: agentTools(scopeFor(["*"]), [], (s) => sources.push(s as { path?: string })), stopWhen: stepCountIs(3) });
+  const seen = JSON.stringify(model.doGenerateCalls[1]!.prompt);
+  assert.ok(seen.includes("last row 599 ") && seen.includes("file(s) removed entirely"));
+  assert.ok(!seen.includes("+++ b/mid.txt"), "mid.txt is cut out of what the model saw");
+  const paths = sources.map((s) => s.path);
+  assert.ok(paths.includes("zlast.txt") && paths.includes("big.txt"));
+  assert.ok(!paths.includes("mid.txt"), "cut text cannot be cited");
 });
