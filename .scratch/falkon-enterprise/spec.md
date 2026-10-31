@@ -858,6 +858,12 @@ Decision (human): on the evidence of the cycle 19 and 19b paid measurements, `MC
 - Adversarial cases: a value that is neither `on` nor `off` (empty string, `0`, `false`, `OFF`): decide and document one rule (recommended: only the exact text `off`, case-insensitive after trimming, disables; everything else enables), tested; the history tools when no pull request data was ever imported (they must answer with coverage gaps, never throw: the existing no-ingest tests); Ask's own tool runner and `list_language_models`/`ask_codebase` are unaffected; a Product listener and the legacy path register the same list.
 - Stop for the human if any current snapshot would have to change.
 
+### Cycle 19c result (merged at `11dcae0`, 2026-10-31; D172 closed)
+
+R1 kept after a clean review and one quality round (comment placement, a stale error text, and a Product-listener test of the default list with both variables unset). `MCP_HISTORY_TOOLS` and `MCP_GIT_TOOLS` now default on; exactly `off` (trimmed, case-insensitive) disables a family; any other value enables it. The default registration equals `registration-git-history.json` byte for byte; with both flags `off` it equals the cycle 18 list; no snapshot file changed. The eval stacks of the reference arms pin both flags `off`, so the stored cycle 15 results keep their meaning. Checks on the tip: typecheck exit 0; shared 296, backend 86 (18 skipped), api 255 (14 skipped), contracts 25, ui 34 and 68, eval 131 pass, 0 fail; api and ui builds exit 0.
+
+Still open: `scripts/ops-smoke.sh` after the tag change (Docker network was intermittent; it built fine later, so it can run now); the full originality scan (`ORIGINALITY_REF_DIR`); whether the two bare-`grep` runs count as leaks; the unexplained fall of ticket-to-code recall (0.97 to 0.88) between the git-history arm and the combined arm; pull request comments are still not parsed for ticket keys (one stored question needs it).
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
