@@ -26,7 +26,7 @@
  * Impact-and-change set (S25): --dataset impact selects o3-impact (11 questions, its pilot is the 6 dev ones) instead of the two O3 sets;
  * arm clone-tools-recipe talks to a second stack (`stack up --recipe on`: project falkon-eval-recipe on EVAL_RECIPE_PORT with MCP_IMPACT_RECIPE=on);
  * `stack up --prs on` (S48) starts project falkon-eval-prs on EVAL_PRS_PORT, whose backend imports <EVAL_O3_DIR>/github-snapshot after indexing;
- * `stack up --git-history on` (S81) starts project falkon-eval-githistory on EVAL_GITHISTORY_PORT with MCP_GIT_TOOLS=on and DISCUSSION_TICKET_KEYS on the api service; arm clone-tools-git-history
+ * `stack up --git-history on` (S81) starts project falkon-eval-githistory on EVAL_GITHISTORY_PORT with MCP_GIT_TOOLS=on and DISCUSSION_TICKET_KEYS on the api service (every other stack sets both history flags to off explicitly, since the api default is on since cycle 19c); arm clone-tools-git-history
  * (the clone-tools-git tools plus search_commits, search_diffs, compare_revisions, list_refs, check_ancestry, get_range_history, list_contributors) talks to it, preflight fails when the
  * server does not list the seven, and the report counts calls per new tool.
  * `stack up --prs on --git-history on` (T3) is the one allowed pair: project falkon-eval-githistory-prs on EVAL_GITHISTORYPRS_PORT (3405) with both flags on the api service and the snapshot import on the
@@ -175,7 +175,7 @@ export function stackChoice(rest: string[], cfg: ReturnType<typeof config>, env:
   if (instructions && instructions !== "off") throw new Error("--instructions must be off (the default stack keeps the instructions on).");
   if (recipe && recipe !== "on") throw new Error("--recipe must be on (the default stack serves no recipe).");
   if (prs && prs !== "on") throw new Error("--prs must be on (the default stack imports no pull requests).");
-  if (gitHistory && gitHistory !== "on") throw new Error("--git-history must be on (the default stack registers no git history tools).");
+  if (gitHistory && gitHistory !== "on") throw new Error("--git-history must be on (the default stack pins both history flags off explicitly; this flag only takes on).");
   const set = [instructions, recipe, prs, gitHistory].filter(Boolean).length;
   if (set > 1 && !(set === 2 && prs && gitHistory)) throw new Error("--instructions off, --recipe on, --prs on and --git-history on are separate stacks; pass one (the only pair allowed is --prs on with --git-history on).");
   const flags = ["--instructions", "--recipe", "--prs", "--git-history"];

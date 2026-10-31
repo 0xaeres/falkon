@@ -27,6 +27,9 @@ const RESEARCH_DESCRIPTION = "Prepare a repository-scoped research brief for you
 
 let warnedMode = false;
 
+/** A history tool family is on unless its variable is the text `off`, in any case, ignoring surrounding spaces; unset, empty, `0`, `false` and every other value leave it on (cycle 19c). */
+const familyOn = (name: "MCP_HISTORY_TOOLS" | "MCP_GIT_TOOLS") => process.env[name]?.trim().toLowerCase() !== "off";
+
 /** One MCP server per session, retaining the existing tool order, annotations and error text. */
 export async function createMcpServer(scope: Scope, product?: string) {
   // MCP_INSTRUCTIONS=off drops the server instructions (eval ablation); unset or "default" keeps them.
@@ -110,7 +113,7 @@ export async function createMcpServer(scope: Scope, product?: string) {
     repos,
     scope,
     impactRecipe,
-    gitRecipes: process.env.MCP_GIT_TOOLS === "on",
+    gitRecipes: familyOn("MCP_GIT_TOOLS"),
     availableRepos: (await toolDeps.listRepos({ sort: "name", direction: "asc" })).map((repo) => repo.name),
   });
   add(
@@ -131,10 +134,9 @@ export async function createMcpServer(scope: Scope, product?: string) {
       messages: [{ role: "user" as const, content: { type: "text" as const, text: await researchBrief(query, repos?.split(",").map((name) => name.trim()).filter(Boolean)) } }],
     }),
   );
-  // MCP_HISTORY_TOOLS=on adds the pull request history tools after every other tool; anything else keeps today's registration bytes (D113).
-  if (process.env.MCP_HISTORY_TOOLS === "on") for (const name of historyToolNames) addDefinition(historyToolDefinitions[name] as unknown as AnyToolDefinition);
-  // MCP_GIT_TOOLS=on adds the git history tools after the pull request tools (D167); the other flag states keep their registration bytes.
-  if (process.env.MCP_GIT_TOOLS === "on") for (const name of gitToolNames) addDefinition(gitToolDefinitions[name] as unknown as AnyToolDefinition);
+  // The pull request history tools follow every other tool (D113), the git history tools follow them (D167).
+  if (familyOn("MCP_HISTORY_TOOLS")) for (const name of historyToolNames) addDefinition(historyToolDefinitions[name] as unknown as AnyToolDefinition);
+  if (familyOn("MCP_GIT_TOOLS")) for (const name of gitToolNames) addDefinition(gitToolDefinitions[name] as unknown as AnyToolDefinition);
   // The SDK's native Zod 4 conversion changes schema content and key order.
   // Keep its registrations/validation, but list the same normalized bytes as Ask/KB.
   server.server.setRequestHandler(ListToolsRequestSchema, () => ({

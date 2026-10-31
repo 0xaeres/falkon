@@ -12,6 +12,8 @@ const fixture = seedContractRepo();
 process.env.DATA_DIR = fixture.dir;
 // Fail before opening a socket if the transport injection ever stops applying.
 process.env.ZOEKT_URL = "invalid-contract-url";
+// These snapshots pin the cycle 18 list; the history families are on by default since cycle 19c (registration-git-history.json pins that one).
+process.env.MCP_HISTORY_TOOLS = process.env.MCP_GIT_TOOLS = "off";
 process.env.CONFIG_PATH = path.join(fixture.dir, "config.json");
 for (const key of ["LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY"]) delete process.env[key];
 import { registerHooks } from "node:module";

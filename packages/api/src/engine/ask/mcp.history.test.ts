@@ -7,11 +7,13 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { snapshot } from "../../../../../tests/contract/snapshot";
 
-// MCP_HISTORY_TOOLS (D113, S49): off keeps today's registration bytes, on appends the three pull request history tools.
+// MCP_HISTORY_TOOLS (D113, S49; on by default since cycle 19c): off keeps the cycle 18 registration bytes, otherwise the three pull request history tools follow.
+// The git flag stays off here so these tests see the pull request family alone.
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-history-"));
 process.env.CONFIG_PATH = path.join(dir, "config.json");
 fs.writeFileSync(process.env.CONFIG_PATH, "{}");
 for (const key of ["LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY"]) delete process.env[key];
+process.env.MCP_GIT_TOOLS = "off";
 import { registerHooks } from "node:module";
 // Pin the workspace package to this tree, as the contract test does.
 const hooks = registerHooks({
@@ -41,7 +43,7 @@ before(async () => {
   await store.replaceDiscussion(1, d, []);
   await store.replaceDiscussion(2, { ...d, title: "Secret seven" }, []);
 });
-after(() => { hooks.deregister(); mock.restoreAll(); fs.rmSync(dir, { recursive: true, force: true }); delete process.env.MCP_HISTORY_TOOLS; });
+after(() => { hooks.deregister(); mock.restoreAll(); fs.rmSync(dir, { recursive: true, force: true }); delete process.env.MCP_HISTORY_TOOLS; delete process.env.MCP_GIT_TOOLS; });
 
 async function connect(flag: string | undefined, repos = ["*"]) {
   if (flag === undefined) delete process.env.MCP_HISTORY_TOOLS; else process.env.MCP_HISTORY_TOOLS = flag;
@@ -53,13 +55,22 @@ async function connect(flag: string | undefined, repos = ["*"]) {
 }
 const core = JSON.parse(fs.readFileSync(new URL("../../../../../tests/contract/registration.json", import.meta.url), "utf8")) as { name: string }[];
 
-test("flag off (unset, off, ON, 1, empty): the registration is byte-for-byte the frozen one", async () => {
-  for (const flag of [undefined, "off", "ON", "1", ""]) {
+test("history flag off (off, OFF, ' off '): the registration is byte-for-byte the cycle 18 one", async () => {
+  for (const flag of ["off", "OFF", " off "]) {
     const s = await connect(flag);
     try {
       const tools = (await s.client.listTools()).tools;
-      assert.equal(JSON.stringify(tools), JSON.stringify(core), String(flag));
+      assert.equal(JSON.stringify(tools), JSON.stringify(core), flag);
       assert.equal((await s.client.callTool({ name: "get_pull_request", arguments: { repo: REPO, number: 7 } })).isError, true, "an unregistered tool cannot be called");
+    } finally { await s.close(); }
+  }
+});
+
+test("history flag on by default: unset, on, ON, 1, 0, false and empty all register the three tools", async () => {
+  for (const flag of [undefined, "on", "ON", "1", "0", "false", ""]) {
+    const s = await connect(flag);
+    try {
+      assert.deepEqual((await s.client.listTools()).tools.slice(core.length).map((t) => t.name), ["get_pull_request", "search_discussions", "get_provenance"], String(flag));
     } finally { await s.close(); }
   }
 });
