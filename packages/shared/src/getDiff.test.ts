@@ -138,10 +138,44 @@ test("get_diff: over the cap, sources are exactly the files still visible, and t
   assert.ok(visible.length > 0 && visible.length < names.length);
   assert.ok(listed.includes("f00x.txt") && listed.includes("f39x.txt") && !listed.includes("f20x.txt"));
   assert.match(r.output, new RegExp(`${names.length - visible.length} file\\(s\\) removed entirely`));
-  // a file split by the cut keeps its source
-  const split = visible.filter((n) => full.split(`--- /dev/null\n+++ b/${n}.txt\n`)[1]!.split("--- /dev/null\n")[0]!.split("\n").some((l, i, a) => i < a.length - 1 && !r.output.includes(l + "\n")));
-  assert.ok(split.length >= 1);
-  for (const n of split) assert.ok(listed.includes(`${n}.txt`));
+  // a file straddling the head boundary (some lines visible, its last lines cut) keeps its source
+  const straddling = visible.filter((n) => full.includes(`${n} line 149\n`) && r.output.includes(`${n} line 0\n`) && !r.output.includes(`${n} line 149\n`));
+  assert.ok(straddling.length >= 1);
+  for (const n of straddling) assert.ok(listed.includes(`${n}.txt`));
+});
+
+test("get_diff: cut offsets count bytes, not characters, so multi-byte text keeps the right sources", async () => {
+  const from = tag("pre-mb");
+  const names = Array.from({ length: 20 }, (_, i) => `m${String(i).padStart(2, "0")}x`);
+  for (const n of names) put(`${n}.txt`, Array.from({ length: 90 }, (_, k) => `${n} é€😀é€😀 line ${k}`).join("\n") + "\n");
+  commitAll("multibyte"); tag("mb");
+  const full = await oldGetDiff(from, "mb");
+  assert.ok(bytes(full) > CAP * 2 && bytes(full) < 120_000 && bytes(full) > full.length * 1.3, "many more bytes than characters");
+  const r = await getDiffFull(from, "mb");
+  assert.ok(!r.output.includes("�"));
+  const visible = names.filter((n) => r.output.includes(n));
+  assert.ok(visible.length > 0 && visible.length < names.length);
+  assert.deepEqual((r.sources ?? []).map((s) => (s.type === "file" ? s.path : "")), visible.map((n) => `${n}.txt`));
+});
+
+test("get_diff: under the cut, renamed and deleted files keep their sources at the ends and lose them in the middle", async () => {
+  const from = tag("pre-rd");
+  const big = (n: string) => Array.from({ length: 150 }, (_, k) => `${n} line ${k}`).join("\n") + "\n";
+  const small = (n: string) => `${n} only\n`.repeat(30); // 100% similar to its renamed self, nothing like the others
+  const names = Array.from({ length: 36 }, (_, i) => `b${String(i).padStart(2, "0")}x`);
+  for (const n of ["a1-ren-old", "a2-del", "b17-ren-old", "b18-del", "z1-ren-old", "z2-del"]) put(`${n}.txt`, small(n));
+  commitAll("small ones"); tag("rd-base");
+  for (const n of names) put(`${n}.txt`, big(n));
+  for (const n of ["a1-ren", "b17-ren", "z1-ren"]) fs.renameSync(path.join(dir, `${n}-old.txt`), path.join(dir, `${n}-new.txt`));
+  for (const n of ["a2-del", "b18-del", "z2-del"]) fs.rmSync(path.join(dir, `${n}.txt`));
+  commitAll("renames, deletes and bulk"); tag("rd");
+  const full = await oldGetDiff("rd-base", "rd");
+  assert.ok(bytes(full) > CAP * 2 && bytes(full) < 120_000);
+  const r = await getDiffFull("rd-base", "rd");
+  const src = (r.sources ?? []).flatMap((s) => (s.type === "file" ? [`${s.path}@${s.revision}`] : []));
+  assert.deepEqual(src.filter((s) => /^(a|z)\d-/.test(s)), ["a1-ren-old.txt@rd-base", "a1-ren-new.txt@rd", "a2-del.txt@rd-base", "z1-ren-old.txt@rd-base", "z1-ren-new.txt@rd", "z2-del.txt@rd-base"]);
+  assert.ok(!src.some((s) => s.startsWith("b17-") || s.startsWith("b18-")), "the middle ones were cut out");
+  assert.ok(r.output.includes("--- a/a1-ren-old.txt\n+++ b/a1-ren-new.txt\n") && !r.output.includes("b17-ren"));
 });
 
 test("get_diff: when git was stopped early, the removed-file count says it covers only the part git read", async () => {

@@ -185,6 +185,61 @@ test("list_refs: a time limit while resolving the commit is a gap", async () => 
   assert.match(t.json.coverageGaps[0], /timed out/);
 });
 
+test("list_refs: asks git for only `count` refs per repository; the total still counts every ref", async () => {
+  const many = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-grt-"));
+  try {
+    mk(many, "init", "-q", "-b", "main");
+    const head = commit(many, "x");
+    execFileSync("git", ["update-ref", "--stdin"], { cwd: many, env: ENV, input: Array.from({ length: 3000 }, (_, i) => `create refs/tags/rc-${i} ${head}\n`).join(""), stdio: "pipe" });
+    const c: ToolContext = { deps: { getRepo: async () => row(R, many), listRepos: async () => [row(R, many)], gitLimits: { repoBytes: 4000 } }, scope: scopeFor(["*"]) };
+    // 3000 full records would not fit in 4000 bytes, so a gap-free answer means git was asked for 5 only
+    const r = await refs({ kind: "tags", count: 5 }, c);
+    assert.equal(r.json.refs.length, 5);
+    assert.deepEqual(r.json.coverageGaps, []);
+    assert.deepEqual(r.json.truncated, ["refs: showing 5 of 3000 found"]);
+    // the newest come first: with a newer tag on a newer commit, it is in the top 5 whatever its name
+    const newer = commit(many, "y");
+    mk(many, "tag", "zzz-newest", newer);
+    assert.equal((await refs({ kind: "tags", count: 5 }, c)).json.refs[0].name, "zzz-newest");
+  } finally { fs.rmSync(many, { recursive: true, force: true }); }
+});
+
+// A history with a damaged commit: A <- B <- C on main, an unrelated root X, and B's object file overwritten.
+function damaged() {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-grt-"));
+  mk(d, "init", "-q", "-b", "main");
+  commit(d, "A");
+  const b = commit(d, "B");
+  commit(d, "C");
+  mk(d, "checkout", "-q", "--orphan", "other");
+  const x = commit(d, "X");
+  mk(d, "checkout", "-q", "main");
+  const file = path.join(d, ".git", "objects", b.slice(0, 2), b.slice(2));
+  fs.chmodSync(file, 0o644);
+  fs.writeFileSync(file, "garbage");
+  return { d, b, x };
+}
+
+test("a damaged repository is not 'not found': list_refs gives a gap, check_ancestry rejects", async () => {
+  const { d, b } = damaged();
+  try {
+    const c: ToolContext = { deps: { getRepo: async () => row(R, d), listRepos: async () => [row(R, d)] }, scope: scopeFor(["*"]) };
+    const l = await refs({ contains: b }, c);
+    assert.deepEqual(l.json.refs, []);
+    assert.equal(l.json.coverageGaps.length, 1);
+    assert.doesNotMatch(l.json.coverageGaps[0], /not found/);
+    await assert.rejects(() => ancestry({ ancestor: b, descendant: "main" }, c), /could not/);
+  } finally { fs.rmSync(d, { recursive: true, force: true }); }
+});
+
+test("check_ancestry: git failing with a code above 1 rejects; it never reads as 'no'", async () => {
+  const { d, x } = damaged();
+  try {
+    const c: ToolContext = { deps: { getRepo: async () => row(R, d), listRepos: async () => [row(R, d)] }, scope: scopeFor(["*"]) };
+    await assert.rejects(() => ancestry({ ancestor: x, descendant: "main" }, c), /could not check whether/); // the walk from main reaches the damaged commit
+  } finally { fs.rmSync(d, { recursive: true, force: true }); }
+});
+
 // ---- check_ancestry ----
 
 const verdict = (r: { json: any }) => r.json.result;

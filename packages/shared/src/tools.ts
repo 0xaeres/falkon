@@ -720,10 +720,10 @@ const getDiff = define({
       files.push({ start, end: size, sources });
     }
     // Only files with some text left after the cut are sources, so Ask cannot cite text the model never saw.
-    let visible = files, cutOut = 0;
+    let visible = files;
     const cut = cutMiddle(out, GET_DIFF_MAX_BYTES, (head, tail) => {
       visible = files.filter((f) => f.start < head || f.end > tail);
-      cutOut = files.length - visible.length;
+      const cutOut = files.length - visible.length;
       return cutOut ? `${cutOut} file(s) removed entirely${read ? " (among the files git read before it was stopped)" : ""}` : "";
     });
     const stopped = read ? `\n[git was stopped after reading ${GET_DIFF_READ_BYTES} bytes of the diff; the rest of the diff was not read]\n` : "";
