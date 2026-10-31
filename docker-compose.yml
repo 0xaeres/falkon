@@ -61,6 +61,8 @@ services:
       AUTH_MODE: ${AUTH_MODE:-none}
       FALKON_UI_URL: ${FALKON_UI_URL:-}
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      # Jira project keys the git tools read from commit messages (as the backend's pull request import does).
+      DISCUSSION_TICKET_KEYS: ${DISCUSSION_TICKET_KEYS:-}
       # Host names (no port) the listeners answer besides loopback: `api` is how the ui container reaches the admin listener.
       API_ALLOWED_HOSTS: api
       # Credential encryption key (README "Stored credentials"); both empty = generated into /data/secrets/master.key.
