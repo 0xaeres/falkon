@@ -232,3 +232,32 @@ test("every other arm denies each of the seven new tools; a call there is a deni
 test("the new arm shares the git-history prompt with the other history arms", () => {
   assert.equal(prompt("clone-tools-git-history", "Q", true), prompt("clone-tools-git", "Q", true));
 });
+
+const prThree = ["get_pull_request", "search_discussions", "get_provenance"];
+
+test("clone-tools-git-history-prs allows the core, git, pull request and git history tools in that order, and denies only research_codebase", () => {
+  const c = buildCommand("clone-tools-git-history-prs", base);
+  assert.deepEqual(flag(c.args, "--allowedTools").split(",").slice(3), [...seven, ...gitThree, ...prThree, ...newSeven].map((n) => `mcp__falkon__${n}`));
+  const denied = flag(c.args, "--disallowedTools").split(",");
+  assert.ok(denied.includes("mcp__falkon__research_codebase"));
+  for (const n of [...gitThree, ...prThree, ...newSeven]) assert.ok(!denied.includes(`mcp__falkon__${n}`), n);
+  for (const n of [...prThree, ...newSeven]) assert.deepEqual(parseClaudeOutput(stream([`mcp__falkon__${n}`]), "clone-tools-git-history-prs").toolCalls, { [n]: 1 }, n);
+  const asked = parseClaudeOutput(stream(["mcp__falkon__research_codebase", "mcp__falkon__ask_codebase"]), "clone-tools-git-history-prs");
+  assert.deepEqual([asked.deniedAttempts, asked.leak], [1, true]);
+});
+
+test("each arm denies exactly the tool families it does not have: a call is a denied attempt, not a leak", () => {
+  const family = (arm: Arm) => ({ git: ["clone-tools-git", "clone-tools-git-prs", "clone-tools-git-history", "clone-tools-git-history-prs"].includes(arm), pr: ["clone-tools-git-prs", "clone-tools-git-history-prs"].includes(arm), hist: ["clone-tools-git-history", "clone-tools-git-history-prs"].includes(arm) });
+  for (const arm of ["clone-tools", "clone-research", "v6-tools", "clone-tools-noinstr", "clone-tools-recipe", "clone-tools-git", "clone-tools-git-prs", "clone-tools-git-history", "clone-tools-git-history-prs"] as Arm[]) {
+    const f = family(arm), denied = flag(buildCommand(arm, base).args, "--disallowedTools").split(",");
+    for (const [has, names] of [[f.git, gitThree], [f.pr, prThree], [f.hist, newSeven]] as const) for (const n of names) {
+      assert.equal(denied.includes(`mcp__falkon__${n}`), !has, `${arm} ${n}`);
+      const parsed = parseClaudeOutput(stream([`mcp__falkon__${n}`]), arm);
+      assert.deepEqual([parsed.leak, parsed.deniedAttempts], [false, has ? 0 : 1], `${arm} ${n}`);
+    }
+  }
+});
+
+test("the combined arm shares the git-history prompt", () => {
+  assert.equal(prompt("clone-tools-git-history-prs", "Q", true), prompt("clone-tools-git", "Q", true));
+});

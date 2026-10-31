@@ -168,3 +168,13 @@ test("the new git-history arm's report counts calls per new tool, zeros included
   cloneRuns(plain, "clone-tools", (_q, f) => f.answer);
   assert.doesNotMatch(dev(plain), /New tool calls/);
 });
+
+test("the combined arm's report counts calls for each of the seven new tools and each of the three pull request tools, zeros included", () => {
+  const input = floorInput();
+  cloneRuns(input, "clone-tools-git-history-prs", (_q, f) => f.answer);
+  input[0]!.runs[0]!.toolCalls = { grep: 1, search_commits: 2, get_pull_request: 3 };
+  input[0]!.runs[1]!.toolCalls = { get_provenance: 1, list_refs: 1 };
+  const text = dev(input, ["clone-tools-git-history-prs"]);
+  assert.match(text, /New tool calls clone-tools-git-history-prs: search_commits 2, search_diffs 0, compare_revisions 0, list_refs 1, check_ancestry 0, get_range_history 0, list_contributors 0\./);
+  assert.match(text, /PR tool calls clone-tools-git-history-prs: get_pull_request 3, search_discussions 0, get_provenance 1\./);
+});
