@@ -54,6 +54,7 @@ export function runGit(cwd: string, args: string[], o: { maxBytes: number; timeo
     };
     const timer = setTimeout(() => finish(null, "time"), o.timeoutMs);
     child.stdout.on("data", (b: Buffer) => {
+      if (settled) return;
       chunks.push(b);
       size += b.length;
       if (size >= o.maxBytes) finish(null, "bytes");
@@ -100,7 +101,7 @@ const term = z.string().min(1).max(200).refine((s) => !/[\0\r\n]/.test(s), "Term
 
 const PLAIN_REF = /^[A-Za-z0-9._/@^~+-]+$/, REF_GLOB = /^[A-Za-z0-9._/*?[\]-]+$/;
 /** Splits revisions into plain refs and ref globs; refuses an option look-alike, `..`, `--all`-style names and empty values. */
-export function splitRevisions(revs: string[]) {
+function splitRevisions(revs: string[]) {
   const plain: string[] = [], globs: string[] = [];
   for (const r of revs) {
     const glob = /[*?[]/.test(r);
@@ -120,7 +121,7 @@ function gitDate(label: string, s: string | undefined, endOfDay = false) {
 }
 
 /** Escapes every regular-expression metacharacter so git's -G pattern matches the terms literally. */
-export const literalPattern = (terms: string[]) => terms.map((x) => x.replace(/[\\^$.|?*+()[\]{}]/g, "\\$&")).join("|");
+const literalPattern = (terms: string[]) => terms.map((x) => x.replace(/[\\^$.|?*+()[\]{}]/g, "\\$&")).join("|");
 
 // ---- search_commits ----
 
@@ -135,8 +136,8 @@ const searchCommits = define({
   isReadOnly: true,
   isIdempotent: true,
   inputSchema: z.object({
-    repos: z.array(z.string().min(1)).max(200).describe(p("search_commits", "repos")).optional(),
-    revisions: z.array(z.string()).max(20).describe(p("search_commits", "revisions")).optional(),
+    repos: z.array(z.string().min(1).max(300)).max(200).describe(p("search_commits", "repos")).optional(),
+    revisions: z.array(z.string().max(300)).max(20).describe(p("search_commits", "revisions")).optional(),
     authors: z.array(term).max(5).describe(p("search_commits", "authors")).optional(),
     messageTerms: z.array(term).max(10).describe(p("search_commits", "messageTerms")).optional(),
     contentTerms: z.array(term).max(10).describe(p("search_commits", "contentTerms")).optional(),
@@ -169,8 +170,10 @@ const searchCommits = define({
 
     // Repositories: the named ones, else the chat's selection, else every visible one. A name the scope excludes reads like a missing one.
     const visible = (await ctx.deps.listRepos({ sort: "name", direction: "asc" })).filter((r) => ctx.scope.allows(r.name));
-    const names = [...new Set(a.repos ?? ctx.selectedRepos ?? visible.map((r) => r.name))];
-    const gaps: string[] = [];
+    const wanted = [...new Set(a.repos ?? ctx.selectedRepos ?? visible.map((r) => r.name))];
+    const lim = { ...GIT_LIMITS, ...ctx.deps.gitLimits };
+    const names = wanted.slice(0, lim.repos);
+    const gaps: string[] = wanted.length > names.length ? [`${wanted.length - names.length} repositories skipped: at most ${lim.repos} are read per call`] : [];
     const repos = [];
     for (const n of names) {
       const r = ctx.scope.allows(n) ? await ctx.deps.getRepo(n) : undefined;
@@ -178,31 +181,35 @@ const searchCommits = define({
     }
 
     const ran = await fanOut(repos, async (r, timeoutMs) => {
-      const g = await runGit(r.path, argv, { maxBytes: GIT_LIMITS.repoBytes, timeoutMs });
+      const g = await runGit(r.path, argv, { maxBytes: lim.repoBytes, timeoutMs });
       const parts = g.stdout.split("\0");
       parts.pop(); // after the last NUL: empty when git finished, a partial record when it was cut
       return { g, commits: parts.filter(Boolean).map((rec) => parseCommit(r.name, rec, tickets(ctx))) };
-    });
+    }, lim);
     const all = [];
     for (const [r, { g, commits }] of ran.done) {
-      if (g.limit === "time") gaps.push(`${r.name}: timed out after ${GIT_LIMITS.repoMs / 1000} seconds; its commits may be missing`);
-      else if (g.limit === "bytes") gaps.push(`${r.name}: output cut at ${GIT_LIMITS.repoBytes} bytes; its commits may be missing`);
+      if (g.limit === "time") gaps.push(`${r.name}: timed out after ${lim.repoMs / 1000} seconds; its commits may be missing`);
+      else if (g.limit === "bytes") gaps.push(`${r.name}: output cut at ${lim.repoBytes} bytes; its commits may be missing`);
       else if (g.code !== 0) gaps.push(`${r.name}: git could not read the requested revisions`);
       all.push(...commits);
     }
-    for (const r of ran.late) gaps.push(`${r.name}: not started before the ${GIT_LIMITS.totalMs / 1000} second deadline`);
-    if (ran.overCap) gaps.push(`${ran.overCap} repositories skipped: at most ${GIT_LIMITS.repos} are read per call`);
+    for (const r of ran.late) gaps.push(`${r.name}: not started before the ${lim.totalMs / 1000} second deadline`);
 
     all.sort((x, y) => y.ts - x.ts || x.repo.localeCompare(y.repo) || x.hash.localeCompare(y.hash));
     const truncated: string[] = [];
     let shown = all.slice(0, count).map(({ ts: _ts, ...c }) => c);
     if (all.length > shown.length) truncated.push(`commits: showing ${shown.length} of ${all.length} found`);
-    const filters = { repos: names, revisions: a.revisions ?? ["HEAD"], authors: a.authors, messageTerms: a.messageTerms, contentTerms: a.contentTerms, files: a.files, after: a.after, before: a.before, count };
+    let filters: Record<string, unknown> = { repos: names, revisions: a.revisions ?? ["HEAD"], authors: a.authors, messageTerms: a.messageTerms, contentTerms: a.contentTerms, files: a.files, after: a.after, before: a.before, count };
     const out = () => ({ commits: shown, filters, coverageGaps: gaps, truncated });
-    while (shown.length && bytes(out()) > GIT_LIMITS.answerBytes) {
-      shown = shown.slice(0, Math.max(0, shown.length - Math.ceil(shown.length / 10)));
-      truncated[0] = `commits: answer byte cap reached; showing ${shown.length} of ${all.length} found`;
+    const over = () => bytes(out()) > GIT_LIMITS.answerBytes;
+    // The cap always holds: trim commits first, then the echo of the filters, then the gaps.
+    const cut = (what: string) => truncated.push(`${what}: answer byte cap reached`);
+    if (over()) {
+      while (shown.length && over()) shown = shown.slice(0, shown.length - Math.ceil(shown.length / 10));
+      truncated.push(`commits: answer byte cap reached; showing ${shown.length} of ${all.length} found`);
     }
+    if (over()) { filters = { repos: names.length, note: "filters not echoed" }; cut("filters"); }
+    if (over()) { const n = gaps.length; while (gaps.length && over()) gaps.length = Math.floor(gaps.length / 2); gaps.push(`${n - gaps.length} more gaps not shown`); cut("coverageGaps"); }
     return { output: JSON.stringify(out()) };
   },
 });

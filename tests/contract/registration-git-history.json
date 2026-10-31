@@ -180,7 +180,8 @@
           "type": "array",
           "items": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "maxLength": 300
           },
           "description": "Repositories to search, by name. Omit to search every repository you can see (the first 50). Names you cannot see are reported as not found."
         },
@@ -188,7 +189,8 @@
           "maxItems": 20,
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 300
           },
           "description": "Branches, tags or commit ids to start from, or globs such as `refs/heads/release-*`. Omit for the clone's default branch. A commit reachable from several of them is listed once. Names starting with `-`, containing `..` or empty are refused."
         },

@@ -245,3 +245,61 @@ test("search_commits: the answer never exceeds the byte cap and says it was cut"
     assert.match(r.json.truncated[0], /byte cap/);
   } finally { fs.rmSync(hist, { recursive: true, force: true }); }
 });
+
+// ---- fix round ----
+
+test("search_commits: with `repos` omitted and 120 visible repositories, at most 50 are looked up and the answer holds the byte cap", async () => {
+  const repos = Array.from({ length: 120 }, (_, i) => row(`fixtures.test/${"long-".repeat(40)}${i}`, i % 2 ? dir : other));
+  let lookups = 0;
+  const c: ToolContext = { deps: { getRepo: async (n) => (lookups++, repos.find((r) => r.name === n)), listRepos: async () => repos }, scope: scopeFor(["*"]) };
+  const r = await search({ count: 100 }, c);
+  assert.ok(lookups <= 50, `getRepo called ${lookups} times`);
+  assert.ok(Buffer.byteLength(r.text) <= 24_000);
+  assert.ok(r.json.coverageGaps.includes("70 repositories skipped: at most 50 are read per call"));
+  const echoed = r.json.filters.repos; // the names, or only their count when the names would break the byte cap
+  assert.ok((Array.isArray(echoed) ? echoed.length : echoed) <= 50);
+});
+
+test("search_commits: the byte cap also holds when the filters and the gaps are what is large", async () => {
+  const names = Array.from({ length: 200 }, (_, i) => `fixtures.test/${"x".repeat(250)}${i}`);
+  const r = await search({ repos: names, contentTerms: ["t".repeat(200)] });
+  assert.ok(Buffer.byteLength(r.text) <= 24_000, `${Buffer.byteLength(r.text)} bytes`);
+  assert.match(JSON.stringify(r.json.truncated), /byte cap/);
+});
+
+test("search_commits: a repository that hits the time limit is a gap and another repository still answers", async () => {
+  const slow = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-gitt-"));
+  try {
+    mk(slow, "init", "-q", "-b", "main");
+    commit(slow, "Sam", "2024-08-10T12:00:00Z", "slow needle", "a.ts", "needle\n");
+    // a text conversion that sleeps makes `git log -G` slow in this repository only
+    mk(slow, "config", "diff.slow.textconv", "sleep 3; cat");
+    fs.writeFileSync(path.join(slow, ".git", "info", "attributes"), "*.ts diff=slow\n");
+    const repos = [row(A, dir), row("fixtures.test/slow", slow)];
+    const c: ToolContext = { deps: { getRepo: async (n) => repos.find((r) => r.name === n), listRepos: async () => repos, gitLimits: { repoMs: 1000 } }, scope: scopeFor(["*"]) };
+    const r = await search({ repos: [A, "fixtures.test/slow"], contentTerms: ["needle"], files: ["a.ts"] }, c);
+    assert.deepEqual(hashes(r), [sh.c2]);
+    assert.deepEqual(r.json.coverageGaps, ["fixtures.test/slow: timed out after 1 seconds; its commits may be missing"]);
+  } finally { fs.rmSync(slow, { recursive: true, force: true }); }
+});
+
+test("search_commits: a repository that hits the byte limit is a gap, its cut last record is dropped, its complete ones stay", async () => {
+  const fat = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-gitt-"));
+  try {
+    mk(fat, "init", "-q", "-b", "main");
+    const oldest = commit(fat, "Fay", "2024-09-01T12:00:00Z", "oldest\n\n" + "z".repeat(20_000), "f.txt", "1");
+    const newer = commit(fat, "Fay", "2024-09-02T12:00:00Z", "newer small", "f.txt", "2");
+    const repos = [row(A, dir), row("fixtures.test/fat", fat)];
+    const c: ToolContext = { deps: { getRepo: async (n) => repos.find((r) => r.name === n), listRepos: async () => repos, gitLimits: { repoBytes: 3000 } }, scope: scopeFor(["*"]) };
+    const r = await search({ repos: [A, "fixtures.test/fat"], revisions: ["main"] }, c);
+    const got = r.json.commits.map((x: any) => x.hash);
+    assert.ok(got.includes(newer) && !got.includes(oldest), "complete record kept, cut record dropped");
+    assert.ok(got.includes(sh.c3), "the other repository still answers");
+    assert.deepEqual(r.json.coverageGaps, ["fixtures.test/fat: output cut at 3000 bytes; its commits may be missing"]);
+  } finally { fs.rmSync(fat, { recursive: true, force: true }); }
+});
+
+test("search_commits: pathspec magic in `files` is literal (matches nothing), content terms ignore case", async () => {
+  for (const f of [":(top)", ":(glob)*", ":/", ":(top)a.ts"]) assert.deepEqual(hashes(await search({ repos: [A], files: [f] })), [], f);
+  assert.deepEqual(hashes(await search({ repos: [A], contentTerms: ["NEEDLE"], files: ["a.ts"] })), [sh.c2]);
+});

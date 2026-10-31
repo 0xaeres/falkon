@@ -44,6 +44,8 @@ export interface ToolDeps {
   syncIntervalMs?: number;
   /** The operator's ticket-key projects (DISCUSSION_TICKET_KEYS); the git tools read ticket keys from commit messages with them. */
   ticketKeys?: string[];
+  /** Tests only: lower a git tool limit (repoMs, repoBytes) so a limit can be reached quickly. */
+  gitLimits?: { repoMs?: number; repoBytes?: number };
 }
 
 export interface ToolContext {
