@@ -66,7 +66,7 @@ const hashes = (r: { json: any }) => r.json.commits.map((c: any) => c.hash);
 const gitSays = (arg: string, rev = "HEAD") => mk(dir, "log", "--format=%H", arg, rev).split("\n").filter((l) => /^[0-9a-f]{40}$/.test(l));
 
 test("get_range_history registers after the earlier git tools", () => {
-  assert.equal(gitToolNames.at(-1), "get_range_history");
+  assert.equal(gitToolNames.at(-2), "get_range_history");
 });
 
 test("a function's history: the commits git reports, newest first, through a rename and a move", async () => {

@@ -110,6 +110,7 @@ export async function createMcpServer(scope: Scope, product?: string) {
     repos,
     scope,
     impactRecipe,
+    gitRecipes: process.env.MCP_GIT_TOOLS === "on",
     availableRepos: (await toolDeps.listRepos({ sort: "name", direction: "asc" })).map((repo) => repo.name),
   });
   add(

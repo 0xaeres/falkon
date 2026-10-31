@@ -77,7 +77,7 @@ const names = (r: { json: any }) => r.json.refs.map((x: any) => x.name).sort();
 const ancestry = (args: Record<string, unknown>, c = ctx()) => call("check_ancestry", { repo: R, ...args }, c);
 
 test("the two tools register after the earlier git tools", () => {
-  assert.deepEqual(gitToolNames.slice(-3), ["list_refs", "check_ancestry", "get_range_history"]);
+  assert.deepEqual(gitToolNames.slice(-4), ["list_refs", "check_ancestry", "get_range_history", "list_contributors"]);
 });
 
 // ---- list_refs ----

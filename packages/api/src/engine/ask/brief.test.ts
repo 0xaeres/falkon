@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { scopeFor } from "@falkon/shared";
-import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS } from "./brief";
+import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS, GIT_BRIEF_RECIPES } from "./brief";
 import { FILE_REFERENCE_REGEX } from "./prompt";
 
 test("research brief narrows visible repositories and gives an evidence-based workflow", () => {
@@ -62,4 +62,20 @@ test("brief stays bounded for large inventories and hostile names", () => {
   assert.ok(!hostile.includes("\n- github.com/acme/secret"), "a caller-supplied name must not inject a list line");
   assert.ok(hostile.includes("- and 450 more; not listed"));
   assert.ok(hostile.length < 20000, `brief is ${hostile.length} chars`);
+});
+
+test("git history recipes: only with gitRecipes, appended before the answer format; off keeps today's bytes; none says a missing result proves absence", () => {
+  const input = { query: "Which release first contains the fix?", scope: scopeFor(["*"]), availableRepos: ["fixtures.test/atlas"] };
+  const base = buildResearchBrief(input);
+  assert.equal(buildResearchBrief({ ...input, gitRecipes: false }), base);
+  const on = buildResearchBrief({ ...input, gitRecipes: true });
+  assert.ok(on.startsWith(base.slice(0, base.indexOf("\nWrite Markdown."))), "everything before the answer format is unchanged");
+  assert.ok(on.endsWith(base.slice(base.indexOf("Write Markdown."))), "the answer format stays last");
+  for (const t of ["list_refs", "contains", "check_ancestry", "search_diffs", "get_range_history", "coverageGaps", "PARTIAL"]) assert.ok(on.includes(t), t);
+  assert.ok(GIT_BRIEF_RECIPES.split(/\s+/).length < 260);
+  // every sentence that speaks of absence or of an empty result must deny that it is proof
+  const sentences = GIT_BRIEF_RECIPES.split(/(?<=\.)\s+/).filter((s) => /absen|empty|missing|nothing/i.test(s));
+  assert.ok(sentences.length > 0);
+  for (const s of sentences) assert.match(s, /\bnot\b|\bno\b|never|cannot|unless|open|only|without/i, s);
+  assert.doesNotMatch(GIT_BRIEF_RECIPES, /proves? (that )?(it|the|there)|means (that )?(it|the) .*(does not exist|never)/i);
 });

@@ -63,21 +63,21 @@ test("git flag off (unset, off, ON, 1, empty), with or without the history flag:
   }
 });
 
-test("git flag on: the six git tools follow the existing tools; with the history flag they follow the pull request tools", async () => {
+test("git flag on: the seven git tools follow the existing tools; with the history flag they follow the pull request tools", async () => {
   let s = await connect("on");
   try {
     const tools = (await s.client.listTools()).tools;
     assert.equal(JSON.stringify(tools.slice(0, core.length)), JSON.stringify(core));
-    assert.deepEqual(tools.slice(core.length).map((t) => t.name), ["search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history"]);
+    assert.deepEqual(tools.slice(core.length).map((t) => t.name), ["search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history", "list_contributors"]);
     snapshot("registration-git", tools.slice(core.length));
     assert.ok(tools.slice(core.length).every((t) => t.annotations?.readOnlyHint === true));
-    assert.doesNotMatch(s.client.getInstructions() ?? "", /search_commits|search_diffs|compare_revisions|list_refs|check_ancestry|get_range_history/, "server instructions unchanged");
+    assert.doesNotMatch(s.client.getInstructions() ?? "", /search_commits|search_diffs|compare_revisions|list_refs|check_ancestry|get_range_history|list_contributors/, "server instructions unchanged");
   } finally { await s.close(); }
   s = await connect("on", "on");
   try {
     const tools = (await s.client.listTools()).tools;
-    assert.deepEqual(tools.slice(core.length).map((t) => t.name), ["get_pull_request", "search_discussions", "get_provenance", "search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history"]);
-    assert.equal(JSON.stringify(tools.slice(core.length, -6)), JSON.stringify(contract("registration-history")));
+    assert.deepEqual(tools.slice(core.length).map((t) => t.name), ["get_pull_request", "search_discussions", "get_provenance", "search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history", "list_contributors"]);
+    assert.equal(JSON.stringify(tools.slice(core.length, -7)), JSON.stringify(contract("registration-history")));
     snapshot("registration-git-history", tools.slice(core.length));
   } finally { await s.close(); }
 });
@@ -130,4 +130,19 @@ test("git flag on: list_refs and check_ancestry answer from the clone and refuse
     for (const [name, args] of [["list_refs", { contains: "--all" }], ["list_refs", { count: 501 }], ["check_ancestry", { repo: REPO, ancestor: "-x", descendant: "HEAD" }], ["check_ancestry", { repo: REPO, ancestor: "HEAD" }]] as const)
       assert.equal((await call(name, args)).isError, true, JSON.stringify(args));
   } finally { await s.close(); }
+});
+
+test("research brief: the git recipes appear only with the git flag; with it off the brief is today's, byte for byte", async () => {
+  const brief = async (flag: string | undefined) => {
+    const s = await connect(flag, undefined, [REPO]);
+    try {
+      const r = await s.client.callTool({ name: "research_codebase", arguments: { query: "Which release first has the fix?" } });
+      return (r.content as { text: string }[])[0]!.text;
+    } finally { await s.close(); }
+  };
+  const off = await brief(undefined), on = await brief("on");
+  assert.equal(await brief("off"), off);
+  assert.doesNotMatch(off, /list_refs|check_ancestry/);
+  assert.match(on, /list_refs[\s\S]*check_ancestry[\s\S]*not proof/);
+  assert.equal(on.replace(/\nThe git history tools are on[\s\S]*?\n(?=\nWrite Markdown)/, ""), off);
 });

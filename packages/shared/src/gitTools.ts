@@ -657,9 +657,82 @@ function declarations(lines: string[]) {
   return files;
 }
 
+// ---- list_contributors ----
+
+const CONTRIB_COUNT = 20, IDENTITIES_PER_REPO = 5;
+const CONTRIB_NOTE = "Counts are per author name and email pair, as git prints them after the repository's .mailmap. Falkon does not merge people: one person with two emails or two spellings of a name appears in separate rows.";
+
+const listContributors = define({
+  name: "list_contributors",
+  description: t.list_contributors!.description,
+  isReadOnly: true,
+  isIdempotent: true,
+  inputSchema: z.object({
+    repos: z.array(z.string().min(1).max(300)).max(200).describe(p("list_contributors", "repos")).optional(),
+    revisions: z.array(z.string().max(300)).max(20).describe(p("list_contributors", "revisions")).optional(),
+    authors: z.array(term).max(5).describe(p("list_contributors", "authors")).optional(),
+    files: z.array(z.string().min(1).max(500)).max(20).describe(p("list_contributors", "files")).optional(),
+    after: z.string().describe(p("list_contributors", "after")).optional(),
+    before: z.string().describe(p("list_contributors", "before")).optional(),
+    count: z.number().int().min(1).max(100).describe(p("list_contributors", "count")).optional().default(CONTRIB_COUNT),
+  }).strict(),
+  async execute(a, ctx) {
+    const count = a.count ?? CONTRIB_COUNT, byRepo = !!a.authors?.length;
+    const v = checkFilters(a);
+    // %aN and %aE apply the .mailmap, as `git shortlog -sne` does; one line per commit, so a cut run costs only its last line
+    const argv = logArgv(a, v, ["--format=%aN%x1f%aE"], []);
+    const lim = { ...GIT_LIMITS, ...ctx.deps.gitLimits };
+    const { names, repos, gaps } = await pickRepos(a.repos, ctx, lim);
+    const ran = await fanOut(repos, async (r, timeoutMs) => {
+      const g = await runGit(r.path, argv, { maxBytes: lim.repoBytes, timeoutMs });
+      const empty = g.code === 128 && /does not have any commits yet/.test(g.stderr);
+      const lines = g.stdout.split("\n");
+      lines.pop(); // after the last newline: empty when git finished, a partial line when it was cut
+      const ids = new Map<string, { name: string; email: string; commits: number }>();
+      for (const l of lines) {
+        const [name = "", email = ""] = l.split("\x1f");
+        const id = ids.get(l) ?? { name, email, commits: 0 };
+        id.commits++;
+        ids.set(l, id);
+      }
+      return { g, empty, ids: [...ids.values()] };
+    }, lim);
+    const totals = new Map<string, { name: string; email: string; commits: number }>(), perRepo: { repo: string; commits: number; ids: { name: string; email: string; commits: number }[] }[] = [];
+    const noCommits: string[] = [];
+    let counted = 0;
+    const order = (x: { commits: number; name: string; email: string }, y: typeof x) => y.commits - x.commits || x.name.localeCompare(y.name) || x.email.localeCompare(y.email);
+    for (const [r, { g, empty, ids }] of ran.done) {
+      if (empty) { noCommits.push(r.name); continue; }
+      const gap = runGap(r.name, g, lim);
+      if (gap) gaps.push(gap);
+      const commits = ids.reduce((n, i) => n + i.commits, 0);
+      counted += commits;
+      if (commits) perRepo.push({ repo: r.name, commits, ids: ids.sort(order) });
+      for (const i of ids) { const k = `${i.name}\x1f${i.email}`, t = totals.get(k); if (t) t.commits += i.commits; else totals.set(k, { ...i }); }
+    }
+    for (const r of ran.late) gaps.push(`${r.name}: not started before the ${lim.totalMs / 1000} second deadline`);
+
+    const partial = gaps.length > 0;
+    const filters = { repos: names, revisions: a.revisions ?? ["HEAD"], authors: a.authors, files: a.files, after: a.after, before: a.before, count };
+    const summary = [
+      partial ? "PARTIAL: at least one repository was not read in full (see coverageGaps). Where a limit stopped git, only its newest commits were counted, so those counts are lower bounds and the order may be wrong. Do not present this as complete." : "",
+      counted ? `${counted} commits counted in ${perRepo.length} repositories.` : "No commits matched in what was read. A window with no commits, a path that never existed and an author who wrote nothing there all look the same.",
+      noCommits.length ? `Repositories with no commits yet: ${noCommits.join(", ")}.` : "",
+      CONTRIB_NOTE,
+    ].filter(Boolean).join(" ");
+    if (byRepo) {
+      const items = perRepo.sort((x, y) => y.commits - x.commits || x.repo.localeCompare(y.repo)).slice(0, count)
+        .map(({ repo, commits, ids }) => ({ repo, commits, identities: ids.slice(0, IDENTITIES_PER_REPO), ...(ids.length > IDENTITIES_PER_REPO ? { moreIdentities: ids.length - IDENTITIES_PER_REPO } : {}) }));
+      return { output: listAnswer("repositories", items, perRepo.length, filters, names.length, gaps, summary) };
+    }
+    const all = [...totals.values()].sort(order);
+    return { output: listAnswer("authors", all.slice(0, count), all.length, filters, names.length, gaps, summary) };
+  },
+});
+
 // ---- registry ----
 
-export const gitToolDefinitions = { search_commits: searchCommits, search_diffs: searchDiffs, compare_revisions: compareRevisions, list_refs: listRefs, check_ancestry: checkAncestry, get_range_history: getRangeHistory } as const;
+export const gitToolDefinitions = { search_commits: searchCommits, search_diffs: searchDiffs, compare_revisions: compareRevisions, list_refs: listRefs, check_ancestry: checkAncestry, get_range_history: getRangeHistory, list_contributors: listContributors } as const;
 
 /** In MCP registration order, after the pull request history tools. */
 export const gitToolNames = Object.keys(gitToolDefinitions) as (keyof typeof gitToolDefinitions)[];

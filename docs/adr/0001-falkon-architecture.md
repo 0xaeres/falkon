@@ -55,6 +55,7 @@ Each capability ships only after it beats the engine without it on its own quest
 | [4.9](#49-zoekt-upstream-probe-d10) | Probe upstream Zoekt before forking. |
 | [4.10](#410-no-regression-d11) | A slice lands only when the four-check regression gate passes. |
 | [4.11](#411-provenance-store-and-pull-request-import-d106-d107-d110-to-d114) | Pull requests in Postgres behind `ProvenanceStore`, loaded through `DiscussionSource`, commits linked and checked against the clone. |
+| [4.12](#412-git-history-tools-d167-d170-d176) | Seven vanilla git history tools behind `MCP_GIT_TOOLS`, one bound for all of them, read from the local clones only. |
 
 ---
 
@@ -319,6 +320,16 @@ Decisions in force: D106, D107, D110 to D114 and, for the live sync, D115 to D12
 - **Reads** take the caller's effective set and are bounded: at most 500 comments, files or links per call (the tools must say when a cap was reached); search ANDs at most 8 words as literal case-insensitive substrings (plain `ILIKE`, no extension) over title, body, head branch and comments, at most 20 hits a page, under a 2 s statement timeout. They read only Postgres; the tools that use them may add the local clone, never the code host. Isolation is P12 ([7](#7-product-isolation-enforcement-points)).
 
 **Why.** D106 keeps one store and its transactions; the port keeps the planned move to the graph database an adapter change. Checking every commit against the clone means a link never points at a commit the Product cannot read.
+
+---
+
+### 4.12 Git history tools (D167, D170, D176)
+
+**Decision (2026-10-31).** Seven vanilla tools read git history from the bare clones: `search_commits`, `search_diffs`, `compare_revisions`, `list_refs`, `check_ancestry`, `get_range_history` and `list_contributors` (`packages/shared/src/gitTools.ts`, wording in `gitToolText.json`). They need no model and never call the code host. The operator flag `MCP_GIT_TOOLS=on` registers them after the pull request tools; with the flag unset or any other value the registration bytes are those of 4.2 and 4.11. The same flag appends short history recipes to the brief that `research_codebase` and the `ask_codebase` prompt return: finding the release that contains a commit, finding the versions that carry a flaw, and never reading a missing result as proof of absence. Nothing is added to the server instructions.
+
+**One bound.** Every tool runs git through `runGit` (`gitRun.ts`), which uses `spawn` and kills the child at a byte or time limit and returns what was read with the limit that fired. The limits are the constants of `GIT_LIMITS`: 4 repositories at a time, at most 50 repositories per call, 15 seconds and 4 MB of git output per repository, 40 seconds for the call, and about 24 KB of JSON per answer. A stopped repository is a `coverageGaps` entry, never a silent short list; a cut last record is dropped. `list_contributors` says PARTIAL in its summary when any repository was stopped, because counts from a cut run are lower bounds. Tests lower the limits through `ToolDeps.gitLimits`.
+
+**Amendments in the same cycle.** `get_diff` (a current tool) now stops git at a read limit and keeps at most 30,000 bytes of the diff, the first 75% and the last 25% with a marker stating the bytes removed; a diff under the cap is unchanged, and it times out after the per-repository limit instead of waiting (D176). The incremental fetch reads `+refs/heads/*` and `+refs/tags/*` with pruning limited to those two namespaces, so a tag no branch reaches arrives, and a tag deleted or moved on the host follows in the clone (D170, S77); the layout of clones and shards is unchanged.
 
 ---
 
