@@ -3,9 +3,10 @@ import { test } from "node:test";
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { EVAL_DIR, datasetSchema, loadDataset, loadProduct, readRaw, writeRaw, type Raw } from "./data.js";
+import { EVAL_DIR, type Arm, datasetSchema, loadDataset, loadProduct, readRaw, writeRaw, type Raw } from "./data.js";
 import { existsSync } from "node:fs";
-import { backendOf, config, lineCounter, main, pilotIds } from "./cli.js";
+import { backendOf, config, lineCounter, main, pilotIds, stackChoice } from "./cli.js";
+import { GIT_HISTORY_TOOLS } from "./harness.js";
 import { goldPaths } from "./preflight.js";
 
 // Pointing the checkouts at a missing directory proves the listing never touches them (or the network or the model).
@@ -290,7 +291,7 @@ test("clone-tools-git-history routes to the --git-history on stack and requires 
   assert.deepEqual([b.id, b.url, b.instructions, b.requireTools?.length], ["githistory", "http://127.0.0.1:4404/mcp/o3", true, 7]);
   assert.equal(backendOf("clone-tools-git-history", config({}), {}).url, "http://127.0.0.1:3404/mcp/o3");
   assert.equal(backendOf("clone-tools-git", config({}), {}).requireTools, undefined);
-  await assert.rejects(main(["stack", "up", "--git-history", "on", "--prs", "on"], {}), /separate stacks/);
+  await assert.rejects(main(["stack", "up", "--git-history", "on", "--recipe", "on"], {}), /separate stacks/);
   await assert.rejects(main(["stack", "up", "--git-history", "off"], {}), /--git-history must be on/);
   await withRuns(async (runs) => {
     assert.match(await main(["pilot", "--list", "--arms", "clone-tools-git-history"], env(runs)), /clone-tools-git-history: .*mcp__falkon__search_commits,mcp__falkon__search_diffs,mcp__falkon__compare_revisions,mcp__falkon__list_refs,mcp__falkon__check_ancestry,mcp__falkon__get_range_history,mcp__falkon__list_contributors/);
@@ -304,5 +305,37 @@ test("the pilot stops when the git-history arm called none of the new tools (the
     assert.match(await main(["report", "--pilot", "--arms", "clone-tools-git-history"], env(runs)), /STOP: .*new git history tool/);
     write(runs, { search_commits: 1 });
     assert.match(await main(["report", "--pilot", "--arms", "clone-tools-git-history"], env(runs)), /PASS: .*new git history tool/);
+  });
+});
+
+test("the combined arm routes to its own stack and requires all ten tools; only --prs on with --git-history on may be combined", async () => {
+  const b = backendOf("clone-tools-git-history-prs", config({ EVAL_GITHISTORYPRS_PORT: "4405" }), {});
+  assert.deepEqual([b.id, b.url, b.instructions, b.requireTools?.length], ["githistoryprs", "http://127.0.0.1:4405/mcp/o3", true, 10]);
+  for (const t of ["get_pull_request", "search_discussions", "get_provenance", ...GIT_HISTORY_TOOLS]) assert.ok(b.requireTools?.includes(t), t);
+  const ports = ["clone-tools", "clone-tools-noinstr", "clone-tools-recipe", "clone-tools-git-prs", "clone-tools-git-history", "clone-tools-git-history-prs"].map((a) => backendOf(a as Arm, config({}), {}).url);
+  assert.equal(new Set(ports).size, 6);
+  assert.equal(backendOf("clone-tools-git-history-prs", config({}), {}).url, "http://127.0.0.1:3405/mcp/o3");
+  const cfg = config({}), choose = (...a: string[]) => stackChoice(a, cfg, {});
+  const both = choose("--prs", "on", "--git-history", "on"), reversed = choose("--git-history", "on", "--prs", "on");
+  assert.deepEqual([both.project, both.port, both.prs, both.gitHistory], ["falkon-eval-githistory-prs", 3405, "on", "on"]);
+  assert.deepEqual(reversed, both);
+  assert.match(both.stateDir, /stack-githistory-prs$/);
+  const prs = choose("--prs", "on"), hist = choose("--git-history", "on");
+  assert.deepEqual([prs.project, prs.gitHistory, hist.project, hist.prs], ["falkon-eval-prs", undefined, "falkon-eval-githistory", undefined]);
+  assert.equal(new Set([both.stateDir, prs.stateDir, hist.stateDir]).size, 3);
+  for (const bad of [["--prs", "on", "--git-history", "on", "--recipe", "on"], ["--prs", "on", "--git-history", "on", "--instructions", "off"], ["--prs", "on", "--recipe", "on"]]) assert.throws(() => choose(...bad), /separate stacks/);
+  assert.throws(() => choose("--prs", "on", "--git-history", "off"), /--git-history must be on/);
+  await withRuns(async (runs) => {
+    assert.match(await main(["pilot", "--list", "--arms", "clone-tools-git-history-prs"], env(runs)), /clone-tools-git-history-prs: .*mcp__falkon__get_pull_request,mcp__falkon__search_discussions,mcp__falkon__get_provenance,mcp__falkon__search_commits,.*mcp__falkon__list_contributors/);
+  });
+});
+
+test("the pilot stops when the combined arm called none of the seven new tools", async () => {
+  const write = (runs: string, toolCalls: Record<string, number>) => { for (const id of pilotIds(loadDataset("openmrs-xrepo"))) writeRaw(join(runs, "openmrs-xrepo"), run(id, "clone-tools-git-history-prs", { firstTool: "grep", toolCalls })); };
+  await withRuns(async (runs) => {
+    write(runs, { grep: 2, get_pull_request: 1 });
+    assert.match(await main(["report", "--pilot", "--arms", "clone-tools-git-history-prs"], env(runs)), /STOP: .*new git history tool.*clone-tools-git-history-prs/);
+    write(runs, { search_commits: 1 });
+    assert.match(await main(["report", "--pilot", "--arms", "clone-tools-git-history-prs"], env(runs)), /PASS: .*new git history tool/);
   });
 });

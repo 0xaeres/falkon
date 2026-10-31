@@ -1,5 +1,5 @@
 import { SEED, goldOf, type Arm, type Dataset, type Raw } from "./data.js";
-import { GIT_HISTORY_TOOLS } from "./harness.js";
+import { GIT_HISTORY_TOOLS, PR_TOOLS, hasHistoryTools } from "./harness.js";
 import { bootstrapCI, scoreAnswer, type Gold } from "./score.js";
 
 /** `floor` holds the reference runs: the recorded Sonnet floor, or the v6-tools runs of the model's own directory. */
@@ -45,7 +45,8 @@ export function report({ datasets, accepted, split, arms, model = "sonnet", refe
     const totals: Record<string, number> = {};
     for (const r of runs) for (const [tool, n] of Object.entries(r.toolCalls ?? {})) totals[tool] = (totals[tool] ?? 0) + n;
     lines.push(`Tool calls ${arm}: ${Object.entries(totals).sort().map(([k, v]) => `${k} ${v}`).join(", ") || "none"}.`);
-    if (arm === "clone-tools-git-history") lines.push(`New tool calls ${arm}: ${GIT_HISTORY_TOOLS.map((t) => `${t} ${totals[t] ?? 0}`).join(", ")}.`);
+    if (hasHistoryTools(arm)) lines.push(`New tool calls ${arm}: ${GIT_HISTORY_TOOLS.map((t) => `${t} ${totals[t] ?? 0}`).join(", ")}.`);
+    if (arm === "clone-tools-git-history-prs") lines.push(`PR tool calls ${arm}: ${PR_TOOLS.map((t) => `${t} ${totals[t] ?? 0}`).join(", ")}.`);
     // Spans dropped because their path is not in the corpus; stored runs from before the field exist are unknown, not zero.
     const unknown = runs.filter((r) => r.droppedSpans === undefined).length;
     lines.push(`Dropped spans ${arm}: ${runs.reduce((n, r) => n + (r.droppedSpans ?? 0), 0)}${unknown ? ` (unknown for ${unknown} of ${runs.length} runs)` : ""}.`);
