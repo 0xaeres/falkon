@@ -63,21 +63,21 @@ test("git flag off (unset, off, ON, 1, empty), with or without the history flag:
   }
 });
 
-test("git flag on: search_commits follows the existing tools; with the history flag it follows the pull request tools", async () => {
+test("git flag on: the three git tools follow the existing tools; with the history flag they follow the pull request tools", async () => {
   let s = await connect("on");
   try {
     const tools = (await s.client.listTools()).tools;
     assert.equal(JSON.stringify(tools.slice(0, core.length)), JSON.stringify(core));
-    assert.deepEqual(tools.slice(core.length).map((t) => t.name), ["search_commits"]);
+    assert.deepEqual(tools.slice(core.length).map((t) => t.name), ["search_commits", "search_diffs", "compare_revisions"]);
     snapshot("registration-git", tools.slice(core.length));
     assert.ok(tools.slice(core.length).every((t) => t.annotations?.readOnlyHint === true));
-    assert.doesNotMatch(s.client.getInstructions() ?? "", /search_commits/, "server instructions unchanged");
+    assert.doesNotMatch(s.client.getInstructions() ?? "", /search_commits|search_diffs|compare_revisions/, "server instructions unchanged");
   } finally { await s.close(); }
   s = await connect("on", "on");
   try {
     const tools = (await s.client.listTools()).tools;
-    assert.deepEqual(tools.slice(core.length).map((t) => t.name), ["get_pull_request", "search_discussions", "get_provenance", "search_commits"]);
-    assert.equal(JSON.stringify(tools.slice(core.length, -1)), JSON.stringify(contract("registration-history")));
+    assert.deepEqual(tools.slice(core.length).map((t) => t.name), ["get_pull_request", "search_discussions", "get_provenance", "search_commits", "search_diffs", "compare_revisions"]);
+    assert.equal(JSON.stringify(tools.slice(core.length, -3)), JSON.stringify(contract("registration-history")));
     snapshot("registration-git-history", tools.slice(core.length));
   } finally { await s.close(); }
 });
@@ -95,5 +95,22 @@ test("git flag on: a call answers from the clone, a repository outside the scope
     const hidden = JSON.parse((await call({ repos: [OTHER] })).text);
     assert.deepEqual([hidden.commits, hidden.coverageGaps], [[], [`repository "${OTHER}" not found`]]);
     for (const args of [{ count: 0 }, { count: 101 }, { revisions: ["--all"] }, { contentTerms: ["x"] }, { unknown: 1 }]) assert.equal((await call(args)).isError, true, JSON.stringify(args));
+  } finally { await s.close(); }
+});
+
+test("git flag on: search_diffs and compare_revisions answer from the clone and refuse bad arguments", async () => {
+  const s = await connect("on", undefined, [REPO]);
+  try {
+    const call = async (name: string, args: Record<string, unknown>) => {
+      const r = await s.client.callTool({ name, arguments: args });
+      return { isError: r.isError === true, text: (r.content as { text: string }[]).map((c) => c.text).join("\n") };
+    };
+    const found = await call("search_diffs", { repos: [REPO], terms: ["x"] });
+    assert.deepEqual([found.isError, JSON.parse(found.text).commits[0].matches[0].side], [false, "added"]);
+    const same = await call("compare_revisions", { repo: REPO, base: "HEAD", head: "HEAD" });
+    assert.deepEqual([same.isError, JSON.parse(same.text).files], [false, []]);
+    assert.equal((await call("compare_revisions", { repo: OTHER, base: "HEAD", head: "HEAD" })).isError, true, "outside the scope");
+    for (const [name, args] of [["search_diffs", { terms: ["x"] }], ["search_diffs", { repos: [REPO], terms: [] }], ["compare_revisions", { repo: REPO, base: "-x", head: "HEAD" }], ["compare_revisions", { repo: REPO, base: "HEAD", head: "HEAD", perPage: 101 }]] as const)
+      assert.equal((await call(name, args)).isError, true, JSON.stringify(args));
   } finally { await s.close(); }
 });
