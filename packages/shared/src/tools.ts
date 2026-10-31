@@ -8,6 +8,7 @@ import { qRepo, type Q } from "./ir";
 import { searchIR, type SearchResponse } from "./zoekt";
 import type { Scope } from "./access";
 import type { ProvenanceStore } from "./provenance";
+import { cutMiddle, GIT_LIMITS, runGit } from "./gitRun";
 import text from "./toolText.json" with { type: "json" };
 
 /**
@@ -663,6 +664,10 @@ const listRepos = define({
   },
 });
 
+/** `get_diff` shows at most this many bytes (D176, set at gate 1); git is stopped after four times as many, so the end of a huge diff is never read. */
+const GET_DIFF_MAX_BYTES = 30_000;
+const GET_DIFF_READ_BYTES = 4 * GET_DIFF_MAX_BYTES;
+
 const getDiff = define({
   name: "get_diff",
   description: t.get_diff!.description,
@@ -678,14 +683,21 @@ const getDiff = define({
     if (!isGitRefValid(base)) throw invalidGitRef(base);
     if (!isGitRefValid(head)) throw invalidGitRef(head);
     const r = await repoOrThrow(ctx, repo);
-    let raw: string;
+    // git is killed once GET_DIFF_READ_BYTES are read (D176); the bytes over GET_DIFF_MAX_BYTES of the formatted diff are cut from the middle.
+    const lim = { ...GIT_LIMITS, ...ctx.deps.gitLimits };
+    let g;
     try {
-      raw = await git(r).raw(["diff", base, head, ...(path ? ["--", path] : [])]);
+      g = await runGit(r.path, ["diff", base, head, ...(path ? ["--", path] : [])], { maxBytes: GET_DIFF_READ_BYTES + 1, timeoutMs: lim.repoMs });
     } catch (e) {
-      const m = e instanceof Error ? e.message : String(e);
-      if (m.includes("unknown revision") || m.includes("bad revision")) throw invalidGitRef(`${base}..${head}`);
-      throw unexpected(`Failed to compute diff for ${repo}: ${m}`);
+      throw unexpected(`Failed to compute diff for ${repo}: ${e}`); // git could not be started, for example an argument holds a NUL
     }
+    if (g.limit === "time") throw unexpected(`The git diff for ${repo} timed out after ${lim.repoMs / 1000} seconds. Ask for one file with path, or for refs that are closer together.`);
+    if (!g.limit && g.code !== 0) {
+      if (g.stderr.includes("unknown revision") || g.stderr.includes("bad revision")) throw invalidGitRef(`${base}..${head}`);
+      throw unexpected(`Failed to compute diff for ${repo}: ${g.stderr || "git did not run"}`);
+    }
+    const read = g.limit === "bytes";
+    const raw = read ? g.stdout.replace(/\ufffd$/, "") : g.stdout;
     let out = "";
     const sources: ToolSource[] = [];
     for (const f of parseDiff(raw)) {
@@ -703,7 +715,8 @@ const getDiff = define({
         out += `@@ -${h.oldStart},${h.oldLines} +${h.newStart},${h.newLines} @@${heading ? ` ${heading}` : ""}\n${body}${body.endsWith("\n") ? "" : "\n"}`;
       }
     }
-    return { output: out, sources };
+    const stopped = read ? `\n[git was stopped after reading ${GET_DIFF_READ_BYTES} bytes of the diff; the rest of the diff was not read]\n` : "";
+    return { output: cutMiddle(out, GET_DIFF_MAX_BYTES) + stopped, sources };
   },
 });
 

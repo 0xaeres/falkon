@@ -6,7 +6,8 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { before, after } from "node:test";
 import { scopeFor } from "./access";
-import { fanOut, gitToolDefinitions, runGit } from "./gitTools";
+import { fanOut, gitToolDefinitions } from "./gitTools";
+import { runGit } from "./gitRun";
 import type { ToolContext, ToolRepo } from "./tools";
 
 const cwd = os.tmpdir();
@@ -16,6 +17,12 @@ test("runGit: returns what git printed and no limit flag", async () => {
   assert.match(r.stdout, /^git version/);
   assert.equal(r.limit, undefined);
   assert.equal(r.code, 0);
+});
+
+test("runGit: a failing git hands back its error text", async () => {
+  const r = await runGit(cwd, ["log", "--no-such-flag"], { maxBytes: 1000, timeoutMs: 5000 });
+  assert.match(r.stderr, /^fatal: /);
+  assert.equal((await runGit(cwd, ["--version"], { maxBytes: 1000, timeoutMs: 5000 })).stderr, "");
 });
 
 test("runGit: kills git at the byte limit and says so", async () => {
