@@ -128,11 +128,11 @@ function runGap(name: string, g: GitRun, lim: Lim, what = "its commits") {
  * The JSON answer for a list tool, kept under the byte cap: trim the items first, then the echo of the filters, then the gaps.
  * `items` is the newest-first list already cut to `count`; `found` is how many existed.
  */
-function listAnswer<T>(key: string, items: T[], found: number, filters: Record<string, unknown>, repoCount: number, gaps: string[]) {
+function listAnswer<T>(key: string, items: T[], found: number, filters: Record<string, unknown>, repoCount: number, gaps: string[], summary?: string) {
   const truncated: string[] = [];
   let shown = items;
   if (found > shown.length) truncated.push(`${key}: showing ${shown.length} of ${found} found`);
-  const out = () => ({ [key]: shown, filters, coverageGaps: gaps, truncated });
+  const out = () => ({ ...(summary ? { summary } : {}), [key]: shown, filters, coverageGaps: gaps, truncated });
   const over = () => bytes(out()) > GIT_LIMITS.answerBytes;
   const cut = (what: string) => truncated.push(`${what}: answer byte cap reached`);
   if (over()) {
@@ -142,6 +142,24 @@ function listAnswer<T>(key: string, items: T[], found: number, filters: Record<s
   if (over()) { filters = { repos: repoCount, note: "filters not echoed" }; cut("filters"); }
   if (over()) { const n = gaps.length; while (gaps.length && over()) gaps.length = Math.floor(gaps.length / 2); gaps.push(`${n - gaps.length} more gaps not shown`); cut("coverageGaps"); }
   return JSON.stringify(out());
+}
+
+/** One time allowance for all the git runs of a single-repository call; a run that hits it is an error saying `what` was being done. */
+function timedGit(cwd: string, lim: Lim, what: string) {
+  const deadline = Date.now() + lim.repoMs;
+  return async (argv: string[], maxBytes = lim.repoBytes) => {
+    const g = await runGit(cwd, argv, { maxBytes, timeoutMs: Math.max(1, deadline - Date.now()) });
+    if (g.limit === "time") throw new Error(`git timed out after ${lim.repoMs / 1000} seconds ${what}`);
+    return g;
+  };
+}
+
+/** The commit a revision names (a tag is followed to its commit), or why it does not name one. */
+async function resolveCommit(git: (argv: string[], maxBytes: number) => Promise<GitRun>, rev: string): Promise<{ sha: string } | { run: GitRun; reason: string }> {
+  const g = await git(["rev-parse", "--verify", "--end-of-options", `${rev}^{commit}`], 2000);
+  const sha = g.stdout.trim();
+  if (g.code === 0 && sha) return { sha };
+  return { run: g, reason: /ambiguous/.test(g.stderr) ? "ambiguous: more than one object starts with these characters, give more of them" : "not found in this repository" };
 }
 
 // ---- search_commits ----
@@ -336,21 +354,14 @@ const compareRevisions = define({
     if (bad !== undefined) throw new Error(`File "${bad}" is not accepted: no ".." segments or NUL.`);
     const r = await repoOrThrow(ctx, a.repo);
     const lim = { ...GIT_LIMITS, ...ctx.deps.gitLimits };
-    const deadline = Date.now() + lim.repoMs;
     const gaps: string[] = [], truncated: string[] = [];
-    // One time allowance for all the git runs of this call.
-    const git = async (argv: string[], maxBytes = lim.repoBytes) => {
-      const g = await runGit(r.path, argv, { maxBytes, timeoutMs: Math.max(1, deadline - Date.now()) });
-      if (g.limit === "time") throw new Error(`git timed out after ${lim.repoMs / 1000} seconds comparing ${a.base} and ${a.head} in "${a.repo}"; try fewer files or closer revisions.`);
-      return g;
-    };
+    const git = timedGit(r.path, lim, `comparing ${a.base} and ${a.head} in "${a.repo}"; try fewer files or closer revisions.`);
 
     const commits: string[] = [];
     for (const rev of revs) {
-      const g = await git(["rev-parse", "--verify", "--quiet", "--end-of-options", `${rev}^{commit}`], 200);
-      const sha = g.stdout.trim();
-      if (g.code !== 0 || !sha) throw new Error(`Revision "${rev}" not found in repository "${a.repo}".`);
-      commits.push(sha);
+      const x = await resolveCommit(git, rev);
+      if (!("sha" in x)) throw new Error(`Revision "${rev}" not found in repository "${a.repo}".`);
+      commits.push(x.sha);
     }
     const [from, to] = commits as [string, string];
     const paths = a.files?.length ? ["--", ...a.files] : [];
@@ -403,9 +414,95 @@ const compareRevisions = define({
   },
 });
 
+// ---- list_refs ----
+
+const REF_COUNT = 100, REF_FORMAT = "--format=%(refname)%1f%(objectname)%1f%(objecttype)%1f%(*objectname)%1f%(*objecttype)%1f%(creatordate:unix)";
+const REF_KINDS = { heads: ["refs/heads/"], tags: ["refs/tags/"], both: ["refs/heads/", "refs/tags/"] } as const;
+
+const listRefs = define({
+  name: "list_refs",
+  description: t.list_refs!.description,
+  isReadOnly: true,
+  isIdempotent: true,
+  inputSchema: z.object({
+    repos: z.array(z.string().min(1).max(300)).max(200).describe(p("list_refs", "repos")).optional(),
+    kind: z.enum(["heads", "tags", "both"]).describe(p("list_refs", "kind")).optional().default("both"),
+    contains: z.string().max(300).describe(p("list_refs", "contains")).optional(),
+    count: z.number().int().min(1).max(500).describe(p("list_refs", "count")).optional().default(REF_COUNT),
+  }).strict(),
+  async execute(a, ctx) {
+    const kind = a.kind ?? "both", count = a.count ?? REF_COUNT;
+    const contains = a.contains === undefined ? undefined : oneRevision(a.contains);
+    const lim = { ...GIT_LIMITS, ...ctx.deps.gitLimits };
+    const { names, repos, gaps } = await pickRepos(a.repos, ctx, lim);
+    const ran = await fanOut(repos, async (r, timeoutMs) => {
+      const deadline = Date.now() + timeoutMs;
+      const git = (argv: string[], maxBytes: number) => runGit(r.path, argv, { maxBytes, timeoutMs: Math.max(1, deadline - Date.now()) });
+      let sha: string | undefined;
+      if (contains !== undefined) {
+        const x = await resolveCommit(git, contains);
+        if (!("sha" in x)) return { gap: x.run.limit ? runGap(r.name, x.run, lim, "its refs") : `${r.name}: revision "${contains}" could not be resolved: ${x.reason}`, refs: [] };
+        sha = x.sha;
+      }
+      const g = await git(["for-each-ref", "--sort=refname", "--sort=-creatordate", REF_FORMAT, ...(sha ? [`--contains=${sha}`] : []), ...REF_KINDS[kind]], lim.repoBytes);
+      const lines = g.stdout.split("\n");
+      if (g.limit) lines.pop(); // a cut run ends inside a record
+      return { gap: runGap(r.name, g, lim, "its refs"), refs: lines.filter(Boolean).map((l) => parseRef(r.name, l)) };
+    }, lim);
+    const all = [];
+    for (const [, { gap, refs }] of ran.done) { if (gap) gaps.push(gap); all.push(...refs); }
+    for (const r of ran.late) gaps.push(`${r.name}: not started before the ${lim.totalMs / 1000} second deadline`);
+
+    all.sort((x, y) => y.ts - x.ts || x.repo.localeCompare(y.repo) || x.name.localeCompare(y.name) || x.kind.localeCompare(y.kind));
+    const filters = { repos: names, kind, contains: a.contains, count };
+    const summary = all.length || gaps.length ? undefined : `No ${kind === "heads" ? "branches" : kind === "tags" ? "tags" : "refs"} found${contains ? ` that contain ${contains}` : ""} in the repositories read.`;
+    return { output: listAnswer("refs", all.slice(0, count).map(({ ts: _ts, ...x }) => x), all.length, filters, names.length, gaps, summary) };
+  },
+});
+
+/** `target` is the object the ref finally reaches (a tag is followed through any chain of tags); `targetType` only when that is not a commit. */
+function parseRef(repo: string, line: string) {
+  const [ref = "", obj = "", type = "", peeled = "", peeledType = "", ts = "0"] = line.split("\x1f");
+  const kind = ref.startsWith("refs/tags/") ? "tag" : "branch", targetType = peeled ? peeledType : type;
+  return {
+    ts: Number(ts), repo, kind, name: ref.replace(/^refs\/(heads|tags)\//, ""), target: peeled || obj, ...(targetType !== "commit" ? { targetType } : {}),
+    date: new Date(Number(ts) * 1000).toISOString(),
+  };
+}
+
+// ---- check_ancestry ----
+
+const checkAncestry = define({
+  name: "check_ancestry",
+  description: t.check_ancestry!.description,
+  isReadOnly: true,
+  isIdempotent: true,
+  inputSchema: z.object({
+    repo: z.string().min(1).max(300).describe(p("check_ancestry", "repo")),
+    ancestor: z.string().max(300).describe(p("check_ancestry", "ancestor")),
+    descendant: z.string().max(300).describe(p("check_ancestry", "descendant")),
+  }).strict(),
+  async execute(a, ctx) {
+    const revs = [oneRevision(a.ancestor), oneRevision(a.descendant)];
+    const r = await repoOrThrow(ctx, a.repo);
+    const git = timedGit(r.path, { ...GIT_LIMITS, ...ctx.deps.gitLimits }, `checking "${a.ancestor}" against "${a.descendant}" in "${a.repo}".`);
+    const side: { revision: string; commit?: string }[] = [], unresolved: { revision: string; reason: string }[] = [];
+    for (const revision of revs) {
+      const x = await resolveCommit(git, revision);
+      if ("sha" in x) side.push({ revision, commit: x.sha }); else { side.push({ revision }); unresolved.push({ revision, reason: x.reason }); }
+    }
+    const answer = (result: "yes" | "no" | "unresolved", explanation: string) => JSON.stringify({ repo: a.repo, ancestor: side[0], descendant: side[1], result, explanation, ...(unresolved.length ? { unresolved } : {}) });
+    if (unresolved.length) return { output: answer("unresolved", "No answer: a revision could not be resolved, so nothing was compared.") };
+    const g = await git(["merge-base", "--is-ancestor", side[0]!.commit!, side[1]!.commit!], 200);
+    if (g.code === 0) return { output: answer("yes", side[0]!.commit === side[1]!.commit ? "Both revisions are the same commit; a commit counts as its own ancestor." : "The ancestor is reachable from the descendant.") };
+    if (g.code === 1) return { output: answer("no", "The ancestor is not reachable from the descendant (the histories diverged or are unrelated).") };
+    throw new Error(`git could not check whether "${a.ancestor}" is an ancestor of "${a.descendant}" in "${a.repo}".`);
+  },
+});
+
 // ---- registry ----
 
-export const gitToolDefinitions = { search_commits: searchCommits, search_diffs: searchDiffs, compare_revisions: compareRevisions } as const;
+export const gitToolDefinitions = { search_commits: searchCommits, search_diffs: searchDiffs, compare_revisions: compareRevisions, list_refs: listRefs, check_ancestry: checkAncestry } as const;
 
 /** In MCP registration order, after the pull request history tools. */
 export const gitToolNames = Object.keys(gitToolDefinitions) as (keyof typeof gitToolDefinitions)[];

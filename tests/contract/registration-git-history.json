@@ -418,5 +418,94 @@
     "execution": {
       "taskSupport": "forbidden"
     }
+  },
+  {
+    "name": "list_refs",
+    "description": "Lists the branches and tags of one or several repositories, newest first, each with the object it finally points at (a tag that points at another tag is followed to the end). With `contains` it answers the other question: which branches and tags have a given commit in their history. That is how to find the first release holding a fix: ask for tags only, then take the oldest.\n\nA tag that no branch reaches is listed too. The list is capped at `count` (100 by default, at most 500); when more exist the answer says how many were found. A commit that cannot be found, or that an abbreviation names twice, is reported as a gap for that repository with the reason, not as an empty result. Results come from the local clones only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "repos": {
+          "maxItems": 200,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "description": "Repositories to read, by name. Omit to read every repository you can see (the first 50). Names you cannot see are reported as not found."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "heads",
+            "tags",
+            "both"
+          ],
+          "description": "`heads` for branches, `tags` for tags, `both` (default).",
+          "default": "both"
+        },
+        "contains": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Only refs that have this commit in their history: a commit id (a unique abbreviation works), branch or tag name. Names starting with `-`, containing `..` or empty are refused."
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "description": "How many refs to return, 1 to 500 (default 100).",
+          "default": 100
+        }
+      },
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "idempotentHint": true
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "check_ancestry",
+    "description": "Says whether one revision is an ancestor of another in one repository, meaning the second contains the first's history. The answer is one of three: `yes`, `no`, or `unresolved` when a revision does not exist in the repository, is an abbreviation that matches several objects, or is too short; `unresolved` lists which revision and why, and is never a `no`. A commit is its own ancestor. Two histories with no common root give `no`.\n\nUse it to check that a fix is part of a release or a branch. Revisions may be branches, tags or commit ids; a tag counts as the commit it points at.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "description": "Full repository name."
+        },
+        "ancestor": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "The older revision: a branch, tag or commit id. Names starting with `-` or containing `..` are refused."
+        },
+        "descendant": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "The revision that should contain it, same forms as `ancestor`."
+        }
+      },
+      "required": [
+        "repo",
+        "ancestor",
+        "descendant"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "idempotentHint": true
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
   }
 ]
