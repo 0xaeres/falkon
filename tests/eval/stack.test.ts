@@ -149,3 +149,21 @@ test("--git-history on sets MCP_GIT_TOOLS and the ticket keys on the api service
     assert.ok(!JSON.stringify(other.compose.services.api).includes("DISCUSSION_TICKET_KEYS"));
   }
 });
+
+test("--prs on with --git-history on puts both flags on the api and the snapshot import on the backend, in its own project; no other stack gets either", () => {
+  const both = stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3405, project: "falkon-eval-githistory-prs", prs: "on", gitHistory: "on" });
+  const { api, backend, zoekt } = both.compose.services as unknown as Record<"api" | "backend" | "zoekt", { ports: string[]; environment: Record<string, string>; volumes: string[] }>;
+  assert.equal(both.compose.name, "falkon-eval-githistory-prs");
+  assert.deepEqual(api.ports, ["127.0.0.1:3405:3001", "127.0.0.1:3505:3002"]);
+  assert.deepEqual([api.environment.MCP_HISTORY_TOOLS, api.environment.MCP_GIT_TOOLS, api.environment.DISCUSSION_TICKET_KEYS], ["on", "on", "TRUNK,RESTWS,O3"]);
+  assert.deepEqual([backend.environment.DISCUSSIONS_SNAPSHOT_DIR, backend.environment.DISCUSSION_TICKET_KEYS], ["/discussions", "TRUNK,RESTWS,O3"]);
+  assert.ok(backend.volumes.includes("/corpus/github-snapshot:/discussions:ro"));
+  assert.ok(!JSON.stringify(zoekt).includes("/discussions") && !JSON.stringify(zoekt).includes("MCP_"));
+  // Each single-flag stack keeps only its own flag, and the combined stack's flags do not outlive the call.
+  const prsOnly = stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3403, project: "p", prs: "on" }).compose.services.api.environment as Record<string, string>;
+  const histOnly = stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3404, project: "g", gitHistory: "on" });
+  assert.deepEqual([prsOnly.MCP_HISTORY_TOOLS, prsOnly.MCP_GIT_TOOLS], ["on", undefined]);
+  assert.deepEqual([(histOnly.compose.services.api.environment as Record<string, string>).MCP_HISTORY_TOOLS, histOnly.compose.services.api.environment.MCP_GIT_TOOLS], [undefined, "on"]);
+  assert.ok(!JSON.stringify(histOnly.compose.services.backend).includes("/discussions"));
+  assert.ok(!JSON.stringify(files().compose).includes("MCP_HISTORY_TOOLS") && !JSON.stringify(files().compose).includes("MCP_GIT_TOOLS"));
+});

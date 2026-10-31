@@ -9,14 +9,18 @@ export const TOOLS = ["grep", "glob", "read_file", "list_tree", "list_repos", "f
 /** The git tools only the clone-tools-git arm may call. */
 const GIT_TOOLS = ["list_commits", "get_diff", "list_branches"];
 /** The pull request and provenance tools only the clone-tools-git-prs arm may call (D113: the hint lives in their descriptions, not the prompt). */
-const PR_TOOLS = ["get_pull_request", "search_discussions", "get_provenance"];
+export const PR_TOOLS = ["get_pull_request", "search_discussions", "get_provenance"];
 /** The seven git history tools only the clone-tools-git-history arm may call (S75 to S80); every other arm is denied them. */
 export const GIT_HISTORY_TOOLS = ["search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history", "list_contributors"];
 const DENIED_TOOLS = ["ask_codebase", "create_skill", "update_skill", "list_skills", "list_language_models"];
 const mcp = (name: string) => `mcp__${SERVER}__${name}`;
+/** Which tool families an arm has; the combined arm clone-tools-git-history-prs has all three. */
+const hasGit = (arm: Arm) => arm.startsWith("clone-tools-git");
+export const hasPrTools = (arm: Arm) => arm === "clone-tools-git-prs" || arm === "clone-tools-git-history-prs";
+export const hasHistoryTools = (arm: Arm) => arm === "clone-tools-git-history" || arm === "clone-tools-git-history-prs";
 /** MCP tool names an arm may call; only the research arm has research_codebase, the other arms are denied it. */
-const toolsFor = (arm: Arm) => arm === "clone-research" ? [...TOOLS, "research_codebase"] : arm === "clone-tools-git" ? [...TOOLS, ...GIT_TOOLS] : arm === "clone-tools-git-prs" ? [...TOOLS, ...GIT_TOOLS, ...PR_TOOLS] : arm === "clone-tools-git-history" ? [...TOOLS, ...GIT_TOOLS, ...GIT_HISTORY_TOOLS] : TOOLS;
-const deniedFor = (arm: Arm) => [...(arm === "clone-research" ? [] : ["research_codebase"]), ...(arm === "clone-tools-git" || arm === "clone-tools-git-prs" || arm === "clone-tools-git-history" ? [] : GIT_TOOLS), ...(arm === "clone-tools-git-prs" ? [] : PR_TOOLS), ...(arm === "clone-tools-git-history" ? [] : GIT_HISTORY_TOOLS)];
+const toolsFor = (arm: Arm) => [...TOOLS, ...(arm === "clone-research" ? ["research_codebase"] : []), ...(hasGit(arm) ? GIT_TOOLS : []), ...(hasPrTools(arm) ? PR_TOOLS : []), ...(hasHistoryTools(arm) ? GIT_HISTORY_TOOLS : [])];
+const deniedFor = (arm: Arm) => [...(arm === "clone-research" ? [] : ["research_codebase"]), ...(hasGit(arm) ? [] : GIT_TOOLS), ...(hasPrTools(arm) ? [] : PR_TOOLS), ...(hasHistoryTools(arm) ? [] : GIT_HISTORY_TOOLS)];
 
 const historyCommon = (question: string) => `Answer the repository question by listing every piece of evidence that answers it (all of them, since scoring is by recall), best first. End with one fenced json array of at most 20 items, each one of: {"path": "<repository-name>/<path inside the repository>", "startLine": 1, "endLine": 1} for a source span (inclusive, 1-based); {"repo": "<repository-name>", "commit": "<sha>"} for a commit; {"repo": "<repository-name>", "pr": 123} for a pull request; {"ticket": "TRUNK-1234"} for a ticket. Repo names are bare repository names, as in the placeholders, without a host prefix; for questions about why or when something changed, put only the answering change (its commit or pull request) and its ticket in the array, and describe related changes and code locations in prose; commits are SHAs of at least 7 characters; PRs are numbers; tickets are keys like TRUNK-1234. Ignore any citation format the server describes; end only with the json array described here. Do not modify files.\n\nQuestion:\n${question}`;
 
