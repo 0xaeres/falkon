@@ -144,12 +144,12 @@ function listAnswer<T>(key: string, items: T[], found: number, filters: Record<s
   return JSON.stringify(out());
 }
 
-/** One time allowance for all the git runs of a single-repository call; a run that hits it is an error saying `what` was being done. */
+/** One time allowance for all the git runs of a single-repository call; a run that hits it is an error saying `what` was being done, unless the caller takes the partial output (`soft`) and reports a gap. */
 function timedGit(cwd: string, lim: Lim, what: string) {
   const deadline = Date.now() + lim.repoMs;
-  return async (argv: string[], maxBytes = lim.repoBytes) => {
+  return async (argv: string[], maxBytes = lim.repoBytes, soft = false) => {
     const g = await runGit(cwd, argv, { maxBytes, timeoutMs: Math.max(1, deadline - Date.now()) });
-    if (g.limit === "time") throw new Error(`git timed out after ${lim.repoMs / 1000} seconds ${what}`);
+    if (g.limit === "time" && !soft) throw new Error(`git timed out after ${lim.repoMs / 1000} seconds ${what}`);
     return g;
   };
 }
@@ -465,7 +465,7 @@ const listRefs = define({
       let gap = runGap(r.name, g, lim, "its refs"), found = refs.length;
       if (refs.length >= count) { // maybe more: count them with one empty line per ref
         const n = await git(["for-each-ref", "--format=", ...select], lim.repoBytes);
-        found = n.stdout.split("\n").length - 1;
+        found = Math.max(n.stdout.split("\n").length - 1, refs.length); // a cut count is a lower bound, never below what is shown
         gap ??= runGap(r.name, n, lim, "its refs");
       }
       return { gap, refs, found };
@@ -523,9 +523,137 @@ const checkAncestry = define({
   },
 });
 
+// ---- get_range_history ----
+
+const RANGE_COUNT = 20, RANGE_MAX = 50, RANGE_DIFF_BYTES = 2000, COMMIT_FILES = 100, HUNKS_PER_FILE = 50, DECL_CHARS = 200;
+
+/** A file path for `git log -L`: from the repository root, and without the `:` that the -L argument is split at. */
+function rangePath(f: string) {
+  if (!isPathValid(f) || /^\.?\//.test(f) || f.endsWith("/") || f.includes(":")) throw new Error(`File "${f}" is not accepted: give the path from the repository root, with no "..", no leading "./" or "/", no trailing "/" and no ":".`);
+  return f;
+}
+
+const getRangeHistory = define({
+  name: "get_range_history",
+  description: t.get_range_history!.description,
+  isReadOnly: true,
+  isIdempotent: true,
+  inputSchema: z.object({
+    repo: z.string().min(1).max(300).describe(p("get_range_history", "repo")),
+    file: z.string().min(1).max(500).describe(p("get_range_history", "file")).optional(),
+    revision: z.string().max(300).describe(p("get_range_history", "revision")).optional(),
+    startLine: z.number().int().min(1).describe(p("get_range_history", "startLine")).optional(),
+    endLine: z.number().int().min(1).describe(p("get_range_history", "endLine")).optional(),
+    function: term.describe(p("get_range_history", "function")).optional(),
+    commit: z.string().max(300).describe(p("get_range_history", "commit")).optional(),
+    count: z.number().int().min(1).max(RANGE_MAX).describe(p("get_range_history", "count")).optional().default(RANGE_COUNT),
+  }).strict(),
+  async execute(a, ctx) {
+    const count = a.count ?? RANGE_COUNT;
+    if (a.file !== undefined) rangePath(a.file);
+    if (a.commit !== undefined && (a.revision !== undefined || a.function !== undefined || a.startLine !== undefined || a.endLine !== undefined)) throw new Error("With `commit`, give no revision, function or line range.");
+    if (a.function?.includes(":")) throw new Error('A function name cannot contain ":" (git splits the -L argument there); give the part after the last ":".');
+    if (a.commit === undefined) {
+      if (a.file === undefined) throw new Error("Give `file` (the path from the repository root).");
+      if ((a.startLine === undefined) !== (a.endLine === undefined)) throw new Error("Give both startLine and endLine.");
+      if ((a.function === undefined) === (a.startLine === undefined)) throw new Error("Give either a line range (startLine and endLine) or a function, not both and not neither.");
+      if (a.startLine! > a.endLine!) throw new Error(`startLine (${a.startLine}) is after the end line (${a.endLine}).`);
+    }
+    const rev = oneRevision(a.commit ?? a.revision ?? "HEAD");
+    const r = await repoOrThrow(ctx, a.repo);
+    const lim = { ...GIT_LIMITS, ...ctx.deps.gitLimits };
+    const git = timedGit(r.path, lim, `reading "${rev}" in "${a.repo}"; try a smaller range or fewer commits.`);
+    const x = await resolveCommit(git, rev);
+    if ("unresolved" in x) throw new Error(`Revision "${rev}" not found in repository "${a.repo}".`);
+    if ("run" in x) throw new Error(`git could not read revision "${rev}" in "${a.repo}".`);
+    const gaps: string[] = [], short = x.sha.slice(0, 10);
+    const revision = { revision: rev, commit: x.sha };
+
+    if (a.commit !== undefined) {
+      const g = await git(["-c", "core.quotePath=false", "--literal-pathspecs", "show", "--format=%x01%P", "-p", "-U0", "-M", "--first-parent", "--no-color", "--end-of-options", x.sha, ...(a.file ? ["--", a.file] : [])], lim.repoBytes, true);
+      const lines = g.stdout.slice(1).split("\n");
+      if (g.limit) lines.pop(); // a cut run ends inside a line
+      const gap = runGap(a.repo, g, lim, "its declarations");
+      if (gap) gaps.push(gap);
+      const files = declarations(lines.slice(1));
+      const merge = lines[0]!.includes(" ");
+      const summary = !files.length && !gap ? `Commit ${short} has no changes${a.file ? ` in ${a.file}` : ""}.` : `Declarations git prints at the top of the hunks of commit ${short}: its guess at the enclosing declaration (null when none precedes), not a parsed symbol.${merge ? " This is a merge commit: it is compared with its first parent." : ""}`;
+      return { output: listAnswer("files", files.slice(0, COMMIT_FILES), files.length, { repo: a.repo, commit: revision, file: a.file }, 1, gaps, summary) };
+    }
+
+    // History mode: read the file at the revision first, so a missing path, a binary file or a range that is not there is said in words.
+    const file = a.file!, filters = { repo: a.repo, file, revision, count } as Record<string, unknown>;
+    const empty = (summary: string) => ({ output: listAnswer("commits", [], 0, filters, 1, gaps, summary) });
+    const blob = await git(["cat-file", "blob", `${x.sha}:${file}`]);
+    if (blob.limit === "bytes") throw new Error(`"${file}" is larger than ${lim.repoBytes} bytes at ${rev}; its lines cannot be checked.`);
+    if (blob.code !== 0) {
+      if (/does not exist|bad file|Not a valid object name|not a blob/.test(blob.stderr)) return empty(`"${file}" is not a file at ${rev} (${short}). It may not exist yet, or was renamed or deleted; try an older or newer revision.`);
+      throw new Error(`git could not read "${file}" at "${rev}" in "${a.repo}".`);
+    }
+    if (blob.stdout.slice(0, 8000).includes("\0")) return empty(`"${file}" is a binary file; it has no line history.`);
+    const lines = blob.stdout.split("\n");
+    if (lines.at(-1) === "") lines.pop();
+    const notes: string[] = [];
+    let arg: string;
+    if (a.function !== undefined) {
+      const hits = lines.flatMap((l, i) => (l.includes(a.function!) ? [i + 1] : []));
+      if (!hits.length) return empty(`No line of "${file}" at ${rev} (${short}) contains "${a.function}".`);
+      // git reads the name as a basic regular expression: only these characters are special in it
+      arg = `-L:${a.function.replace(/[\\.[*^$]/g, "\\$&")}:${file}`;
+      filters.target = { function: a.function, matchingLines: hits.slice(0, 20) };
+      notes.push(hits.length > 1 ? `The name appears on lines ${hits.slice(0, 20).join(", ")}${hits.length > 20 ? " and more" : ""}; git follows the declaration at the first, line ${hits[0]}.` : `The declaration is at line ${hits[0]}.`);
+    } else {
+      const end = Math.min(a.endLine!, lines.length);
+      if (a.startLine! > lines.length) return empty(`"${file}" has only ${lines.length} lines at ${rev} (${short}); lines ${a.startLine}-${a.endLine} do not exist there.`);
+      arg = `-L${a.startLine},${end}:${file}`;
+      filters.target = { startLine: a.startLine, endLine: end };
+      if (end < a.endLine!) notes.push(`The range ends at line ${end} because the file has ${lines.length} lines.`);
+    }
+    const g = await git(["-c", "core.quotePath=false", "log", DIFF_FORMAT, `--max-count=${count + 1}`, arg, "--end-of-options", x.sha], lim.repoBytes, true);
+    const recs = g.stdout.split(/^\x01/m).slice(1);
+    if (g.limit) recs.pop(); // a cut run ends inside a record
+    const gap = runGap(a.repo, g, lim, "its history");
+    if (gap) gaps.push(gap);
+    if (recs.length > count) gaps.push(`older commits exist beyond the ${count} shown; raise count (at most ${RANGE_MAX}) or give an older revision`);
+    const commits = recs.slice(0, count).map((rec) => {
+      const lines = rec.split("\n"), [hash = "", ts = "0", author = "", ...subject] = lines[0]!.split("\x1f");
+      const plus = lines.find((l) => l.startsWith("+++ ")), minus = lines.find((l) => l.startsWith("--- "));
+      const at = lines.findIndex((l) => l.startsWith("@@")), diff = at < 0 ? "" : lines.slice(at).join("\n").trimEnd();
+      const cut = cutMiddle(diff, RANGE_DIFF_BYTES);
+      return {
+        hash, date: new Date(Number(ts) * 1000).toISOString(), author, subject: cutChars(subject.join("\x1f"), SUBJECT_CHARS),
+        path: (plus && pathOf(plus.slice(4), "b/")) || (minus && pathOf(minus.slice(4), "a/")) || file, diff: cut, ...(cut !== diff ? { diffCut: true } : {}),
+      };
+    });
+    const what = a.function !== undefined ? `the declaration of "${a.function}"` : `lines ${a.startLine}-${Math.min(a.endLine!, lines.length)}`;
+    const summary = `History of ${what} in ${file} as it is at ${rev} (${short}), newest first. Renames and moves are followed: each commit's path is the file's name at that commit. ${notes.join(" ")}`.trim();
+    return { output: listAnswer("commits", commits, commits.length, filters, 1, gaps, summary) };
+  },
+});
+
+/** The files of a `-U0` diff with, for each hunk, the declaration text git prints after the hunk's `@@` header. */
+function declarations(lines: string[]) {
+  const files: { file: string; binary?: true; hunks: number; declarations: { declaration: string | null; oldStart: number; newStart: number }[] }[] = [];
+  let from = "", cur: (typeof files)[number] | undefined, header = false;
+  for (const l of lines) {
+    if (l.startsWith("diff --git ")) { header = true; from = ""; cur = undefined; continue; }
+    const bin = header ? /^Binary files (.*) and (.*) differ$/.exec(l) : null;
+    if (bin) { files.push({ file: pathOf(bin[2]!, "b/") || pathOf(bin[1]!, "a/"), binary: true, hunks: 0, declarations: [] }); continue; }
+    if (header && l.startsWith("--- ")) from = pathOf(l.slice(4), "a/");
+    else if (header && l.startsWith("+++ ")) files.push(cur = { file: pathOf(l.slice(4), "b/") || from, hunks: 0, declarations: [] });
+    const h = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@ ?(.*)$/.exec(l);
+    if (h && cur) {
+      header = false;
+      cur.hunks++;
+      if (cur.declarations.length < HUNKS_PER_FILE) cur.declarations.push({ declaration: h[3]!.trim() ? cutChars(h[3]!.trim(), DECL_CHARS) : null, oldStart: Number(h[1]), newStart: Number(h[2]) });
+    }
+  }
+  return files;
+}
+
 // ---- registry ----
 
-export const gitToolDefinitions = { search_commits: searchCommits, search_diffs: searchDiffs, compare_revisions: compareRevisions, list_refs: listRefs, check_ancestry: checkAncestry } as const;
+export const gitToolDefinitions = { search_commits: searchCommits, search_diffs: searchDiffs, compare_revisions: compareRevisions, list_refs: listRefs, check_ancestry: checkAncestry, get_range_history: getRangeHistory } as const;
 
 /** In MCP registration order, after the pull request history tools. */
 export const gitToolNames = Object.keys(gitToolDefinitions) as (keyof typeof gitToolDefinitions)[];
