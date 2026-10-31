@@ -157,6 +157,50 @@ test("search_diffs: matches per commit and line text are bounded and say so; the
   } finally { fs.rmSync(big, { recursive: true, force: true }); }
 });
 
+test("search_diffs: changed lines that look like file headers (`++ x`, `-- y`) are content, with their side and line number", async () => {
+  const hdr = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-gdt-"));
+  try {
+    mk(hdr, "init", "-q", "-b", "main");
+    commit(hdr, "Hal", "2024-12-01T12:00:00Z", "start", { "h.txt": "k1\nk2\n-- yy\nk4\n" });
+    const c2 = commit(hdr, "Hal", "2024-12-02T12:00:00Z", "swap", { "h.txt": "k1\nk2\n++ xx\nk4\n" });
+    const c: ToolContext = { deps: { getRepo: async () => row(D, hdr), listRepos: async () => [row(D, hdr)] }, scope: scopeFor(["*"]) };
+    const r = await search({ terms: ["xx", "yy"] }, c);
+    assert.deepEqual(hashes(r).slice(0, 1), [c2]);
+    assert.deepEqual(r.json.commits[0].matches.map((m: any) => [m.file, m.side, m.line, m.text]), [["h.txt", "removed", 3, "-- yy"], ["h.txt", "added", 3, "++ xx"]]);
+  } finally { fs.rmSync(hdr, { recursive: true, force: true }); }
+});
+
+// File names git quotes even with core.quotePath=false: a tab, a double quote and a backslash.
+const ODD = 'tab\tq"b\\.txt', ODD_DIR = 'd d/in\tner.txt';
+test("search_diffs and compare_revisions: file names git quotes are unquoted; a type change keeps the other diffs of the page", async () => {
+  const odd = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-gdt-"));
+  try {
+    mk(odd, "init", "-q", "-b", "main");
+    fs.writeFileSync(path.join(odd, "target"), "t\n");
+    fs.symlinkSync("target", path.join(odd, "link"));
+    const a = commit(odd, "Ivy", "2025-01-01T12:00:00Z", "start", { [ODD]: "one\n", [ODD_DIR]: "in\n", "a-plain.txt": "p\n", "z-plain.txt": "q\n" });
+    fs.rmSync(path.join(odd, "link"));
+    const b = commit(odd, "Ivy", "2025-01-02T12:00:00Z", "change", { link: "needle now a file\n", [ODD]: "one\nneedle two\n", [ODD_DIR]: "in\nneedle in\n", "a-plain.txt": "p\nneedle a\n", "z-plain.txt": "q\nneedle z\n" });
+    const c: ToolContext = { deps: { getRepo: async () => row(D, odd), listRepos: async () => [row(D, odd)] }, scope: scopeFor(["*"]) };
+
+    const s = await search({ terms: ["needle"] }, c);
+    assert.deepEqual(s.json.commits[0].matches.map((m: any) => m.file).sort(), [ODD, ODD_DIR, "a-plain.txt", "link", "z-plain.txt"].sort());
+
+    const r = await compare({ base: a, head: b }, c);
+    const by = Object.fromEntries(r.json.files.map((f: any) => [f.path, f]));
+    assert.deepEqual(r.json.coverageGaps, []);
+    assert.equal(by.link.status, "type changed");
+    assert.deepEqual([by.link.additions, by.link.deletions], [1, 1]);
+    assert.match(by.link.diff, /\+needle now a file/);
+    assert.match(by.link.diff, /-target/);
+    for (const [f, add] of [[ODD, "needle two"], [ODD_DIR, "needle in"], ["a-plain.txt", "needle a"], ["z-plain.txt", "needle z"]] as const) {
+      assert.equal(by[f].diffOmitted, undefined, f);
+      assert.match(by[f].diff, new RegExp(`\\+${add}`), f);
+      assert.deepEqual([by[f].additions, by[f].deletions], [1, 0], f);
+    }
+  } finally { fs.rmSync(odd, { recursive: true, force: true }); }
+});
+
 // ---- compare_revisions ----
 
 test("compare_revisions: files with status, counts and their diff; rename-only and binary files are listed", async () => {

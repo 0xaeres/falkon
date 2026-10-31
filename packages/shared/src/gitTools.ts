@@ -154,12 +154,13 @@ function timedGit(cwd: string, lim: Lim, what: string) {
   };
 }
 
-/** The commit a revision names (a tag is followed to its commit), or why it does not name one. */
-async function resolveCommit(git: (argv: string[], maxBytes: number) => Promise<GitRun>, rev: string): Promise<{ sha: string } | { run: GitRun; reason: string }> {
+/** The commit a revision names (a tag is followed to its commit); `unresolved` says why it names none; `run` is any other git failure (damaged repository, a limit). */
+async function resolveCommit(git: (argv: string[], maxBytes: number) => Promise<GitRun>, rev: string): Promise<{ sha: string } | { unresolved: string } | { run: GitRun }> {
   const g = await git(["rev-parse", "--verify", "--end-of-options", `${rev}^{commit}`], 2000);
   const sha = g.stdout.trim();
   if (g.code === 0 && sha) return { sha };
-  return { run: g, reason: /ambiguous/.test(g.stderr) ? "ambiguous: more than one object starts with these characters, give more of them" : "not found in this repository" };
+  if (g.code === 128 && !g.limit && /Needed a single revision/.test(g.stderr)) return { unresolved: /ambiguous/.test(g.stderr) ? "ambiguous: more than one object starts with these characters, give more of them" : "not found in this repository" };
+  return { run: g };
 }
 
 // ---- search_commits ----
@@ -284,7 +285,13 @@ const searchDiffs = define({
 });
 
 const cutChars = (s: string, n: number) => (s.length > n ? s.slice(0, n).replace(/[\ud800-\udbff]$/, "") : s);
-const pathOf = (s: string, prefix: string) => { const f = s.replace(/\t$/, ""); return f === "/dev/null" ? "" : f.startsWith(prefix) ? f.slice(2) : f; };
+const C_ESCAPES: Record<string, string> = { a: "\x07", b: "\b", f: "\f", n: "\n", r: "\r", t: "\t", v: "\v" };
+/** A path from a `---`/`+++` line: git's C-style quoting (octal bytes, \t, \", \\) undone, the `a/` or `b/` prefix removed. */
+const pathOf = (s: string, prefix: string) => {
+  let f = s.replace(/\t$/, "");
+  if (/^".*"$/.test(f)) f = Buffer.concat(Array.from(f.slice(1, -1).matchAll(/\\([0-7]{3})|\\(.)|([^\\]+)/gs), ([, oct, esc, raw]) => oct ? Buffer.from([parseInt(oct, 8)]) : Buffer.from(esc ? C_ESCAPES[esc] ?? esc : raw!))).toString("utf8");
+  return f === "/dev/null" ? "" : f.startsWith(prefix) ? f.slice(2) : f;
+};
 
 /** One log record: the header line, then the `-U0` diff. Only changed lines are looked at, so context never matches. */
 function parseDiffRecord(repo: string, rec: string, needles: string[], side: "added" | "removed" | "both") {
@@ -360,7 +367,8 @@ const compareRevisions = define({
     const commits: string[] = [];
     for (const rev of revs) {
       const x = await resolveCommit(git, rev);
-      if (!("sha" in x)) throw new Error(`Revision "${rev}" not found in repository "${a.repo}".`);
+      if ("unresolved" in x) throw new Error(`Revision "${rev}" not found in repository "${a.repo}".`);
+      if ("run" in x) throw new Error(`git could not read revision "${rev}" in repository "${a.repo}".`);
       commits.push(x.sha);
     }
     const [from, to] = commits as [string, string];
@@ -389,12 +397,15 @@ const compareRevisions = define({
     const mine = entries.slice((page - 1) * perPage, page * perPage);
     const d = await git(["--literal-pathspecs", "diff", "-M", "--no-color", "--end-of-options", from, to, "--", ...mine.flatMap((e) => (e.oldPath ? [e.oldPath, e.path] : [e.path]))]);
     const sections = d.stdout.split(/^(?=diff --git )/m).filter(Boolean);
+    const need = (e: { status: string }) => (e.status === "type changed" ? 2 : 1); // a type change is a delete and an add of one path
+    const whole = d.code === 0 && sections.length === mine.reduce((n, e) => n + need(e), 0);
     if (d.limit) { sections.pop(); gaps.push(`${a.repo}: diffs cut at ${lim.repoBytes} bytes; the last files of this page have no diff`); }
-    else if (d.code !== 0 || sections.length !== mine.length) gaps.push(`${a.repo}: git could not read the diffs of this page; the files are listed without them`);
-    const usable = sections.length === mine.length || d.limit ? sections : [];
-    const items = mine.map((e, i) => {
-      const sec = usable[i], hunks = sec?.search(/^@@/m) ?? -1;
-      const body = sec && hunks >= 0 ? sec.slice(hunks).split("\n") : [];
+    else if (!whole) gaps.push(`${a.repo}: git could not read the diffs of this page; the files are listed without them`);
+    const usable = d.limit || whole ? sections : [];
+    let at = 0;
+    const items = mine.map((e) => {
+      const secs = usable.slice(at, at += need(e)), sec = secs.length === need(e) ? secs.join("") : undefined;
+      const body = secs.length === need(e) ? secs.flatMap((x) => { const h = x.search(/^@@/m); return h >= 0 ? x.slice(h).split("\n") : []; }) : [];
       return { meta: { ...e, additions: body.filter((l) => l[0] === "+").length, deletions: body.filter((l) => l[0] === "-").length, ...(sec && /^(Binary files .* differ|GIT binary patch)$/m.test(sec) ? { binary: true } : {}) }, diff: sec };
     });
 
@@ -441,22 +452,33 @@ const listRefs = define({
       let sha: string | undefined;
       if (contains !== undefined) {
         const x = await resolveCommit(git, contains);
-        if (!("sha" in x)) return { gap: x.run.limit ? runGap(r.name, x.run, lim, "its refs") : `${r.name}: revision "${contains}" could not be resolved: ${x.reason}`, refs: [] };
+        if ("unresolved" in x) return { gap: `${r.name}: revision "${contains}" could not be resolved: ${x.unresolved}`, refs: [], found: 0 };
+        if ("run" in x) return { gap: runGap(r.name, x.run, lim, "its refs") ?? `${r.name}: git could not read revision "${contains}"`, refs: [], found: 0 };
         sha = x.sha;
       }
-      const g = await git(["for-each-ref", "--sort=refname", "--sort=-creatordate", REF_FORMAT, ...(sha ? [`--contains=${sha}`] : []), ...REF_KINDS[kind]], lim.repoBytes);
+      const select = [...(sha ? [`--contains=${sha}`] : []), ...REF_KINDS[kind]];
+      // the overall top `count` lies within each repository's top `count`, so git need not print more
+      const g = await git(["for-each-ref", `--count=${count}`, "--sort=refname", "--sort=-creatordate", REF_FORMAT, ...select], lim.repoBytes);
       const lines = g.stdout.split("\n");
       if (g.limit) lines.pop(); // a cut run ends inside a record
-      return { gap: runGap(r.name, g, lim, "its refs"), refs: lines.filter(Boolean).map((l) => parseRef(r.name, l)) };
+      const refs = lines.filter(Boolean).map((l) => parseRef(r.name, l));
+      let gap = runGap(r.name, g, lim, "its refs"), found = refs.length;
+      if (refs.length >= count) { // maybe more: count them with one empty line per ref
+        const n = await git(["for-each-ref", "--format=", ...select], lim.repoBytes);
+        found = n.stdout.split("\n").length - 1;
+        gap ??= runGap(r.name, n, lim, "its refs");
+      }
+      return { gap, refs, found };
     }, lim);
     const all = [];
-    for (const [, { gap, refs }] of ran.done) { if (gap) gaps.push(gap); all.push(...refs); }
+    let found = 0;
+    for (const [, { gap, refs, found: n }] of ran.done) { if (gap) gaps.push(gap); all.push(...refs); found += n; }
     for (const r of ran.late) gaps.push(`${r.name}: not started before the ${lim.totalMs / 1000} second deadline`);
 
     all.sort((x, y) => y.ts - x.ts || x.repo.localeCompare(y.repo) || x.name.localeCompare(y.name) || x.kind.localeCompare(y.kind));
     const filters = { repos: names, kind, contains: a.contains, count };
     const summary = all.length || gaps.length ? undefined : `No ${kind === "heads" ? "branches" : kind === "tags" ? "tags" : "refs"} found${contains ? ` that contain ${contains}` : ""} in the repositories read.`;
-    return { output: listAnswer("refs", all.slice(0, count).map(({ ts: _ts, ...x }) => x), all.length, filters, names.length, gaps, summary) };
+    return { output: listAnswer("refs", all.slice(0, count).map(({ ts: _ts, ...x }) => x), found, filters, names.length, gaps, summary) };
   },
 });
 
@@ -489,7 +511,8 @@ const checkAncestry = define({
     const side: { revision: string; commit?: string }[] = [], unresolved: { revision: string; reason: string }[] = [];
     for (const revision of revs) {
       const x = await resolveCommit(git, revision);
-      if ("sha" in x) side.push({ revision, commit: x.sha }); else { side.push({ revision }); unresolved.push({ revision, reason: x.reason }); }
+      if ("run" in x) throw new Error(`git could not read revision "${revision}" in "${a.repo}".`);
+      if ("sha" in x) side.push({ revision, commit: x.sha }); else { side.push({ revision }); unresolved.push({ revision, reason: x.unresolved }); }
     }
     const answer = (result: "yes" | "no" | "unresolved", explanation: string) => JSON.stringify({ repo: a.repo, ancestor: side[0], descendant: side[1], result, explanation, ...(unresolved.length ? { unresolved } : {}) });
     if (unresolved.length) return { output: answer("unresolved", "No answer: a revision could not be resolved, so nothing was compared.") };
