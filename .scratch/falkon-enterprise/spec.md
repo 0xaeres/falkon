@@ -832,6 +832,21 @@ Decision (loop, to veto): the candidate "join stored pull request tickets into `
 
 Order: T1, T2, T3 in parallel (disjoint files). Then one paid run of the combined arm, new arm only, on the same 40 questions (dev 24, hidden 16), compared with the stored cycle 15 old arm and the cycle 19 git-history arm: estimated $0.35, cap $1.00, pilot first; **needs the human's go-ahead**. Limits as in cycle 19 (no dependency, no push, no snapshot change with the flags off). Budget: 500k subagent tokens.
 
+### Cycle 19b paid measurement: both flags on (run 2026-10-31 with the human's go-ahead; merged at `ce03794`)
+
+Arm `clone-tools-git-history-prs` (pull request tools and the seven git tools, after fixes T1 to T3), Haiku, 40 questions, new arm only, against the stored cycle 15 arms and the cycle 19 git-history arm (different days). This arm's spend about $0.32 (ledger $0.69 in total with the first measurement; limit $1.00 for this run; the Claude command line bills Anthropic). Reports: `baseline-c19b-vs-clone-tools-git.md`, `...-vs-clone-tools-git-history.md`, `...-vs-clone-tools-git-prs.md`; runs in `eval-runs-c19/`.
+
+| Pooled, 40 questions | recall | precision | cost per question |
+|---|---:|---:|---:|
+| old arm `clone-tools-git` (cycle 15) | 0.7446 | 0.5631 | $0.0331 |
+| PR arm `clone-tools-git-prs` (cycle 15) | 0.8438 | 0.5765 | $0.0347 |
+| git-history arm (cycle 19, first measurement) | 0.8250 | 0.5749 | $0.0085 |
+| **both flags on (this run)** | **0.8979** | 0.6308 | $0.0088 |
+
+Differences of this run: against the old arm recall +0.153 [0.067, 0.238] (wins 17, losses 4, ties 19); against the PR arm +0.054 [-0.019, 0.129]; against the git-history arm +0.073 [-0.006, 0.154]. "Why" recall: 0.58 (git-history arm) to **0.83** (n 16); what-when 1.00; ticket-to-code 0.88 (it was 0.97 with the git-history arm alone: a drop to watch, not explained). Both tool families were used (`get_pull_request` 54 calls, `get_provenance` 21, `search_discussions` 9, `search_commits` 36, `search_diffs` 20).
+
+Limits: the tool withholds its pooled verdict because two runs are flagged as leaks and the stored cycle 15 old arm has one. The two flagged runs (`hist-a-08`, `hist-a-13`) called a tool named bare `grep` (not `mcp__falkon__grep`), which does not exist; nothing outside the MCP server was read. At 40 questions the interval is about ±0.1, so the gain over the PR arm and the git-history arm is not established, only the gain over the old arm is; the arms ran on different days; the cost fall against cycle 15 is not explained by the tools alone. The first pass of the hidden split stopped at the runner's reservation ceiling (3 runs in flight at $0.25 each against the ledger cap) and was finished with a higher ceiling; real spend never neared the limit. **Open for the human:** the D172 decision (the pull request flag leaves its flag with the git flag, on this evidence), and whether to count the bare-`grep` runs as leaks (the harness does today).
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
