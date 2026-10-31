@@ -321,8 +321,6 @@ Decisions in force: D106, D107, D110 to D114 and, for the live sync, D115 to D12
 
 **Why.** D106 keeps one store and its transactions; the port keeps the planned move to the graph database an adapter change. Checking every commit against the clone means a link never points at a commit the Product cannot read.
 
----
-
 ### 4.12 Git history tools (D167, D170, D176)
 
 **Decision (2026-10-31).** Seven vanilla tools read git history from the bare clones: `search_commits`, `search_diffs`, `compare_revisions`, `list_refs`, `check_ancestry`, `get_range_history` and `list_contributors` (`packages/shared/src/gitTools.ts`, wording in `gitToolText.json`). They need no model and never call the code host. The operator flag `MCP_GIT_TOOLS=on` registers them after the pull request tools; with the flag unset or any other value the registration bytes are those of 4.2 and 4.11. The same flag appends short history recipes to the brief that `research_codebase` and the `ask_codebase` prompt return: finding the release that contains a commit, finding the versions that carry a flaw, and never reading a missing result as proof of absence. Nothing is added to the server instructions.

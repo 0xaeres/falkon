@@ -677,10 +677,10 @@ const listContributors = define({
     count: z.number().int().min(1).max(100).describe(p("list_contributors", "count")).optional().default(CONTRIB_COUNT),
   }).strict(),
   async execute(a, ctx) {
-    const count = a.count ?? CONTRIB_COUNT, byRepo = !!a.authors?.length;
+    const count = a.count, byRepo = !!a.authors?.length;
     const v = checkFilters(a);
-    // %aN and %aE apply the .mailmap, as `git shortlog -sne` does; one line per commit, so a cut run costs only its last line
-    const argv = logArgv(a, v, ["--format=%aN%x1f%aE"], []);
+    // %aN and %aE apply the .mailmap, as `git shortlog -sne` does, and --use-mailmap makes --author match those same names (git versions differ in the default); one line per commit, so a cut run costs only its last line
+    const argv = logArgv(a, v, ["--use-mailmap", "--format=%aN%x1f%aE"], []);
     const lim = { ...GIT_LIMITS, ...ctx.deps.gitLimits };
     const { names, repos, gaps } = await pickRepos(a.repos, ctx, lim);
     const ran = await fanOut(repos, async (r, timeoutMs) => {
@@ -708,7 +708,7 @@ const listContributors = define({
       const commits = ids.reduce((n, i) => n + i.commits, 0);
       counted += commits;
       if (commits) perRepo.push({ repo: r.name, commits, ids: ids.sort(order) });
-      for (const i of ids) { const k = `${i.name}\x1f${i.email}`, t = totals.get(k); if (t) t.commits += i.commits; else totals.set(k, { ...i }); }
+      for (const i of ids) { const k = `${i.name}\x1f${i.email}`, seen = totals.get(k); if (seen) seen.commits += i.commits; else totals.set(k, { ...i }); }
     }
     for (const r of ran.late) gaps.push(`${r.name}: not started before the ${lim.totalMs / 1000} second deadline`);
 

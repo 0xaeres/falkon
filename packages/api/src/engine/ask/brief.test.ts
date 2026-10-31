@@ -73,9 +73,10 @@ test("git history recipes: only with gitRecipes, appended before the answer form
   assert.ok(on.endsWith(base.slice(base.indexOf("Write Markdown."))), "the answer format stays last");
   for (const t of ["list_refs", "contains", "check_ancestry", "search_diffs", "get_range_history", "coverageGaps", "PARTIAL"]) assert.ok(on.includes(t), t);
   assert.ok(GIT_BRIEF_RECIPES.split(/\s+/).length < 260);
-  // every sentence that speaks of absence or of an empty result must deny that it is proof
-  const sentences = GIT_BRIEF_RECIPES.split(/(?<=\.)\s+/).filter((s) => /absen|empty|missing|nothing/i.test(s));
-  assert.ok(sentences.length > 0);
-  for (const s of sentences) assert.match(s, /\bnot\b|\bno\b|never|cannot|unless|open|only|without/i, s);
+  // the absence recipe must carry these denials, and the release recipe must settle order by ancestry, not by tag date
+  for (const phrase of ["is not proof that something never happened", "leave the question open", 'Report "not found in what was read"']) assert.ok(GIT_BRIEF_RECIPES.includes(phrase), phrase);
+  assert.match(GIT_BRIEF_RECIPES, /do not pick the first release by date/);
+  assert.match(GIT_BRIEF_RECIPES, /check_ancestry[^.]*\(commit as ancestor, tag as descendant\)/);
+  assert.doesNotMatch(GIT_BRIEF_RECIPES, /oldest tag by date/);
   assert.doesNotMatch(GIT_BRIEF_RECIPES, /proves? (that )?(it|the|there)|means (that )?(it|the) .*(does not exist|never)/i);
 });

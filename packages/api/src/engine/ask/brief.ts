@@ -11,7 +11,7 @@ export const CLIENT_RESEARCH_INSTRUCTIONS = `Falkon searches and reads code in t
 
 /** Appended to the research brief when MCP_GIT_TOOLS=on, so the git history tools are named only where they exist. */
 export const GIT_BRIEF_RECIPES = `The git history tools are on, so for questions about when something changed, who changed it or which release holds it:
-- Release holding a commit: call list_refs with kind "tags" and contains set to the commit; the oldest tag by date is the first release that has it. Check the neighbours with check_ancestry (commit as ancestor, tag as descendant): it should answer yes for that tag and no for the tag before it.
+- Release holding a commit: call list_refs with kind "tags" and contains set to the commit; it lists every tag whose history holds the commit. Tag dates can be wrong, so do not pick the first release by date. Take the earliest candidates and confirm the order with check_ancestry (commit as ancestor, tag as descendant): the first release answers yes while the tag before it answers no.
 - Versions that carry a flaw: find the commit that introduced it (search_diffs on the added lines, or get_range_history on the code) and the commit that fixed it. The affected tags are those list_refs returns for contains set to the introducing commit, minus those it returns for the fixing commit. Confirm the edges with check_ancestry, and say which releases you could not check.
 - Absence: an empty or short result is not proof that something never happened. Read coverageGaps and truncated first; a gap, a cut, a PARTIAL summary, a repository you could not see or a clone that lags the code host each leave the question open. Report "not found in what was read", name what was read, and list what was not.`;
 

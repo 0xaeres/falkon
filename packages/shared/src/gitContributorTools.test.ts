@@ -9,8 +9,8 @@ import { gitToolDefinitions, gitToolNames } from "./gitTools";
 import type { ToolContext, ToolRepo } from "./tools";
 
 // list_contributors against real temporary repositories (cycle 19, S80). Expected counts come from `git shortlog -sne`.
-const A = "fixtures.test/team", B = "fixtures.test/side", EMPTY = "fixtures.test/empty", BIG = "fixtures.test/big", SECRET = "fixtures.test/hidden";
-let dir: string, other: string, empty: string, big: string;
+const MAP = "fixtures.test/mapped", A = "fixtures.test/team", B = "fixtures.test/side", EMPTY = "fixtures.test/empty", BIG = "fixtures.test/big", SECRET = "fixtures.test/hidden";
+let dir: string, other: string, empty: string, big: string, mapped: string;
 const ENV = { ...process.env, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null" };
 const mk = (d: string, ...a: string[]) => execFileSync("git", a, { cwd: d, env: ENV, stdio: "pipe" }).toString().trim();
 /** One commit per entry through fast-import: "Name <email> unixtime file". Entries chain on one branch, oldest first. */
@@ -32,12 +32,34 @@ before(() => {
   // 1200 commits by 300 identities: enough that a 2000-byte limit stops git inside the list
   bulk(big, Array.from({ length: 1200 }, (_, i): [string, number, string] => [`Dev${i % 300} <dev${i % 300}@x.test>`, day(1) + i, "f.txt"]));
 });
+before(() => {
+  // a bare clone (as Falkon keeps them) of a repository with a .mailmap, a merge commit and a non-ASCII name
+  const src = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-contrib-src-"));
+  mapped = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-contrib-map-"));
+  const as = (name: string, email: string, file: string, args: string[] = []) => {
+    fs.writeFileSync(path.join(src, file), `${file}\n`);
+    mk(src, "add", "-A");
+    execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-q", "-m", file, ...args], { cwd: src, env: { ...ENV, GIT_AUTHOR_NAME: name, GIT_AUTHOR_EMAIL: email, GIT_COMMITTER_NAME: name, GIT_COMMITTER_EMAIL: email }, stdio: "pipe" });
+  };
+  mk(src, "init", "-q", "-b", "main");
+  fs.writeFileSync(path.join(src, ".mailmap"), "Zoe Canonical <zoe@canon.test> <zoe@old.test>\n");
+  as("Zoë", "zoe@old.test", "a.txt");
+  as("Zoë", "zoe@x.test", "b.txt");
+  mk(src, "checkout", "-q", "-b", "side");
+  as("Bob", "bob@x.test", "s.txt");
+  mk(src, "checkout", "-q", "main");
+  as("Zoë", "zoe@x.test", "c.txt");
+  execFileSync("git", ["-c", "commit.gpgsign=false", "merge", "-q", "--no-ff", "-m", "merge side", "side"], { cwd: src, env: { ...ENV, GIT_AUTHOR_NAME: "Bob", GIT_AUTHOR_EMAIL: "bob@x.test", GIT_COMMITTER_NAME: "Bob", GIT_COMMITTER_EMAIL: "bob@x.test" }, stdio: "pipe" });
+  execFileSync("git", ["clone", "-q", "--bare", src, mapped], { env: ENV, stdio: "pipe" });
+  fs.rmSync(src, { recursive: true, force: true });
+});
+after(() => { fs.rmSync(mapped, { recursive: true, force: true }); });
 after(() => { for (const d of [dir, other, empty, big]) fs.rmSync(d, { recursive: true, force: true }); });
 
 const row = (name: string, p: string): ToolRepo => ({ name, displayName: null, codeHostType: "github", webUrl: null, defaultBranch: "main", isFork: false, isArchived: false, pushedAt: null, indexedAt: null, indexedRevisions: [], path: p });
 const ctx = (gitLimits?: { repoMs?: number; repoBytes?: number }): ToolContext => {
-  const repos = [row(A, dir), row(B, other), row(EMPTY, empty), row(BIG, big), row(SECRET, other)];
-  return { deps: { getRepo: async (n) => repos.find((r) => r.name === n), listRepos: async () => repos, gitLimits }, scope: scopeFor([A, B, EMPTY, BIG]) };
+  const repos = [row(A, dir), row(B, other), row(EMPTY, empty), row(BIG, big), row(MAP, mapped), row(SECRET, other)];
+  return { deps: { getRepo: async (n) => repos.find((r) => r.name === n), listRepos: async () => repos, gitLimits }, scope: scopeFor([A, B, EMPTY, BIG, MAP]) };
 };
 const contrib = async (args: Record<string, unknown>, c = ctx()) => {
   const d = gitToolDefinitions.list_contributors;
@@ -141,4 +163,24 @@ test("the answer holds the byte cap", async () => {
   const r = await contrib({ repos: [BIG], count: 100 });
   assert.ok(Buffer.byteLength(r.text) <= 24_000);
   assert.ok(r.json.truncated.some((t: string) => /showing 100 of 300 found/.test(t)), r.json.truncated.join());
+});
+
+test("authors match as plain text: `A.ice` and `.*` match no repository (a regular expression would match)", async () => {
+  for (const authors of [["A.ice"], [".*"], ["^Alice$"], ["al[i]ce"]]) assert.deepEqual((await contrib({ repos: [A, B], authors })).json.repositories, [], authors[0]);
+  assert.equal((await contrib({ repos: [A], authors: ["ALICE@X.TEST"] })).json.repositories.length, 1, "case is ignored");
+});
+
+test("a .mailmap, a merge commit and a non-ASCII name count exactly as `git shortlog -sne` counts them", async () => {
+  const want = byCount(shortlog(mapped));
+  assert.ok(want.some((w) => w.name === "Zoe Canonical") && want.some((w) => w.name === "Zoë") && want.some((w) => w.name === "Bob"), JSON.stringify(want));
+  assert.ok(Number(mk(mapped, "rev-list", "--merges", "--count", "HEAD")) >= 1);
+  assert.deepEqual(rows(await contrib({ repos: [MAP] })), want);
+});
+
+test("`authors` matches the name and email after the .mailmap, the ones the rows show: the canonical address finds the commits, the replaced one finds nothing", async () => {
+  const r = await contrib({ repos: [MAP], authors: ["zoe@canon.test"] });
+  assert.deepEqual(r.json.repositories.map((x: any) => [x.repo, x.commits, x.identities[0].name, x.identities[0].email]), [[MAP, 1, "Zoe Canonical", "zoe@canon.test"]]);
+  assert.equal((await contrib({ repos: [MAP], authors: ["Zoe Canonical"] })).json.repositories.length, 1);
+  assert.deepEqual((await contrib({ repos: [MAP], authors: ["zoe@old.test"] })).json.repositories, []);
+  assert.match(gitToolDefinitions.list_contributors.description, /after the `\.mailmap`, the same ones shown in the rows/);
 });
