@@ -289,15 +289,63 @@ test("a commit's declarations: an unknown commit is an error, a commit with no c
     const r = await range({ commit: second }, ctx(undefined, d));
     assert.ok(Buffer.byteLength(r.text) <= 24_000);
     assert.ok(r.json.files.length < 150);
-    assert.match(JSON.stringify(r.json.truncated), /files: showing \d+ of 150/);
+    assert.equal(r.json.truncated[0], "files: showing 100 of 150 found");
   } finally { fs.rmSync(d, { recursive: true, force: true }); }
 });
 
-// ---- search_diffs and octal quoting (review finding) ----
+// ---- fix round: entries without hunks, quoted names, a cut first line ----
 
-test("search_diffs: a non-ASCII file name comes back as written, not as octal escapes", async () => {
-  const d = gitToolDefinitions.search_diffs;
-  const { output } = await d.execute(d.inputSchema.parse({ repos: [R], terms: ["export const a = 2"] }) as never, ctx());
-  const j = JSON.parse(output);
-  assert.deepEqual(j.commits.map((c: any) => c.matches.map((m: any) => m.file)), [["café.ts"]]);
+test("a commit's declarations: a pure rename, a mode-only change and an empty-file add are listed (no hunks), never 'no changes'", async () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-rng-"));
+  try {
+    mk(d, "init", "-q", "-b", "main");
+    save(d, "root", { "old name.js": "function a() {\n  1;\n}\n", "tool.sh": "echo 1\n" });
+    mk(d, "mv", "old name.js", "new.js");
+    const rename = save(d, "rename only", {});
+    const r = await range({ commit: rename }, ctx(undefined, d));
+    assert.deepEqual(r.json.files.map((f: any) => [f.file, f.hunks]), [["new.js", 0]]);
+    assert.doesNotMatch(r.json.summary, /no changes/);
+    fs.chmodSync(path.join(d, "tool.sh"), 0o755);
+    const mode = save(d, "mode only", {});
+    assert.deepEqual((await range({ commit: mode }, ctx(undefined, d))).json.files.map((f: any) => [f.file, f.hunks]), [["tool.sh", 0]]);
+    const empty = save(d, "empty file", { "empty.txt": "" });
+    assert.deepEqual((await range({ commit: empty }, ctx(undefined, d))).json.files.map((f: any) => [f.file, f.hunks]), [["empty.txt", 0]]);
+    const gone = (() => { mk(d, "rm", "-q", "empty.txt"); return save(d, "delete", {}); })();
+    assert.deepEqual((await range({ commit: gone }, ctx(undefined, d))).json.files.map((f: any) => f.file), ["empty.txt"]);
+  } finally { fs.rmSync(d, { recursive: true, force: true }); }
+});
+
+// A name git always quotes: a tab, a double quote, a backslash and a control byte (printed as an octal escape).
+const ODD = "t\tq\"b\\s\x01.ts";
+
+test("file names git always quotes come back as written, in commit mode and in search_diffs (the decoder is exercised)", async () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-rng-"));
+  try {
+    mk(d, "init", "-q", "-b", "main");
+    save(d, "root", { "plain.ts": "x\n" });
+    const c = save(d, "odd name", { [ODD]: "function oddity() {\n  needle;\n}\n" });
+    assert.match(mk(d, "show", "--format=", c), /"b\/t\\tq\\"b\\\\s\\001\.ts"/, "git really quotes this name");
+    assert.deepEqual((await range({ commit: c }, ctx(undefined, d))).json.files.map((f: any) => f.file), [ODD]);
+    const sd = gitToolDefinitions.search_diffs;
+    const { output } = await sd.execute(sd.inputSchema.parse({ repos: [R], terms: ["needle"], after: "2000-01-01" }) as never, ctx(undefined, d));
+    assert.deepEqual(JSON.parse(output).commits.map((x: any) => x.matches.map((m: any) => m.file)), [[ODD]]);
+  } finally { fs.rmSync(d, { recursive: true, force: true }); }
+});
+
+test("a commit's declarations: git output cut before its first line break is a gap, not a crash", async () => {
+  const r = await range({ commit: sh.h6 }, ctx({ repoBytes: 5 }));
+  assert.deepEqual(r.json.files, []);
+  assert.match(r.json.coverageGaps.join(), /output cut at 5 bytes; its declarations may be missing/);
+  assert.doesNotMatch(r.json.summary, /no changes/);
+});
+
+test("a commit's declarations: at most 100 files are listed and the answer says how many were found", async () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "falkon-rng-"));
+  try {
+    mk(d, "init", "-q", "-b", "main");
+    const c = save(d, "many", Object.fromEntries(Array.from({ length: 130 }, (_, i) => [`g${i}.js`, "function g() {\n}\n"])));
+    const r = await range({ commit: c }, ctx(undefined, d));
+    assert.equal(r.json.files.length, 100);
+    assert.deepEqual(r.json.truncated, ["files: showing 100 of 130 found"]);
+  } finally { fs.rmSync(d, { recursive: true, force: true }); }
 });

@@ -576,8 +576,8 @@ const getRangeHistory = define({
       const gap = runGap(a.repo, g, lim, "its declarations");
       if (gap) gaps.push(gap);
       const files = declarations(lines.slice(1));
-      const merge = lines[0]!.includes(" ");
-      const summary = !files.length && !gap ? `Commit ${short} has no changes${a.file ? ` in ${a.file}` : ""}.` : `Declarations git prints at the top of the hunks of commit ${short}: its guess at the enclosing declaration (null when none precedes), not a parsed symbol.${merge ? " This is a merge commit: it is compared with its first parent." : ""}`;
+      const merge = lines[0]?.includes(" ") ?? false; // the parents line; absent when the output was cut before its end
+      const summary = !files.length && !gap ? (lines.slice(1).some((l) => l.trim()) ? `Git printed a diff for commit ${short} that could not be read as files; nothing is listed.` : `Commit ${short} has no changes${a.file ? ` in ${a.file}` : ""}.`) : `Declarations git prints at the top of the hunks of commit ${short}: its guess at the enclosing declaration (null when none precedes), not a parsed symbol.${merge ? " This is a merge commit: it is compared with its first parent." : ""}`;
       return { output: listAnswer("files", files.slice(0, COMMIT_FILES), files.length, { repo: a.repo, commit: revision, file: a.file }, 1, gaps, summary) };
     }
 
@@ -631,18 +631,24 @@ const getRangeHistory = define({
   },
 });
 
-/** The files of a `-U0` diff with, for each hunk, the declaration text git prints after the hunk's `@@` header. */
+/** The name in a `diff --git a/P b/P` header (P is the same on both sides unless the file was renamed, which a `rename to` line then corrects). */
+function headerName(rest: string) {
+  const quoted = /^"a\/.*" ("b\/.*")$/.exec(rest);
+  return quoted ? pathOf(quoted[1]!, "b/") : rest.startsWith("a/") && rest.length % 2 === 1 ? rest.slice((rest.length - 5) / 2 + 5) : "";
+}
+
+/** The files of a `-U0` diff (also those with no hunk: a rename, a mode change, an empty file) with, for each hunk, the declaration text git prints after its `@@` header. */
 function declarations(lines: string[]) {
   const files: { file: string; binary?: true; hunks: number; declarations: { declaration: string | null; oldStart: number; newStart: number }[] }[] = [];
-  let from = "", cur: (typeof files)[number] | undefined, header = false;
+  let cur: (typeof files)[number] | undefined, header = false;
   for (const l of lines) {
-    if (l.startsWith("diff --git ")) { header = true; from = ""; cur = undefined; continue; }
-    const bin = header ? /^Binary files (.*) and (.*) differ$/.exec(l) : null;
-    if (bin) { files.push({ file: pathOf(bin[2]!, "b/") || pathOf(bin[1]!, "a/"), binary: true, hunks: 0, declarations: [] }); continue; }
-    if (header && l.startsWith("--- ")) from = pathOf(l.slice(4), "a/");
-    else if (header && l.startsWith("+++ ")) files.push(cur = { file: pathOf(l.slice(4), "b/") || from, hunks: 0, declarations: [] });
+    if (l.startsWith("diff --git ")) { header = true; files.push(cur = { file: headerName(l.slice(11)), hunks: 0, declarations: [] }); continue; }
+    if (!cur) continue;
+    if (header && l.startsWith("rename to ")) cur.file = pathOf(l.slice(10), "\0");
+    else if (header && l.startsWith("+++ ")) cur.file = pathOf(l.slice(4), "b/") || cur.file;
+    else if (header && /^Binary files .* differ$/.test(l)) cur.binary = true;
     const h = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@ ?(.*)$/.exec(l);
-    if (h && cur) {
+    if (h) {
       header = false;
       cur.hunks++;
       if (cur.declarations.length < HUNKS_PER_FILE) cur.declarations.push({ declaration: h[3]!.trim() ? cutChars(h[3]!.trim(), DECL_CHARS) : null, oldStart: Number(h[1]), newStart: Number(h[2]) });
