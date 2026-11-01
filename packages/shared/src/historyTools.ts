@@ -17,6 +17,9 @@ const MAX_BYTES = 24_000;
 const BODY_CHARS = 8000, BODY_BYTES = 8000, COMMENT_CHARS = 2000, COMMENT_BYTES = 3000, TITLE_CHARS = 300;
 const COMMENTS_PER_PAGE = 50, FILES = 100, PER_KIND = 50, SNIPPETS = 3, SNIPPET_CHARS = 300;
 const GIT_TIMEOUT_MS = 15_000;
+/** Stable sort key: keys from a comment (`comment-ticket-pattern`) after those from title, body and branch. */
+const commentLast = (a: { source: string }, b: { source: string }) => Number(a.source === "comment-ticket-pattern") - Number(b.source === "comment-ticket-pattern");
+
 /** Candidates loaded for an exact ticket or #N lookup. */
 const EXACT_LOADS = 200;
 
@@ -114,7 +117,7 @@ const getPullRequest = define({
     const { links } = await h.links(names, { kind: "pr", repo, number });
     if (links.length >= MAX_ROWS) truncated.add(`links: the store returned its cap of ${MAX_ROWS}`);
     const own = (l: RepoLink) => l.repo === repo;
-    const tickets = links.filter((l) => own(l) && l.fromKind === "pr" && l.fromRef === String(number) && l.toKind === "ticket").map((l) => ({ key: l.toRef, source: l.source }));
+    const tickets = links.filter((l) => own(l) && l.fromKind === "pr" && l.fromRef === String(number) && l.toKind === "ticket").map((l) => ({ key: l.toRef, source: l.source })).sort(commentLast);
     const commits = links.filter((l) => own(l) && l.fromKind === "commit").map((l) => ({ sha: l.fromRef, source: l.source, verified: l.verified }));
     const state = r.id === undefined ? undefined : await h.syncState(r.id);
 
@@ -360,7 +363,7 @@ const getProvenance = define({
       const uniq = [...new Map(prs.map((x) => [`${x.repo} ${x.number}`, x])).values()].slice(0, PER_KIND);
       const found = await Promise.all(uniq.map((x) => h.links(names, { kind: "pr", ...x })));
       found.forEach((f, i) => {
-        for (const l of f.links) if (l.toKind === "ticket" && l.fromKind === "pr" && l.repo === uniq[i]!.repo && Number(l.fromRef) === uniq[i]!.number) add(lists.tickets, l.toRef, { key: l.toRef, source: l.source, verified: l.verified });
+        for (const l of [...f.links].sort(commentLast)) if (l.toKind === "ticket" && l.fromKind === "pr" && l.repo === uniq[i]!.repo && Number(l.fromRef) === uniq[i]!.number) add(lists.tickets, l.toRef, { key: l.toRef, source: l.source, verified: l.verified });
       });
     };
     let anchor: object;
@@ -396,7 +399,7 @@ const getProvenance = define({
       const res = await h.links(names, a);
       if (res.links.length >= MAX_ROWS) truncated.add(`links: the store returned its cap of ${MAX_ROWS}`);
       gaps = repo ? res.gaps.filter((g) => g === notIngested(repo)) : res.gaps;
-      for (const l of res.links) {
+      for (const l of [...res.links].sort(commentLast)) {
         if (repo && a.kind !== "pr" && l.repo !== repo) continue;
         const meta = { source: l.source, verified: l.verified };
         if (l.fromKind === "commit") add(lists.commits, `${l.repo} ${l.fromRef}`, { repo: l.repo, sha: l.fromRef, ...meta });

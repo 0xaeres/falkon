@@ -228,14 +228,19 @@ export function ticketKeys(text: string, keys: string[]): string[] {
 }
 
 /**
- * The links a pull request's own text makes: ticket keys from its title, body and head branch name, and `#N` or `owner/repo#N`
- * references in its body. A reference to another repository is named `<host>/<owner>/<repo>` after this repository's host.
+ * The links a pull request's own text makes: ticket keys from its title, body and head branch name (source `ticket-pattern`),
+ * then keys from its first MAX_ROWS comments (source `comment-ticket-pattern`; bot authors and `>` quoted lines are skipped, and a
+ * key already found keeps its earlier source), and `#N` or `owner/repo#N` references in its body. A reference to another repository is named `<host>/<owner>/<repo>` after this repository's host.
  */
-export function discussionLinks(d: Pick<Discussion, "number" | "title" | "body" | "headRef">, repoName: string, keys: string[]): Link[] {
+export function discussionLinks(d: Pick<Discussion, "number" | "title" | "body" | "headRef"> & { comments?: Pick<DiscussionComment, "body" | "authorLogin">[] }, repoName: string, keys: string[]): Link[] {
   const from = { fromKind: "pr" as const, fromRef: String(d.number), verified: true };
   const links = new Map<string, Link>();
   const add = (l: Link) => links.set(`${l.toKind} ${l.toRepo ?? ""} ${l.toRef}`, l);
   for (const key of ticketKeys([d.title, d.body, d.headRef ?? ""].join("\n"), keys)) add({ ...from, toKind: "ticket", toRef: key, toRepo: null, source: "ticket-pattern" });
+  for (const c of (d.comments ?? []).slice(0, MAX_ROWS)) {
+    if (c.authorLogin?.endsWith("[bot]")) continue;
+    for (const key of ticketKeys(c.body.split("\n").filter((l) => !l.startsWith(">")).join("\n"), keys)) if (!links.has(`ticket  ${key}`)) add({ ...from, toKind: "ticket", toRef: key, toRepo: null, source: "comment-ticket-pattern" });
+  }
   const host = repoName.split("/")[0]!;
   for (const m of d.body.matchAll(/(?<![\w./-])([A-Za-z0-9][A-Za-z0-9-]*)\/([A-Za-z0-9._-]+)#(\d+)\b/g)) {
     const target = `${host}/${m[1]}/${m[2]}`;

@@ -369,16 +369,27 @@ test("get_provenance: a pull request outside the scope contributes no ticket", a
   }
 });
 
-test("get_provenance: keys only in a comment, or of an unconfigured project, are never tickets", async () => {
+test("get_provenance and get_pull_request: a key only in a comment is a ticket from source comment-ticket-pattern; unconfigured keys are not", async () => {
   await seed();
-  // links as the importer derives them: configured keys O3 from title, body and branch only
-  const d = pr(7, { title: "fix", body: "see ZZZ-1 and also O3-77 is not here", headRef: "feature", mergeCommitSha: sha2, comments: [comment(1, "tracked in O3-5629")] });
+  // links as the importer derives them: configured key O3 from title, body, branch, then comments
+  const d = pr(7, { title: "fix", body: "see ZZZ-1 and also O3-77 is here", headRef: "feature", mergeCommitSha: sha2, comments: [comment(1, "tracked in O3-5629"), comment(2, "ZZZ-2 and O3-77")] });
   const links = discussionLinks(d, APP, ["O3"]);
-  assert.deepEqual(links.filter((l) => l.toKind === "ticket").map((l) => l.toRef), ["O3-77"], "importer: ZZZ unconfigured, comment ignored");
+  assert.deepEqual(links.filter((l) => l.toKind === "ticket").map((l) => [l.toRef, l.source]), [["O3-77", "ticket-pattern"], ["O3-5629", "comment-ticket-pattern"]]);
   await store.replaceDiscussion(ids[APP], d, links);
   await store.replaceCommitLinks(ids[APP], [commitLink(sha2, 7)]);
-  const keys = (await run("get_provenance", { commit: sha2 })).json.tickets.map((x: any) => x.key);
-  assert.deepEqual(keys, ["O3-77"], "neither the comment key O3-5629 nor ZZZ-1");
+  const prov = (await run("get_provenance", { commit: sha2 })).json.tickets.map((x: any) => [x.key, x.source]);
+  assert.deepEqual(prov, [["O3-77", "ticket-pattern"], ["O3-5629", "comment-ticket-pattern"]]);
+  const got = (await run("get_pull_request", { repo: APP, number: 7 })).json.tickets.map((x: any) => [x.key, x.source]);
+  assert.deepEqual(got, [["O3-77", "ticket-pattern"], ["O3-5629", "comment-ticket-pattern"]]);
+});
+
+test("comment keys: a comment key on a pull request outside the Product scope is invisible", async () => {
+  await seed();
+  const d = pr(4, { comments: [comment(1, "see O3-4242")] });
+  await store.replaceDiscussion(ids[SECRET], d, discussionLinks(d, SECRET, ["O3"]));
+  const j = (await run("get_provenance", { ticket: "O3-4242" })).json;
+  assert.deepEqual(j.pullRequests, []);
+  assert.ok(!JSON.stringify(j).includes(SECRET));
 });
 
 test("get_provenance: isolation, links into outside repositories dropped, outside repo like a missing one", async () => {
