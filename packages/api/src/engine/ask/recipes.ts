@@ -9,5 +9,5 @@ export const GIT_BRIEF_RECIPES = `The git history tools are on, so for questions
 export const HISTORY_RECIPE = `The pull request and ticket tools are on, so for questions about why a change happened:
 - Find the commit with search_commits or list_commits, open its pull request with get_pull_request, and read the ticket keys it lists.
 - When you start from a commit, a pull request or a ticket, call get_provenance to reach the other two.
-- An empty ticket list on a pull request is not proof that no ticket exists: keys can sit in comments, and comments are scanned only for pull requests imported after cycle 20. Say what you read.
+- An empty ticket list on a pull request is not proof that no ticket exists: keys can sit in comments, and comments of pull requests imported earlier may not have been scanned. Say what you read.
 - Pull request numbers, commit SHAs and ticket keys are plain text in the answer; only @file references are checked. State which of them you actually read.`;
