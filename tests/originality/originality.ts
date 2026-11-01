@@ -90,6 +90,8 @@ export function shippedFiles(): string[] {
     ...["prompt", "impact", "evidence", "brief"].map((n) => p(`packages/api/src/engine/ask/${n}.ts`)),
     p("packages/shared/src/toolText.json"),
     p("packages/shared/src/tools.ts"),
+    ...["gitToolText", "historyToolText"].map((n) => p(`packages/shared/src/${n}.json`)),
+    ...["gitTools", "historyTools"].map((n) => p(`packages/shared/src/${n}.ts`)),
     p("packages/api/src/engine/mcp.ts"),
     p("packages/shared/schemas/falkon/config.json"),
     ...walk(p("packages/shared/src/kb")).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts")),

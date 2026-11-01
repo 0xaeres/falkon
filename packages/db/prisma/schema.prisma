@@ -294,7 +294,7 @@ model DiscussionFile {
   @@index([discussionId])
 }
 
-/// commit -> pr (merge-commit-sha, squash-subject, merge-subject), pr -> ticket (ticket-pattern), pr -> pr (body-ref).
+/// commit -> pr (merge-commit-sha, squash-subject, merge-subject), pr -> ticket (ticket-pattern, comment-ticket-pattern), pr -> pr (body-ref).
 /// Commit links are verified against the local clone; unverified ones are hidden by default. Head-branch SHAs are never stored.
 model ProvenanceLink {
   id       Int     @id @default(autoincrement())

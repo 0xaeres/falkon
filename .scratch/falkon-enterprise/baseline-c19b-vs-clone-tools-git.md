@@ -43,7 +43,7 @@ Floor: n 16; recall 0.6972; precision 0.5404; cost 0.0247.
 
 ### clone-tools-git-history-prs (hidden)
 
-Coverage clone-tools-git-history-prs: 16/16 paired; failed 0; malformed 0; leaks 2.
+Coverage clone-tools-git-history-prs: 16/16 paired; failed 0; malformed 0; leaks 0.
 Denied tool attempts (research_codebase, list_commits, get_diff, list_branches): 0.
 Tool calls clone-tools-git-history-prs: check_ancestry 4, compare_revisions 1, get_diff 8, get_provenance 10, get_pull_request 36, get_range_history 1, grep 44, list_commits 2, list_repos 9, read_file 27, search_commits 10, search_diffs 14, search_discussions 1.
 New tool calls clone-tools-git-history-prs: search_commits 10, search_diffs 14, compare_revisions 1, list_refs 0, check_ancestry 4, get_range_history 1, list_contributors 0.
@@ -67,7 +67,7 @@ Reference: n 16, failed 0, malformed 0, leaks 1.
 
 ### clone-tools-git-history-prs
 
-Coverage clone-tools-git-history-prs: 40/40 paired; failed 0; malformed 0; leaks 2.
+Coverage clone-tools-git-history-prs: 40/40 paired; failed 0; malformed 0; leaks 0.
 Denied tool attempts (research_codebase, list_commits, get_diff, list_branches): 0.
 Tool calls clone-tools-git-history-prs: check_ancestry 4, compare_revisions 1, find_symbol_definitions 2, find_symbol_references 1, get_diff 22, get_provenance 25, get_pull_request 83, get_range_history 7, glob 1, grep 115, list_commits 5, list_repos 17, read_file 69, search_commits 42, search_diffs 31, search_discussions 9.
 New tool calls clone-tools-git-history-prs: search_commits 42, search_diffs 31, compare_revisions 1, list_refs 0, check_ancestry 4, get_range_history 7, list_contributors 0.
