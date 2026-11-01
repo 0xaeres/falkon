@@ -972,7 +972,7 @@ Order: S89 and S91 in parallel (disjoint files), then S90, then S92 after the hu
 |---|---|---|
 | (a) answers labelled partial for the cap alone | 8 of 10 human-style, all 12 eval | 0 of 22 |
 | (b) history question uses a history tool | no history tool existed in chat | yes: `get_pull_request` and `search_diffs` on the payment-change question (only one question in the set asks for history, so this is thin evidence) |
-| (c) eval recall, stored view, 12 questions | 0.833 | 0.858 (strict file-and-line match; per question: seven at 1.00, one 0.80, three 0.50 and one more at 1.00; the three at 0.50 are the docs questions, one of which was 1.00 before) |
+| (c) eval recall, stored view, 12 questions | 0.833 | 0.858 (strict file-and-line match; per question: eight at 1.00, one at 0.80, three at 0.50; the three at 0.50 are the docs questions, one of which was 1.00 before) |
 | (d) literal marker in stored text | 1 of 22 | 0 of 22 |
 | (e) readable explanation for a human | to be judged by the human | answers run 391 to 1,090 words, open with a plain summary, use numbered headings, end with what was not verified; read `runs-c21/q02.thread.json` (flow), `q06` (why) and `q10` (absence) |
 
