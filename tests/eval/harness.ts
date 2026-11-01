@@ -60,10 +60,11 @@ const isLeakPath = (path: string) => !(spillOrScratch(homedir()).test(path) && !
 /** Input fields that name files; Grep's regex `pattern` is code, not a path. */
 const pathFields: Record<string, string[]> = { Read: ["file_path", "path"], Grep: ["path", "glob"], Glob: ["pattern", "path"] };
 
-export type Parsed = { result?: string; usage: Record<string, unknown>; total_cost_usd?: number; num_turns?: number; is_error?: boolean; toolCalls: Record<string, number>; firstTool?: string; leak: boolean; deniedAttempts: number };
+export type Parsed = { result?: string; usage: Record<string, unknown>; total_cost_usd?: number; num_turns?: number; is_error?: boolean; toolCalls: Record<string, number>; firstTool?: string; leak: boolean; deniedAttempts: number; bareGrep: number };
 /** Reads a stream-json run. Any tool outside the arm's allowlist, or a path into private areas, marks the run as a leak. */
 export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] = []): Parsed {
-  const out: Parsed = { usage: {}, toolCalls: {}, leak: false, deniedAttempts: 0 };
+  const out: Parsed = { usage: {}, toolCalls: {}, leak: false, deniedAttempts: 0, bareGrep: 0 };
+  const bare = new Set<unknown>();
   const allowed = ["Read", "Grep", "Glob", ...toolsFor(arm).map(mcp)];
   const visit = (node: unknown): void => {
     if (Array.isArray(node)) return node.forEach(visit);
@@ -73,6 +74,8 @@ export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] 
       out.firstTool ??= item.name.replace(`mcp__${SERVER}__`, "");
       // An arm may try a tool it was denied (research_codebase, git history and pull request tools); that is counted, not a leak.
       if (deniedFor(arm).map(mcp).includes(item.name)) out.deniedAttempts++;
+      // A tool named exactly `grep` (no MCP prefix) does not exist: Claude Code rejects it and nothing runs, so it is a failed call. A result that is not an error would mean something did run (checked below).
+      else if (item.name === "grep") { out.bareGrep++; bare.add(item.id); }
       else if (!allowed.includes(item.name)) out.leak = true;
       else if (item.name.startsWith(`mcp__${SERVER}__`)) { const short = item.name.slice(mcp("").length); out.toolCalls[short] = (out.toolCalls[short] ?? 0) + 1; }
       if (Object.hasOwn(pathFields, item.name)) {
@@ -82,6 +85,7 @@ export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] 
         }
       }
     }
+    else if (item.type === "tool_result" && bare.has(item.tool_use_id) && item.is_error !== true) out.leak = true;
     Object.values(item).forEach(visit);
   };
   for (const line of stdout.split("\n")) {
@@ -100,6 +104,13 @@ export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] 
     }
   }
   return out;
+}
+
+/** Stored runs keep the leak flag of the parser that recorded them. Clears it only when bare `grep` calls were the sole cause (the current rules find no leak and at least one bare call), so older flags for real leaks stand. */
+export function restoreLeak<T extends { arm: string; leak?: boolean; stdout?: string }>(run: T, denyPaths: string[] = []): T {
+  if (!run.leak || !run.stdout) return run;
+  const now = parseClaudeOutput(run.stdout, run.arm as Arm, denyPaths);
+  return !now.leak && now.bareGrep > 0 ? { ...run, leak: false } : run;
 }
 
 const sha = z.string().regex(/^[0-9a-fA-F]{7,40}$/), repo = z.string().min(1);
