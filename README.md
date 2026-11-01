@@ -449,7 +449,7 @@ On the `api` service, seven more tools are on by default and read git history fr
 
 ## Ask and the knowledge base
 
-**Ask** is a chat over one Product. It calls the same tools, then answers with `@file:{repo::path:a-b}` citations that link to the source. The answer reads evidence from files the tools opened, and Falkon drops any citation that does not match them.
+**Ask** is a chat over one Product. It calls every tool MCP registers except the agent tier (`ask_codebase`, `research_codebase`, `list_language_models`), including the pull request and git history tools unless `MCP_HISTORY_TOOLS=off` or `MCP_GIT_TOOLS=off` removes them, then answers with `@file:{repo::path:a-b}` citations that link to the source. The answer reads evidence from files the tools opened, and Falkon drops any citation that does not match them.
 
 **The knowledge base** writes architecture documents for each repository and commits them to a companion git repository named `<repo>::knowledge`. Zoekt indexes that repository like any other, so search and MCP tools find the documents without extra tools. A knowledge repository is visible exactly when its owner repository is.
 
