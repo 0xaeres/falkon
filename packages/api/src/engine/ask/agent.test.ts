@@ -6,6 +6,9 @@ import { MockLanguageModelV3 } from "ai/test";
 import { scopeFor } from "@falkon/shared";
 import { agentTools } from "./agent";
 
+// The ten core tools: the pull request and git families are switched off (S89 offers them by default).
+process.env.MCP_HISTORY_TOOLS = "off";
+process.env.MCP_GIT_TOOLS = "off";
 const tools = () => agentTools(scopeFor(["*"]), [], () => {});
 
 test("every Ask agent tool sends byte-identical Zod 3 schema JSON to the model", async () => {

@@ -1,20 +1,34 @@
 import { createUIMessageStream, jsonSchema, NoSuchToolError, streamText, tool, type ModelMessage, type UIMessage } from "ai";
-import { gitRead, toolDefinitions, toolJsonSchema, toolNames, type AnyToolDefinition, type Scope, type ToolSource } from "@falkon/shared";
+import { gitRead, gitToolDefinitions, gitToolNames, historyToolDefinitions, historyToolNames, toolDefinitions, toolJsonSchema, toolNames, type AnyToolDefinition, type Scope, type ToolSource } from "@falkon/shared";
 import { toolDeps } from "../tools";
+import { familyOn } from "../toolFamily";
 import { answerPart } from "./answer";
 import { aiModel, type LanguageModelConfig } from "./models";
 import { dynamicPrompt, STATIC_PROMPT } from "./prompt";
 
 const MAX_STEPS = () => Number(process.env.FALKON_CHAT_MAX_STEP_COUNT ?? 100);
 
-/** The order the agent's tools are registered in, which is the order the model sees. */
-const AGENT_TOOL_ORDER = ["read_file", "list_branches", "list_commits", "list_repos", "get_diff", "grep", "glob", "find_symbol_references", "find_symbol_definitions", "list_tree"] as const;
+/** The first ten tools, in the order the model has always seen them; every other registered tool follows in registry order. */
+const CORE_TOOL_ORDER = ["read_file", "list_branches", "list_commits", "list_repos", "get_diff", "grep", "glob", "find_symbol_references", "find_symbol_definitions", "list_tree"] as const;
+
+/** MCP tools the chat agent is never offered: the agent tier (they would nest a model run in a model run). Not in the three registries; the parity test reads this. */
+export const CHAT_EXCLUDED_TOOLS = ["ask_codebase", "research_codebase", "list_language_models"] as const;
+
+/** Every registered tool the chat offers, in order: the core ten, then shared, pull request (MCP_HISTORY_TOOLS) and git (MCP_GIT_TOOLS) tools. */
+export function chatToolDefinitions(): [string, AnyToolDefinition][] {
+  const all: [string, AnyToolDefinition][] = [
+    ...toolNames.map((n) => [n, toolDefinitions[n]] as [string, unknown]),
+    ...(familyOn("MCP_HISTORY_TOOLS") ? historyToolNames.map((n) => [n, historyToolDefinitions[n]] as [string, unknown]) : []),
+    ...(familyOn("MCP_GIT_TOOLS") ? gitToolNames.map((n) => [n, gitToolDefinitions[n]] as [string, unknown]) : []),
+  ] as [string, AnyToolDefinition][];
+  const core = CORE_TOOL_ORDER.flatMap((n) => all.filter(([name]) => name === n));
+  return [...core, ...all.filter(([n]) => !(CORE_TOOL_ORDER as readonly string[]).includes(n) && !(CHAT_EXCLUDED_TOOLS as readonly string[]).includes(n))];
+}
 
 /** The agent's tools: the shared definitions, scoped to the caller and the chat's selected repos. */
 export function agentTools(scope: Scope, selectedRepos: string[], onSource: (s: ToolSource) => void) {
   return Object.fromEntries(
-    AGENT_TOOL_ORDER.filter((n) => toolNames.includes(n)).map((name) => {
-      const d = toolDefinitions[name] as unknown as AnyToolDefinition;
+    chatToolDefinitions().map(([name, d]) => {
       return [
         name,
         tool({
