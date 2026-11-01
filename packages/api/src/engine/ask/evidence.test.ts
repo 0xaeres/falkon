@@ -247,7 +247,7 @@ test("fixture: real answers resolve at least 95% of their references and satisfy
     assertProperties(r, counts);
   }
   const resolved = distinct - unverified;
-  console.log(`evidence fixture: ${resolved}/${distinct} distinct references resolved (${((100 * resolved) / distinct).toFixed(1)}%), ${capped} of them over the 12-item cap; ${marked}/${total} occurrences carry a marker; ${fixtures.length} answers`);
+  console.log(`evidence fixture: ${resolved}/${distinct} distinct references resolved (${((100 * resolved) / distinct).toFixed(1)}%), ${capped} of them over the 40-item cap; ${marked}/${total} occurrences carry a marker; ${fixtures.length} answers`);
   assert(resolved / distinct >= 0.95, `${resolved}/${distinct}`);
 });
 
@@ -368,4 +368,11 @@ test("stored size of a message with 40 evidence windows", async () => {
   const real = Object.fromEntries(Object.keys(files).map((k) => [k, Array.from({ length: 50 }, (_, i) => `  const value${i} = computeSomething(argument${i}, options); // line ${i}`).join("\n")]));
   const r = await run({ text: paths.map((p) => `Uses ${ref(APP, p)}.`).join("\n\n"), sources }, real);
   assert(JSON.stringify(r).length < 150_000, "40 windows of about 30 lines stay near 90 KB");
+});
+
+test("a text that opens with two marker lines keeps the text after them", async () => {
+  const dbl = answerOf(await run({ text: `${ANSWER_TAG}\n${ANSWER_TAG}\nNothing found.` }, FILES));
+  assert.deepEqual([dbl.kind, dbl.abstention], ["abstention", "Nothing found."]);
+  const rep = answerOf(await run({ text: `${REPLY_TAG}\n${REPLY_TAG}\nHi`, sources: [] }, FILES));
+  assert.deepEqual([rep.kind, rep.paragraphs.map((p) => p.text)], ["reply", ["Hi"]]);
 });

@@ -65,13 +65,16 @@ function paragraphs(text: string) {
   return out;
 }
 
-/** Keeps the text before the first later marker line (reply or answer tag, outside fences): after it the model writes a shorter duplicate summary, and the first block is the grounded one. */
+/** Keeps the text before the first marker line that follows some text (reply or answer tag, outside fences): after it the model writes a shorter duplicate summary, and the first block is the grounded one. */
 function firstAnswer(text: string) {
   const kept: string[] = [];
   let open = false;
   for (const line of text.split("\n")) {
     if (FENCE.test(line)) open = !open;
-    if (!open && (line.trim() === REPLY_TAG || line.trim() === ANSWER_TAG)) break;
+    if (!open && (line.trim() === REPLY_TAG || line.trim() === ANSWER_TAG)) {
+      if (kept.join("").trim()) break; // a leading run of marker lines is skipped, not cut at
+      continue;
+    }
     kept.push(line);
   }
   return kept.join("\n").trim();
