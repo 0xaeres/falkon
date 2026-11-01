@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildCommand, parseAnswer, parseClaudeOutput, prompt } from "./harness.js";
+import { buildCommand, parseAnswer, parseClaudeOutput, prompt, restoreLeak } from "./harness.js";
 import { homedir } from "node:os";
 import type { Arm } from "./data.js";
 
@@ -260,4 +260,48 @@ test("each arm denies exactly the tool families it does not have: a call is a de
 
 test("the combined arm shares the git-history prompt", () => {
   assert.equal(prompt("clone-tools-git-history-prs", "Q", true), prompt("clone-tools-git", "Q", true));
+});
+
+// Real shape from cycle 19b runs hist-a-08 and hist-a-13: the model called a tool named `grep`, and Claude Code answered with a tool_use_error.
+const bareGrepNoSuchTool = (id: string) => [
+  { type: "assistant", message: { content: [{ type: "tool_use", id, name: "grep", input: { pattern: "(date-picker|dropdown)", repo: "openmrs-esm-reports-app", limit: "100" } }] } },
+  { type: "user", message: { content: [{ type: "tool_result", tool_use_id: id, is_error: true, content: "<tool_use_error>Error: No such tool available: grep. Tool names are case-sensitive: call Grep instead.</tool_use_error>" }] } },
+].map((e) => JSON.stringify(e)).join("\n");
+
+test("a bare grep call that Claude Code rejected is a failed call, not a leak", () => {
+  const out = parseClaudeOutput([bareGrepNoSuchTool("t1"), bareGrepNoSuchTool("t2"), stream(["mcp__falkon__list_repos"])].join("\n"), "clone-tools-git-history-prs");
+  assert.deepEqual([out.leak, out.bareGrep, out.firstTool, out.toolCalls], [false, 2, "grep", { list_repos: 1 }]);
+});
+
+test("a bare grep call does not hide a real leak in the same transcript", () => {
+  for (const tool of ["Bash", "Write"]) assert.equal(parseClaudeOutput([bareGrepNoSuchTool("t1"), stream([tool])].join("\n"), "clone-tools-git-history-prs").leak, true, tool);
+  assert.equal(parseClaudeOutput([bareGrepNoSuchTool("t1"), stream(["Read"], { file_path: "/Users/me/.env" })].join("\n"), "clone-tools-git-history-prs").leak, true);
+});
+
+test("a bare grep that returned a result ran outside the server and is a leak", () => {
+  const ran = [{ type: "assistant", message: { content: [{ type: "tool_use", id: "t1", name: "grep", input: {} }] } }, { type: "user", message: { content: [{ type: "tool_result", tool_use_id: "t1", content: "a.ts:1:x" }] } }].map((e) => JSON.stringify(e)).join("\n");
+  assert.equal(parseClaudeOutput(ran, "clone-tools").leak, true);
+});
+
+test("grep names: MCP-prefixed grep is a normal call, Grep is the allowed built-in, other casings leak", () => {
+  const mcp = parseClaudeOutput(stream(["mcp__falkon__grep"]), "clone-tools");
+  assert.deepEqual([mcp.leak, mcp.bareGrep, mcp.toolCalls], [false, 0, { grep: 1 }]);
+  assert.equal(parseClaudeOutput(stream(["Grep"], { pattern: "x", path: "." }), "clone-tools").leak, false);
+  for (const name of ["GREP", "Grep ", "mcp__other__grep"]) assert.equal(parseClaudeOutput(stream([name]), "clone-tools").leak, true, name);
+});
+
+test("an empty transcript has no leak and no bare grep", () => {
+  const out = parseClaudeOutput("", "clone-tools");
+  assert.deepEqual([out.leak, out.bareGrep, out.firstTool], [false, 0, undefined]);
+});
+
+test("restoreLeak clears a stored leak only when bare grep was its sole cause", () => {
+  const arm = "clone-tools-git-history-prs";
+  assert.equal(restoreLeak({ arm, leak: true, stdout: bareGrepNoSuchTool("t1") }).leak, false);
+  // Cycle 15 hist-b-09 shape: a Grep into the spill folder, flagged by the old rules; no bare grep, so the stored flag stands.
+  const spill = stream(["Grep"], { pattern: "x", path: `${homedir()}/.claude/projects/-p/s/tool-results` });
+  assert.equal(restoreLeak({ arm, leak: true, stdout: spill }).leak, true);
+  assert.equal(restoreLeak({ arm, leak: true, stdout: [bareGrepNoSuchTool("t1"), stream(["Bash"])].join("\n") }).leak, true);
+  assert.equal(restoreLeak({ arm, leak: false, stdout: bareGrepNoSuchTool("t1") }).leak, false);
+  assert.equal(restoreLeak({ arm, leak: true }).leak, true);
 });
