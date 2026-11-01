@@ -1,5 +1,7 @@
 import dedent from "dedent";
+import { familyOn } from "../toolFamily";
 import { IMPACT_PROMPT, isImpactQuery } from "./impact";
+import { GIT_BRIEF_RECIPES, HISTORY_RECIPE } from "./recipes";
 
 export const ANSWER_TAG = "<!--answer-->";
 /** Marks a purely conversational reply (greeting, thanks, "what can you do"); evidence.ts reads it. */
@@ -54,7 +56,6 @@ export const STATIC_PROMPT = d`
     - Broken: @file:acme/app::src/cart.ts (no curly braces)
     - Broken: @file:{acme/app::src/cart.ts:10-25,30-35} (one range only)
     - Broken: @file:{src/cart.ts} (no repository)
-    - Be clear and very concise, and use bullets where they help.
     - Cite only lines a tool has shown you in this conversation. A file you have seen only by name (in search or tree results) must be read with \`read_file\` before citing it; a file you read that way after a \`grep\` is fine to cite.
     - Never describe code without its location. If you cannot give a reference for something, leave it out.
     - Quote code through \`${FILE_REFERENCE_PREFIX}\` references instead of pasting code blocks.
@@ -110,8 +111,28 @@ Example: \`\`\`archify
 \`\`\`
 </archify_diagrams>`;
 
+/** Who reads the answer: a person in the Falkon UI, or another agent over MCP. */
+export type Audience = "human" | "agent";
+
+/** Per-chat answer style by audience; kept out of STATIC_PROMPT so that stays one cache-stable text. Citations stay mandatory for both. */
+export const AUDIENCE_PROMPT: Record<Audience, string> = {
+  human: `<answer_style audience="human">
+The reader is a person who may not know this code. Start with a short plain-language summary of the answer. Then explain what the code does, why it is built that way, and how the pieces and repositories fit together.
+- The first time a domain or code term appears (an entity name, an abbreviation, a business word), say in a few words what it means.
+- For a question about a flow, walk the path step by step, from what the user sees to where the data is stored.
+- Name the repositories involved.
+- Use headings and short paragraphs; add a table only where it makes a comparison clearer.
+- Say what you could not read or verify.
+- Let the length follow the question: a simple question gets a short answer, and nothing is padded.
+References stay required for every piece of code you mention.
+</answer_style>`,
+  agent: `<answer_style audience="agent">
+The reader is another program or agent that will act on your answer. Be terse and put locations first: the answer in a few lines, then the list of locations, each with a one-line note. No tutorial, no diagrams, no definitions. Say what could not be checked.
+</answer_style>`,
+};
+
 /** Per-chat context: selected repos and files the user mentioned. */
-export function dynamicPrompt({ repos, files, query, diagrams }: { repos: string[]; files: { path: string; repo: string; language: string; revision: string; source: string }[]; query?: string; diagrams?: boolean }) {
+export function dynamicPrompt({ repos, files, query, diagrams, audience }: { repos: string[]; files: { path: string; repo: string; language: string; revision: string; source: string }[]; query?: string; diagrams?: boolean; audience: Audience }) {
   const parts: string[] = [];
   if (repos.length > 0) {
     parts.push(d`
@@ -142,6 +163,9 @@ export function dynamicPrompt({ repos, files, query, diagrams }: { repos: string
   }
   parts.push(RENDER_PROMPT, REPLY_PROMPT);
   if (diagrams) parts.push(DIAGRAM_PROMPT);
+  parts.push(AUDIENCE_PROMPT[audience]);
+  if (familyOn("MCP_HISTORY_TOOLS")) parts.push(HISTORY_RECIPE);
+  if (familyOn("MCP_GIT_TOOLS")) parts.push(GIT_BRIEF_RECIPES);
   // The recipe goes in this per-chat part, not STATIC_PROMPT: the static part stays byte-identical and prompt-cached, and only this part can see the question.
   if (query !== undefined && isImpactQuery(query)) parts.push(IMPACT_PROMPT);
   return parts.join("\n\n");

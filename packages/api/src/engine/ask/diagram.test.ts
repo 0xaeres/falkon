@@ -39,7 +39,7 @@ test(`only the first ${MAX_DIAGRAMS} blocks are rendered`, async () => {
 });
 
 test("the archify guidance is added only when asked for (the MCP and blocking paths leave it off)", () => {
-  const base = { repos: [], files: [] };
+  const base = { repos: [], files: [], audience: "human" as const };
   assert.ok(!dynamicPrompt(base).includes("<archify_diagrams>"));
   assert.ok(dynamicPrompt({ ...base, diagrams: true }).includes("<archify_diagrams>"));
 });

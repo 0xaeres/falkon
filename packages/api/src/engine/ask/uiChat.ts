@@ -42,6 +42,7 @@ export async function uiChatResponse(o: {
       ...(await buildDiagrams(ctx.text)),
     ],
     diagrams: true,
+    audience: "human",
   });
   return createUIMessageStreamResponse({ stream });
 }
