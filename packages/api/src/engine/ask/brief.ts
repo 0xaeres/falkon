@@ -3,8 +3,6 @@ import { IMPACT_BRIEF_STEPS, isImpactQuery } from "./impact";
 import { fileReferenceToString } from "./prompt";
 import { GIT_BRIEF_RECIPES } from "./recipes";
 
-export { GIT_BRIEF_RECIPES };
-
 const fileCitation = fileReferenceToString({ repo: "<repo>", path: "<path>" });
 const rangeCitation = fileCitation.replace(/\}$/, ":<start>-<end>}");
 const answerFormat = `Write Markdown. Follow every code mention immediately with ${fileCitation} or ${rangeCitation}, using the repository name, file path, and start and end lines from your evidence.`;

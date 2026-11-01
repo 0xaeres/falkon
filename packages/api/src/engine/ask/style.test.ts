@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { GIT_BRIEF_RECIPES } from "./brief";
-import { REPLY_PROMPT, RENDER_PROMPT, STATIC_PROMPT, dynamicPrompt } from "./prompt";
+import { gitToolNames, historyToolNames } from "@falkon/shared";
+import { GIT_BRIEF_RECIPES } from "./recipes";
+import { ANSWER_TAG, AUDIENCE_PROMPT, REPLY_PROMPT, RENDER_PROMPT, STATIC_PROMPT, dynamicPrompt } from "./prompt";
 
 const base = { repos: ["a/b"], files: [], query: "how does checkout work?" };
 const human = () => dynamicPrompt({ ...base, audience: "human" });
@@ -31,22 +32,26 @@ test("human block only for human, agent block only for agent", () => {
   assert.doesNotMatch(agent(), /plain-language|first time a domain/);
 });
 
-test("history recipes follow the flags and name no absent tool", () => {
-  withEnv({ MCP_HISTORY_TOOLS: undefined, MCP_GIT_TOOLS: undefined }, () => {
-    const p = human();
-    assert.match(p, /get_pull_request/);
-    assert.match(p, /get_provenance/);
-    assert.match(p, /not proof that no ticket exists/);
-    assert.ok(p.includes(GIT_BRIEF_RECIPES));
+test("each tool family is named only when its flag is on, in all four combinations", () => {
+  const mentions = (p: string, names: readonly string[]) => names.filter((n) => new RegExp(`\\b${n}\\b`).test(p));
+  for (const history of [true, false]) for (const git of [true, false]) {
+    withEnv({ MCP_HISTORY_TOOLS: history ? undefined : " Off ", MCP_GIT_TOOLS: git ? "on" : "off" }, () => {
+      const p = human();
+      const label = `history ${history}, git ${git}`;
+      assert.deepEqual(mentions(p, historyToolNames).length > 0, history, label);
+      assert.equal(mentions(p, gitToolNames).length > 0, git, label);
+      assert.equal(p.includes(GIT_BRIEF_RECIPES), git, label);
+      assert.equal(agent() === p.replace(AUDIENCE_PROMPT.human, AUDIENCE_PROMPT.agent), true, label);
+    });
+  }
+  withEnv({ MCP_HISTORY_TOOLS: undefined, MCP_GIT_TOOLS: "off" }, () => {
+    assert.match(human(), /not proof that no ticket exists/);
   });
-  withEnv({ MCP_HISTORY_TOOLS: "off", MCP_GIT_TOOLS: " OFF " }, () => {
-    const p = agent();
-    assert.doesNotMatch(p, /get_pull_request|get_provenance|search_commits|list_refs|check_ancestry/);
-  });
-  withEnv({ MCP_HISTORY_TOOLS: "off", MCP_GIT_TOOLS: "on" }, () => {
-    assert.ok(!human().includes("get_pull_request"));
-    assert.ok(human().includes(GIT_BRIEF_RECIPES));
-  });
+});
+
+test("the human block follows the answer tag and leaves conversational messages alone", () => {
+  assert.ok(AUDIENCE_PROMPT.human.includes(`After the ${ANSWER_TAG} line, begin with a short plain-language summary`));
+  assert.ok(AUDIENCE_PROMPT.human.includes("This does not apply to a conversational message (see the conversational replies section)."));
 });
 
 test("reply and render parts are unchanged", () => {

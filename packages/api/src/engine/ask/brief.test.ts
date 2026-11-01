@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { scopeFor } from "@falkon/shared";
-import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS, GIT_BRIEF_RECIPES } from "./brief";
+import { buildResearchBrief, CLIENT_RESEARCH_INSTRUCTIONS } from "./brief";
+import { GIT_BRIEF_RECIPES } from "./recipes";
 import { FILE_REFERENCE_REGEX } from "./prompt";
 
 test("research brief narrows visible repositories and gives an evidence-based workflow", () => {

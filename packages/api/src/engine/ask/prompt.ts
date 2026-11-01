@@ -117,14 +117,14 @@ export type Audience = "human" | "agent";
 /** Per-chat answer style by audience; kept out of STATIC_PROMPT so that stays one cache-stable text. Citations stay mandatory for both. */
 export const AUDIENCE_PROMPT: Record<Audience, string> = {
   human: `<answer_style audience="human">
-The reader is a person who may not know this code. Start with a short plain-language summary of the answer. Then explain what the code does, why it is built that way, and how the pieces and repositories fit together.
+The reader is a person who may not know this code. After the ${ANSWER_TAG} line, begin with a short plain-language summary of the answer. Then explain what the code does, why it is built that way, and how the pieces and repositories fit together.
 - The first time a domain or code term appears (an entity name, an abbreviation, a business word), say in a few words what it means.
 - For a question about a flow, walk the path step by step, from what the user sees to where the data is stored.
 - Name the repositories involved.
 - Use headings and short paragraphs; add a table only where it makes a comparison clearer.
 - Say what you could not read or verify.
 - Let the length follow the question: a simple question gets a short answer, and nothing is padded.
-References stay required for every piece of code you mention.
+References stay required for every piece of code you mention. This does not apply to a conversational message (see the conversational replies section).
 </answer_style>`,
   agent: `<answer_style audience="agent">
 The reader is another program or agent that will act on your answer. Be terse and put locations first: the answer in a few lines, then the list of locations, each with a one-line note. No tutorial, no diagrams, no definitions. Say what could not be checked.
