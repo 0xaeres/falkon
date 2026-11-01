@@ -916,6 +916,46 @@ Limits: the loop decides alone the cause in S86, the exact source value in S87, 
 - Checks on the tip: typecheck exit 0; shared 301, backend 86 (18 skipped), api 255 (14 skipped), contracts 25, ui 34 and 68, eval 137, originality 7 pass, 0 fail; api build exit 0. The `list_refs` failure the S87 builder saw under parallel load did not recur.
 - Budget: about 420k subagent tokens of 600k; wall-clock about 90 minutes of 150. No paid call.
 
+## Cycle 21: chat tools, citation cap and answer style (human, 2026-11-01; loop-planned from the live test in [`live-chat/findings.md`](live-chat/findings.md))
+
+Roadmap note: this cycle is inserted before the agent tier foundation (D166), which moves one cycle later. No knowledge base work: the knowledge base budget finding (four scans ended `BUDGET_EXHAUSTED`; the first-scan estimate is far below real use) is left as a separate follow-up.
+
+Evidence (live test, `main` at `7120551`, DeepSeek-V4.1-Flash, 22 questions): chat answered well, but (1) `AGENT_TOOL_ORDER` in `packages/api/src/engine/ask/agent.ts` gives chat ten fixed tools, none of the pull request or git history tools; (2) `MAX_EVIDENCE = 12` in `ask/evidence.ts` turned 4 to 44 citations per answer into bare paths and labelled 8 of 10 answers partial; (3) the static Ask prompt says "Be clear and very concise" and has no audience; (4) a literal `<!--reply-->` line and a duplicate summary ended one stored answer.
+
+Human decisions at the grill (2026-11-01): chat gets all ten history tools (three pull request, seven git) and must get every tool added later; the cap rises to 40; two answer styles by audience (human chat explains, an MCP agent client gets terse, location-first answers); a paid verification run at the end, with a pilot, and a separate go-ahead right before it.
+
+Decisions (loop, to veto): D180. Chat's tool list is derived, not listed: every definition in the shared, pull request and git registries, in the order the model already sees (the current ten first, then the rest in registry order), gated by the same `MCP_HISTORY_TOOLS` and `MCP_GIT_TOOLS` rules MCP uses, minus an explicit exclusion list (`ask_codebase`, `research_codebase`, `list_language_models`: the agent tier, never called by the agent itself). A parity test fails when MCP registers a tool that chat neither has nor excludes by name, which is how "new tools reach chat" is enforced. D181. `ask_codebase` runs the same agent, so it gets the same tools. D182. The audience goes in the per-chat part of the prompt (a `human` or `agent` style block), so `STATIC_PROMPT` stays one cache-stable text; the "very concise" line leaves it. D183. Pull request numbers, commit SHAs and ticket keys in an answer stay plain text (only `@file` references are verified); said in the history recipe so the model states what it read. D184. ADR and README amendments named in the slices below (the "one registry of ten tools used by MCP and Ask" line, the chat transport and evidence cap wording) are approved here, so they do not stop the cycle at gate 2.
+
+Limits: no dependency, no push, no snapshot change with both history flags `off` (the cycle 18 list) and none of the MCP registration snapshots change (chat tools are not MCP registrations); stop for the human if one must. Budget: 700k subagent tokens, 150 minutes; the paid run is outside it (see S92).
+
+**S89. Chat gets every registered tool.** Tier standard. Agent claude. Blocked by: none.
+- Goal: replace the fixed list with the derived list of D180; one small shared helper for "family on" if used three times (`mcp.ts` uses it twice); README and ADR (tool registry wording, chat tool list) amended in place.
+- Scope: `packages/api/src/engine/ask/agent.ts`, `engine/mcp.ts` (helper only), their tests, `README.md`, `docs/adr/0001-falkon-architecture.md` (the registry line at 95 and the Ask tool wording).
+- Done: chat tool names with both flags on equal the MCP tool names minus the exclusion list, in the order of D180; with `MCP_GIT_TOOLS=off` the seven git tools are absent from chat, with `MCP_HISTORY_TOOLS=off` the three pull request tools; with both off the list is today's ten, byte for byte; the parity test fails when a tool is added to an MCP registry without chat or the exclusion list changing; a history tool call in chat runs with the caller's scope and selected repositories (an out-of-scope repository gives no data, as in MCP).
+- Adversarial cases: a selected-repositories list that excludes the repository of a pull request; a model that calls `ask_codebase` or `research_codebase` (not offered, repaired or refused as today); tool names that differ only in case (existing repair); a flag value other than exactly `off`.
+- Verify: `pnpm typecheck`; api tests; api build; shared tests (minus `opsSmoke`).
+
+**S90. Answer style by audience, history recipes in chat.** Tier standard. Agent claude. Blocked by: S89 (needs the flag helper and tool names).
+- Goal: `dynamicPrompt` takes an audience. Human chat: summary first, explain what, why and how the pieces fit in plain words, define OpenMRS or code terms when first used, name the repositories, give a short worked path (UI to database) when the question is about a flow, say what was not read; no "very concise". Agent client (`ask_codebase`): terse, locations first, no diagrams, no tutorial. The static prompt loses the "very concise" line and names no audience. A history recipe block (pull request and ticket tools, git tools) appears in the per-chat prompt only when the matching flag is on (reuse `GIT_BRIEF_RECIPES` text where it fits; add a pull request recipe in the same voice, own words, D9).
+- Scope: `packages/api/src/engine/ask/prompt.ts`, `brief.ts` (reuse only), the places that call `dynamicPrompt` (`uiChat.ts`, `chat.ts` or where `ask_codebase` builds its prompt), prompt tests, the originality scan (run it with the local reference set: the scan list already covers `prompt.ts`), ADR text on the chat prompt if it names the concise rule.
+- Done: tests pin that the static prompt is byte-identical for both audiences and holds no style words; human and agent blocks differ as above; history recipes follow the flags; the originality scan reports 0 hits.
+- Adversarial cases: a question that is a greeting (the reply path is unchanged); a very long question; both flags off (no recipe block, no mention of tools that are absent); the diagram prompt still only for the UI chat.
+- Verify: `pnpm typecheck`; api tests; the originality scan.
+
+**S91. Citation cap 40 and the stray reply marker.** Tier standard. Agent claude. Blocked by: none (parallel with S89).
+- Goal: `MAX_EVIDENCE` becomes 40; a citation past the cap still falls back to a bare path with the partial reason (so the rule stays, only larger); the literal `<!--reply-->` marker never appears in stored paragraphs of a non-reply answer, and text after a second answer marker in the same message is handled (decide: keep the first answer only, or strip the markers; say which and why from `ask/evidence.ts` and the live trace `runs-human/q10.thread.json`).
+- Scope: `packages/api/src/engine/ask/evidence.ts` and its tests (`evidence.test.ts`, `evidence.fixture.json` only if needed), README line that names the limit.
+- Done: a test with 41 distinct references shows 40 evidence parts and one partial reason; a test built from the q10 shape shows no marker in the stored text; the evidence contract tests pass unchanged; stored message size for 40 windows is measured and reported (bytes).
+- Adversarial cases: the same reference repeated (counts once); references only inside code fences; a reference to an unread file (dropped as today); a whole-file reference; text with zero references.
+- Verify: `pnpm typecheck`; api tests; contracts tests; ui tests (the UI must render 40 citations: test or check the component for a fixed 12).
+
+**S92. Live verification (paid, needs the human's go-ahead).** Tier standard. Agent claude, main session (Docker). Blocked by: S89, S90, S91 kept and merged.
+- Goal: rebuild the `falkon-live` stack from the cycle tip (recipe and scripts in `live-chat/`), rerun the same 10 human questions (six repositories) and 12 eval questions (42 repositories) and compare with `live-chat/findings.md`.
+- Pilot: 3 questions first. Estimate before running: about $0.5 to $1 on the human's DeepInfra model; cap $2; no knowledge base scan.
+- Decision rule: keep the cycle if (a) no answer is labelled partial for the cap alone, (b) history questions use at least one pull request or git history tool where the corpus has one (q09 and the ticket-style questions), (c) recall on the 12 eval questions (stored view) is not below 0.833, (d) no answer carries a literal marker, (e) human answers read as explanations (checked by the human on three answers at gate 2). A miss on (b) or (c) is reported, not hidden; the code stays and the miss is next-cycle input.
+
+Order: S89 and S91 in parallel (disjoint files), then S90, then S92 after the human's go-ahead at gate 2 or earlier on request.
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).

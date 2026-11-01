@@ -1,0 +1,516 @@
+{
+  "id": "df920806-f364-4541-a658-bb2583556d3f",
+  "productId": "openmrs",
+  "title": "Billing Module Cash Point Concept",
+  "updatedAt": 1793522751004,
+  "answers": [
+    {
+      "id": "GwqUWzUPtWnJG858",
+      "productId": "openmrs",
+      "question": "Why does the billing module have a cash point concept? Explain what it is used for and where it appears in code.",
+      "generation": "g-ab363e",
+      "kind": "partial",
+      "paragraphs": [
+        {
+          "text": "## Why a cash point exists",
+          "citations": []
+        },
+        {
+          "text": "A cash point models **a physical cashier station** — \"the cashier stations bills are raised at\" [1]. The class doc says it is \"a location where `Bill`s can be created and paid for\" [2]. It is deliberately finer-grained than an OpenMRS `Location`: a `Location` is a building or ward, whereas a facility can have several cash desks inside one location (OPD desk, IPD desk, pharmacy till). It carries a `Location` reference so stations can be scoped and filtered [3].",
+          "citations": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "text": "It is a `BaseOpenmrsMetadata` subclass [4], persisted in the `cashier_cash_point` table with name, description, location and the standard retire/audit columns [5].",
+          "citations": [
+            4,
+            5
+          ]
+        },
+        {
+          "text": "## What it is used for",
+          "citations": []
+        },
+        {
+          "text": "- **Attributing money to a station.** Every `Bill` references exactly one cash point (`not-null`) [6], exposed as the `cashPoint` field [7]. This is what makes cash reconciliation possible: you can total the takings of one desk.\n- **Driving shift/cashier accounting.** A `Timesheet` (clock-in/clock-out for a cashier) is also tied to a cash point, also `not-null` [8], so a shift records *which station* the cashier was manning [9].\n- **Receipt-number grouping.** The sequential receipt generator can group numbers by cash point: `GroupingType.CASH_POINT` prefixes the number with `cashPointPrefix + bill.getCashPoint().getId()`, and `CASHIER_AND_CASH_POINT` combines cashier and cash point [10]. The prefix is stored in the generator model [11].\n- **Filtering and reporting.** Bills can be searched by cash point through `BillSearch.cashPointUuid` [12], fed from the REST `cashPointUuid` request parameter omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillResource.java. The frontend surfaces it per bill as `cashPointUuid` / `cashPointName` / `cashPointLocation` src/billing.resource.ts.",
+          "citations": [
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "text": "## Where it appears in code",
+          "citations": []
+        },
+        {
+          "text": "**Model and persistence**\n- `CashPoint` model api/src/main/java/org/openmrs/module/billing/api/model/CashPoint.java; hibernate mapping [5]",
+          "citations": [
+            5
+          ]
+        },
+        {
+          "text": "**Service / DAO**\n- `CashPointService` interface, methods authorized with `PrivilegeConstants.MANAGE_METADATA` api/src/main/java/org/openmrs/module/billing/api/CashPointService.java\n- `CashPointServiceImpl`: CRUD plus location/name lookups; `getCashPointsByLocation` requires a non-null location api/src/main/java/org/openmrs/module/billing/api/impl/CashPointServiceImpl.java; `getCashPointsByLocationAndName` validates name length against a 255-char cap api/src/main/java/org/openmrs/module/billing/api/impl/CashPointServiceImpl.java; retire/unretire at api/src/main/java/org/openmrs/module/billing/api/impl/CashPointServiceImpl.java\n- DAO contract `CashPointDAO` api/src/main/java/org/openmrs/module/billing/api/db/CashPointDAO.java, implemented by `HibernateCashPointDAOImpl` api/src/main/java/org/openmrs/module/billing/api/db/hibernate/HibernateCashPointDAOImpl.java\n- Search criteria object `CashPointSearch` (locationUuid, name, includeRetired) api/src/main/java/org/openmrs/module/billing/api/search/CashPointSearch.java",
+          "citations": []
+        },
+        {
+          "text": "**Bill creation — the crucial rule**\nOn a new bill, if no cash point was posted, `BillResource.save` calls `loadBillCashPoint` omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillResource.java. That method looks up the cashier's open timesheet and takes its cash point: if a timesheet exists it uses `timesheet.getCashPoint()`, erroring if it is null; if there is no current timesheet it either throws when the `billing.timesheetRequired` global property is set, copies the cash point from the adjusted bill, or throws \"Cash point cannot be null!\" omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillResource.java. The open timesheet is selected by cashier with a null `clockOut` api/src/main/java/org/openmrs/module/billing/api/impl/TimesheetServiceImpl.java.",
+          "citations": []
+        },
+        {
+          "text": "**REST / legacy web**\n- `CashPointResource` at `/billing/cashPoint`, a `MetadataDelegatingCrudResource` with get-all, get-by-uuid, save, retire-on-delete and purge omod/src/main/java/org/openmrs/module/billing/web/rest/resource/CashPointResource.java\n- `CashPointSearchHandler` for the `q`/location search omod/src/main/java/org/openmrs/module/billing/web/rest/search/CashPointSearchHandler.java\n- `TimesheetResource` exposes cash point as a `REF` representation omod/src/main/java/org/openmrs/module/billing/web/rest/resource/TimesheetResource.java\n- `CashPointPropertyEditor` converts an id or UUID string to a CashPoint for legacy form binding api/src/main/java/org/openmrs/module/billing/web/propertyeditor/CashPointPropertyEditor.java\n- Legacy page controller `/module/billing/cashPoints` omod/src/main/java/org/openmrs/module/billing/web/legacyweb/controller/CashPointsController.java",
+          "citations": []
+        },
+        {
+          "text": "**Frontend (billing app)**\n- `useCashPoint` fetches `/cashPoint` src/billing-form/billing-form.resource.ts; the check-in form posts the first cash point's UUID as `cashPoint` when creating the bill src/billing-form/billing-checkin-form.component.tsx\n- Admin UI: `AddCashPointModal` creates cash points via `POST /billing/cashPoint` src/billable-services/cash-point/add-cash-point.modal.tsx and `cash-point-configuration.component.tsx` lists them src/billable-services/cash-point/cash-point-configuration.component.tsx\n- Config default `postBilledItems.cashPoint` src/config-schema.ts\n- `CashPoint` type and the invoice fields src/types/index.ts\n- Seed data goes in a content package at `cashpoints/cashPoints.csv` README.md",
+          "citations": []
+        },
+        {
+          "text": "```archify\n{\"schema_version\":1,\"diagram_type\":\"architecture\",\"meta\":{\"title\":\"Cash point in the billing module\"},\"components\":[{\"id\":\"esm\",\"type\":\"frontend\",\"label\":\"Billing app\",\"sublabel\":\"useCashPoint, add-cash-point modal\",\"row\":0,\"col\":0},{\"id\":\"rest\",\"type\":\"backend\",\"label\":\"REST layer\",\"sublabel\":\"CashPointResource, BillResource\",\"row\":0,\"col\":1},{\"id\":\"service\",\"type\":\"backend\",\"label\":\"CashPointService\",\"sublabel\":\"CashPointServiceImpl\",\"row\":0,\"col\":2},{\"id\":\"dao\",\"type\":\"backend\",\"label\":\"CashPointDAO\",\"sublabel\":\"hibernate impl\",\"row\":0,\"col\":3},{\"id\":\"db\",\"type\":\"database\",\"label\":\"cashier_cash_point\",\"sublabel\":\"name, location, retired\",\"row\":0,\"col\":4},{\"id\":\"bill\",\"type\":\"backend\",\"label\":\"Bill\",\"sublabel\":\"cash_point_id not-null\",\"row\":1,\"col\":2},{\"id\":\"timesheet\",\"type\":\"backend\",\"label\":\"Timesheet\",\"sublabel\":\"cashier shift at a station\",\"row\":1,\"col\":1},{\"id\":\"receipt\",\"type\":\"backend\",\"label\":\"SequentialReceiptNumberGenerator\",\"sublabel\":\"group by cash point\",\"row\":2,\"col\":2}],\"connections\":[{\"from\":\"esm\",\"to\":\"rest\",\"label\":\"POST cashPoint\"},{\"from\":\"rest\",\"to\":\"service\"},{\"from\":\"service\",\"to\":\"dao\"},{\"from\":\"dao\",\"to\":\"db\"},{\"from\":\"timesheet\",\"to\":\"bill\",\"label\":\"supplies cash point\"},{\"from\":\"bill\",\"to\":\"receipt\",\"label\":\"grouping prefix\"},{\"from\":\"rest\",\"to\":\"timesheet\",\"label\":\"getCurrentTimesheet\"}]}\n```",
+          "citations": []
+        },
+        {
+          "text": "## Summary",
+          "citations": []
+        },
+        {
+          "text": "The cash point is the module's *till*: a metadata-defined cashier station under an OpenMRS location. It is required on every bill and timesheet, it decides which station a bill's money belongs to, it can group receipt numbers, and it is the filter dimension for cash reports. On bill creation it is not trusted from the client — the backend re-derives it from the cashier's open timesheet unless the `billing.timesheetRequired` property is off omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillResource.java.",
+          "citations": []
+        },
+        {
+          "text": "One thing I did not check: I found no dedicated cash-point reporting endpoint beyond the `cashPointUuid` bill filter, so I cannot confirm whether the O3 docs describe a reconciliation report.",
+          "citations": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "README.md",
+          "revision": "HEAD",
+          "startLine": 154,
+          "code": [
+            "e168c141-f5fd-4eec-bd3e-633bed1c9606,, Mobile money, Phone Number::Text::::True;Reference",
+            "```",
+            "",
+            "### Cash points",
+            "",
+            "The cashier stations bills are raised at. `location` references an existing location, so define your locations in the",
+            "same content package.",
+            "",
+            "```csv",
+            "Uuid, Void/Retire, name, description, location",
+            "54065383-b4d4-42d2-af4d-d250a1fd2590,, OPD Cash Point, OPD cash point for billing, Opd Clinic",
+            "ba685651-ed3b-4e63-9b35-78893060758a,, IPD Cash Point, IPD cash point for billing, Inpatient Ward",
+            "```",
+            "",
+            "### Item prices",
+            ""
+          ],
+          "highlightedLines": [
+            157,
+            158,
+            159,
+            160,
+            161,
+            162,
+            163,
+            164,
+            165,
+            166
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/CashPoint.java",
+          "revision": "HEAD",
+          "startLine": 12,
+          "code": [
+            "import org.openmrs.BaseOpenmrsMetadata;",
+            "import org.openmrs.Location;",
+            "",
+            "/**",
+            " * Model class that represents a location where {@link Bill}'s can be created and paid for.",
+            " */",
+            "public class CashPoint extends BaseOpenmrsMetadata {",
+            "\t",
+            "\tprivate static final long serialVersionUID = 0L;",
+            "\t"
+          ],
+          "highlightedLines": [
+            15,
+            16,
+            17,
+            18
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/CashPoint.java",
+          "revision": "HEAD",
+          "startLine": 21,
+          "code": [
+            "\t",
+            "\tprivate Integer cashPointId;",
+            "\t",
+            "\tprivate Location location;",
+            "\t",
+            "\tpublic Location getLocation() {",
+            "\t\treturn location;",
+            "\t}",
+            "\t",
+            "\tpublic void setLocation(Location location) {",
+            "\t\tthis.location = location;",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic Integer getId() {"
+          ],
+          "highlightedLines": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32
+          ]
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/CashPoint.java",
+          "revision": "HEAD",
+          "startLine": 15,
+          "code": [
+            "/**",
+            " * Model class that represents a location where {@link Bill}'s can be created and paid for.",
+            " */",
+            "public class CashPoint extends BaseOpenmrsMetadata {",
+            "\t",
+            "\tprivate static final long serialVersionUID = 0L;",
+            "\t"
+          ],
+          "highlightedLines": [
+            18
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/resources/Cashier.hbm.xml",
+          "revision": "HEAD",
+          "startLine": 14,
+          "code": [
+            "\t\t\"-//Hibernate/Hibernate Mapping DTD 3.0//EN\"",
+            "\t\t\"http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd\">",
+            "<hibernate-mapping package=\"org.openmrs.module.billing.api.model\">",
+            "\t<class name=\"org.openmrs.module.billing.api.model.CashPoint\" table=\"cashier_cash_point\">",
+            "\t\t<cache usage=\"read-write\"/>",
+            "",
+            "\t\t<id name=\"id\" type=\"int\" column=\"cash_point_id\">",
+            "\t\t\t<generator class=\"native\">",
+            "\t\t\t\t<param name=\"sequence\">cashier_cash_point_cash_point_id_seq</param>",
+            "\t\t\t</generator>",
+            "\t\t</id>",
+            "\t\t<discriminator column=\"cash_point_id\" insert=\"false\"/>",
+            "",
+            "\t\t<property name=\"name\" type=\"java.lang.String\" column=\"name\" not-null=\"true\" length=\"255\"/>",
+            "\t\t<property name=\"description\" type=\"java.lang.String\" column=\"description\" length=\"1024\"/>",
+            "",
+            "\t\t<many-to-one name=\"creator\" class=\"org.openmrs.User\" not-null=\"true\" column=\"creator\"/>",
+            "\t\t<property name=\"dateCreated\" type=\"java.util.Date\" column=\"date_created\" not-null=\"true\" length=\"19\"/>",
+            "\t\t<many-to-one name=\"changedBy\" class=\"org.openmrs.User\" column=\"changed_by\"/>",
+            "\t\t<property name=\"dateChanged\" type=\"java.util.Date\" column=\"date_changed\" length=\"19\"/>",
+            "\t\t<many-to-one name=\"retiredBy\" class=\"org.openmrs.User\" column=\"retired_by\"/>",
+            "\t\t<property name=\"dateRetired\" type=\"java.util.Date\" column=\"date_retired\" length=\"19\"/>",
+            "\t\t<property name=\"retireReason\" type=\"java.lang.String\" column=\"retire_reason\" length=\"255\"/>",
+            "\t\t<property name=\"retired\" type=\"boolean\" column=\"retired\" length=\"1\" not-null=\"true\"/>",
+            "\t\t<property name=\"uuid\" type=\"java.lang.String\" column=\"uuid\" length=\"38\" unique=\"true\"/>",
+            "\t\t<many-to-one name=\"location\" class=\"org.openmrs.Location\" column=\"location_id\"/>",
+            "\t</class>",
+            "",
+            "\t<class name=\"org.openmrs.module.billing.api.model.Timesheet\" table=\"cashier_timesheet\">",
+            "\t\t<cache usage=\"read-write\"/>"
+          ],
+          "highlightedLines": [
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/resources/Bill.hbm.xml",
+          "revision": "HEAD",
+          "startLine": 114,
+          "code": [
+            "\t\t</set>",
+            "\t\t<many-to-one name=\"cashier\" class=\"org.openmrs.Provider\" not-null=\"true\" column=\"provider_id\"/>",
+            "\t\t<many-to-one name=\"patient\" class=\"org.openmrs.Patient\" not-null=\"true\" column=\"patient_id\"/>",
+            "\t\t<many-to-one name=\"cashPoint\" class=\"org.openmrs.module.billing.api.model.CashPoint\" not-null=\"true\"",
+            "\t\t             column=\"cash_point_id\"/>",
+            "\t\t<many-to-one name=\"visit\" class=\"org.openmrs.Visit\" column=\"visit_id\" index=\"cashier_bill_visit_id_idx\"/>",
+            "\t\t<many-to-one name=\"billAdjusted\" class=\"org.openmrs.module.billing.api.model.Bill\" column=\"adjusted_bill_id\"/>",
+            ""
+          ],
+          "highlightedLines": [
+            117,
+            118
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Bill.java",
+          "revision": "HEAD",
+          "startLine": 47,
+          "code": [
+            "\t",
+            "\tprivate Patient patient;",
+            "\t",
+            "\tprivate CashPoint cashPoint;",
+            "\t",
+            "\tprivate Visit visit;",
+            "\t"
+          ],
+          "highlightedLines": [
+            50
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/resources/Cashier.hbm.xml",
+          "revision": "HEAD",
+          "startLine": 49,
+          "code": [
+            "\t\t</id>",
+            "\t\t<discriminator column=\"timesheet_id\" insert=\"false\"/>",
+            "",
+            "\t\t<many-to-one name=\"cashier\" class=\"org.openmrs.Provider\" not-null=\"true\" column=\"provider_id\"/>",
+            "\t\t<many-to-one name=\"cashPoint\" class=\"org.openmrs.module.billing.api.model.CashPoint\" not-null=\"true\"",
+            "\t\t             column=\"cash_point_id\"/>",
+            "",
+            "\t\t<property name=\"clockIn\" type=\"java.util.Date\" column=\"clock_in\" not-null=\"true\" length=\"19\"/>",
+            "\t\t<property name=\"clockOut\" type=\"java.util.Date\" column=\"clock_out\" length=\"19\"/>",
+            "",
+            "\t\t<!-- bi-directional many-to-one association to User -->",
+            "\t\t<many-to-one name=\"creator\" class=\"org.openmrs.User\" not-null=\"true\" column=\"creator\"/>"
+          ],
+          "highlightedLines": [
+            52,
+            53,
+            54,
+            55,
+            56,
+            57
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Timesheet.java",
+          "revision": "HEAD",
+          "startLine": 17,
+          "code": [
+            "/**",
+            " * Model class to represent a cashier timesheet entry.",
+            " */",
+            "public class Timesheet extends BaseOpenmrsData {",
+            "\t",
+            "\tprivate static final long serialVersionUID = 0L;",
+            "\t",
+            "\tprivate Integer timesheetId;",
+            "\t",
+            "\tprivate Provider cashier;",
+            "\t",
+            "\tprivate CashPoint cashPoint;",
+            "\t",
+            "\tprivate Date clockIn;",
+            "\t",
+            "\tprivate Date clockOut;",
+            "\t",
+            "\t@Override",
+            "\tpublic Integer getId() {"
+          ],
+          "highlightedLines": [
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/SequentialReceiptNumberGenerator.java",
+          "revision": "HEAD",
+          "startLine": 112,
+          "code": [
+            "\t\treturn numberWithoutSep.substring(numberWithoutSep.length() - 1);",
+            "\t}",
+            "\t",
+            "\tprivate String createGrouping(Bill bill) {",
+            "\t\tString result = \"\";",
+            "\t\t",
+            "\t\tswitch (model.getGroupingType()) {",
+            "\t\t\tcase CASHIER:",
+            "\t\t\t\tresult = model.getCashierPrefix() + bill.getCashier().getId();",
+            "\t\t\t\tbreak;",
+            "\t\t\tcase CASH_POINT:",
+            "\t\t\t\tresult = model.getCashPointPrefix() + bill.getCashPoint().getId();",
+            "\t\t\t\tbreak;",
+            "\t\t\tcase CASHIER_AND_CASH_POINT:",
+            "\t\t\t\tresult = model.getCashierPrefix() + bill.getCashier().getId() + model.getSeparator()",
+            "\t\t\t\t        + model.getCashPointPrefix() + bill.getCashPoint().getId();",
+            "\t\t\t\tbreak;",
+            "\t\t\tdefault:",
+            "\t\t\t\tbreak;",
+            "\t\t}",
+            "\t\t",
+            "\t\treturn result;",
+            "\t}",
+            "\t",
+            "\tprivate String getSequence(String grouping) {",
+            "\t\t// Do not include the separator when getting the next sequence"
+          ],
+          "highlightedLines": [
+            115,
+            116,
+            117,
+            118,
+            119,
+            120,
+            121,
+            122,
+            123,
+            124,
+            125,
+            126,
+            127,
+            128,
+            129,
+            130,
+            131,
+            132,
+            133,
+            134
+          ]
+        },
+        {
+          "id": 11,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/resources/SequentialReceiptNumberGenerator.hbm.xml",
+          "revision": "HEAD",
+          "startLine": 39,
+          "code": [
+            "\t\t</property>",
+            "",
+            "\t\t<property name=\"separator\" type=\"java.lang.String\" column=\"sequence_separator\" length=\"5\" not-null=\"true\"/>",
+            "\t\t<property name=\"cashierPrefix\" type=\"java.lang.String\" column=\"cashier_prefix\" length=\"5\" not-null=\"true\"/>",
+            "\t\t<property name=\"cashPointPrefix\" type=\"java.lang.String\" column=\"cash_point_prefix\" length=\"5\" not-null=\"true\"/>",
+            "\t\t<property name=\"sequencePadding\" type=\"int\" column=\"sequence_padding\" not-null=\"true\"/>",
+            "\t\t<property name=\"includeCheckDigit\" type=\"boolean\" column=\"has_check_digit\" not-null=\"true\"/>",
+            ""
+          ],
+          "highlightedLines": [
+            42,
+            43
+          ]
+        },
+        {
+          "id": 12,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/search/BillSearch.java",
+          "revision": "HEAD",
+          "startLine": 37,
+          "code": [
+            "\t",
+            "\tprivate String cashierUuid;",
+            "\t",
+            "\tprivate String cashPointUuid;",
+            "\t",
+            "\tprivate String visitUuid;",
+            "\t"
+          ],
+          "highlightedLines": [
+            40
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [
+        "25 references were not shown (limit 12)."
+      ],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}

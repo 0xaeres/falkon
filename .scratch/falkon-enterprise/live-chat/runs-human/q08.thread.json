@@ -1,0 +1,544 @@
+{
+  "id": "43a33597-4a8a-4799-a458-c240d6dc534b",
+  "productId": "openmrs",
+  "title": "FHIR2 Patient Mapping",
+  "updatedAt": 1793522832152,
+  "answers": [
+    {
+      "id": "FqYGg9yZTebgNjMd",
+      "productId": "openmrs",
+      "question": "How does the FHIR2 module map an OpenMRS Patient to a FHIR Patient resource? Explain the translator and its main mappings.",
+      "generation": "g-ab363e",
+      "kind": "partial",
+      "paragraphs": [
+        {
+          "text": "The translation lives in `PatientTranslatorImpl`, which implements the `PatientTranslator` interface (bidirectional, via `OpenmrsFhirUpdatableTranslator`) [1].",
+          "citations": [
+            1
+          ]
+        },
+        {
+          "text": "## Entry point: `toFhirResource`",
+          "citations": []
+        },
+        {
+          "text": "`toFhirResource(org.openmrs.Patient)` [2] asserts non-null, builds a new `Patient`, and delegates each field group to a specialized sub-translator injected by Spring (`@Autowired` setters).",
+          "citations": [
+            2
+          ]
+        },
+        {
+          "text": "## Main mappings",
+          "citations": []
+        },
+        {
+          "text": "| OpenMRS source | FHIR `Patient` field | Translating code |\n|---|---|---|\n| `patient.getUuid()` | `id` | [3] |\n| `!patient.getVoided()` | `active` | [4] |\n| each `PatientIdentifier` in `getActiveIdentifiers()` | `identifier` (repeated) | [5] |\n| each `PersonName` | `name` (repeated) | [6] |\n| `getGender()` (if non-null) | `gender` | [7] |\n| `getBirthdate()` / `getBirthdateEstimated()` | `birthDate` (`DateType`) | [8] |\n| `getDead()` + `getDeathDate()` | `deceased[x]` | [9] |\n| each `PersonAddress` | `address` (repeated) | [10] |\n| each `PersonAttribute` | `extension` (repeated) | [11] |\n| contact-point attributes | `telecom` | [12] |\n| `dateChanged`/`dateCreated` | `meta.lastUpdated`, `meta.versionId` | api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java |",
+          "citations": [
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "text": "## Field-level detail",
+          "citations": []
+        },
+        {
+          "text": "- **Identifiers** — `PatientIdentifierTranslatorImpl` skips null/voided identifiers, sets `value` and `id` (uuid), maps `preferred=true → use=OFFICIAL`, `false → use=USUAL`, sets `system` from the identifier type's URL and `type` as a `CodeableConcept` coded by the type's uuid with translated text, and puts the location in an extension api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientIdentifierTranslatorImpl.java.\n- **Names** — `PersonNameTranslatorImpl` maps `givenName` and `middleName` both into `HumanName.given` (given first, middle concatenated after), `familyName → family`, and `fullName → text`; OpenMRS-only parts (prefix, familyNamePrefix, familyName2, familyNameSuffix, degree) go into the `openmrs-fhir-ext/name` extension api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PersonNameTranslatorImpl.java.\n- **Gender** — a switch over `M/F/U/O` to `MALE/FEMALE/UNKNOWN/OTHER`, anything else `NULL` api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/GenderTranslatorImpl.java.\n- **Birth date** — `BirthDateTranslatorImpl` returns null when no birthdate; a plain `DateType` otherwise. If `birthdateEstimated`, it lowers precision: YEAR when older than 5 years, MONTH when 5 or younger api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/BirthDateTranslatorImpl.java.\n- **Deceased** — dead with a death date gives a `DateTimeType`; dead without one gives `BooleanType(true)`; alive gives `BooleanType(false)` [9].\n- **Addresses** — `PersonAddressTranslatorImpl` maps `cityVillage→city`, `stateProvince→state`, `country→country`, `countyDistrict→district`, `postalCode→postalCode`, and `preferred → use=HOME` (else `OLD`); the remaining OpenMRS address lines 1–15 are carried as extensions api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PersonAddressTranslatorImpl.java api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/BaseAddressTranslator.java.\n- **Person attributes** — `PersonAttributeTranslatorImpl` wraps each non-voided attribute in a `person-attribute` extension carrying the type name and value api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PersonAttributeTranslatorImpl.java.\n- **Telecom** — the translator reads the `fhir2.personContactPointAttributeTypeUuid` global property, and if unset returns an empty list; otherwise it loads active attributes of that type and converts them via `TelecomTranslator` api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java.\n- **Meta** — `FhirTranslatorUtils.getLastUpdated` prefers `dateChanged`, falling back to `dateCreated`, and `getVersionId` is that timestamp in millis as a string api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/FhirTranslatorUtils.java.",
+          "citations": [
+            9
+          ]
+        },
+        {
+          "text": "Extension URLs come from `FhirConstants`: `openmrs-fhir-ext/name` api/src/main/java/org/openmrs/module/fhir2/FhirConstants.java, `.../address` api/src/main/java/org/openmrs/module/fhir2/FhirConstants.java, `.../person-attribute` api/src/main/java/org/openmrs/module/fhir2/FhirConstants.java and the patient-identifier location extension api/src/main/java/org/openmrs/module/fhir2/FhirConstants.java.",
+          "citations": []
+        },
+        {
+          "text": "## Reverse direction",
+          "citations": []
+        },
+        {
+          "text": "`toOpenmrsType` (new, and update overload) runs the same sub-translators backwards api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java: id → uuid, `identifier`/`name`/`gender`/`birthDate`/`address` mapped back, `deceased` split into `dead` and `deathDate`, `telecom` turned into `PersonAttribute`s via the global-property attribute type, and `person-attribute` extensions restored, skipping invalid ones with a warning api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java. Note that on update, `name` entries are matched back to existing `PersonName`s by id so they are edited rather than duplicated api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java.",
+          "citations": []
+        },
+        {
+          "text": "## Structure",
+          "citations": []
+        },
+        {
+          "text": "```archify\n{\"schema_version\":1,\"diagram_type\":\"architecture\",\"meta\":{\"title\":\"Patient translation components\"},\"components\":[{\"id\":\"peer\",\"type\":\"backend\",\"label\":\"PatientTranslatorImpl\",\"sublabel\":\"toFhirResource / toOpenmrsType\",\"row\":0,\"col\":1},{\"id\":\"id\",\"type\":\"backend\",\"label\":\"PatientIdentifierTranslator\",\"row\":1,\"col\":0},{\"id\":\"name\",\"type\":\"backend\",\"label\":\"PersonNameTranslator\",\"row\":1,\"col\":1},{\"id\":\"gender\",\"type\":\"backend\",\"label\":\"GenderTranslator\",\"row\":1,\"col\":2},{\"id\":\"birth\",\"type\":\"backend\",\"label\":\"BirthDateTranslator\",\"row\":2,\"col\":0},{\"id\":\"addr\",\"type\":\"backend\",\"label\":\"PersonAddressTranslator\",\"row\":2,\"col\":1},{\"id\":\"attr\",\"type\":\"backend\",\"label\":\"PersonAttributeTranslator\",\"row\":2,\"col\":2},{\"id\":\"tel\",\"type\":\"backend\",\"label\":\"TelecomTranslator\",\"row\":3,\"col\":0},{\"id\":\"dao\",\"type\":\"database\",\"label\":\"FhirPersonDao\",\"sublabel\":\"contact point attributes\",\"row\":3,\"col\":1},{\"id\":\"gp\",\"type\":\"database\",\"label\":\"Global properties\",\"sublabel\":\"contact point attribute type\",\"row\":3,\"col\":2}],\"connections\":[{\"from\":\"peer\",\"to\":\"id\",\"label\":\"identifiers\"},{\"from\":\"peer\",\"to\":\"name\",\"label\":\"names\"},{\"from\":\"peer\",\"to\":\"gender\",\"label\":\"gender\"},{\"from\":\"peer\",\"to\":\"birth\",\"label\":\"birthDate\"},{\"from\":\"peer\",\"to\":\"addr\",\"label\":\"addresses\"},{\"from\":\"peer\",\"to\":\"attr\",\"label\":\"extensions\"},{\"from\":\"peer\",\"to\":\"tel\",\"label\":\"telecom\"},{\"from\":\"peer\",\"to\":\"dao\",\"label\":\"query\"},{\"from\":\"peer\",\"to\":\"gp\",\"label\":\"read\"}]}\n```",
+          "citations": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/PatientTranslator.java",
+          "revision": "HEAD",
+          "startLine": 13,
+          "code": [
+            "",
+            "import org.hl7.fhir.r4.model.Patient;",
+            "",
+            "public interface PatientTranslator extends OpenmrsFhirUpdatableTranslator<org.openmrs.Patient, Patient> {",
+            "\t",
+            "\t/**",
+            "\t * Maps a {@link org.openmrs.Patient} to a {@link Patient}",
+            "\t *",
+            "\t * @param patient the patient to translate",
+            "\t * @return the corresponding FHIR patient",
+            "\t */",
+            "\t@Override",
+            "\tPatient toFhirResource(@Nonnull org.openmrs.Patient patient);",
+            "\t",
+            "\t/**",
+            "\t * Maps a {@link Patient} to a {@link org.openmrs.Patient}",
+            "\t *",
+            "\t * @param patient the FHIR patient to map",
+            "\t * @return the corresponding OpenMRS patient",
+            "\t */",
+            "\t@Override",
+            "\torg.openmrs.Patient toOpenmrsType(@Nonnull Patient patient);",
+            "\t",
+            "\t/**",
+            "\t * Maps a {@link Patient} to an existing {@link org.openmrs.Patient}",
+            "\t *",
+            "\t * @param currentPatient the patient to update",
+            "\t * @param patient the FHIR patient to map",
+            "\t * @return the updated OpenMRS patient",
+            "\t */",
+            "\t@Override",
+            "\torg.openmrs.Patient toOpenmrsType(@Nonnull org.openmrs.Patient currentPatient, @Nonnull Patient patient);",
+            "\t",
+            "}"
+          ],
+          "highlightedLines": [
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java",
+          "revision": "HEAD",
+          "startLine": 93,
+          "code": [
+            "\t@Setter(value = PROTECTED, onMethod_ = @Autowired)",
+            "\tprivate PersonAttributeTranslator personAttributeTranslator;",
+            "\t",
+            "\t@Override",
+            "\tpublic Patient toFhirResource(@Nonnull org.openmrs.Patient openmrsPatient) {",
+            "\t\tnotNull(openmrsPatient, \"The Openmrs Patient object should not be null\");",
+            "\t\t",
+            "\t\tPatient patient = new Patient();",
+            "\t\tpatient.setId(openmrsPatient.getUuid());",
+            "\t\tpatient.setActive(!openmrsPatient.getVoided());",
+            "\t\t",
+            "\t\tfor (PatientIdentifier identifier : openmrsPatient.getActiveIdentifiers()) {",
+            "\t\t\tpatient.addIdentifier(identifierTranslator.toFhirResource(identifier));",
+            "\t\t}",
+            "\t\t",
+            "\t\tfor (PersonName name : openmrsPatient.getNames()) {",
+            "\t\t\tpatient.addName(nameTranslator.toFhirResource(name));",
+            "\t\t}",
+            "\t\t",
+            "\t\tif (openmrsPatient.getGender() != null) {",
+            "\t\t\tpatient.setGender(genderTranslator.toFhirResource(openmrsPatient.getGender()));",
+            "\t\t}",
+            "\t\t",
+            "\t\tpatient.setBirthDateElement(birthDateTranslator.toFhirResource(openmrsPatient));",
+            "\t\t",
+            "\t\tif (openmrsPatient.getDead()) {",
+            "\t\t\tif (openmrsPatient.getDeathDate() != null) {",
+            "\t\t\t\tpatient.setDeceased(new DateTimeType(openmrsPatient.getDeathDate()));",
+            "\t\t\t} else {",
+            "\t\t\t\tpatient.setDeceased(new BooleanType(true));",
+            "\t\t\t}",
+            "\t\t} else {",
+            "\t\t\tpatient.setDeceased(new BooleanType(false));",
+            "\t\t}",
+            "\t\t",
+            "\t\tfor (PersonAddress address : openmrsPatient.getAddresses()) {",
+            "\t\t\tpatient.addAddress(addressTranslator.toFhirResource(address));",
+            "\t\t}",
+            "\t\t",
+            "\t\tSet<PersonAttribute> attributeSet = openmrsPatient.getAttributes();",
+            "\t\t",
+            "\t\tfor (PersonAttribute personAttribute : attributeSet) {",
+            "\t\t\tExtension personAttributeExtension = personAttributeTranslator.toFhirResource(personAttribute);",
+            "\t\t\tif (personAttributeExtension != null) {",
+            "\t\t\t\tpatient.addExtension(personAttributeExtension);",
+            "\t\t\t}",
+            "\t\t}",
+            "\t\t",
+            "\t\tpatient.setTelecom(getPatientContactDetails(openmrsPatient));",
+            "\t\tpatient.getMeta().setLastUpdated(getLastUpdated(openmrsPatient));",
+            "\t\tpatient.getMeta().setVersionId(getVersionId(openmrsPatient));",
+            "\t\t",
+            "\t\treturn patient;",
+            "\t}",
+            "\t",
+            "\tpublic List<ContactPoint> getPatientContactDetails(@Nonnull org.openmrs.Patient patient) {",
+            "\t\tString personContactAttributeType = globalPropertyService"
+          ],
+          "highlightedLines": [
+            96,
+            97,
+            98,
+            99,
+            100,
+            101,
+            102,
+            103,
+            104,
+            105,
+            106,
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            113,
+            114,
+            115,
+            116,
+            117,
+            118,
+            119,
+            120,
+            121,
+            122,
+            123,
+            124,
+            125,
+            126,
+            127,
+            128,
+            129,
+            130,
+            131,
+            132,
+            133,
+            134,
+            135,
+            136,
+            137,
+            138,
+            139,
+            140,
+            141,
+            142,
+            143,
+            144,
+            145,
+            146
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java",
+          "revision": "HEAD",
+          "startLine": 98,
+          "code": [
+            "\t\tnotNull(openmrsPatient, \"The Openmrs Patient object should not be null\");",
+            "\t\t",
+            "\t\tPatient patient = new Patient();",
+            "\t\tpatient.setId(openmrsPatient.getUuid());",
+            "\t\tpatient.setActive(!openmrsPatient.getVoided());",
+            "\t\t",
+            "\t\tfor (PatientIdentifier identifier : openmrsPatient.getActiveIdentifiers()) {"
+          ],
+          "highlightedLines": [
+            101
+          ]
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java",
+          "revision": "HEAD",
+          "startLine": 99,
+          "code": [
+            "\t\t",
+            "\t\tPatient patient = new Patient();",
+            "\t\tpatient.setId(openmrsPatient.getUuid());",
+            "\t\tpatient.setActive(!openmrsPatient.getVoided());",
+            "\t\t",
+            "\t\tfor (PatientIdentifier identifier : openmrsPatient.getActiveIdentifiers()) {",
+            "\t\t\tpatient.addIdentifier(identifierTranslator.toFhirResource(identifier));"
+          ],
+          "highlightedLines": [
+            102
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java",
+          "revision": "HEAD",
+          "startLine": 101,
+          "code": [
+            "\t\tpatient.setId(openmrsPatient.getUuid());",
+            "\t\tpatient.setActive(!openmrsPatient.getVoided());",
+            "\t\t",
+            "\t\tfor (PatientIdentifier identifier : openmrsPatient.getActiveIdentifiers()) {",
+            "\t\t\tpatient.addIdentifier(identifierTranslator.toFhirResource(identifier));",
+            "\t\t}",
+            "\t\t",
+            "\t\tfor (PersonName name : openmrsPatient.getNames()) {",
+            "\t\t\tpatient.addName(nameTranslator.toFhirResource(name));"
+          ],
+          "highlightedLines": [
+            104,
+            105,
+            106
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java",
+          "revision": "HEAD",
+          "startLine": 105,
+          "code": [
+            "\t\t\tpatient.addIdentifier(identifierTranslator.toFhirResource(identifier));",
+            "\t\t}",
+            "\t\t",
+            "\t\tfor (PersonName name : openmrsPatient.getNames()) {",
+            "\t\t\tpatient.addName(nameTranslator.toFhirResource(name));",
+            "\t\t}",
+            "\t\t",
+            "\t\tif (openmrsPatient.getGender() != null) {",
+            "\t\t\tpatient.setGender(genderTranslator.toFhirResource(openmrsPatient.getGender()));"
+          ],
+          "highlightedLines": [
+            108,
+            109,
+            110
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java",
+          "revision": "HEAD",
+          "startLine": 109,
+          "code": [
+            "\t\t\tpatient.addName(nameTranslator.toFhirResource(name));",
+            "\t\t}",
+            "\t\t",
+            "\t\tif (openmrsPatient.getGender() != null) {",
+            "\t\t\tpatient.setGender(genderTranslator.toFhirResource(openmrsPatient.getGender()));",
+            "\t\t}",
+            "\t\t",
+            "\t\tpatient.setBirthDateElement(birthDateTranslator.toFhirResource(openmrsPatient));",
+            "\t\t"
+          ],
+          "highlightedLines": [
+            112,
+            113,
+            114
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java",
+          "revision": "HEAD",
+          "startLine": 113,
+          "code": [
+            "\t\t\tpatient.setGender(genderTranslator.toFhirResource(openmrsPatient.getGender()));",
+            "\t\t}",
+            "\t\t",
+            "\t\tpatient.setBirthDateElement(birthDateTranslator.toFhirResource(openmrsPatient));",
+            "\t\t",
+            "\t\tif (openmrsPatient.getDead()) {",
+            "\t\t\tif (openmrsPatient.getDeathDate() != null) {"
+          ],
+          "highlightedLines": [
+            116
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java",
+          "revision": "HEAD",
+          "startLine": 115,
+          "code": [
+            "\t\t",
+            "\t\tpatient.setBirthDateElement(birthDateTranslator.toFhirResource(openmrsPatient));",
+            "\t\t",
+            "\t\tif (openmrsPatient.getDead()) {",
+            "\t\t\tif (openmrsPatient.getDeathDate() != null) {",
+            "\t\t\t\tpatient.setDeceased(new DateTimeType(openmrsPatient.getDeathDate()));",
+            "\t\t\t} else {",
+            "\t\t\t\tpatient.setDeceased(new BooleanType(true));",
+            "\t\t\t}",
+            "\t\t} else {",
+            "\t\t\tpatient.setDeceased(new BooleanType(false));",
+            "\t\t}",
+            "\t\t",
+            "\t\tfor (PersonAddress address : openmrsPatient.getAddresses()) {",
+            "\t\t\tpatient.addAddress(addressTranslator.toFhirResource(address));"
+          ],
+          "highlightedLines": [
+            118,
+            119,
+            120,
+            121,
+            122,
+            123,
+            124,
+            125,
+            126
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java",
+          "revision": "HEAD",
+          "startLine": 125,
+          "code": [
+            "\t\t\tpatient.setDeceased(new BooleanType(false));",
+            "\t\t}",
+            "\t\t",
+            "\t\tfor (PersonAddress address : openmrsPatient.getAddresses()) {",
+            "\t\t\tpatient.addAddress(addressTranslator.toFhirResource(address));",
+            "\t\t}",
+            "\t\t",
+            "\t\tSet<PersonAttribute> attributeSet = openmrsPatient.getAttributes();",
+            "\t\t"
+          ],
+          "highlightedLines": [
+            128,
+            129,
+            130
+          ]
+        },
+        {
+          "id": 11,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java",
+          "revision": "HEAD",
+          "startLine": 129,
+          "code": [
+            "\t\t\tpatient.addAddress(addressTranslator.toFhirResource(address));",
+            "\t\t}",
+            "\t\t",
+            "\t\tSet<PersonAttribute> attributeSet = openmrsPatient.getAttributes();",
+            "\t\t",
+            "\t\tfor (PersonAttribute personAttribute : attributeSet) {",
+            "\t\t\tExtension personAttributeExtension = personAttributeTranslator.toFhirResource(personAttribute);",
+            "\t\t\tif (personAttributeExtension != null) {",
+            "\t\t\t\tpatient.addExtension(personAttributeExtension);",
+            "\t\t\t}",
+            "\t\t}",
+            "\t\t",
+            "\t\tpatient.setTelecom(getPatientContactDetails(openmrsPatient));",
+            "\t\tpatient.getMeta().setLastUpdated(getLastUpdated(openmrsPatient));"
+          ],
+          "highlightedLines": [
+            132,
+            133,
+            134,
+            135,
+            136,
+            137,
+            138,
+            139
+          ]
+        },
+        {
+          "id": 12,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-fhir2",
+          "path": "api/src/main/java/org/openmrs/module/fhir2/api/translators/impl/PatientTranslatorImpl.java",
+          "revision": "HEAD",
+          "startLine": 138,
+          "code": [
+            "\t\t\t}",
+            "\t\t}",
+            "\t\t",
+            "\t\tpatient.setTelecom(getPatientContactDetails(openmrsPatient));",
+            "\t\tpatient.getMeta().setLastUpdated(getLastUpdated(openmrsPatient));",
+            "\t\tpatient.getMeta().setVersionId(getVersionId(openmrsPatient));",
+            "\t\t"
+          ],
+          "highlightedLines": [
+            141
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [
+        "17 references were not shown (limit 12)."
+      ],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}

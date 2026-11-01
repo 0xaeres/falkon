@@ -1,0 +1,415 @@
+{
+  "id": "ec739364-a21b-448b-9b3a-12a0c8f56938",
+  "productId": "openmrs",
+  "title": "Kubernetes Billing Cron Job Operator",
+  "updatedAt": 1793522886545,
+  "answers": [
+    {
+      "id": "5taizVG00bptiywq",
+      "productId": "openmrs",
+      "question": "Where is the Kubernetes operator that provisions the billing cron job?",
+      "generation": "g-ab363e",
+      "kind": "grounded",
+      "paragraphs": [
+        {
+          "text": "There is no Kubernetes operator in any of the six selected repositories, so nothing provisions a billing cron job via Kubernetes.",
+          "citations": []
+        },
+        {
+          "text": "What actually exists:",
+          "citations": []
+        },
+        {
+          "text": "- **No Kubernetes manifests or operator code at all.** A search for `apiVersion`, `kind: CronJob`, `kind: Deployment`, `kubebuilder` and `controller-runtime` across the selected repositories returns nothing; the only `reconcile` matches are unrelated Java methods in the billing module (e.g. `reconcileBillStatus`) [1]. The only Kubernetes mention is prose in the O3 docs telling you that a custom Docker/Kubernetes deployment is your responsibility [2]. The YAML/CI files in the selected repos are GitHub Actions and Bamboo build specs, not deployment manifests, e.g. the billing module's `[3]` and `[4]`, and the billing app's `[5]`.",
+          "citations": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "text": "- **The billing recurring job is an OpenMRS scheduler task, not a Kubernetes CronJob.** `AutoCloseTimesheetsTask` extends `AbstractTask` and calls `closeOpenTimesheets()` on the `ITimesheetService`, guarded by the `isExecuting` flag so it never runs twice concurrently [6]. It is registered through OpenMRS core's scheduler (`org.openmrs.scheduler.tasks.AbstractTask`) [7].",
+          "citations": [
+            6,
+            7
+          ]
+        },
+        {
+          "text": "- **Its registration is currently disabled.** The Liquibase changeset that would insert the task into the `scheduler_task_config` table is commented out, so the task is not auto-scheduled by the module and must be created in the OpenMRS scheduler admin UI [8].",
+          "citations": [
+            8
+          ]
+        },
+        {
+          "text": "- **The `cron` matches you may have seen are unrelated.** They are cron triggers for GitHub Actions (translation pull and dependency updates) [9] and `[10]`.",
+          "citations": [
+            9,
+            10
+          ]
+        },
+        {
+          "text": "So the \"cron job that provisions billing\" you are looking for most likely lives in a separate infrastructure/deployment repository (or an OpenMRS distro/Helm chart) that is not among the repositories I can search. If you can name that repository, I can trace the operator there. I could not check anything outside these six repositories.\n<!--reply-->\nI checked the six repositories available to me and found no Kubernetes operator or CronJob manifest — the only recurring billing job is an in-app OpenMRS scheduler task.",
+          "citations": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/impl/BillRefundServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 105,
+          "code": [
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\tprivate void reconcileBillStatus(Integer billId) {",
+            "\t\tif (billId == null) {",
+            "\t\t\treturn;",
+            "\t\t}"
+          ],
+          "highlightedLines": [
+            108
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-contrib-o3-docs",
+          "path": "content/en-US/docs/recipes/deploy-to-production.mdx",
+          "revision": "HEAD",
+          "startLine": 198,
+          "code": [
+            "docker compose logs -f frontend",
+            "```",
+            "",
+            "### Method 2: Custom Docker deployment",
+            "",
+            "If you're building custom Docker images or deploying to Kubernetes, you'll need to:",
+            "",
+            "1. **Build your frontend image** - Create a Dockerfile that copies your built SPA files into an nginx container",
+            "2. **Configure nginx** - Set up proper routing and proxy configuration",
+            "3. **Set environment variables** - Configure SPA path, API URL, and config URLs",
+            "4. **Set up health checks** - Implement health check endpoints",
+            "",
+            "Example Dockerfile for frontend:",
+            "",
+            "```dockerfile"
+          ],
+          "highlightedLines": [
+            201,
+            202,
+            203,
+            204,
+            205,
+            206,
+            207,
+            208,
+            209
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": ".github/workflows/build.yml",
+          "revision": "HEAD",
+          "startLine": 1,
+          "code": [
+            "name: Build with Maven",
+            "",
+            "on:",
+            "  push:",
+            "    branches: [ main ]",
+            "  pull_request:",
+            "    branches: [ main ]",
+            "  workflow_dispatch:",
+            "",
+            "concurrency:",
+            "  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}",
+            "  cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
+            "",
+            "jobs:",
+            "  build:",
+            "    uses: openmrs/openmrs-contrib-gha-workflows/.github/workflows/build-backend-module.yml@main",
+            "    permissions:",
+            "      contents: read",
+            "    secrets:",
+            "      MAVEN_REPO_USERNAME: ${{ secrets.MAVEN_REPO_USERNAME }}",
+            "      MAVEN_REPO_API_KEY: ${{ secrets.MAVEN_REPO_API_KEY }}",
+            "",
+            "  owasp-dependency-check:",
+            "    if: ${{ github.event_name != 'pull_request' }}",
+            "    uses: openmrs/openmrs-contrib-gha-workflows/.github/workflows/owasp-dependency-check.yml@main",
+            "    secrets:",
+            "      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}",
+            "      BOT_GH_TOKEN: ${{ secrets.OMRS_BOT_GH_TOKEN }}"
+          ],
+          "highlightedLines": []
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "bamboo-specs/bamboo.yml",
+          "revision": "HEAD",
+          "startLine": 1,
+          "code": [
+            "---",
+            "version: 2",
+            "plan:",
+            "  project-key: BILL",
+            "  key: BILL",
+            "  name: Billing",
+            "  description: Release plan for billing",
+            "stages:",
+            "- Build and Test:",
+            "    manual: false",
+            "    final: false",
+            "    jobs:",
+            "    - Build and Test JDK 8",
+            "- Deploy:",
+            "    manual: false",
+            "    final: false",
+            "    jobs:",
+            "    - Deploy to Maven",
+            "- Release:",
+            "    manual: true",
+            "    final: false",
+            "    jobs:",
+            "    - Release to Maven",
+            "Build and Test JDK 8:",
+            "  key: BTJ8",
+            "  tasks:",
+            "  - checkout:",
+            "      force-clean-build: 'false'",
+            "      description: Checkout default repository",
+            "  - script:"
+          ],
+          "highlightedLines": []
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": ".github/workflows/ci.yml",
+          "revision": "HEAD",
+          "startLine": 1,
+          "code": [
+            "name: OpenMRS CI",
+            "",
+            "on:",
+            "  workflow_dispatch:",
+            "    inputs:",
+            "      release_type:",
+            "        description: 'Release version bump'",
+            "        type: choice",
+            "        options: [patch, minor, major]",
+            "        default: patch",
+            "      custom_version:",
+            "        description: 'Custom version (e.g. 12.5.0). If set, overrides the version bump above.'",
+            "        required: false",
+            "      publish_only:",
+            "        description: 'Re-Publish only (For recovering from a failed npm publish. Skips the version bump, commit, and tag. Set \"Custom version\" to the existing release version, e.g. 12.4.0.)'",
+            "        type: boolean",
+            "        default: false",
+            "        required: false",
+            "  push:",
+            "    branches: [main]",
+            "  pull_request:",
+            "    branches: [main]",
+            "",
+            "concurrency:",
+            "  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}",
+            "  cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
+            "",
+            "jobs:",
+            "  build:",
+            "    uses: openmrs/openmrs-contrib-gha-workflows/.github/workflows/build-frontend-module.yml@main"
+          ],
+          "highlightedLines": []
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/tasks/AutoCloseTimesheetsTask.java",
+          "revision": "HEAD",
+          "startLine": 18,
+          "code": [
+            " * A scheduled task that automatically closes all open timesheets",
+            " */",
+            "@Slf4j",
+            "public class AutoCloseTimesheetsTask extends AbstractTask {",
+            "\t",
+            "\t@Override",
+            "\tpublic void execute() {",
+            "\t\tif (!isExecuting) {",
+            "\t\t\tif (log.isDebugEnabled()) {",
+            "\t\t\t\tlog.debug(\"Starting Auto Close Timesheets Task...\");",
+            "\t\t\t}",
+            "\t\t\t",
+            "\t\t\tstartExecuting();",
+            "\t\t\t",
+            "\t\t\ttry {",
+            "\t\t\t\tITimesheetService timesheetService = Context.getService(ITimesheetService.class);",
+            "\t\t\t\t",
+            "\t\t\t\ttimesheetService.closeOpenTimesheets();",
+            "\t\t\t}",
+            "\t\t\tcatch (Exception e) {",
+            "\t\t\t\tlog.error(\"Error while auto closing open timesheets:\", e);",
+            "\t\t\t}",
+            "\t\t\tfinally {",
+            "\t\t\t\tstopExecuting();",
+            "\t\t\t}",
+            "\t\t}",
+            "\t}",
+            "}"
+          ],
+          "highlightedLines": [
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/tasks/AutoCloseTimesheetsTask.java",
+          "revision": "HEAD",
+          "startLine": 12,
+          "code": [
+            "import lombok.extern.slf4j.Slf4j;",
+            "import org.openmrs.api.context.Context;",
+            "import org.openmrs.module.billing.api.ITimesheetService;",
+            "import org.openmrs.scheduler.tasks.AbstractTask;",
+            "",
+            "/**",
+            " * A scheduled task that automatically closes all open timesheets"
+          ],
+          "highlightedLines": [
+            15
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/resources/liquibase.xml",
+          "revision": "HEAD",
+          "startLine": 724,
+          "code": [
+            "<!--\t<changeSet id=\"openhmis.cashier-001-v2.0.0-6\" author=\"pochu\">-->",
+            "<!--\t\t<preConditions onFail=\"MARK_RAN\">-->",
+            "<!--\t\t\t<sqlCheck expectedResult=\"0\">-->",
+            "<!--\t\t\t\tSELECT COUNT(*) FROM scheduler_task_config-->",
+            "<!--\t\t\t\tWHERE schedulable_class = 'org.openmrs.module.billing.tasks.api.cashier.AutoCloseTimesheetsTask'-->",
+            "<!--\t\t\t\tAnd name = 'Auto Close Open Timesheets Task'-->",
+            "<!--\t\t\t</sqlCheck>-->",
+            "<!--\t\t</preConditions>-->",
+            "<!--\t\t<comment>Inserting Auto Close Open Timesheets Task into 'schedule_task_config' table</comment>-->",
+            "<!--\t\t<insert tableName=\"scheduler_task_config\">-->",
+            "<!--\t\t\t<column name=\"name\" value=\"Auto Close Open Timesheets Task\" />-->",
+            "<!--\t\t\t<column name=\"description\" value=\"Stops all active visits that match the visit type(s) specified by the value of the global property 'autoCloseVisits.visitType'\" />-->",
+            "<!--\t\t\t<column name=\"schedulable_class\" value=\"org.openmrs.module.billing.tasks.api.cashier.AutoCloseTimesheetsTask\" />-->"
+          ],
+          "highlightedLines": [
+            727,
+            728,
+            729,
+            730,
+            731,
+            732,
+            733
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": ".github/workflows/tx-pull.yml",
+          "revision": "HEAD",
+          "startLine": 1,
+          "code": [
+            "on:",
+            "  workflow_dispatch:  # Allow manual trigger",
+            "  schedule:",
+            "    # Runs daily at 8:30 PM UTC",
+            "    - cron: '30 20 * * *'",
+            "",
+            "name: \"Scheduled Transifex Update\"",
+            ""
+          ],
+          "highlightedLines": [
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": ".github/workflows/update-openmrs-deps.yml",
+          "revision": "HEAD",
+          "startLine": 5,
+          "code": [
+            "",
+            "on:",
+            "  workflow_dispatch:",
+            "  schedule:",
+            "    # Runs every 4 hours",
+            "    - cron: '0 */4 * * *'",
+            "",
+            "jobs:",
+            "  check-for-updates:"
+          ],
+          "highlightedLines": [
+            8,
+            9,
+            10
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}

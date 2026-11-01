@@ -1,0 +1,447 @@
+{
+  "id": "c5d4d9a7-9537-481b-9bfb-d1ecd0bf9939",
+  "productId": "openmrs",
+  "title": "UserService.getUserByUuid Impact",
+  "updatedAt": 1793523023952,
+  "answers": [
+    {
+      "id": "ucfBcggwp2jPdwvL",
+      "productId": "openmrs",
+      "question": "If the behaviour of `UserService.getUserByUuid` in openmrs-core changed, which code in the REST web services module (openmrs-module-webservices.rest) uses it and could be affected?",
+      "generation": "g-b59a21",
+      "kind": "partial",
+      "paragraphs": [
+        {
+          "text": "**Declaration analysed:** the `UserService` interface method `UserService.getUserByUuid(String uuid)` [1], implemented by `UserServiceImpl.getUserByUuid` [2] (delegating to the DAO) and by `HibernateUserDAO.getUserByUuid` [3]. Its contract is: return the user for the uuid, `null` if not found, `APIException` on error, and `AccessDeniedException` if the caller lacks the GET_USERS privilege (enforced by the `@PreAuthorize` on the interface) [4]. Note the separate, same-named `ContextDAO.getUserByUuid` [5] — a name clash, not part of this analysis.",
+          "citations": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "text": "## Confirmed affected (production code)",
+          "citations": []
+        },
+        {
+          "text": "- `UserConverter1_8.getByUniqueId` returns `Context.getUserService().getUserByUuid(string)` [6]. This is the widest blast radius: `ConversionUtil.getConverter(User.class)` finds this handler (it is `@Handler(supports = User.class, order = 0)` [7]), and `ConversionUtil` calls `getByUniqueId` for any String→object conversion [8], and for any incoming map carrying a `uuid` property [9]. So *every* REST payload that supplies a `User` by uuid runs through `getUserByUuid`, not just the user endpoints.\n- `UserResource1_8.getByUniqueId` backs `GET /user/{uuid}` [10]. It maps the result to `new UserAndPassword1_8(user)` only when non-null, so a change in the null-return contract changes whether the request 404s or NPEs.\n- `ProviderSearchHandler1_9.search` resolves the `user` search parameter, and already branches on `user == null` to return `EmptySearchResult` [11]. This handler is what `GET /provider?user={uuid}` uses [12]; a privilege change here would surface as an error instead of an empty page.\n- `AlertRecipientResource2_0.setRecipientProperty` re-looks-up the recipient by uuid and silently skips assignment when the result is null omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/AlertRecipientResource2_0.java — a null behaviour that would make alert-recipient creates quietly drop the recipient.\n- `ChangePasswordController1_8.changeOthersPassword` resolves the target user under a pushed `GET_USERS` proxy privilege omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/ChangePasswordController1_8.java. It relies on `getUserByUuid` throwing nothing but returning null: null or a null `userId` becomes a 404 via the `NullPointerException` handler omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/ChangePasswordController1_8.java. A change to throw instead of returning null would bypass that and return a 500.",
+          "citations": [
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "text": "## Tests that would need updating",
+          "citations": []
+        },
+        {
+          "text": "- `UserResource2_0Test` and `UserResource1_9Test` build fixtures with `new UserAndPassword1_8(Context.getUserService().getUserByUuid(getUuidProperty()))` omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/UserResource2_0Test.java and omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/UserResource1_9Test.java.\n- `UserController1_8Test` asserts post-create/edit/retire state through it omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/UserController1_8Test.java and omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/UserController1_8Test.java, and asserts search hits against it omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/UserController1_8Test.java.\n- `UserController2_0Test` does the same for v2 omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/UserController2_0Test.java.\n- Alert tests use it for fixtures: `AlertResource2_0Test` omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/AlertResource2_0Test.java, `AlertController2_0Test` omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/AlertController2_0Test.java, `AlertRecipientResource2_0Test` omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_0/AlertRecipientResource2_0Test.java, `AlertRecipientController2_0Test` omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/AlertRecipientController2_0Test.java.\n- `ChangePasswordController1_8Test` authenticates its target via `service.getUserByUuid(RestTestConstants1_8.USER_UUID)` omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/ChangePasswordController1_8Test.java.\n- `PasswordResetController2_2Test` uses the same call for four fixtures omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/PasswordResetController2_2Test.java. Note the production `PasswordResetController2_2` itself uses `getUserByUsernameOrEmail` instead omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/PasswordResetController2_2.java, so it is unaffected.",
+          "citations": []
+        },
+        {
+          "text": "## Flow",
+          "citations": []
+        },
+        {
+          "text": "```mermaid\n---\ntitle: getUserByUuid callers in webservices.rest\n---\nflowchart TD\n  conv[\"UserConverter1_8.getByUniqueId\"] --> svc[\"UserService.getUserByUuid\"]\n  ur[\"UserResource1_8.getByUniqueId\"] --> svc\n  psh[\"ProviderSearchHandler1_9.search\"] --> svc\n  arr[\"AlertRecipientResource2_0.setRecipient\"] --> svc\n  cpc[\"ChangePasswordController1_8\"] --> svc\n  cu[\"ConversionUtil.convert / convertMap\"] --> conv\n  payload[\"Any REST payload with a User uuid\"] --> cu\n```",
+          "citations": []
+        },
+        {
+          "text": "## Likely affected but not verified here",
+          "citations": []
+        },
+        {
+          "text": "- Other `Resource`/`Converter` handlers in this module that accept a `User`-typed property by uuid only reach `getUserByUuid` indirectly through `ConversionUtil` omod-common/src/main/java/org/openmrs/module/webservices/rest/web/ConversionUtil.java; I did not enumerate every such resource, so the list of endpoints above is the confirmed set, not necessarily the complete set.",
+          "citations": []
+        },
+        {
+          "text": "## Could not check",
+          "citations": []
+        },
+        {
+          "text": "- Repositories outside the two named: the O3/React frontends in the picked set consume these REST endpoints over HTTP, so they would feel any contract change, but no TypeScript caller can be traced to a Java method through code search.\n- Runtime/Spring effects: `@PreAuthorize` is evaluated by AOP proxies and `UserConverter1_8` is selected by `HandlerUtil.getPreferredHandler` reflection omod-common/src/main/java/org/openmrs/module/webservices/rest/web/ConversionUtil.java, so a change in how the privilege check or handler ordering resolves would not show up as a static caller.\n- I did not run the tests, so I cannot say which of the test assertions above would actually fail.\n- If the behaviour change is confined to `HibernateUserDAO` [3] rather than the service layer, the same callers are affected but the `@Transactional`/privilege semantics would come from the service, not the DAO.",
+          "citations": [
+            3
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/UserService.java",
+          "revision": "HEAD",
+          "startLine": 105,
+          "code": [
+            "\t * @throws org.springframework.security.access.AccessDeniedException if the current user lacks",
+            "\t *             permission",
+            "\t */",
+            "\t@PreAuthorize(\"hasPermission(#uuid, 'User', '\" + PrivilegeConstants.GET_USERS + \"')\")",
+            "\tUser getUserByUuid(String uuid) throws APIException;",
+            "",
+            "\t/**",
+            "\t * Get user by username (user's login identifier)"
+          ],
+          "highlightedLines": [
+            108,
+            109
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/impl/UserServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 657,
+          "code": [
+            "\t/**",
+            "\t * @see org.openmrs.api.UserService#getUserByUuid(java.lang.String)",
+            "\t */",
+            "\t@Override",
+            "\t@Transactional(readOnly = true)",
+            "\tpublic User getUserByUuid(String uuid) throws APIException {",
+            "\t\treturn dao.getUserByUuid(uuid);",
+            "\t}",
+            "",
+            "\t/**",
+            "\t * @see UserService#getCountOfUsers(String, List, boolean)"
+          ],
+          "highlightedLines": [
+            660,
+            661,
+            662,
+            663,
+            664
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/db/hibernate/HibernateUserDAO.java",
+          "revision": "HEAD",
+          "startLine": 582,
+          "code": [
+            "\t * @see org.openmrs.api.db.UserDAO#getUserByUuid(java.lang.String)",
+            "\t */",
+            "\t@Override",
+            "\tpublic User getUserByUuid(String uuid) {",
+            "\t\tUser ret = null;",
+            "",
+            "\t\tif (uuid != null) {"
+          ],
+          "highlightedLines": [
+            585
+          ]
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/UserService.java",
+          "revision": "HEAD",
+          "startLine": 92,
+          "code": [
+            "\t@PreAuthorize(\"hasPermission(#userId, 'User', '\" + PrivilegeConstants.GET_USERS + \"')\")",
+            "\tUser getUser(Integer userId) throws APIException;",
+            "",
+            "\t/**",
+            "\t * Get user by the given uuid.",
+            "\t * <p>",
+            "\t * <strong>Should</strong> fetch user with given uuid<br/>",
+            "\t * <strong>Should</strong> find object given valid uuid<br/>",
+            "\t * <strong>Should</strong> return null if no object found with given uuid",
+            "\t *",
+            "\t * @param uuid",
+            "\t * @return user or null",
+            "\t * @throws APIException",
+            "\t * @throws org.springframework.security.access.AccessDeniedException if the current user lacks",
+            "\t *             permission",
+            "\t */",
+            "\t@PreAuthorize(\"hasPermission(#uuid, 'User', '\" + PrivilegeConstants.GET_USERS + \"')\")",
+            "\tUser getUserByUuid(String uuid) throws APIException;",
+            ""
+          ],
+          "highlightedLines": [
+            95,
+            96,
+            97,
+            98,
+            99,
+            100,
+            101,
+            102,
+            103,
+            104,
+            105,
+            106,
+            107
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/db/ContextDAO.java",
+          "revision": "HEAD",
+          "startLine": 67,
+          "code": [
+            "\t * @return the User from the database",
+            "\t * @throws ContextAuthenticationException",
+            "\t */",
+            "\tpublic User getUserByUuid(String uuid) throws ContextAuthenticationException;",
+            "",
+            "\t/**",
+            "\t * Gets a user given the username. Privilege checks are not done here because this is used by the"
+          ],
+          "highlightedLines": [
+            70
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/converter/openmrs1_8/UserConverter1_8.java",
+          "revision": "HEAD",
+          "startLine": 31,
+          "code": [
+            "\t/**",
+            "\t * @see Converter#getByUniqueId(String)",
+            "\t */",
+            "\t@Override",
+            "\tpublic User getByUniqueId(String string) {",
+            "\t\treturn Context.getUserService().getUserByUuid(string);",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * @see Converter#newInstance(String)"
+          ],
+          "highlightedLines": [
+            34,
+            35,
+            36,
+            37
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/converter/openmrs1_8/UserConverter1_8.java",
+          "revision": "HEAD",
+          "startLine": 25,
+          "code": [
+            " * An implementation of Converter to be able to create a representation from a User when User is",
+            " * used in another resource. Currently UserAndPassword doesn't convert User",
+            " */",
+            "@Handler(supports = User.class, order = 0)",
+            "public class UserConverter1_8 implements Converter<User> {",
+            "\t",
+            "\t/**",
+            "\t * @see Converter#getByUniqueId(String)"
+          ],
+          "highlightedLines": [
+            28,
+            29
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod-common/src/main/java/org/openmrs/module/webservices/rest/web/ConversionUtil.java",
+          "revision": "HEAD",
+          "startLine": 239,
+          "code": [
+            "\t\t\treturn new Float((Double) object);",
+            "\t\t}",
+            "\t\t",
+            "\t\tif (object instanceof String) {",
+            "\t\t\tString string = (String) object;",
+            "\t\t\tConverter<?> converter = getConverter(toClass);",
+            "\t\t\tif (converter != null)",
+            "\t\t\t\treturn converter.getByUniqueId(string);",
+            "\t\t\t",
+            "\t\t\tif (toClass.isAssignableFrom(Date.class)) {",
+            "\t\t\t\tIllegalArgumentException pex = null;"
+          ],
+          "highlightedLines": [
+            242,
+            243,
+            244,
+            245,
+            246
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod-common/src/main/java/org/openmrs/module/webservices/rest/web/ConversionUtil.java",
+          "revision": "HEAD",
+          "startLine": 305,
+          "code": [
+            "\t * @throws ConversionException",
+            "\t */",
+            "\t@SuppressWarnings({ \"rawtypes\", \"unchecked\" })",
+            "\tpublic static Object convertMap(Map<String, ?> map, Class<?> toClass) throws ConversionException {",
+            "\t\t// TODO handle refs by fetching the object at their URI",
+            "\t\tConverter converter = getConverter(toClass);",
+            "\t\t",
+            "\t\tObject ret = null;",
+            "\t\tObject uuid = map.get(RestConstants.PROPERTY_UUID);",
+            "\t\tif (uuid instanceof String) {",
+            "\t\t\tret = converter.getByUniqueId(uuid.toString());",
+            "\t\t}",
+            "\t\t",
+            "\t\tif (ret == null) {",
+            "\t\t\tString type = (String) map.get(RestConstants.PROPERTY_FOR_TYPE);",
+            "\t\t\tret = converter.newInstance(type);",
+            "\t\t}",
+            "\t\t",
+            "\t\t// If the converter is a resource handler use the order of properties of its default representation",
+            "\t\tif (converter instanceof DelegatingResourceHandler) {"
+          ],
+          "highlightedLines": [
+            308,
+            309,
+            310,
+            311,
+            312,
+            313,
+            314,
+            315,
+            316,
+            317,
+            318,
+            319,
+            320,
+            321
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/UserResource1_8.java",
+          "revision": "HEAD",
+          "startLine": 204,
+          "code": [
+            "\t/**",
+            "\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#getByUniqueId(String)",
+            "\t */",
+            "\t@Override",
+            "\tpublic UserAndPassword1_8 getByUniqueId(String uuid) {",
+            "\t\tUser user = Context.getUserService().getUserByUuid(uuid);",
+            "\t\treturn user != null ? new UserAndPassword1_8(user) : null;",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#delete(Object,"
+          ],
+          "highlightedLines": [
+            207,
+            208,
+            209,
+            210,
+            211
+          ]
+        },
+        {
+          "id": 11,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs1_9/ProviderSearchHandler1_9.java",
+          "revision": "HEAD",
+          "startLine": 50,
+          "code": [
+            "\t * @see SearchHandler#search(RequestContext)",
+            "\t */",
+            "\t@Override",
+            "\tpublic PageableResult search(RequestContext context) throws ResponseException {",
+            "\t\tString userUuid = context.getParameter(\"user\");",
+            "\t\t",
+            "\t\tUser user = Context.getUserService().getUserByUuid(userUuid);",
+            "\t\tif (user == null) {",
+            "\t\t\treturn new EmptySearchResult();",
+            "\t\t}",
+            "\t\t",
+            "\t\tPerson person = user.getPerson();",
+            "\t\tList<Provider> providers = (List<Provider>) Context.getProviderService().getProvidersByPerson(person);",
+            "\t\treturn new NeedsPaging<Provider>(providers, context);",
+            "\t}",
+            "\t",
+            "}"
+          ],
+          "highlightedLines": [
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
+          ]
+        },
+        {
+          "id": 12,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs1_9/ProviderSearchHandler1_9.java",
+          "revision": "HEAD",
+          "startLine": 33,
+          "code": [
+            "@Component",
+            "public class ProviderSearchHandler1_9 implements SearchHandler {",
+            "\t",
+            "\tprivate final SearchConfig searchConfig = new SearchConfig(\"default\", RestConstants.VERSION_1 + \"/provider\",",
+            "\t        Arrays.asList(\"1.9.* - 9.*\"),",
+            "\t        new SearchQuery.Builder(",
+            "\t                \"Allows you to find providers by user uuid\").withRequiredParameters(\"user\").build());",
+            "\t",
+            "\t/**",
+            "\t * @see SearchHandler#getSearchConfig()"
+          ],
+          "highlightedLines": [
+            36,
+            37,
+            38,
+            39
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [
+        "18 references were not shown (limit 12)."
+      ],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}
