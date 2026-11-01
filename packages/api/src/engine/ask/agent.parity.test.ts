@@ -117,3 +117,18 @@ test("a history tool in chat keeps the caller's scope: out-of-scope repositories
   const unselected = await run(chat(["*"], [REPO]), "get_pull_request", { repo: OTHER, number: 7 });
   assert.equal(unselected.ok, true);
 });
+
+test("an empty chat selection means no selection: git tools called without repos read the visible repositories", async () => {
+  flags();
+  const run = async (selected: string[] | undefined) => {
+    const t = agent.agentTools(scopeFor(["*"]), selected as string[], () => {}).list_contributors as unknown as { execute: (a: unknown, o: unknown) => Promise<{ output: string }> };
+    return (await t.execute({}, { toolCallId: "1", messages: [] })).output;
+  };
+  const mentions = (out: string, name: string) => out.includes(name);
+  for (const empty of [[], undefined]) {
+    const out = await run(empty);
+    assert.ok(mentions(out, REPO) && mentions(out, OTHER), `${JSON.stringify(empty)} reads both: ${out}`);
+  }
+  const narrowed = await run([REPO]);
+  assert.ok(mentions(narrowed, REPO) && !mentions(narrowed, OTHER), `a selection narrows: ${narrowed}`);
+});
