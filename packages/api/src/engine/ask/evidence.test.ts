@@ -39,7 +39,7 @@ function assertProperties(r: Result, lineCounts: Record<string, number>) {
   const answer = answerOf(r);
   assert(answerPartSchema.safeParse(answer).success, "data-answer validates");
   assert.deepEqual(r.map((p) => p.type), [...evidence.map(() => "data-evidence"), "data-answer"]);
-  assert(evidence.length <= 12);
+  assert(evidence.length <= 40);
   assert.deepEqual(evidence.map((e) => e.id), evidence.map((_, i) => i + 1), "ids by first appearance, dense");
   for (const e of evidence) {
     assert(evidencePartSchema.safeParse(e).success);
@@ -132,15 +132,15 @@ test("a file that cannot be read or is empty drops the reference", async () => {
   assert.equal(answerOf(r).kind, "abstention");
 });
 
-test("evidence is capped at 12; later references keep their path without a marker", async () => {
-  const paths = Array.from({ length: 20 }, (_, i) => `f${i}.ts`);
+test("evidence is capped at 40; later references keep their path without a marker", async () => {
+  const paths = Array.from({ length: 48 }, (_, i) => `f${i}.ts`);
   const sources = paths.map((p) => src(APP, p));
   const files = Object.fromEntries(paths.map((p) => [`${APP}::${p}`, file(50)]));
   const r = await run({ text: paths.map((p) => `Uses ${ref(APP, p, 3, 4)}.`).join("\n\n"), sources }, files);
-  assert.equal(evidenceOf(r).length, 12);
+  assert.equal(evidenceOf(r).length, 40);
   const a = answerOf(r);
-  assert.deepEqual([a.kind, a.partialReasons], ["partial", ["8 references were not shown (limit 12)."]]);
-  assert.equal(a.paragraphs[12]!.text, "Uses f12.ts.");
+  assert.deepEqual([a.kind, a.partialReasons], ["partial", ["8 references were not shown (limit 40)."]]);
+  assert.equal(a.paragraphs[40]!.text, "Uses f40.ts.");
   assertProperties(r, Object.fromEntries(paths.map((p) => [`${APP}::${p}`, 50])));
 });
 
@@ -163,11 +163,11 @@ test("hostile references: parent paths, other repos, ranges past EOF, reversed r
   assertProperties(r, COUNTS);
 });
 
-test("thousands of references finish with at most 12 evidence items", async () => {
+test("thousands of references finish with at most 40 evidence items", async () => {
   const text = Array.from({ length: 5000 }, (_, i) => `Claim ${i} ${ref(APP, "src/a.ts", i + 1, i + 2)}.`).join("\n\n");
   const r = await run({ text }, FILES);
   assertProperties(r, COUNTS);
-  assert.equal(evidenceOf(r).length, 12);
+  assert.equal(evidenceOf(r).length, 40);
   const none = await run({ text: Array.from({ length: 5000 }, (_, i) => ref("x/y", `p${i}.ts`, 1, 2)).join(" ") }, FILES);
   assert.equal(answerOf(none).kind, "abstention");
 });
@@ -247,7 +247,7 @@ test("fixture: real answers resolve at least 95% of their references and satisfy
     assertProperties(r, counts);
   }
   const resolved = distinct - unverified;
-  console.log(`evidence fixture: ${resolved}/${distinct} distinct references resolved (${((100 * resolved) / distinct).toFixed(1)}%), ${capped} of them over the 12-item cap; ${marked}/${total} occurrences carry a marker; ${fixtures.length} answers`);
+  console.log(`evidence fixture: ${resolved}/${distinct} distinct references resolved (${((100 * resolved) / distinct).toFixed(1)}%), ${capped} of them over the 40-item cap; ${marked}/${total} occurrences carry a marker; ${fixtures.length} answers`);
   assert(resolved / distinct >= 0.95, `${resolved}/${distinct}`);
 });
 
@@ -311,4 +311,68 @@ test("reply: a search that ran and found nothing, then the marker, abstains", as
 test("reply: a reply never carries partial reasons", async () => {
   const a = answerOf(await run({ text: `${ANSWER_TAG}\n${REPLY_TAG}\nHi, see src/x.ts ${ref(APP, "src/gone.ts", 1, 2)}.`, sources: [] }, FILES));
   assert.deepEqual([a.kind, a.partialReasons], ["reply", []]);
+});
+
+const manyFiles = (n: number) => {
+  const paths = Array.from({ length: n }, (_, i) => `f${i}.ts`);
+  return { sources: paths.map((p) => src(APP, p)), files: Object.fromEntries(paths.map((p) => [`${APP}::${p}`, file(50)])), paths };
+};
+
+test("41 distinct references: 40 evidence parts and exactly one partial reason", async () => {
+  const { sources, files, paths } = manyFiles(41);
+  const r = await run({ text: paths.map((p) => `Uses ${ref(APP, p, 3, 4)}.`).join("\n\n"), sources }, files);
+  assert.equal(evidenceOf(r).length, 40);
+  assert.deepEqual(answerOf(r).partialReasons, ["1 reference was not shown (limit 40)."]);
+});
+
+test("the same reference repeated counts once against the cap", async () => {
+  const { sources, files, paths } = manyFiles(40);
+  const text = [...paths, ...paths, ...paths].map((p) => `Uses ${ref(APP, p, 3, 4)}.`).join("\n\n");
+  const r = await run({ text, sources }, files);
+  assert.deepEqual([evidenceOf(r).length, answerOf(r).kind, answerOf(r).partialReasons], [40, "grounded", []]);
+});
+
+test("zero references, whole-file reference, unread file, fence-only references", async () => {
+  const none = answerOf(await run({ text: "No references here." }, FILES));
+  assert.deepEqual([none.kind, none.abstention], ["abstention", "No references here."]);
+  const whole = evidenceOf(await run({ text: `All of ${ref(APP, "src/a.ts")}.` }, FILES));
+  assert.deepEqual([whole.length, whole[0]!.startLine, whole[0]!.code.length, whole[0]!.highlightedLines], [1, 1, 30, []]);
+  const unread = await run({ text: `Seen ${ref(APP, "src/a.ts", 1, 2)} and ${ref(APP, "src/zzz.ts", 1, 2)}.` }, FILES);
+  assert.deepEqual([evidenceOf(unread).length, answerOf(unread).partialReasons], [1, ["1 reference could not be verified."]]);
+  const fenced = await run({ text: "```\n" + ref(APP, "src/a.ts", 1, 2) + "\n```" }, FILES);
+  assert.equal(evidenceOf(fenced).length, 0);
+});
+
+test("a second reply marker after a long answer (q10 shape) keeps the first answer only; no marker is stored", async () => {
+  const first = `Billing runs as an in-app task ${ref(APP, "src/a.ts", 3, 4)}.\n\nNo operator exists in these repositories.`;
+  const text = `${ANSWER_TAG}\n${first}\n${REPLY_TAG}\nI found no operator; billing is an in-app task.`;
+  const r = await run({ text }, FILES);
+  const a = answerOf(r);
+  assert.equal(a.kind, "grounded");
+  assert.deepEqual(a.paragraphs.map((p) => p.text), ["Billing runs as an in-app task [1].", "No operator exists in these repositories."]);
+  assert(!JSON.stringify(r).includes(REPLY_TAG));
+  // a stray second answer tag is cut the same way, and a marker in a fence stays literal
+  const again = answerOf(await run({ text: `${ANSWER_TAG}\n${first}\n${ANSWER_TAG}\nDuplicate.` }, FILES));
+  assert(!JSON.stringify(again).includes("Duplicate"));
+  const fence = answerOf(await run({ text: `${first}\n\n\`\`\`\n${REPLY_TAG}\n\`\`\`` }, FILES));
+  assert(fence.paragraphs.at(-1)!.text.includes(REPLY_TAG));
+});
+
+test("a reply-marked answer followed by a second marker keeps the first reply text", async () => {
+  const a = answerOf(await run({ text: `${ANSWER_TAG}\n${REPLY_TAG}\nHello!\n${REPLY_TAG}\nHi again.`, sources: [] }, FILES));
+  assert.deepEqual([a.kind, a.paragraphs.map((p) => p.text)], ["reply", ["Hello!"]]);
+});
+
+test("stored size of a message with 40 evidence windows", async () => {
+  const { sources, files, paths } = manyFiles(40);
+  const real = Object.fromEntries(Object.keys(files).map((k) => [k, Array.from({ length: 50 }, (_, i) => `  const value${i} = computeSomething(argument${i}, options); // line ${i}`).join("\n")]));
+  const r = await run({ text: paths.map((p) => `Uses ${ref(APP, p)}.`).join("\n\n"), sources }, real);
+  assert(JSON.stringify(r).length < 150_000, "40 windows of about 30 lines stay near 90 KB");
+});
+
+test("a text that opens with two marker lines keeps the text after them", async () => {
+  const dbl = answerOf(await run({ text: `${ANSWER_TAG}\n${ANSWER_TAG}\nNothing found.` }, FILES));
+  assert.deepEqual([dbl.kind, dbl.abstention], ["abstention", "Nothing found."]);
+  const rep = answerOf(await run({ text: `${REPLY_TAG}\n${REPLY_TAG}\nHi`, sources: [] }, FILES));
+  assert.deepEqual([rep.kind, rep.paragraphs.map((p) => p.text)], ["reply", ["Hi"]]);
 });

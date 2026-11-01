@@ -78,8 +78,8 @@ test("a thread made for a first message that failed is discarded; one with an an
 });
 
 test("the evidence display cap is a note; unverified references and the step cap stay warnings", () => {
-  assert.equal(isCapNote("1 reference was not shown (limit 12)."), true);
-  assert.equal(isCapNote("8 references were not shown (limit 12)."), true);
+  assert.equal(isCapNote("1 reference was not shown (limit 40)."), true);
+  assert.equal(isCapNote("8 references were not shown (limit 40)."), true);
   assert.equal(isCapNote("2 references could not be verified."), false);
   assert.equal(
     isCapNote(
