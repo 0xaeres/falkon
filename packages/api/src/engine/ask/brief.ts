@@ -1,6 +1,7 @@
 import type { Scope } from "@falkon/shared";
 import { IMPACT_BRIEF_STEPS, isImpactQuery } from "./impact";
 import { fileReferenceToString } from "./prompt";
+import { GIT_BRIEF_RECIPES } from "./recipes";
 
 const fileCitation = fileReferenceToString({ repo: "<repo>", path: "<path>" });
 const rangeCitation = fileCitation.replace(/\}$/, ":<start>-<end>}");
@@ -8,12 +9,6 @@ const answerFormat = `Write Markdown. Follow every code mention immediately with
 
 /** Guidance for the client's model; no server model is needed. */
 export const CLIENT_RESEARCH_INSTRUCTIONS = `Falkon searches and reads code in the repositories your access policy permits. Use list_repos for repository names; glob and list_tree for paths; grep for content; read_file for source; find_symbol_definitions and find_symbol_references for symbol relationships; list_branches, list_commits, and get_diff for history. For open questions, research_codebase returns a scoped research brief for your model to carry out with these tools. ${answerFormat}`;
-
-/** Appended to the research brief unless MCP_GIT_TOOLS=off, so the git history tools are named only where they exist. */
-export const GIT_BRIEF_RECIPES = `The git history tools are on, so for questions about when something changed, who changed it or which release holds it:
-- Release holding a commit: call list_refs with kind "tags" and contains set to the commit; it lists every tag whose history holds the commit. Tag dates can be wrong, so do not pick the first release by date. Take the earliest candidates and confirm the order with check_ancestry (commit as ancestor, tag as descendant): the first release answers yes while the tag before it answers no.
-- Versions that carry a flaw: find the commit that introduced it (search_diffs on the added lines, or get_range_history on the code) and the commit that fixed it. The affected tags are those list_refs returns for contains set to the introducing commit, minus those it returns for the fixing commit. Confirm the edges with check_ancestry, and say which releases you could not check.
-- Absence: an empty or short result is not proof that something never happened. Read coverageGaps and truncated first; a gap, a cut, a PARTIAL summary, a repository you could not see or a clone that lags the code host each leave the question open. Report "not found in what was read", name what was read, and list what was not.`;
 
 // Bounds keep the brief small however many repositories exist or a caller names.
 const MAX_LISTED = 50;

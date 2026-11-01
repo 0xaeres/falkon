@@ -4,7 +4,7 @@ import { toolDeps } from "../tools";
 import { familyOn } from "../toolFamily";
 import { answerPart } from "./answer";
 import { aiModel, type LanguageModelConfig } from "./models";
-import { dynamicPrompt, STATIC_PROMPT } from "./prompt";
+import { dynamicPrompt, STATIC_PROMPT, type Audience } from "./prompt";
 
 const MAX_STEPS = () => Number(process.env.FALKON_CHAT_MAX_STEP_COUNT ?? 100);
 
@@ -95,13 +95,15 @@ export async function createMessageStream(o: {
   abortSignal?: AbortSignal;
   /** The UI chat renders ```archify blocks: adds the diagram guidance to the prompt. The MCP and blocking paths leave it off. */
   diagrams?: boolean;
+  /** Who reads the answer: the UI chat is a person, ask_codebase over MCP is another agent. Set at every call site. */
+  audience: Audience;
   /** Extra data parts written (and persisted) once the model stream has ended, before the finish chunk. */
   postProcess?: (ctx: { text: string; sources: ToolSource[]; stepCapHit: boolean; toolCalls: number }) => Promise<{ type: `data-${string}`; data: unknown }[]>;
 }) {
   const { model, temperature } = await aiModel(o.model);
   const repos = [...o.selectedRepos].sort((a, b) => a.localeCompare(b));
   const query = o.messages.findLast((m) => m.role === "user")?.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ");
-  const dyn = dynamicPrompt({ repos, files: await mentionedFiles(o.messages, o.scope), query, diagrams: o.diagrams });
+  const dyn = dynamicPrompt({ repos, files: await mentionedFiles(o.messages, o.scope), query, diagrams: o.diagrams, audience: o.audience });
   return createUIMessageStream({
     originalMessages: o.messages,
     onFinish: async ({ messages }) => o.onFinish?.(messages),
