@@ -260,9 +260,9 @@ test("P11: a membership change rejects the open session (no widening through an 
   } finally { products.fx!.repoNames = [IN]; }
 });
 
-// ---- P12: the pull request history tools (MCP_HISTORY_TOOLS=on) through the real Product listener ----
+// ---- P12: the pull request history tools (MCP_HISTORY_TOOLS, on by default; the git family is off here) through the real Product listener ----
 
-test("P12: history tools exist only with the flag, and the Product's repository set bounds every read", async () => {
+test("P12: history tools exist unless the flag is off, and the Product's repository set bounds every read", async () => {
   const { toolDeps } = await import("./engine/tools");
   const { fakeProvenanceStore } = await import("../../shared/src/provenance.fake");
   const store = fakeProvenanceStore({ [IN]: 1, [OUT]: 2 });
@@ -272,10 +272,11 @@ test("P12: history tools exist only with the flag, and the Product's repository 
   await store.saveSyncState(2, ok);
   await store.replaceDiscussion(1, d("in-set seven"), [{ fromKind: "pr", fromRef: "7", toKind: "pr", toRef: "7", toRepo: OUT, source: "body-ref", verified: true }, { fromKind: "pr", fromRef: "7", toKind: "ticket", toRef: "TRUNK-1", toRepo: null, source: "ticket-pattern", verified: true }]);
   await store.replaceDiscussion(2, d("outside seven"), [{ fromKind: "pr", fromRef: "7", toKind: "ticket", toRef: "TRUNK-1", toRepo: null, source: "ticket-pattern", verified: true }]);
-  const before = toolDeps.history, flag = process.env.MCP_HISTORY_TOOLS;
+  const before = toolDeps.history, flag = process.env.MCP_HISTORY_TOOLS, gitFlag = process.env.MCP_GIT_TOOLS;
+  process.env.MCP_GIT_TOOLS = "off";
   toolDeps.history = store;
   try {
-    delete process.env.MCP_HISTORY_TOOLS;
+    process.env.MCP_HISTORY_TOOLS = "off";
     const off = await openSession("fx");
     const names = async (session: string) => ((await payload(await send("fx", { jsonrpc: "2.0", id: ++rpcId, method: "tools/list" }, session))).result.tools as { name: string }[]).map((t) => t.name);
     assert.ok(!(await names(off)).includes("get_pull_request"), "flag off: not listed");
@@ -323,5 +324,28 @@ test("P12: history tools exist only with the flag, and the Product's repository 
   } finally {
     toolDeps.history = before;
     if (flag === undefined) delete process.env.MCP_HISTORY_TOOLS; else process.env.MCP_HISTORY_TOOLS = flag;
+    if (gitFlag === undefined) delete process.env.MCP_GIT_TOOLS; else process.env.MCP_GIT_TOOLS = gitFlag;
+  }
+});
+
+test("P12 default: with both history flags unset the Product lists all ten history tools, and an out-of-set repository reads like a missing one", async () => {
+  const { toolDeps } = await import("./engine/tools");
+  const { fakeProvenanceStore } = await import("../../shared/src/provenance.fake");
+  const before = toolDeps.history, flags = [process.env.MCP_HISTORY_TOOLS, process.env.MCP_GIT_TOOLS];
+  toolDeps.history = fakeProvenanceStore({ [IN]: 1, [OUT]: 2 });
+  try {
+    delete process.env.MCP_HISTORY_TOOLS; delete process.env.MCP_GIT_TOOLS;
+    const session = await openSession("fx");
+    const names = ((await payload(await send("fx", { jsonrpc: "2.0", id: ++rpcId, method: "tools/list" }, session))).result.tools as { name: string }[]).map((t) => t.name);
+    assert.deepEqual(names.slice(-10), ["get_pull_request", "search_discussions", "get_provenance", "search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history", "list_contributors"]);
+    for (const [name, args] of [["check_ancestry", (repo: string) => ({ repo, ancestor: "HEAD", descendant: "HEAD" })], ["get_pull_request", (repo: string) => ({ repo, number: 7 })]] as const) {
+      const out = await call(session, name, args(OUT));
+      const missing = await call(session, name, args(MISSING));
+      assert.equal(out.isError && missing.isError, true, name);
+      assert.equal(out.text.replaceAll(OUT, "<repo>"), missing.text.replaceAll(MISSING, "<repo>"), name);
+    }
+  } finally {
+    toolDeps.history = before;
+    for (const [k, v] of [["MCP_HISTORY_TOOLS", flags[0]], ["MCP_GIT_TOOLS", flags[1]]] as const) if (v === undefined) delete process.env[k]; else process.env[k] = v;
   }
 });

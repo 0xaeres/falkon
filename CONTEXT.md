@@ -1,6 +1,6 @@
 # Falkon
 
-Falkon is a self-hosted code context engine: it lets coding agents and people answer questions about one Product at a time from source they can verify, without a model on the serving path. This glossary defines the language used to describe that domain.
+Falkon is a self-hosted code context engine: it lets coding agents and people answer questions about one Product at a time from source they can verify. Its vanilla tools need no model; agent tools that run a server model are an opt-in tier. This glossary defines the language used to describe that domain.
 
 ## Scope
 
@@ -45,13 +45,13 @@ The declaration units a change to one unit could affect, inferred from static de
 _Avoid_: Actual impact, blast radius
 
 **Coverage gap**:
-A disclosed part of a repository that a result could not see at its index revision, such as a project the indexer failed on or a file that did not parse. It keeps an empty result from reading as "no effect".
+A disclosed part of a repository, or a whole repository, that a result could not see or read, such as a project the indexer failed on, a file that did not parse, or a repository a tool timed out on, cut short or could not find. It keeps an empty result from reading as "no effect".
 _Avoid_: Error, missing data
 
 ## Tools
 
 **Vanilla tool**:
-An MCP tool that answers from Falkon's indexes and clones without running a model on the server. Vanilla tools are always available and stay model-free.
+An MCP tool that answers from Falkon's indexes and clones without running a model on the server. Vanilla tools stay model-free; some are switched on by the operator.
 _Avoid_: Basic tool, free tool
 
 **Agent tool**:

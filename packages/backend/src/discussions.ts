@@ -4,7 +4,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { NoAccess, RateLimited, discussionLinks, type Discussion, type DiscussionComment, type DiscussionSource, type Link, type ProvenanceStore } from "@falkon/shared";
+import { NoAccess, RateLimited, discussionLinks, mergePrNumber, squashPrNumber, type Discussion, type DiscussionComment, type DiscussionSource, type Link, type ProvenanceStore } from "@falkon/shared";
 import { git } from "./git";
 
 // ---- snapshot source -------------------------------------------------------------------------------------------
@@ -110,9 +110,9 @@ export async function commitLinks(dir: string, head: string, prs: { number: numb
   }
   for (const [sha, subject] of log) {
     if (merged.has(sha)) continue;
-    const squash = /\(#(\d+)\)\s*$/.exec(subject), merge = /^Merge pull request #(\d+) from /.exec(subject);
-    if (squash && numbers.has(Number(squash[1]))) link(sha, Number(squash[1]), "squash-subject", true);
-    else if (merge && numbers.has(Number(merge[1]))) link(sha, Number(merge[1]), "merge-subject", true);
+    const squash = squashPrNumber(subject), merge = mergePrNumber(subject);
+    if (squash !== undefined && numbers.has(squash)) link(sha, squash, "squash-subject", true);
+    else if (merge !== undefined && numbers.has(merge)) link(sha, merge, "merge-subject", true);
   }
   return links;
 }

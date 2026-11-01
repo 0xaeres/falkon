@@ -67,7 +67,8 @@ test("--prs on mounts the pull request snapshot read-only into the backend only 
   assert.ok(!JSON.stringify(files().compose).includes("discussions"));
   // The api service must expose the pull request tools, or the arm silently equals clone-tools-git.
   assert.equal(on.compose.services.api.environment.MCP_HISTORY_TOOLS, "on");
-  assert.ok(!JSON.stringify(files().compose).includes("MCP_HISTORY_TOOLS"));
+  // Every other stack sets both flags off explicitly, so its tools/list stays what the stored cycle 15 results saw (the api default is on since cycle 19c).
+  assert.equal(files().compose.services.api.environment.MCP_HISTORY_TOOLS, "off");
 });
 
 test("the api service runs the engine with the admin token by interpolation, never in the file", () => {
@@ -134,4 +135,37 @@ test("the admin token file is mode 600 (also when it already existed) and its va
   assert.equal(statSync(join(fresh, "admin.token")).mode & 0o777, 0o600);
   assert.equal(readFileSync(join(fresh, "admin.token"), "utf8"), made);
   assert.ok(!JSON.stringify(files().compose).includes(made));
+});
+
+test("--git-history on sets MCP_GIT_TOOLS=on and the ticket keys on the api service only, in its own project; the other stacks set it off", () => {
+  const on = stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3404, project: "falkon-eval-githistory", gitHistory: "on" });
+  assert.equal(on.compose.name, "falkon-eval-githistory");
+  assert.deepEqual(on.compose.services.api.ports, ["127.0.0.1:3404:3001", "127.0.0.1:3504:3002"]);
+  assert.equal(on.compose.services.api.environment.MCP_GIT_TOOLS, "on");
+  assert.equal(on.compose.services.api.environment.DISCUSSION_TICKET_KEYS, "TRUNK,RESTWS,O3");
+  for (const s of ["backend", "zoekt"] as const) assert.ok(!JSON.stringify(on.compose.services[s]).includes("MCP_GIT_TOOLS"), s);
+  // A flag set for one stack must not leak into the next one built in the same process.
+  for (const other of [files(), stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3403, project: "p", prs: "on" }), stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3401, project: "n", instructions: "off" })]) {
+    assert.equal(other.compose.services.api.environment.MCP_GIT_TOOLS, "off");
+    assert.ok(!JSON.stringify(other.compose.services.api).includes("DISCUSSION_TICKET_KEYS"));
+  }
+});
+
+test("--prs on with --git-history on puts both flags on the api and the snapshot import on the backend, in its own project; no other stack gets either", () => {
+  const both = stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3405, project: "falkon-eval-githistory-prs", prs: "on", gitHistory: "on" });
+  const { api, backend, zoekt } = both.compose.services as unknown as Record<"api" | "backend" | "zoekt", { ports: string[]; environment: Record<string, string>; volumes: string[] }>;
+  assert.equal(both.compose.name, "falkon-eval-githistory-prs");
+  assert.deepEqual(api.ports, ["127.0.0.1:3405:3001", "127.0.0.1:3505:3002"]);
+  assert.deepEqual([api.environment.MCP_HISTORY_TOOLS, api.environment.MCP_GIT_TOOLS, api.environment.DISCUSSION_TICKET_KEYS], ["on", "on", "TRUNK,RESTWS,O3"]);
+  assert.deepEqual([backend.environment.DISCUSSIONS_SNAPSHOT_DIR, backend.environment.DISCUSSION_TICKET_KEYS], ["/discussions", "TRUNK,RESTWS,O3"]);
+  assert.ok(backend.volumes.includes("/corpus/github-snapshot:/discussions:ro"));
+  assert.ok(!JSON.stringify(zoekt).includes("/discussions") && !JSON.stringify(zoekt).includes("MCP_"));
+  // Each single-flag stack keeps only its own flag, and the combined stack's flags do not outlive the call.
+  const prsOnly = stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3403, project: "p", prs: "on" }).compose.services.api.environment as Record<string, string>;
+  const histOnly = stackFiles({ o3Dir: "/corpus", repoRoot: "/repo", port: 3404, project: "g", gitHistory: "on" });
+  assert.deepEqual([prsOnly.MCP_HISTORY_TOOLS, prsOnly.MCP_GIT_TOOLS], ["on", "off"]);
+  assert.deepEqual([(histOnly.compose.services.api.environment as Record<string, string>).MCP_HISTORY_TOOLS, histOnly.compose.services.api.environment.MCP_GIT_TOOLS], ["off", "on"]);
+  assert.ok(!JSON.stringify(histOnly.compose.services.backend).includes("/discussions"));
+  const plain = files().compose.services.api.environment;
+  assert.deepEqual([plain.MCP_HISTORY_TOOLS, plain.MCP_GIT_TOOLS], ["off", "off"]);
 });

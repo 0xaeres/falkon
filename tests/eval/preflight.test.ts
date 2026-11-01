@@ -126,3 +126,22 @@ test("a missing Product and a refused key name their cause", async () => {
     await assert.rejects(connect(url), /refused \(401\).*EVAL_API_KEY_FILE/);
   } finally { server.close(); }
 });
+
+test("an arm's required tools must be in the registration the server answers; an older server fails with a clear message", async () => {
+  const seven = ["search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history", "list_contributors"];
+  const all = [...TOOLS, "research_codebase"];
+  assert.match(await preflight({ ...base, requireTools: seven, createClient: async () => fakeClient({ tools: [...all, ...seven] }) }), /3 of 3 repositories/);
+  await assert.rejects(preflight({ ...base, requireTools: seven, createClient: async () => fakeClient({ tools: all }) }), /missing the git history tools: search_commits.*list_contributors.*MCP_GIT_TOOLS=off.*--git-history on/s);
+  await assert.rejects(preflight({ ...base, requireTools: seven, createClient: async () => fakeClient({ tools: [...all, ...seven.slice(1)] }) }), /missing the git history tools: search_commits\b(?!.*search_diffs)/s);
+  // Without a requirement (every other arm) an older server is fine.
+  assert.match(await preflight({ ...base, createClient: async () => fakeClient({ tools: all }) }), /3 of 3/);
+});
+
+test("the combined arm's ten tools: either family missing fails with the flag that adds it", async () => {
+  const hist = ["search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history", "list_contributors"], prs = ["get_pull_request", "search_discussions", "get_provenance"];
+  const all = [...TOOLS, "research_codebase"], need = [...prs, ...hist];
+  assert.match(await preflight({ ...base, requireTools: need, createClient: async () => fakeClient({ tools: [...all, ...need] }) }), /3 of 3 repositories/);
+  await assert.rejects(preflight({ ...base, requireTools: need, createClient: async () => fakeClient({ tools: [...all, ...hist] }) }), (e: Error) => /pull request tools: get_pull_request, search_discussions, get_provenance.*MCP_HISTORY_TOOLS=off.*--prs on/s.test(e.message) && !/git history tools/.test(e.message));
+  await assert.rejects(preflight({ ...base, requireTools: need, createClient: async () => fakeClient({ tools: [...all, ...prs] }) }), (e: Error) => /git history tools: search_commits.*MCP_GIT_TOOLS=off.*--git-history on/s.test(e.message) && !/pull request tools/.test(e.message));
+  await assert.rejects(preflight({ ...base, requireTools: need, createClient: async () => fakeClient({ tools: [...all, ...prs.slice(1), ...hist.slice(1)] }) }), /pull request tools: get_pull_request\b.*git history tools: search_commits\b/s);
+});

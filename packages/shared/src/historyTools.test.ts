@@ -9,7 +9,7 @@ import { toolJsonSchema } from "./toolJsonSchema";
 import { historyToolDefinitions, historyToolNames } from "./historyTools";
 import { fakeProvenanceStore } from "./provenance.fake";
 import { pr } from "./provenance.contract";
-import { MAX_OFFSET, type Discussion, type Link, type ProvenanceStore, type SyncState } from "./provenance";
+import { MAX_OFFSET, discussionLinks, type Discussion, type Link, type ProvenanceStore, type SyncState } from "./provenance";
 import type { ToolContext, ToolDeps, ToolRepo } from "./tools";
 
 const APP = "github.com/acme/app", LIB = "github.com/acme/lib", SECRET = "github.com/other/secret", NEVER = "github.com/acme/never";
@@ -329,6 +329,67 @@ test("get_provenance: commit, pr and ticket anchors return linked kinds with sou
   assert.deepEqual(byTicket.pullRequests, [{ repo: APP, number: 12, source: "ticket-pattern", verified: true }]);
   assert.deepEqual(byTicket.tickets, []);
   assert.deepEqual(byTicket.coverageGaps, [`pull requests not ingested for ${NEVER}`]);
+});
+
+test("get_provenance: commit and ticket anchors carry the tickets of their pull requests (the key sits on the pull request side)", async () => {
+  await seed();
+  // real failing shape: commit -> pr (merge-commit-sha), key only in the pr body/title as a pr -> ticket link
+  await store.replaceDiscussion(ids[APP], pr(12, { title: "fix crash", body: "Related: o3-5629", mergeCommitSha: sha2 }), [ticket(12, "O3-5629")]);
+  await store.replaceCommitLinks(ids[APP], [commitLink(sha2, 12, { source: "merge-commit-sha" })]);
+  const want = [{ key: "O3-5629", source: "ticket-pattern", verified: true }];
+  assert.deepEqual((await run("get_provenance", { commit: sha2 })).json.tickets, want);
+  assert.deepEqual((await run("get_provenance", { repo: APP, commit: sha2 })).json.tickets, want);
+  assert.deepEqual((await run("get_provenance", { repo: APP, pr: 12 })).json.tickets, want);
+  // ticket anchor: its pull request's other keys come along, the anchor itself does not
+  await store.replaceDiscussion(ids[APP], pr(12, { mergeCommitSha: sha2 }), [ticket(12, "O3-5629"), ticket(12, "O3-7")]);
+  assert.deepEqual((await run("get_provenance", { ticket: "o3-5629" })).json.tickets.map((x: any) => x.key), ["O3-7"]);
+  assert.deepEqual((await run("get_provenance", { commit: sha2 })).json.tickets.map((x: any) => x.key), ["O3-5629", "O3-7"]);
+  assert.deepEqual((await run("get_provenance", { repo: APP, path: "a.ts" })).json.tickets.map((x: any) => x.key), ["O3-5629", "O3-7"], "path anchor too");
+});
+
+test("get_provenance: pr-side tickets, edge cases (two prs, empty store)", async () => {
+  await seed();
+  await store.replaceDiscussion(ids[APP], pr(1), [ticket(1, "A-1")]);
+  await store.replaceDiscussion(ids[APP], pr(2), [ticket(2, "B-2")]);
+  await store.replaceCommitLinks(ids[APP], [commitLink(sha2, 1), commitLink(sha2, 2)]);
+  assert.deepEqual((await run("get_provenance", { commit: sha2 })).json.tickets.map((x: any) => x.key).sort(), ["A-1", "B-2"], "two pull requests for one commit");
+  assert.deepEqual((await run("get_provenance", { commit: "f".repeat(40) })).json.tickets, [], "unknown commit");
+});
+
+test("get_provenance: a pull request outside the scope contributes no ticket", async () => {
+  await seed();
+  // the commit (in scope) links to SECRET#5, which holds a ticket, and APP#1 also links to it by body
+  await store.replaceDiscussion(ids[SECRET], pr(5), [ticket(5, "S-9")]);
+  await store.replaceDiscussion(ids[APP], pr(1), [{ fromKind: "pr", fromRef: "1", toKind: "pr", toRef: "5", toRepo: SECRET, source: "body-ref", verified: true }]);
+  await store.replaceCommitLinks(ids[APP], [commitLink(sha2, 5, { toRepo: SECRET }), commitLink(sha2, 1)]);
+  for (const a of [{ commit: sha2 }, { repo: APP, commit: sha2 }, { repo: APP, path: "a.ts" }, { ticket: "S-9" }]) {
+    const j = (await run("get_provenance", a)).json;
+    assert.deepEqual(j.tickets, [], JSON.stringify(a));
+    assert.ok(!JSON.stringify(j).includes(SECRET), JSON.stringify(a));
+  }
+});
+
+test("get_provenance and get_pull_request: a key only in a comment is a ticket from source comment-ticket-pattern; unconfigured keys are not", async () => {
+  await seed();
+  // links as the importer derives them: configured key O3 from title, body, branch, then comments
+  const d = pr(7, { title: "fix", body: "see ZZZ-1 and also O3-77 is here", headRef: "feature", mergeCommitSha: sha2, comments: [comment(1, "tracked in O3-5629"), comment(2, "ZZZ-2 and O3-77")] });
+  const links = discussionLinks(d, APP, ["O3"]);
+  assert.deepEqual(links.filter((l) => l.toKind === "ticket").map((l) => [l.toRef, l.source]), [["O3-77", "ticket-pattern"], ["O3-5629", "comment-ticket-pattern"]]);
+  await store.replaceDiscussion(ids[APP], d, links);
+  await store.replaceCommitLinks(ids[APP], [commitLink(sha2, 7)]);
+  const prov = (await run("get_provenance", { commit: sha2 })).json.tickets.map((x: any) => [x.key, x.source]);
+  assert.deepEqual(prov, [["O3-77", "ticket-pattern"], ["O3-5629", "comment-ticket-pattern"]]);
+  const got = (await run("get_pull_request", { repo: APP, number: 7 })).json.tickets.map((x: any) => [x.key, x.source]);
+  assert.deepEqual(got, [["O3-77", "ticket-pattern"], ["O3-5629", "comment-ticket-pattern"]]);
+});
+
+test("comment keys: a comment key on a pull request outside the Product scope is invisible", async () => {
+  await seed();
+  const d = pr(4, { comments: [comment(1, "see O3-4242")] });
+  await store.replaceDiscussion(ids[SECRET], d, discussionLinks(d, SECRET, ["O3"]));
+  const j = (await run("get_provenance", { ticket: "O3-4242" })).json;
+  assert.deepEqual(j.pullRequests, []);
+  assert.ok(!JSON.stringify(j).includes(SECRET));
 });
 
 test("get_provenance: isolation, links into outside repositories dropped, outside repo like a missing one", async () => {

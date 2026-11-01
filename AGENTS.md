@@ -19,6 +19,10 @@ Read [`CONTEXT.md`](CONTEXT.md) and the sections of [`docs/adr/0001-falkon-archi
 
 The product is spelled Falkon, with a k. The predecessor product's name, in any case or spelling, and the misspelling of Falkon that swaps the k for a c, stay out of every shipped file (everything tracked outside `.scratch/`); planning files under `.scratch/` may name them to give scrub instructions.
 
+## Shipped prompt and tool text
+
+A slice that adds or changes shipped prompt or tool text (`*ToolText.json`, tool registration files, prompts) extends the file list in `tests/originality/originality.ts` in the same slice.
+
 ## Request-path code
 
 Code that runs per HTTP poll or request must not do remote I/O or unbounded reads: cache config with a TTL and a load timeout, and bound queries to the latest row per key.

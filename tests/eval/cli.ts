@@ -19,19 +19,24 @@
  *                                                   --check validates the gold pull requests of o3-history against the snapshot and the checkouts.
  *
  * Options for pilot, run and report: --model sonnet|haiku (or the full id; default sonnet), --arms from
- * clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git,clone-tools-git-prs (default clone-tools,clone-research). Runs are stored per model under
+ * clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git,clone-tools-git-prs,clone-tools-git-history,clone-tools-git-history-prs (default clone-tools,clone-research). Runs are stored per model under
  * <runs dir>/<model alias>/; Sonnet runs in the earlier layout (datasets directly under the runs dir) are still read.
  * The reference is the recorded Sonnet floor for sonnet, and the v6-tools runs of the model's own directory otherwise.
  *
  * Impact-and-change set (S25): --dataset impact selects o3-impact (11 questions, its pilot is the 6 dev ones) instead of the two O3 sets;
  * arm clone-tools-recipe talks to a second stack (`stack up --recipe on`: project falkon-eval-recipe on EVAL_RECIPE_PORT with MCP_IMPACT_RECIPE=on);
  * `stack up --prs on` (S48) starts project falkon-eval-prs on EVAL_PRS_PORT, whose backend imports <EVAL_O3_DIR>/github-snapshot after indexing;
+ * `stack up --git-history on` (S81) starts project falkon-eval-githistory on EVAL_GITHISTORY_PORT with MCP_GIT_TOOLS=on and DISCUSSION_TICKET_KEYS on the api service (every other stack sets both history flags to off explicitly, since the api default is on since cycle 19c); arm clone-tools-git-history
+ * (the clone-tools-git tools plus search_commits, search_diffs, compare_revisions, list_refs, check_ancestry, get_range_history, list_contributors) talks to it, preflight fails when the
+ * server does not list the seven, and the report counts calls per new tool.
+ * `stack up --prs on --git-history on` (T3) is the one allowed pair: project falkon-eval-githistory-prs on EVAL_GITHISTORYPRS_PORT (3405) with both flags on the api service and the snapshot import on the
+ * backend; arm clone-tools-git-history-prs (every tool of the two arms above) talks to it, preflight requires all ten PR and git history tools, and the report counts calls for the seven new and the three PR tools.
  * `report --reference clone-tools` compares the arms against that arm's runs of the same model instead of the recorded floor or v6-tools.
  *
  * Commit-history set (S43): --dataset history selects o3-history, whose answers cite spans, commits, pull requests and tickets; arm clone-tools-git
  * (the clone stack, plus list_commits, get_diff and list_branches) is meant for it; arm clone-tools-git-prs adds get_pull_request, search_discussions and get_provenance and talks to the `--prs on` stack.
  *
- * Environment: EVAL_O3_DIR (corpus checkouts), EVAL_PORT (3400), EVAL_NOINSTR_PORT (3401), EVAL_RECIPE_PORT (3402), EVAL_PRS_PORT (3403), EVAL_RUNS_DIR, EVAL_WORK_DIR,
+ * Environment: EVAL_O3_DIR (corpus checkouts), EVAL_PORT (3400), EVAL_NOINSTR_PORT (3401), EVAL_RECIPE_PORT (3402), EVAL_PRS_PORT (3403), EVAL_GITHISTORY_PORT (3404), EVAL_GITHISTORYPRS_PORT (3405), EVAL_RUNS_DIR, EVAL_WORK_DIR,
  * EVAL_API_KEY_FILE (optional key file for the clone stacks), EVAL_SPEND_CAP (agent spend ledger per model directory, default 6),
  * EVAL_V6_URL (the v6-tools arm's MCP endpoint, e.g. http://127.0.0.1:3000/api/mcp) and EVAL_V6_KEY_FILE (its key, a mode 600 file).
  * Start the stack with `pnpm eval -- stack up`; its state lives under tests/eval/.local (ignored).
@@ -43,14 +48,17 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ALL_ARMS, ARMS, DATASETS, EVAL_DIR, HISTORY_DATASETS, IMPACT_DATASETS, FLOOR_DIR, REPO_ROOT, hasRaw, goldOf, loadAccepted, loadDataset, loadProduct, modelDir, readRaw, resolveModel, type Arm, type Dataset, type Raw } from "./data.js";
 import { MANIFEST, checkSnapshot, fetchSnapshot, goldPrs, realDeps, verifySnapshot } from "./discussions.js";
-import { buildCommand, parseAnswer } from "./harness.js";
+import { GIT_HISTORY_TOOLS, PR_TOOLS, buildCommand, hasHistoryTools, parseAnswer, restoreLeak } from "./harness.js";
 import { assertFullHistory, deepenCheckouts, expectedRepos, goldPaths, preflight, readKey } from "./preflight.js";
 import { report } from "./report.js";
 import { execute, runTasks, spentSoFar, type Task } from "./runner.js";
 import { scoreAnswer } from "./score.js";
 import { PRODUCT, stack } from "./stack.js";
 
-const PER_RUN_CAP = 1;
+/** The Claude CLI's budget for one run and the cost recorded for a timed-out run; unchanged since cycle 15, so costlier runs are not cut short and results stay comparable. */
+export const PER_RUN_CAP = 1;
+/** What the runner reserves per run in flight against the ledger cap (D178): a typical run costs about $0.04, so $0.25 lets a $2 cap start two runs at once. A run may still spend up to PER_RUN_CAP. */
+export const RESERVATION = 0.25;
 const hash = (id: string) => createHash("sha256").update("eval|" + id).digest("hex");
 
 /** `count` (default five) dev questions of a set: the first of each relation in a fixed hash order, then the next in that order. */
@@ -66,6 +74,8 @@ export const config = (env: NodeJS.ProcessEnv) => ({
   noinstrPort: Number(env.EVAL_NOINSTR_PORT ?? 3401),
   recipePort: Number(env.EVAL_RECIPE_PORT ?? 3402),
   prsPort: Number(env.EVAL_PRS_PORT ?? 3403),
+  gitHistoryPort: Number(env.EVAL_GITHISTORY_PORT ?? 3404),
+  gitHistoryPrsPort: Number(env.EVAL_GITHISTORYPRS_PORT ?? 3405),
   spendCap: Number(env.EVAL_SPEND_CAP ?? 6),
   runsRoot: resolve(env.EVAL_RUNS_DIR ?? join(REPO_ROOT, ".scratch/falkon-mvp/eval-runs")),
   workDir: resolve(env.EVAL_WORK_DIR ?? "/private/tmp/falkon-eval"),
@@ -103,13 +113,15 @@ function exportChart(o3Dir: string, workDir: string): string {
   return dest;
 }
 
-type Backend = { id: string; url: string; key?: string; kind: "clone" | "v6"; instructions?: boolean };
+type Backend = { id: string; url: string; key?: string; kind: "clone" | "v6"; instructions?: boolean; requireTools?: string[] };
 /** The server an arm talks to; the v6 instance is configured only by EVAL_V6_URL and EVAL_V6_KEY_FILE, never by argv. Reads a key file, so it is not used when listing. */
 export function backendOf(arm: Arm, cfg: ReturnType<typeof config>, env: NodeJS.ProcessEnv): Backend {
   const local = (port: number) => `http://127.0.0.1:${port}/mcp/${PRODUCT}`;
   if (arm === "clone-tools-noinstr") return { id: "noinstr", url: local(cfg.noinstrPort), key: readKey(cfg.keyFile), kind: "clone", instructions: false };
   if (arm === "clone-tools-recipe") return { id: "recipe", url: local(cfg.recipePort), key: readKey(cfg.keyFile), kind: "clone", instructions: true };
   if (arm === "clone-tools-git-prs") return { id: "prs", url: local(cfg.prsPort), key: readKey(cfg.keyFile), kind: "clone", instructions: true };
+  if (arm === "clone-tools-git-history-prs") return { id: "githistoryprs", url: local(cfg.gitHistoryPrsPort), key: readKey(cfg.keyFile), kind: "clone", instructions: true, requireTools: [...PR_TOOLS, ...GIT_HISTORY_TOOLS] };
+  if (arm === "clone-tools-git-history") return { id: "githistory", url: local(cfg.gitHistoryPort), key: readKey(cfg.keyFile), kind: "clone", instructions: true, requireTools: GIT_HISTORY_TOOLS };
   if (arm !== "v6-tools") return { id: "clone", url: local(cfg.port), key: readKey(cfg.keyFile), kind: "clone", instructions: true };
   let url: URL | undefined;
   try { url = new URL(env.EVAL_V6_URL ?? ""); } catch { /* reported below */ }
@@ -148,14 +160,39 @@ function pilotReport(named: Dataset, stored: Raw[], arms: Arm[], alias: string, 
   if (arms.includes("v6-tools")) rule(v6.length === ids.length && meanV6 >= 0.5, `v6-tools pilot recall ${shown(meanV6)} (needs complete runs and at least 0.50; a reference near zero shows nothing)`);
   rule(mine.length > 0 && !mine.some((r) => r.leak), `no leaks (${mine.filter((r) => r.leak).length} of ${mine.length} runs)`);
   if (arms.includes("clone-research")) rule(research.length > 0 && research.every((r) => r.firstTool === "research_codebase"), `research_codebase first in every research run (${research.filter((r) => r.firstTool === "research_codebase").length}/${research.length})`);
+  // Cycle 14's first pilot was invalid because the tools never reached the api; a pilot where the arm never called a new tool shows nothing.
+  for (const arm of arms.filter(hasHistoryTools)) {
+    const runs = mine.filter((r) => r.arm === arm), calls = runs.reduce((n, r) => n + GIT_HISTORY_TOOLS.reduce((m, t) => m + (r.toolCalls?.[t] ?? 0), 0), 0);
+    rule(calls > 0, `a new git history tool was called in the ${arm} pilot runs (${calls} calls)`);
+  }
   lines.push("", `Stop rules (spec S5, model ${alias}):`, ...rules, `Denied tool attempts by arms (research_codebase, list_commits, get_diff, list_branches): ${mine.reduce((n, r) => n + (r.deniedAttempts ?? 0), 0)}.`);
   return { lines, stop: rules.some((r) => r.startsWith("STOP")) };
+}
+
+/** The stack the flags select. Flags are separate stacks, except exactly `--prs on` with `--git-history on`, which is one stack with both. `rest` is argv after `stack <action>`. */
+export function stackChoice(rest: string[], cfg: ReturnType<typeof config>, env: NodeJS.ProcessEnv) {
+  const instructions = flagValue(rest, "--instructions"), recipe = flagValue(rest, "--recipe"), prs = flagValue(rest, "--prs"), gitHistory = flagValue(rest, "--git-history");
+  if (instructions && instructions !== "off") throw new Error("--instructions must be off (the default stack keeps the instructions on).");
+  if (recipe && recipe !== "on") throw new Error("--recipe must be on (the default stack serves no recipe).");
+  if (prs && prs !== "on") throw new Error("--prs must be on (the default stack imports no pull requests).");
+  if (gitHistory && gitHistory !== "on") throw new Error("--git-history must be on (the default stack pins both history flags off explicitly; this flag only takes on).");
+  const set = [instructions, recipe, prs, gitHistory].filter(Boolean).length;
+  if (set > 1 && !(set === 2 && prs && gitHistory)) throw new Error("--instructions off, --recipe on, --prs on and --git-history on are separate stacks; pass one (the only pair allowed is --prs on with --git-history on).");
+  const flags = ["--instructions", "--recipe", "--prs", "--git-history"];
+  const extra = rest.filter((a, i, all) => !flags.includes(a) && !flags.includes(all[i - 1]!));
+  const dir = (name: string, fallback: string) => resolve(env[name] ?? join(EVAL_DIR, ".local", fallback));
+  if (prs && gitHistory) return { extra, port: cfg.gitHistoryPrsPort, project: "falkon-eval-githistory-prs", prs: "on" as const, gitHistory: "on" as const, stateDir: dir("EVAL_GITHISTORYPRS_STATE_DIR", "stack-githistory-prs") };
+  if (gitHistory) return { extra, port: cfg.gitHistoryPort, project: "falkon-eval-githistory", gitHistory: "on" as const, stateDir: dir("EVAL_GITHISTORY_STATE_DIR", "stack-githistory") };
+  if (prs) return { extra, port: cfg.prsPort, project: "falkon-eval-prs", prs: "on" as const, stateDir: dir("EVAL_PRS_STATE_DIR", "stack-prs") };
+  if (recipe) return { extra, port: cfg.recipePort, project: "falkon-eval-recipe", recipe: "on" as const, stateDir: dir("EVAL_RECIPE_STATE_DIR", "stack-recipe") };
+  if (instructions) return { extra, port: cfg.noinstrPort, project: "falkon-eval-noinstr", instructions: "off" as const, stateDir: dir("EVAL_NOINSTR_STATE_DIR", "stack-noinstr") };
+  return { extra, port: cfg.port, project: env.EVAL_COMPOSE_PROJECT ?? "falkon-eval", stateDir: dir("EVAL_STATE_DIR", "stack") };
 }
 
 export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env): Promise<string> {
   const args = argv.filter((a, i) => !(a === "--" && i < 2)); // pnpm may pass a leading "--"
   const command = args[0], cfg = config(env), listing = args.includes("--list");
-  if (!["pilot", "run", "report", "preflight", "stack", "corpus"].includes(command ?? "")) throw new Error("Usage: pnpm eval -- pilot|run|report|preflight|stack|corpus deepen [--split dev|hidden] [--model sonnet|haiku] [--arms clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git,clone-tools-git-prs] [--dataset impact|history] [--reference arm] [--list] [--pilot] [--instructions off] [--recipe on] [--prs on]");
+  if (!["pilot", "run", "report", "preflight", "stack", "corpus"].includes(command ?? "")) throw new Error("Usage: pnpm eval -- pilot|run|report|preflight|stack|corpus deepen [--split dev|hidden] [--model sonnet|haiku] [--arms clone-tools,clone-research,v6-tools,clone-tools-noinstr,clone-tools-recipe,clone-tools-git,clone-tools-git-prs,clone-tools-git-history,clone-tools-git-history-prs] [--dataset impact|history] [--reference arm] [--list] [--pilot] [--instructions off] [--recipe on] [--prs on] [--git-history on]");
   const splitFlag = flagValue(args, "--split");
   if (splitFlag && !["dev", "hidden"].includes(splitFlag)) throw new Error("--split must be dev or hidden");
   const split = (splitFlag ?? "dev") as "dev" | "hidden";
@@ -174,18 +211,8 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     return deepenCheckouts(cfg.o3Dir) + "\n";
   }
   if (command === "stack") {
-    const instructions = flagValue(args, "--instructions"), recipe = flagValue(args, "--recipe"), prs = flagValue(args, "--prs");
-    if (instructions && instructions !== "off") throw new Error("--instructions must be off (the default stack keeps the instructions on).");
-    if (recipe && recipe !== "on") throw new Error("--recipe must be on (the default stack serves no recipe).");
-    if (prs && prs !== "on") throw new Error("--prs must be on (the default stack imports no pull requests).");
-    if ([instructions, recipe, prs].filter(Boolean).length > 1) throw new Error("--instructions off, --recipe on and --prs on are separate stacks; pass one.");
-    const extra = args.slice(2).filter((a, i, all) => !["--instructions", "--recipe", "--prs"].includes(a) && !["--instructions", "--recipe", "--prs"].includes(all[i - 1]!));
-    const base = { o3Dir: cfg.o3Dir, repoRoot: REPO_ROOT };
-    if (prs) return stack(args[1] ?? "", extra, { ...base, port: cfg.prsPort, project: "falkon-eval-prs", prs: "on", stateDir: resolve(env.EVAL_PRS_STATE_DIR ?? join(EVAL_DIR, ".local/stack-prs")) });
-    if (recipe) return stack(args[1] ?? "", extra, { ...base, port: cfg.recipePort, project: "falkon-eval-recipe", recipe: "on", stateDir: resolve(env.EVAL_RECIPE_STATE_DIR ?? join(EVAL_DIR, ".local/stack-recipe")) });
-    return instructions
-      ? stack(args[1] ?? "", extra, { ...base, port: cfg.noinstrPort, project: "falkon-eval-noinstr", instructions: "off", stateDir: resolve(env.EVAL_NOINSTR_STATE_DIR ?? join(EVAL_DIR, ".local/stack-noinstr")) })
-      : stack(args[1] ?? "", extra, { ...base, port: cfg.port, project: env.EVAL_COMPOSE_PROJECT ?? "falkon-eval", stateDir: resolve(env.EVAL_STATE_DIR ?? join(EVAL_DIR, ".local/stack")) });
+    const { extra, ...choice } = stackChoice(args.slice(2), cfg, env);
+    return stack(args[1] ?? "", extra, { o3Dir: cfg.o3Dir, repoRoot: REPO_ROOT, ...choice });
   }
   const datasetFlag = flagValue(args, "--dataset");
   if (datasetFlag && !["impact", "history"].includes(datasetFlag)) throw new Error("--dataset must be impact or history (the default is the two O3 sets).");
@@ -214,7 +241,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
       datasets: datasets.map((dataset) => {
         // Stored runs from before droppedSpans existed: re-parse the final text against the corpus (in memory only; scoring is untouched).
         const count = datasetFlag === "history" && existsSync(cfg.o3Dir) ? lineCounter(cfg.o3Dir) : undefined;
-        const runs = readRaw(dirOf(dataset.id)).map((r) => count && r.droppedSpans === undefined && r.result ? { ...r, droppedSpans: parseAnswer(r.result, count).dropped } : r);
+        const runs = readRaw(dirOf(dataset.id)).map((r) => restoreLeak(r, [cfg.o3Dir, REPO_ROOT])).map((r) => count && r.droppedSpans === undefined && r.result ? { ...r, droppedSpans: parseAnswer(r.result, count).dropped } : r);
         return { dataset, floor: referenceArm ? runs.filter((r) => r.arm === referenceArm) : readRaw(join(FLOOR_DIR, dataset.id)), runs };
       }),
       accepted: loadAccepted(), split: splitFlag as "dev" | "hidden" | undefined, arms, model: `${model.alias} (${model.id})`, referenceArm,
@@ -225,7 +252,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     ? pilot.map((id) => ({ id, dataset: named.id, split: "dev" as const, question: named.questions.find((q) => q.id === id)!.question }))
     : datasets.flatMap((d) => d.questions.filter((q) => q.split === split).map((q) => ({ id: q.id, dataset: d.id, split, question: q.question })));
   const worst = tasks.length * arms.length;
-  const header = `${worst} runs (${tasks.length} questions x ${arms.length} arms, model ${model.alias}); worst case $${(worst * PER_RUN_CAP).toFixed(2)} at the $${PER_RUN_CAP} per-run cap, ledger cap $${cfg.spendCap} across all models.`;
+  const header = `${worst} runs (${tasks.length} questions x ${arms.length} arms, model ${model.alias}); worst case $${(worst * PER_RUN_CAP).toFixed(2)} at the $${PER_RUN_CAP} per-run cap (the runner reserves $${RESERVATION} per run in flight), ledger cap $${cfg.spendCap} across all models.`;
   const launch = (task: Task, arm: Arm, configPath: string, backend?: Backend) => buildCommand(arm, { question: task.question, tree: join(cfg.workDir, "chart-only"), env: process.env, configPath, url: backend?.url ?? "", model: model.id, perRunCap: PER_RUN_CAP, apiKey: backend?.key, denyPaths: [cfg.o3Dir, REPO_ROOT], history: datasetFlag === "history" });
   if (listing) {
     return [header, ...tasks.flatMap((t) => arms.map((arm) => { const a = launch(t, arm, "/mcp.json").args; return `${t.dataset}/${t.id} ${arm}: ${a[a.indexOf("--allowedTools") + 1]}`; }))].join("\n") + "\n";
@@ -245,7 +272,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
   console.log(header);
   const lineCount = lineCounter(cfg.o3Dir), ledger = join(cfg.runsRoot, "ledger.jsonl");
   await runTasks(tasks, {
-    runsRoot: runsDir, ledger, arms, concurrency: 3, perRunCap: PER_RUN_CAP, spendCap: cfg.spendCap,
+    runsRoot: runsDir, ledger, arms, concurrency: 3, perRunCap: RESERVATION, spendCap: cfg.spendCap,
     run: async (task, arm) => {
       const bin = mkdtempSync(join(cfg.workDir, ".run-")), backend = backends.get(arm)!;
       try {
@@ -265,7 +292,7 @@ async function preflightArms(arms: Arm[], cfg: ReturnType<typeof config>, env: N
   assertFullHistory(cfg.o3Dir);
   const servers = new Map(arms.map((arm) => backendOf(arm, cfg, env)).map((b) => [b.id, b]));
   const out: string[] = [];
-  for (const b of servers.values()) out.push(`${b.id} (${new URL(b.url).host}): ${await preflight({ expectedRepos: expectedRepos(), gold: goldPaths(datasetIds), url: b.url, apiKey: b.key, kind: b.kind, instructions: b.instructions })}`);
+  for (const b of servers.values()) out.push(`${b.id} (${new URL(b.url).host}): ${await preflight({ expectedRepos: expectedRepos(), gold: goldPaths(datasetIds), url: b.url, apiKey: b.key, kind: b.kind, instructions: b.instructions, requireTools: b.requireTools })}`);
   return out.join("\n");
 }
 

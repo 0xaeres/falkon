@@ -386,7 +386,7 @@ read -rs GITHUB_TOKEN && export GITHUB_TOKEN
 scripts/sync-smoke.sh
 ```
 
-**Freshness.** With `MCP_HISTORY_TOOLS=on`, every history tool result lists, for each repository it read, `lastSyncedAt` and `stale`. `stale: true` (with a `reason`) means the last success is older than twice the sync interval, the last run failed, the sync is waiting for the rate limit, or the token cannot read the repository. The data is still served from what was stored; an agent should treat it as possibly behind GitHub and say so. The tools read only Postgres and never call GitHub.
+**Freshness.** The pull request tools are on by default (`MCP_HISTORY_TOOLS=off` removes them); every history tool result lists, for each repository it read, `lastSyncedAt` and `stale`. `stale: true` (with a `reason`) means the last success is older than twice the sync interval, the last run failed, the sync is waiting for the rate limit, or the token cannot read the repository. The data is still served from what was stored; an agent should treat it as possibly behind GitHub and say so. The tools read only Postgres and never call GitHub.
 
 **Limits.** Polling only: no webhooks, so a change shows after the next run (15 minutes by default). Pull requests only: issues are not synced. A first sync reads the last 24 months of pull requests; older history stays reachable through git. A pull request with more than 100 comments, reviews or files, or 30 review threads, is stored with those parts cut and flagged `truncated`. When the rate-limit budget falls below 10% the sync stops, saves its progress and resumes after GitHub's reset time.
 
@@ -400,6 +400,8 @@ scripts/sync-smoke.sh
 | `ADMIN_TOKEN` | generated | Admin bearer, at least 32 characters. Otherwise stored in `${DATA_DIR}/secrets/admin.token` |
 | `FALKON_SECRET_KEY` | generated | Base64 of 32 bytes. Encrypts stored code-host tokens |
 | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | unset | OpenAI-compatible model for Ask and the knowledge base |
+| `MCP_HISTORY_TOOLS` | on | The three pull request tools (`get_pull_request`, `search_discussions`, `get_provenance`). Off only when the value is the text `off`, in any case and ignoring surrounding spaces; unset, empty, `0`, `false` or anything else leaves them on |
+| `MCP_GIT_TOOLS` | on | The seven git history tools and the git recipes in the research brief. Same rule: only `off` disables them. With both variables `off` the tool list is the one of release 0.1.0 |
 | `API_ALLOWED_HOSTS` | loopback | Extra host names the listeners answer, for example behind a proxy |
 
 ## Query syntax
@@ -442,6 +444,8 @@ MCP clients and the Ask chat share one tool registry, so they see the same names
 | `list_language_models` | Which models can Ask use? |
 
 Version 0.1.0 has no code graph. Change and impact questions run through the symbol and reference tools, guided by an "impact and change" recipe.
+
+On the `api` service, seven more tools are on by default and read git history from the clones (`MCP_GIT_TOOLS=off` removes them): `search_commits`, `search_diffs`, `compare_revisions`, `list_refs`, `check_ancestry`, `get_range_history` and `list_contributors`. They are listed after the tools above, each call is bounded in time and size and says what it could not read, and the short history recipes are added to the brief that both `research_codebase` and the `ask_codebase` prompt return. With `MCP_GIT_TOOLS=off` the tool list and the research brief are the ones of release 0.1.0 plus the pull request tools.
 
 ## Ask and the knowledge base
 

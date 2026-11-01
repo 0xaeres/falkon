@@ -4,7 +4,7 @@ import { define, fileNotFound, git, isPathValid, repoOrThrow, type ToolContext }
 import text from "./historyToolText.json" with { type: "json" };
 
 /**
- * The pull request history tools (ADR 0001 4.11, D113): registered only with MCP_HISTORY_TOOLS=on, in their own registry so the
+ * The pull request history tools (ADR 0001 4.11, D113): registered unless MCP_HISTORY_TOOLS=off (on by default since cycle 19c), in their own registry so the
  * ten core tools and their contract snapshots stay untouched. They read Postgres through ToolDeps.history and, for a path, the
  * local clone; never the code host. Pull request text is untrusted third-party content.
  */
@@ -17,6 +17,9 @@ const MAX_BYTES = 24_000;
 const BODY_CHARS = 8000, BODY_BYTES = 8000, COMMENT_CHARS = 2000, COMMENT_BYTES = 3000, TITLE_CHARS = 300;
 const COMMENTS_PER_PAGE = 50, FILES = 100, PER_KIND = 50, SNIPPETS = 3, SNIPPET_CHARS = 300;
 const GIT_TIMEOUT_MS = 15_000;
+/** Stable sort key: keys from a comment (`comment-ticket-pattern`) after those from title, body and branch. */
+const commentLast = (a: { source: string }, b: { source: string }) => Number(a.source === "comment-ticket-pattern") - Number(b.source === "comment-ticket-pattern");
+
 /** Candidates loaded for an exact ticket or #N lookup. */
 const EXACT_LOADS = 200;
 
@@ -114,7 +117,7 @@ const getPullRequest = define({
     const { links } = await h.links(names, { kind: "pr", repo, number });
     if (links.length >= MAX_ROWS) truncated.add(`links: the store returned its cap of ${MAX_ROWS}`);
     const own = (l: RepoLink) => l.repo === repo;
-    const tickets = links.filter((l) => own(l) && l.fromKind === "pr" && l.fromRef === String(number) && l.toKind === "ticket").map((l) => ({ key: l.toRef, source: l.source }));
+    const tickets = links.filter((l) => own(l) && l.fromKind === "pr" && l.fromRef === String(number) && l.toKind === "ticket").map((l) => ({ key: l.toRef, source: l.source })).sort(commentLast);
     const commits = links.filter((l) => own(l) && l.fromKind === "commit").map((l) => ({ sha: l.fromRef, source: l.source, verified: l.verified }));
     const state = r.id === undefined ? undefined : await h.syncState(r.id);
 
@@ -355,6 +358,14 @@ const getProvenance = define({
     const truncated = new Set<string>();
     const lists = { commits: new Map<string, object>(), pullRequests: new Map<string, object>(), tickets: new Map<string, object>() };
     const add = (m: Map<string, object>, key: string, v: object) => void (m.has(key) || m.set(key, v));
+    // The tickets of pull requests (pr -> ticket links), the same ones get_pull_request lists; out-of-scope pull requests give none.
+    const addPrTickets = async (prs: { repo: string; number: number }[]) => {
+      const uniq = [...new Map(prs.map((x) => [`${x.repo} ${x.number}`, x])).values()].slice(0, PER_KIND);
+      const found = await Promise.all(uniq.map((x) => h.links(names, { kind: "pr", ...x })));
+      found.forEach((f, i) => {
+        for (const l of [...f.links].sort(commentLast)) if (l.toKind === "ticket" && l.fromKind === "pr" && l.repo === uniq[i]!.repo && Number(l.fromRef) === uniq[i]!.number) add(lists.tickets, l.toRef, { key: l.toRef, source: l.source, verified: l.verified });
+      });
+    };
     let anchor: object;
     let gaps: string[];
 
@@ -380,6 +391,7 @@ const getProvenance = define({
         for (const l of f.links) if (l.repo === repo) add(lists.pullRequests, `${l.toRepo ?? l.repo} ${l.toRef} ${rows[i]!.sha}`, { repo: l.toRepo ?? l.repo, number: Number(l.toRef), source: l.source, verified: l.verified, commit: rows[i]!.sha });
         if (f.links.length >= MAX_ROWS) truncated.add(`links: the store returned its cap of ${MAX_ROWS}`);
       });
+      await addPrTickets([...lists.pullRequests.values()] as { repo: string; number: number }[]);
       gaps = await gapsOf(h, names, repo);
       anchor = { repo, path: file, ...(startLine !== undefined ? { startLine, endLine } : {}) };
     } else {
@@ -387,7 +399,7 @@ const getProvenance = define({
       const res = await h.links(names, a);
       if (res.links.length >= MAX_ROWS) truncated.add(`links: the store returned its cap of ${MAX_ROWS}`);
       gaps = repo ? res.gaps.filter((g) => g === notIngested(repo)) : res.gaps;
-      for (const l of res.links) {
+      for (const l of [...res.links].sort(commentLast)) {
         if (repo && a.kind !== "pr" && l.repo !== repo) continue;
         const meta = { source: l.source, verified: l.verified };
         if (l.fromKind === "commit") add(lists.commits, `${l.repo} ${l.fromRef}`, { repo: l.repo, sha: l.fromRef, ...meta });
@@ -395,6 +407,8 @@ const getProvenance = define({
         if (l.toKind === "pr") add(lists.pullRequests, `${l.toRepo ?? l.repo} ${l.toRef}`, { repo: l.toRepo ?? l.repo, number: Number(l.toRef), ...meta });
         else add(lists.tickets, l.toRef, { key: l.toRef, ...meta });
       }
+      // A ticket key is a pr -> ticket link, so a commit or ticket anchor needs a second hop to the pull requests it found.
+      if (a.kind !== "pr") await addPrTickets(res.links.filter((l) => !repo || l.repo === repo).flatMap((l) => l.fromKind === "pr" ? [{ repo: l.repo, number: Number(l.fromRef) }] : l.toKind === "pr" ? [{ repo: l.toRepo ?? l.repo, number: Number(l.toRef) }] : []));
       // the anchor is not its own companion
       if (a.kind === "commit") for (const k of lists.commits.keys()) if (k.endsWith(` ${a.sha.toLowerCase()}`)) lists.commits.delete(k);
       if (a.kind === "pr") lists.pullRequests.delete(`${a.repo} ${a.number}`);

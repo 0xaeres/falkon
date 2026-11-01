@@ -1,0 +1,83 @@
+{
+  "search_commits": {
+    "description": "Finds commits across one or several repositories by who wrote them, what the message says, which files or dates they touch, and what text their changes add or remove. Every filter is optional and filters combine: a commit must satisfy all the kinds you give, and any one value inside a list. Results are newest first and come from the local clones only, so very recent pushes can be missing.\n\nAll terms are plain text, never patterns: `.*` or `(` search for those characters. Matching ignores case.\n\nEach commit lists `ticketKeys` and `pullRequests` that Falkon read from its message. They are marked `source: message` and are unverified: nothing checks that the ticket or pull request exists. Use `get_provenance` for stored, verified links. When a commit lists a pull request number but no ticket key (`ticketKeys` is empty), open that pull request before concluding it has no ticket, since the key is often only in the pull request text; if a pull request tool is available, use it, and an empty `ticketKeys` alone does not show that no ticket exists.\n\nBounds, each named in the answer when reached: at most 100 commits (default 50); at most 50 repositories per call; 15 seconds per repository and 40 seconds in all; messages are cut per commit; the whole answer stays under about 24 KB. `coverageGaps` names every repository that was skipped, timed out or could not be read, so an empty or short list is not proof of absence. `filters` echoes what was applied.\n\nSearching changed text (`contentTerms`) reads every diff in range, so it needs a narrowing filter: `after` or `before`, `files`, or an explicit `repos` list.",
+    "params": {
+      "repos": "Repositories to search, by name. Omit to search every repository you can see (the first 50). Names you cannot see are reported as not found.",
+      "revisions": "Branches, tags or commit ids to start from, or globs such as `refs/heads/release-*`. Omit for the clone's default branch. A commit reachable from several of them is listed once. Names starting with `-`, containing `..` or empty are refused.",
+      "authors": "Up to 5 author names or email fragments; a commit matches if its author contains any of them.",
+      "messageTerms": "Up to 10 words or phrases; a commit matches if its message contains any of them.",
+      "contentTerms": "Up to 10 words or phrases; a commit matches if it adds or removes a line containing any of them. Needs `after`, `before`, `files` or `repos`.",
+      "files": "Up to 20 file paths; a commit matches if it touches any of them. Exact paths, no wildcards.",
+      "after": "Only commits on or after this date: ISO 8601 (`2024-02-01`), or `3 days ago`, `yesterday`, `last month`.",
+      "before": "Only commits on or before this date, same forms as `after`.",
+      "count": "How many commits to return, 1 to 100 (default 50)."
+    }
+  },
+  "search_diffs": {
+    "description": "Finds the commits whose changes add or remove a given piece of text, and shows the changed lines that match. Use it to answer when a call, setting or phrase was introduced, removed or touched, across one or several repositories.\n\nThe terms are plain text, never patterns: `.*` or `(` search for those characters. Matching ignores case. A commit matches when one of its changed lines contains any of the terms; lines that only sit next to a change (context) do not count. Choose `side` to look at added lines, removed lines, or both (the default); every commit says which side matched.\n\nEach commit lists up to 5 matching lines with file, side, line number and text (text over 200 characters is cut and marked), and the total number of matching lines. Results are newest first and come from the local clones only. Merge commits are not searched, and a very large change may be only partly read.\n\nThis reads every diff in range, so it needs a narrowing filter: `after` or `before`, `files`, or an explicit `repos` list.\n\nBounds, each named in the answer when reached: at most 100 commits (default 50); at most 50 repositories per call; 15 seconds per repository and 40 seconds in all; a byte limit on what git may print per repository; the whole answer stays under about 24 KB. `coverageGaps` names every repository that was skipped, timed out or cut short, so a short list is not proof of absence. `filters` echoes what was applied.",
+    "params": {
+      "repos": "Repositories to search, by name. Omit to search every repository you can see (the first 50). Names you cannot see are reported as not found.",
+      "revisions": "Branches, tags or commit ids to start from, or globs such as `refs/heads/release-*`. Omit for the clone's default branch. Names starting with `-`, containing `..` or empty are refused.",
+      "terms": "1 to 10 words or phrases to look for in changed lines; a commit matches if any one is found. Each is one line of plain text.",
+      "side": "`added` looks only at lines the commit added, `removed` only at lines it removed, `both` (default) at either.",
+      "files": "Up to 20 file paths; only changes to these files are searched. Exact paths, no wildcards.",
+      "authors": "Up to 5 author names or email fragments; a commit matches if its author contains any of them.",
+      "after": "Only commits on or after this date: ISO 8601 (`2024-02-01`), or `3 days ago`, `yesterday`, `last month`.",
+      "before": "Only commits on or before this date, same forms as `after`.",
+      "count": "How many commits to return, 1 to 100 (default 50)."
+    }
+  },
+  "compare_revisions": {
+    "description": "Compares two revisions of one repository and lists the files that differ, each with its status (added, modified, deleted, renamed, copied, type changed), the number of added and removed lines, and its diff. Revisions may be branches, tags or commit ids; the comparison is what it takes to turn `base` into `head`. Unlike `get_diff`, it works through a large change page by page and keeps one file's long diff from crowding out the others.\n\nFiles are listed in path order, 50 per page by default and at most 100. `totalFiles` and `totalPages` tell you how much is left; ask for the next `page` to continue. A binary file is listed with `binary: true` and no lines. A renamed file shows its former name in `oldPath`. When a file's diff is long, its middle is removed (the first three quarters and the last quarter of the allowed size are kept) and a marker states how many bytes were removed; `diffCut` is true for that file. If the page is still too large for one answer, fewer files are shown and `truncated` says how many; ask for a smaller `perPage`.\n\nSame revision on both sides gives an empty list and a summary saying there are no differences. A revision that does not exist in this repository, including a commit id from another repository, is reported as not found. Git works within 15 seconds and a byte limit; when a limit is reached it is named in `coverageGaps` (or the call fails for a timeout).",
+    "params": {
+      "repo": "Full repository name.",
+      "base": "Revision to compare from: a branch, tag or commit id. Names starting with `-` or containing `..` are refused.",
+      "head": "Revision to compare to, same forms as `base`.",
+      "files": "Up to 20 file paths; only these files are compared. Exact paths, no wildcards.",
+      "page": "Page of files to return, from 1 (default 1).",
+      "perPage": "Files per page, 1 to 100 (default 50)."
+    }
+  },
+  "list_refs": {
+    "description": "Lists the branches and tags of one or several repositories, newest first, each with the object it finally points at (a tag that points at another tag is followed to the end). With `contains` it answers the other question: which branches and tags have a given commit in their history. That is how to find the first release holding a fix: ask for tags only, then take the oldest.\n\nA tag that no branch reaches is listed too. The list is capped at `count` (100 by default, at most 500); when more exist the answer says how many were found. A commit that cannot be found, or that an abbreviation names twice, is reported as a gap for that repository with the reason, not as an empty result. Results come from the local clones only.",
+    "params": {
+      "repos": "Repositories to read, by name. Omit to read every repository you can see (the first 50). Names you cannot see are reported as not found.",
+      "kind": "`heads` for branches, `tags` for tags, `both` (default).",
+      "contains": "Only refs that have this commit in their history: a commit id (a unique abbreviation works), branch or tag name. Names starting with `-`, containing `..` or empty are refused.",
+      "count": "How many refs to return, 1 to 500 (default 100)."
+    }
+  },
+  "check_ancestry": {
+    "description": "Says whether one revision is an ancestor of another in one repository, meaning the second contains the first's history. The answer is one of three: `yes`, `no`, or `unresolved` when a revision does not exist in the repository, is an abbreviation that matches several objects, or is too short; `unresolved` lists which revision and why, and is never a `no`. A commit is its own ancestor. Two histories with no common root give `no`.\n\nUse it to check that a fix is part of a release or a branch. Revisions may be branches, tags or commit ids; a tag counts as the commit it points at.",
+    "params": {
+      "repo": "Full repository name.",
+      "ancestor": "The older revision: a branch, tag or commit id. Names starting with `-` or containing `..` are refused.",
+      "descendant": "The revision that should contain it, same forms as `ancestor`."
+    }
+  },
+  "get_range_history": {
+    "description": "Shows how part of one file changed over time in one repository, or which declarations one commit touched.\n\nHistory mode: give `file` and either a line range (`startLine` and `endLine`) or a `function` name. The result lists the commits that changed those lines, newest first, each with its date, author, subject, the path the file had then (history is followed through renames and moves) and the diff of just that range. Lines are counted in the file as it is at `revision` (default HEAD). A function is found by plain text: git starts at the first line of the file that contains the name and follows that declaration to the next one; if the name appears on several lines they are all listed, and the answer says which one was followed. Regular-expression characters in the name mean themselves. A name cannot contain `:`. A range or function that is not in the file at the revision, a path that is not a file there, and a binary file are reported in the summary instead of an error.\n\nCommit mode: give `commit` (and optionally `file`) to list, per changed file, the declaration line git prints at the top of each of that commit's hunks. This is git's own heuristic, the nearest earlier line that looks like a declaration; it is a line of text, not a parsed symbol, and is null when nothing precedes the change. A merge commit is compared with its first parent. At most 100 files are listed.\n\nAt most `count` commits are returned; the answer says when older ones exist. Long diffs are cut in the middle with a marker. Use it to answer what changed in this code and when; use `search_commits` to find commits by message or author.",
+    "params": {
+      "repo": "Full repository name.",
+      "file": "Path of the file from the repository root, such as `src/app.ts`. No `..`, no leading `./` or `/`, no `:`. Required in history mode; in commit mode it limits the answer to that file.",
+      "revision": "Branch, tag or commit id at which lines are counted and from which history is read. Default HEAD. Names starting with `-` or containing `..` are refused. History mode only.",
+      "startLine": "First line of the range, counting from 1. Give with `endLine`, not with `function`.",
+      "endLine": "Last line of the range, not before `startLine`. A value past the end of the file is cut back to the last line and the answer says so.",
+      "function": "Name of a function or other declaration to follow, matched as plain text in the file. Give instead of a line range.",
+      "commit": "Commit id, branch or tag whose touched declarations are wanted. Give instead of the history parameters.",
+      "count": "Most commits to return in history mode, 1 to 50. Default 20."
+    }
+  },
+  "list_contributors": {
+    "description": "Counts who wrote the commits of one or several repositories, in the style of `git shortlog -sne`: one row per author name and email pair, most commits first. Narrow it to a path (`files`), a time window (`after`, `before`) or branches and tags (`revisions`, default the clone's default branch). Merge commits count, as they do in git.\n\nGive `authors` to turn the question around: the answer then lists the repositories those authors committed to, with the commit count of each and the name and email identities git saw there. The `authors` text is matched against the name and email after the `.mailmap`, the same ones shown in the rows, so the address a row shows finds its commits and an address the map replaced finds nothing.\n\nCounts are exactly what git prints, after the repository's own `.mailmap`. Falkon does not merge people: one person who used two emails or two spellings of a name appears in separate rows, and the answer says so. Do not add rows together unless you know they are one person.\n\nBounds, each named in the answer when reached: at most 100 rows (default 20); at most 50 repositories per call; 15 seconds and 4 MB of git output per repository, 40 seconds in all; the whole answer stays under about 24 KB. When a bound stops a repository, git has read only its newest commits: the summary then starts with PARTIAL and `coverageGaps` names the repository. Counts from a PARTIAL answer are lower bounds for those repositories and the order may be wrong; never present them as complete. An empty answer means no commit matched in what was read; a path that never existed, a window with no commits and an author who wrote nothing look the same.",
+    "params": {
+      "repos": "Repositories to read, by name. Omit to read every repository you can see (the first 50). Names you cannot see are reported as not found.",
+      "revisions": "Branches, tags or commit ids to count from, or globs such as `refs/heads/release-*`. Omit for the clone's default branch. Names starting with `-`, containing `..` or empty are refused.",
+      "authors": "Up to 5 author names or email fragments, matched as plain text ignoring case against the author name and email after the `.mailmap`, as the rows show them. When given, the answer lists repositories instead of authors.",
+      "files": "Up to 20 file paths; only commits that touch any of them are counted. Exact paths, no wildcards.",
+      "after": "Only commits on or after this date: ISO 8601 (`2024-02-01`), or `3 days ago`, `yesterday`, `last month`.",
+      "before": "Only commits on or before this date, same forms as `after`.",
+      "count": "How many rows to return, 1 to 100 (default 20). The answer says how many existed."
+    }
+  }
+}

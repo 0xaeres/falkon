@@ -1,3 +1,4 @@
+import { homedir } from "node:os";
 import { z } from "zod";
 import type { Arm } from "./data.js";
 import type { Evidence } from "./score.js";
@@ -8,12 +9,18 @@ export const TOOLS = ["grep", "glob", "read_file", "list_tree", "list_repos", "f
 /** The git tools only the clone-tools-git arm may call. */
 const GIT_TOOLS = ["list_commits", "get_diff", "list_branches"];
 /** The pull request and provenance tools only the clone-tools-git-prs arm may call (D113: the hint lives in their descriptions, not the prompt). */
-const PR_TOOLS = ["get_pull_request", "search_discussions", "get_provenance"];
+export const PR_TOOLS = ["get_pull_request", "search_discussions", "get_provenance"];
+/** The seven git history tools only the clone-tools-git-history arm may call (S75 to S80); every other arm is denied them. */
+export const GIT_HISTORY_TOOLS = ["search_commits", "search_diffs", "compare_revisions", "list_refs", "check_ancestry", "get_range_history", "list_contributors"];
 const DENIED_TOOLS = ["ask_codebase", "create_skill", "update_skill", "list_skills", "list_language_models"];
 const mcp = (name: string) => `mcp__${SERVER}__${name}`;
+/** Which tool families an arm has; the combined arm clone-tools-git-history-prs has all three. */
+const hasGit = (arm: Arm) => arm.startsWith("clone-tools-git");
+const hasPrTools = (arm: Arm) => arm === "clone-tools-git-prs" || arm === "clone-tools-git-history-prs";
+export const hasHistoryTools = (arm: Arm) => arm === "clone-tools-git-history" || arm === "clone-tools-git-history-prs";
 /** MCP tool names an arm may call; only the research arm has research_codebase, the other arms are denied it. */
-const toolsFor = (arm: Arm) => arm === "clone-research" ? [...TOOLS, "research_codebase"] : arm === "clone-tools-git" ? [...TOOLS, ...GIT_TOOLS] : arm === "clone-tools-git-prs" ? [...TOOLS, ...GIT_TOOLS, ...PR_TOOLS] : TOOLS;
-const deniedFor = (arm: Arm) => [...(arm === "clone-research" ? [] : ["research_codebase"]), ...(arm === "clone-tools-git" || arm === "clone-tools-git-prs" ? [] : GIT_TOOLS), ...(arm === "clone-tools-git-prs" ? [] : PR_TOOLS)];
+const toolsFor = (arm: Arm) => [...TOOLS, ...(arm === "clone-research" ? ["research_codebase"] : []), ...(hasGit(arm) ? GIT_TOOLS : []), ...(hasPrTools(arm) ? PR_TOOLS : []), ...(hasHistoryTools(arm) ? GIT_HISTORY_TOOLS : [])];
+const deniedFor = (arm: Arm) => [...(arm === "clone-research" ? [] : ["research_codebase"]), ...(hasGit(arm) ? [] : GIT_TOOLS), ...(hasPrTools(arm) ? [] : PR_TOOLS), ...(hasHistoryTools(arm) ? [] : GIT_HISTORY_TOOLS)];
 
 const historyCommon = (question: string) => `Answer the repository question by listing every piece of evidence that answers it (all of them, since scoring is by recall), best first. End with one fenced json array of at most 20 items, each one of: {"path": "<repository-name>/<path inside the repository>", "startLine": 1, "endLine": 1} for a source span (inclusive, 1-based); {"repo": "<repository-name>", "commit": "<sha>"} for a commit; {"repo": "<repository-name>", "pr": 123} for a pull request; {"ticket": "TRUNK-1234"} for a ticket. Repo names are bare repository names, as in the placeholders, without a host prefix; for questions about why or when something changed, put only the answering change (its commit or pull request) and its ticket in the array, and describe related changes and code locations in prose; commits are SHAs of at least 7 characters; PRs are numbers; tickets are keys like TRUNK-1234. Ignore any citation format the server describes; end only with the json array described here. Do not modify files.\n\nQuestion:\n${question}`;
 
@@ -46,16 +53,18 @@ export function buildCommand(arm: Arm, o: CommandOptions): { command: string; ar
 }
 
 const sensitive = /(?:^|[\/ ])(?:\.env(?:[.\/ ]|$)|\.local(?:[\/ ]|$)|eval(?:[\/ ]|$))|\/Users(?:\/|$)|\/(?:private\/)?tmp\/claude-501(?:\/|$)|\.\.\//i;
-/** Claude Code's own spill file for an oversized tool result: <home>/.claude/projects/<project>/<session>/tool-results/<file>. Nothing else under ~/.claude. */
-const toolResultSpill = /^\/(?:Users|home)\/[^\/*?[]+\/\.claude\/projects\/[^\/*?[]+\/[^\/*?[]+\/tool-results\/\w[\w.-]*$/;
-const isLeakPath = (path: string) => !(toolResultSpill.test(path) && !path.includes("..")) && sensitive.test(path.replaceAll("\\", "/"));
+/** Claude Code's own files for this run, never anything else under ~/.claude or /tmp: the spill folder of an oversized tool result (<home>/.claude/projects/<project>/<session>/tool-results, the folder or a file in it; cycle 15) and the scratchpad of this checkout's session (cycle 13). Names are plain components, so no `..`, dot-file or glob character gets through. */
+const own = "\\w[\\w.-]*";
+const spillOrScratch = (home: string) => new RegExp(`^(?:${home.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/\\.claude/projects/[^/*?[]+/[^/*?[]+/tool-results(?:/${own})?|/(?:private/)?tmp/claude-501/-[\\w-]*chart-only/[^/*?[]+/(?:scratchpad|tool-results)(?:/${own})*)$`);
+const isLeakPath = (path: string) => !(spillOrScratch(homedir()).test(path) && !path.includes("..")) && sensitive.test(path.replaceAll("\\", "/"));
 /** Input fields that name files; Grep's regex `pattern` is code, not a path. */
 const pathFields: Record<string, string[]> = { Read: ["file_path", "path"], Grep: ["path", "glob"], Glob: ["pattern", "path"] };
 
-export type Parsed = { result?: string; usage: Record<string, unknown>; total_cost_usd?: number; num_turns?: number; is_error?: boolean; toolCalls: Record<string, number>; firstTool?: string; leak: boolean; deniedAttempts: number };
+export type Parsed = { result?: string; usage: Record<string, unknown>; total_cost_usd?: number; num_turns?: number; is_error?: boolean; toolCalls: Record<string, number>; firstTool?: string; leak: boolean; deniedAttempts: number; bareGrep: number };
 /** Reads a stream-json run. Any tool outside the arm's allowlist, or a path into private areas, marks the run as a leak. */
 export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] = []): Parsed {
-  const out: Parsed = { usage: {}, toolCalls: {}, leak: false, deniedAttempts: 0 };
+  const out: Parsed = { usage: {}, toolCalls: {}, leak: false, deniedAttempts: 0, bareGrep: 0 };
+  const bare = new Set<unknown>();
   const allowed = ["Read", "Grep", "Glob", ...toolsFor(arm).map(mcp)];
   const visit = (node: unknown): void => {
     if (Array.isArray(node)) return node.forEach(visit);
@@ -65,6 +74,8 @@ export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] 
       out.firstTool ??= item.name.replace(`mcp__${SERVER}__`, "");
       // An arm may try a tool it was denied (research_codebase, git history and pull request tools); that is counted, not a leak.
       if (deniedFor(arm).map(mcp).includes(item.name)) out.deniedAttempts++;
+      // A tool named exactly `grep` (no MCP prefix) does not exist: Claude Code rejects it and nothing runs, so it is a failed call. A result that is not an error would mean something did run (checked below).
+      else if (item.name === "grep") { out.bareGrep++; bare.add(item.id); }
       else if (!allowed.includes(item.name)) out.leak = true;
       else if (item.name.startsWith(`mcp__${SERVER}__`)) { const short = item.name.slice(mcp("").length); out.toolCalls[short] = (out.toolCalls[short] ?? 0) + 1; }
       if (Object.hasOwn(pathFields, item.name)) {
@@ -74,6 +85,7 @@ export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] 
         }
       }
     }
+    else if (item.type === "tool_result" && bare.has(item.tool_use_id) && item.is_error !== true) out.leak = true;
     Object.values(item).forEach(visit);
   };
   for (const line of stdout.split("\n")) {
@@ -92,6 +104,13 @@ export function parseClaudeOutput(stdout: string, arm: Arm, denyPaths: string[] 
     }
   }
   return out;
+}
+
+/** Stored runs keep the leak flag of the parser that recorded them. Clears it only when bare `grep` calls were the sole cause (the current rules find no leak and at least one bare call), so older flags for real leaks stand. */
+export function restoreLeak<T extends { arm: string; leak?: boolean; stdout?: string }>(run: T, denyPaths: string[] = []): T {
+  if (!run.leak || !run.stdout) return run;
+  const now = parseClaudeOutput(run.stdout, run.arm as Arm, denyPaths);
+  return !now.leak && now.bareGrep > 0 ? { ...run, leak: false } : run;
 }
 
 const sha = z.string().regex(/^[0-9a-fA-F]{7,40}$/), repo = z.string().min(1);

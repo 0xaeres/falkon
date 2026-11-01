@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { discussionLinks, likePattern, parseTicketKeys, searchBounds, ticketKeys } from "./provenance";
+import { MAX_ROWS, discussionLinks, likePattern, mergePrNumber, parseTicketKeys, searchBounds, squashPrNumber, ticketKeys } from "./provenance";
 import { fakeProvenanceStore } from "./provenance.fake";
 import { CONTRACT_REPOS, provenanceStoreContract } from "./provenance.contract";
 
@@ -31,6 +31,32 @@ test("pull request text links: tickets from title, body and branch; #N and owner
   assert.deepEqual(discussionLinks({ number: 1, title: "", body: "", headRef: null }, "github.com/acme/app", KEYS), [], "empty body");
 });
 
+const cm = (body: string, authorLogin: string | null = "rev") => ({ body, authorLogin });
+const ticketsOf = (links: ReturnType<typeof discussionLinks>) => links.filter((l) => l.toKind === "ticket").map((l) => [l.toRef, l.source]);
+const PR = { number: 5, title: "Fix the thing", body: "No key here.", headRef: "fix-thing" };
+
+test("comment keys: a key only in a comment (hist-a-11 shape) is a ticket with its own source", () => {
+  const links = discussionLinks({ ...PR, comments: [cm("Looks good, tracked in https://issues.openmrs.org/browse/RESTWS-1038"), cm("also restws-77 follow-up")] }, "github.com/acme/app", KEYS);
+  assert.deepEqual(ticketsOf(links), [["RESTWS-1038", "comment-ticket-pattern"], ["RESTWS-77", "comment-ticket-pattern"]]);
+});
+
+test("comment keys: title/body keys come first and win; same key in body and comment is listed once", () => {
+  const links = discussionLinks({ ...PR, title: "TRUNK-1: fix", body: "RESTWS-5", comments: [cm("RESTWS-5 again, and O3-9"), cm("TRUNK-1")] }, "github.com/acme/app", KEYS);
+  assert.deepEqual(ticketsOf(links), [["TRUNK-1", "ticket-pattern"], ["RESTWS-5", "ticket-pattern"], ["O3-9", "comment-ticket-pattern"]]);
+});
+
+test("comment keys: unconfigured projects, empty or blank comments, bot authors and quoted lines give none", () => {
+  const links = discussionLinks({ ...PR, comments: [cm("ZZZ-1 is unrelated"), cm(""), cm("   "), cm("TRUNK-2 from CI", "jira[bot]"), cm("> TRUNK-3 quoted\n> O3-4 too\nno key in my reply"), cm("no key at all")] }, "github.com/acme/app", KEYS);
+  assert.deepEqual(ticketsOf(links), []);
+  assert.deepEqual(ticketsOf(discussionLinks({ ...PR, comments: [cm("> TRUNK-3 quoted\nbut mine is O3-4", null)] }, "github.com/acme/app", KEYS)), [["O3-4", "comment-ticket-pattern"]], "a null author is not a bot");
+});
+
+test("comment keys: the scan is bounded to the first MAX_ROWS comments", () => {
+  const many = Array.from({ length: MAX_ROWS + 5 }, (_, i) => cm(i === MAX_ROWS + 1 ? "TRUNK-9" : `comment ${i}`));
+  assert.deepEqual(ticketsOf(discussionLinks({ ...PR, comments: many }, "github.com/acme/app", KEYS)), []);
+  assert.deepEqual(ticketsOf(discussionLinks({ ...PR, comments: [...many.slice(0, MAX_ROWS - 1), cm("TRUNK-8")] }, "github.com/acme/app", KEYS)), [["TRUNK-8", "comment-ticket-pattern"]]);
+});
+
 test("search bounds: at most 8 words of 100 characters, 1 to 20 hits, offset 0 to 1000; LIKE metacharacters escaped", () => {
   assert.deepEqual(searchBounds({ words: [" a ", "", ..."bcdefghijk".split("")], limit: 500, offset: -3 }), { words: ["a", "b", "c", "d", "e", "f", "g", "h"], limit: 20, offset: 0 });
   assert.deepEqual(searchBounds({ words: ["x".repeat(150)], limit: 0, offset: 5000 }), { words: ["x".repeat(100)], limit: 1, offset: 1000 });
@@ -41,4 +67,13 @@ test("search bounds: at most 8 words of 100 characters, 1 to 20 hits, offset 0 t
 provenanceStoreContract("fake store", async () => {
   const ids = Object.fromEntries(CONTRACT_REPOS.map((r, i) => [r, i + 1]));
   return { store: fakeProvenanceStore(ids), id: (r) => ids[r]! };
+});
+
+test("commit subject pull request numbers: squash `(#N)` at the end, `Merge pull request #N from` at the start", () => {
+  assert.equal(squashPrNumber("fix scan (#12)"), 12);
+  assert.equal(squashPrNumber("fix scan (#12)  "), 12);
+  assert.equal(squashPrNumber("fix (#12) scan"), undefined);
+  assert.equal(mergePrNumber("Merge pull request #7 from acme/x"), 7);
+  assert.equal(mergePrNumber("see Merge pull request #7 from acme/x"), undefined);
+  assert.equal(mergePrNumber("fix scan (#12)"), undefined);
 });
