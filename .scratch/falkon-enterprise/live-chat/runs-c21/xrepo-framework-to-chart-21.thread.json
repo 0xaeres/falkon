@@ -1,0 +1,788 @@
+{
+  "id": "603ad503-c626-4105-a0bf-576e19ada598",
+  "productId": "openmrs",
+  "title": "UserIcon Changes in Patient Chart",
+  "updatedAt": 1793548663670,
+  "answers": [
+    {
+      "id": "yNxzXAJYuTaJatm7",
+      "productId": "openmrs",
+      "question": "If `UserIcon` in the OpenMRS frontend framework (openmrs-esm-core) changed its behaviour, which code in the patient chart app (openmrs-esm-patient-chart) uses it and could be affected?",
+      "generation": "g-b59a21",
+      "kind": "grounded",
+      "paragraphs": [
+        {
+          "text": "# Impact of a `UserIcon` behaviour change on the patient chart",
+          "citations": []
+        },
+        {
+          "text": "Short version: `UserIcon` lives in the framework (`esm-styleguide`), and only **two** components in `openmrs-esm-patient-chart` use it, both in the medication ordering/display area, both rendering it as a small (16px) icon inside a tooltip trigger that reveals the name of the person who ordered a medication. Nothing else in that app imports it, and no test mocks it.",
+          "citations": []
+        },
+        {
+          "text": "## What `UserIcon` actually is",
+          "citations": []
+        },
+        {
+          "text": "`UserIcon` is one of the framework's generated icon components. It is a memoised `forwardRef` component whose only job is to render the generic `Icon` with the sprite id `omrs-icon-user` [1]. The real behaviour — sizing, fill, the `<svg>` wrapper — sits in `Icon` [2], which defaults `size` to 20 and `fill` to `currentColor` [3], rejects sizes below 1 or above 72 with a console error and falls back to 20 [4], and renders an SVG with `classNames('omrs-icon', style.icon, className)` [5]. The icon path is registered under the id `omrs-icon-user` in the sprite [6], and `UserIcon` reaches apps through `@openmrs/esm-framework`, which re-exports the styleguide public surface [7]. So a change to `UserIcon` means a change to any of: the `IconProps` contract (`className`, `fill`, `size`) [8], the icon id/`use` href, the default size and fill, or the invalid-size guard.",
+          "citations": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ]
+        },
+        {
+          "text": "## The two affected call sites",
+          "citations": []
+        },
+        {
+          "text": "Both are local helper components, confusingly both named `InfoTooltip`, but with different signatures and in different packages.",
+          "citations": []
+        },
+        {
+          "text": "**1. Orders app — medication record.** `MedicationRecord` renders `<InfoTooltip orderer={order.orderer?.display ?? '--'} />` next to the start date [9]. That `InfoTooltip` is defined at the bottom of the same file and renders `<UserIcon size={16} />` as the child of a Carbon `ToggletipButton`, with the orderer's name in the `ToggletipContent` [10], imported from the framework on line 5 [11]. `MedicationRecord` is itself used by the orders details table [12] and rendered per matching order inside that table [13]. So the icon appears in the Orders view of the patient chart whenever a rendered medication row shows its orderer.",
+          "citations": [
+            9,
+            10,
+            11,
+            12,
+            13
+          ]
+        },
+        {
+          "text": "**2. Medications app — medications details table.** The `startDate` cell renders `<InfoTooltip orderer={medication.orderer?.person?.display ?? '--'} />`, but only when the table is not in print mode (`!isPrinting`) [14]. Its own `InfoTooltip` renders `<UserIcon size={16} />` inside a Carbon `IconButton` (`kind=\"ghost\"`, `size=\"sm\"`, label = the orderer string) [15]. This one is imported in the big framework import block of the file [16]. Note the behavioural coupling here: print mode deliberately suppresses the icon, so anything that changes the icon's rendered size or box model touches the table layout (and possibly the print layout) of this column.",
+          "citations": [
+            14,
+            15,
+            16
+          ]
+        },
+        {
+          "text": "A good way to read the dependency: the icon is always the *trigger* of a tooltip, never standalone content.",
+          "citations": []
+        },
+        {
+          "text": "```mermaid\n---\ntitle: UserIcon usage in the patient chart\n---\nflowchart TD\n  subgraph fw[\"esm-framework (openmrs-esm-core)\"]\n    ui[\"UserIcon\"] --> ic[\"Icon\"]\n    ic --> sprite[\"omrs-icon-user sprite\"]\n  end\n  subgraph orders[\"esm-patient-orders-app\"]\n    mr[\"MedicationRecord\"] --> mi[\"InfoTooltip\"]\n    mi --> oi[\"UserIcon size 16\"]\n    odt[\"order-details-table\"] --> mr\n  end\n  subgraph meds[\"esm-patient-medications-app\"]\n    mdt[\"medications-details-table\"] --> mt[\"InfoTooltip\"]\n    mt --> mi2[\"UserIcon size 16\"]\n  end\n  ui -.->|\"exported via @openmrs/esm-framework\"| mi\n  ui -.-> mi2\n```",
+          "citations": []
+        },
+        {
+          "text": "## Likely, but not verified from the app",
+          "citations": []
+        },
+        {
+          "text": "- `UserIcon` is also mocked in the framework's own test helpers as a plain `<span>UserIcon</span>` [17] and [18]. I did not check whether the patient chart's test setup wires up these mocks, so I cannot say whether the app's tests would notice a change to the real component.\n- Tests that render the affected code: `MedicationRecord` is exercised directly many times in its own test file [19], and the orders-details-table test replaces `MedicationRecord` with a mock altogether [20], meaning a real `UserIcon` change would only be seen by the medication-record tests.",
+          "citations": [
+            17,
+            18,
+            19,
+            20
+          ]
+        },
+        {
+          "text": "## Name clashes to ignore",
+          "citations": []
+        },
+        {
+          "text": "There is a third `InfoTooltip` in the same repository, in the tests app [21], but it is a local function that renders Carbon's `Information` icon, not `UserIcon`, so it is unaffected. Likewise the `UserAvatarIcon`, `UserFollowIcon` and `UserXrayIcon` components are separate symbols with separate sprite ids [22], and none of them are imported in the patient chart.",
+          "citations": [
+            21,
+            22
+          ]
+        },
+        {
+          "text": "## What I could not check",
+          "citations": []
+        },
+        {
+          "text": "Only the two repositories you selected were searched with symbol resolution; other apps (the O3 framework's shared components, `openmrs-esm-core`'s app-shell, or any repository outside this scope) may use `UserIcon` too, and I did not search them. Within the patient chart, the string `UserIcon` appears in exactly the two files above, so an empty result there is not being claimed for anything else. Dynamic dispatch and reflection are not a factor for a React component, but the icon is rendered inside Carbon's `ToggletipButton`/`IconButton`, whose own layout and accessibility behaviour around an SVG child I did not inspect.",
+          "citations": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-styleguide/src/icons/icons.tsx",
+          "revision": "HEAD",
+          "startLine": 821,
+          "code": [
+            "",
+            "/**",
+            " */",
+            "export const UserIcon = memo(",
+            "  forwardRef<SVGSVGElement, IconProps>(function UserIcon(props, ref) {",
+            "    return <Icon ref={ref} icon=\"omrs-icon-user\" iconProps={props} />;",
+            "  }),",
+            ");",
+            "",
+            "/**",
+            " */"
+          ],
+          "highlightedLines": [
+            824,
+            825,
+            826,
+            827,
+            828
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-styleguide/src/icons/icons.tsx",
+          "revision": "HEAD",
+          "startLine": 932,
+          "code": [
+            "/**",
+            " * This is a utility type for custom icons that use the svg-sprite-loader to bundle custom icons",
+            " */",
+            "export const Icon = memo(",
+            "  forwardRef<SVGSVGElement, SvgIconProps>(function Icon({ icon, iconProps }, ref) {",
+            "    let { className, fill, size } = Object.assign({}, { fill: 'currentColor', size: 20 }, iconProps);",
+            "    if (size <= 0 || size > 72) {",
+            "      console.error(`Invalid size '${size}' specified for ${icon}. Defaulting to 20.`);",
+            "      size = 20;",
+            "    }",
+            "    const iconRef = useRef<SVGSVGElement>(null);",
+            "",
+            "    useImperativeHandle(ref, () => iconRef.current!);",
+            "",
+            "    useEffect(() => {",
+            "      if (iconRef.current) {",
+            "        if (fill !== 'currentColor') {",
+            "          iconRef.current.style.setProperty('--omrs-icon-fill', fill);",
+            "        }",
+            "      }",
+            "    }, []);",
+            "",
+            "    return (",
+            "      <svg",
+            "        ref={iconRef}",
+            "        className={classNames('omrs-icon', style.icon, className)}",
+            "        height={size}",
+            "        width={size}",
+            "        viewBox=\"0 0 16 16\"",
+            "      >",
+            "        <use href={`#${icon}`} />",
+            "      </svg>",
+            "    );",
+            "  }),",
+            ");"
+          ],
+          "highlightedLines": [
+            935,
+            936,
+            937,
+            938,
+            939,
+            940,
+            941,
+            942,
+            943,
+            944,
+            945,
+            946,
+            947,
+            948,
+            949,
+            950,
+            951,
+            952,
+            953,
+            954,
+            955,
+            956,
+            957,
+            958,
+            959,
+            960,
+            961,
+            962,
+            963,
+            964,
+            965,
+            966
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-styleguide/src/icons/icons.tsx",
+          "revision": "HEAD",
+          "startLine": 934,
+          "code": [
+            " */",
+            "export const Icon = memo(",
+            "  forwardRef<SVGSVGElement, SvgIconProps>(function Icon({ icon, iconProps }, ref) {",
+            "    let { className, fill, size } = Object.assign({}, { fill: 'currentColor', size: 20 }, iconProps);",
+            "    if (size <= 0 || size > 72) {",
+            "      console.error(`Invalid size '${size}' specified for ${icon}. Defaulting to 20.`);",
+            "      size = 20;"
+          ],
+          "highlightedLines": [
+            937
+          ]
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-styleguide/src/icons/icons.tsx",
+          "revision": "HEAD",
+          "startLine": 935,
+          "code": [
+            "export const Icon = memo(",
+            "  forwardRef<SVGSVGElement, SvgIconProps>(function Icon({ icon, iconProps }, ref) {",
+            "    let { className, fill, size } = Object.assign({}, { fill: 'currentColor', size: 20 }, iconProps);",
+            "    if (size <= 0 || size > 72) {",
+            "      console.error(`Invalid size '${size}' specified for ${icon}. Defaulting to 20.`);",
+            "      size = 20;",
+            "    }",
+            "    const iconRef = useRef<SVGSVGElement>(null);",
+            "",
+            "    useImperativeHandle(ref, () => iconRef.current!);"
+          ],
+          "highlightedLines": [
+            938,
+            939,
+            940,
+            941
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-styleguide/src/icons/icons.tsx",
+          "revision": "HEAD",
+          "startLine": 951,
+          "code": [
+            "      }",
+            "    }, []);",
+            "",
+            "    return (",
+            "      <svg",
+            "        ref={iconRef}",
+            "        className={classNames('omrs-icon', style.icon, className)}",
+            "        height={size}",
+            "        width={size}",
+            "        viewBox=\"0 0 16 16\"",
+            "      >",
+            "        <use href={`#${icon}`} />",
+            "      </svg>",
+            "    );",
+            "  }),",
+            ");"
+          ],
+          "highlightedLines": [
+            954,
+            955,
+            956,
+            957,
+            958,
+            959,
+            960,
+            961,
+            962,
+            963
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-styleguide/src/icons/icon-registration.ts",
+          "revision": "HEAD",
+          "startLine": 184,
+          "code": [
+            "  addIconSvg('omrs-icon-user-follow', userFollow);",
+            "  // userXray is also used for imaging orders",
+            "  addIconSvg('omrs-icon-user-xray', userXray);",
+            "  addIconSvg('omrs-icon-user', user);",
+            "  addIconSvg('omrs-icon-view-off', viewOff);",
+            "  addIconSvg('omrs-icon-view', view);",
+            "  addIconSvg('omrs-icon-warning', warning);"
+          ],
+          "highlightedLines": [
+            187
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-framework/src/index.ts",
+          "revision": "HEAD",
+          "startLine": 11,
+          "code": [
+            "export * from '@openmrs/esm-navigation/src/public';",
+            "export * from '@openmrs/esm-react-utils/src/public';",
+            "export * from '@openmrs/esm-state/src/public';",
+            "export * from '@openmrs/esm-styleguide/src/public';",
+            "export * from '@openmrs/esm-translations/src/public';",
+            "export * from '@openmrs/esm-utils';",
+            "export * from './deprecated';"
+          ],
+          "highlightedLines": [
+            14
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-styleguide/src/icons/icons.tsx",
+          "revision": "HEAD",
+          "startLine": 102,
+          "code": [
+            "",
+            "export type IconId = (typeof iconIds)[number];",
+            "",
+            "export type IconProps = {",
+            "  className?: Argument;",
+            "  fill?: string;",
+            "  size?: number;",
+            "};",
+            "",
+            "/**",
+            " */"
+          ],
+          "highlightedLines": [
+            105,
+            106,
+            107,
+            108,
+            109
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/components/medication-record.component.tsx",
+          "revision": "HEAD",
+          "startLine": 24,
+          "code": [
+            "    <div className={styles.medicationContainer}>",
+            "      <div className={styles.startDateColumn}>",
+            "        <span>{formatDate(new Date(order.dateActivated))}</span>",
+            "        <InfoTooltip orderer={order.orderer?.display ?? '--'} />",
+            "      </div>",
+            "      <div className={styles.medicationRecord}>",
+            "        <p className={styles.bodyLong01}>"
+          ],
+          "highlightedLines": [
+            27
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/components/medication-record.component.tsx",
+          "revision": "HEAD",
+          "startLine": 102,
+          "code": [
+            "  );",
+            "}",
+            "",
+            "function InfoTooltip({ orderer }: { orderer: string }) {",
+            "  const { t } = useTranslation();",
+            "  return (",
+            "    <Toggletip align=\"top-start\">",
+            "      <ToggletipButton label={t('ordererInformation', 'Orderer information')}>",
+            "        <UserIcon size={16} />",
+            "      </ToggletipButton>",
+            "      <ToggletipContent>",
+            "        <p>{orderer}</p>",
+            "      </ToggletipContent>",
+            "    </Toggletip>",
+            "  );",
+            "}"
+          ],
+          "highlightedLines": [
+            105,
+            106,
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            113,
+            114,
+            115,
+            116,
+            117
+          ]
+        },
+        {
+          "id": 11,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/components/medication-record.component.tsx",
+          "revision": "HEAD",
+          "startLine": 2,
+          "code": [
+            "import { capitalize } from 'lodash-es';",
+            "import { InlineLoading, Toggletip, ToggletipButton, ToggletipContent } from '@carbon/react';",
+            "import { useTranslation } from 'react-i18next';",
+            "import { formatDate, UserIcon } from '@openmrs/esm-framework';",
+            "import { type Order, useDrugOrderByUuid } from '@openmrs/esm-patient-common-lib';",
+            "import styles from './medication-record.scss';",
+            ""
+          ],
+          "highlightedLines": [
+            5
+          ]
+        },
+        {
+          "id": 12,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/components/order-details-table.component.tsx",
+          "revision": "HEAD",
+          "startLine": 66,
+          "code": [
+            "import { buildGeneralOrder, buildLabOrder, buildMedicationOrder } from '../utils';",
+            "import { ORDER_TYPES, getOrderGrouping, isValidOmrsOrderType } from '../constants/order-types';",
+            "import GeneralOrderTable from './general-order-table.component';",
+            "import MedicationRecord from './medication-record.component';",
+            "import PrintComponent from '../print/print.component';",
+            "import styles from './order-details-table.scss';",
+            ""
+          ],
+          "highlightedLines": [
+            69
+          ]
+        },
+        {
+          "id": 13,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/components/order-details-table.component.tsx",
+          "revision": "HEAD",
+          "startLine": 558,
+          "code": [
+            "                                        })}",
+            "                                      >",
+            "                                        {matchingOrder?.type === ORDER_TYPES.DRUG_ORDER ? (",
+            "                                          <MedicationRecord medication={matchingOrder} />",
+            "                                        ) : (",
+            "                                          <GeneralOrderTable order={matchingOrder} />",
+            "                                        )}"
+          ],
+          "highlightedLines": [
+            561
+          ]
+        },
+        {
+          "id": 14,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-medications-app/src/components/medications-details-table.component.tsx",
+          "revision": "HEAD",
+          "startLine": 196,
+          "code": [
+            "        </div>",
+            "      ),",
+            "    },",
+            "    startDate: {",
+            "      sortKey: dayjs(medication.scheduledDate || medication.dateActivated).toDate(),",
+            "      content: (",
+            "        <div className={styles.startDateColumn}>",
+            "          <span>{formatDate(new Date(medication.scheduledDate || medication.dateActivated))}</span>",
+            "          {!isPrinting && <InfoTooltip orderer={medication.orderer?.person?.display ?? '--'} />}",
+            "        </div>",
+            "      ),",
+            "    },",
+            "  }));",
+            "",
+            "  const sortRow = (cellA, cellB, { sortDirection, sortStates }) => {"
+          ],
+          "highlightedLines": [
+            199,
+            200,
+            201,
+            202,
+            203,
+            204,
+            205,
+            206,
+            207
+          ]
+        },
+        {
+          "id": 15,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-medications-app/src/components/medications-details-table.component.tsx",
+          "revision": "HEAD",
+          "startLine": 373,
+          "code": [
+            "  );",
+            "};",
+            "",
+            "function InfoTooltip({ orderer }: { orderer: string }) {",
+            "  return (",
+            "    <IconButton className={styles.tooltip} align=\"top-left\" label={orderer} kind=\"ghost\" size=\"sm\">",
+            "      <UserIcon size={16} />",
+            "    </IconButton>",
+            "  );",
+            "}",
+            "",
+            "function OrderBasketItemActions({",
+            "  patient,"
+          ],
+          "highlightedLines": [
+            376,
+            377,
+            378,
+            379,
+            380,
+            381,
+            382
+          ]
+        },
+        {
+          "id": 16,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-medications-app/src/components/medications-details-table.component.tsx",
+          "revision": "HEAD",
+          "startLine": 35,
+          "code": [
+            "  useOrderBasket,",
+            "  useStartVisitIfNeeded,",
+            "} from '@openmrs/esm-patient-common-lib';",
+            "import {",
+            "  AddIcon,",
+            "  age,",
+            "  formatDate,",
+            "  getPatientName,",
+            "  launchWorkspace2,",
+            "  PrinterIcon,",
+            "  useConfig,",
+            "  useLayoutType,",
+            "  usePagination,",
+            "  UserIcon,",
+            "} from '@openmrs/esm-framework';",
+            "import { buildMedicationOrder } from '../api';",
+            "import { type AddDrugOrderWorkspaceProps } from '../add-drug-order/add-drug-order.workspace';",
+            "import { type ConfigObject } from '../config-schema';"
+          ],
+          "highlightedLines": [
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49
+          ]
+        },
+        {
+          "id": 17,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-styleguide/mock.tsx",
+          "revision": "HEAD",
+          "startLine": 96,
+          "code": [
+            "export const TwoFactorAuthenticationIcon = () => <span>TwoFactorAuthenticationIcon</span>;",
+            "export const UserAvatarIcon = () => <span>UserAvatarIcon</span>;",
+            "export const UserFollowIcon = () => <span>UserFollowIcon</span>;",
+            "export const UserIcon = () => <span>UserIcon</span>;",
+            "export const UserXrayIcon = () => <span>UserXrayIcon</span>;",
+            "export const ViewIcon = () => <span>ViewIcon</span>;",
+            "export const ViewOffIcon = () => <span>ViewOffIcon</span>;"
+          ],
+          "highlightedLines": [
+            99
+          ]
+        },
+        {
+          "id": 18,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-styleguide/mock-jest.tsx",
+          "revision": "HEAD",
+          "startLine": 95,
+          "code": [
+            "export const TwoFactorAuthenticationIcon = () => <span>TwoFactorAuthenticationIcon</span>;",
+            "export const UserAvatarIcon = () => <span>UserAvatarIcon</span>;",
+            "export const UserFollowIcon = () => <span>UserFollowIcon</span>;",
+            "export const UserIcon = () => <span>UserIcon</span>;",
+            "export const UserXrayIcon = () => <span>UserXrayIcon</span>;",
+            "export const ViewIcon = () => <span>ViewIcon</span>;",
+            "export const ViewOffIcon = () => <span>ViewOffIcon</span>;"
+          ],
+          "highlightedLines": [
+            98
+          ]
+        },
+        {
+          "id": 19,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/components/medication-record.test.tsx",
+          "revision": "HEAD",
+          "startLine": 56,
+          "code": [
+            "  dispenseAsWritten: false,",
+            "} as Order;",
+            "",
+            "describe('MedicationRecord', () => {",
+            "  it('renders a loading state while fetching the drug order', () => {",
+            "    mockUseDrugOrderByUuid.mockReturnValue({",
+            "      data: null,",
+            "      error: undefined,",
+            "      isLoading: true,",
+            "    });",
+            "",
+            "    renderWithSwr(<MedicationRecord medication={baseMedication} />);",
+            "",
+            "    expect(screen.getByText('Loading...')).toBeInTheDocument();",
+            "  });"
+          ],
+          "highlightedLines": [
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67
+          ]
+        },
+        {
+          "id": 20,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/components/order-details-table.test.tsx",
+          "revision": "HEAD",
+          "startLine": 58,
+          "code": [
+            "  },",
+            "}));",
+            "",
+            "vi.mock('./medication-record.component', () => ({",
+            "  default: function MockMedicationRecord() {",
+            "    return 'Medication details';",
+            "  },",
+            "}));"
+          ],
+          "highlightedLines": [
+            61,
+            62
+          ]
+        },
+        {
+          "id": 21,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-tests-app/src/test-results/overview/common-overview.component.tsx",
+          "revision": "HEAD",
+          "startLine": 77,
+          "code": [
+            "",
+            "const Separator = ({ ...props }) => <div {...props} className={styles.separator} />;",
+            "",
+            "const InfoTooltip = ({ effectiveDateTime, issuedDateTime }) => {",
+            "  const { t } = useTranslation();",
+            "  return (",
+            "    <Toggletip align=\"bottom\" className={styles.tooltipContainer}>",
+            "      <ToggletipButton label=\"Additional information\">",
+            "        <Information />",
+            "      </ToggletipButton>",
+            "      <ToggletipContent>",
+            "        <div className={styles.tooltip}>",
+            "          <p>{t('dateCollected', 'Displaying date collected')}</p>",
+            "          <p>",
+            "            <span className={styles.label}>{t('ordered', 'Ordered')}: </span>{' '}",
+            "            {formatDatetime(effectiveDateTime, { mode: 'wide' })}"
+          ],
+          "highlightedLines": [
+            80,
+            81,
+            82,
+            83,
+            84,
+            85,
+            86,
+            87,
+            88,
+            89
+          ]
+        },
+        {
+          "id": 22,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-styleguide/src/icons/icons.tsx",
+          "revision": "HEAD",
+          "startLine": 91,
+          "code": [
+            "  'omrs-icon-trash-can',",
+            "  'omrs-icon-tree-view--alt',",
+            "  'omrs-icon-two-factor-authentication',",
+            "  'omrs-icon-user-avatar',",
+            "  'omrs-icon-user-follow',",
+            "  'omrs-icon-user-xray',",
+            "  'omrs-icon-user',",
+            "  'omrs-icon-view-off',",
+            "  'omrs-icon-view',",
+            "  'omrs-icon-warning',"
+          ],
+          "highlightedLines": [
+            94,
+            95,
+            96,
+            97
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}

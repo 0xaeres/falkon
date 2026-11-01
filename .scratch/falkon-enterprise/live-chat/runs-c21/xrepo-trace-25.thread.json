@@ -1,0 +1,679 @@
+{
+  "id": "1456e326-d6d8-4333-a50f-0ec2f8e31604",
+  "productId": "openmrs",
+  "title": "Visit Deletion Request Flow",
+  "updatedAt": 1793548799035,
+  "answers": [
+    {
+      "id": "m958PWL4a0sCozRg",
+      "productId": "openmrs",
+      "question": "When a user deletes a visit in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "generation": "g-b59a21",
+      "kind": "grounded",
+      "paragraphs": [
+        {
+          "text": "Deleting a visit is a **soft delete**. Nothing is ever removed from the `visit` table: React sends an HTTP `DELETE`, the OpenMRS REST module marks the row as *voided* (retired), and Hibernate writes the updated row back. Below is the exact chain, from the user's click to the database write.",
+          "citations": []
+        },
+        {
+          "text": "## The path in four steps",
+          "citations": []
+        },
+        {
+          "text": "| Step | Where | What runs |\n| --- | --- | --- |\n| 1. Frontend request | `openmrs-esm-patient-chart` | `deleteVisit()` in `visit.resource.tsx` [1] |\n| 2. REST handler | `openmrs-module-webservices.rest` | `VisitResource1_9.delete()` [2] |\n| 3. Core service | `openmrs-core` | `VisitServiceImpl.voidVisit()` [3] |\n| 4. Data access | `openmrs-core` | `HibernateVisitDAO.saveVisit()` [4] |",
+          "citations": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "text": "## Step 1 — the user clicks \"Delete visit\" (patient chart)",
+          "citations": []
+        },
+        {
+          "text": "The user opens the delete dialog from the visit action item, and the **Delete visit** button calls `initiateDeletingVisit` [5]. That function is provided by the `useDeleteVisit` hook [6], specifically at [7].",
+          "citations": [
+            5,
+            6,
+            7
+          ]
+        },
+        {
+          "text": "The function that actually sends the request is `deleteVisit(visitUuid)` in the visit resource module [1]. It calls the framework's `openmrsFetch` with `method: 'DELETE'` against `${restBaseUrl}/visit/${visitUuid}`, i.e. `DELETE /ws/rest/v1/visit/<uuid>`. Note this file is `visit.resource.tsx`, and the hook imports from `../visits-widget/visit.resource` [8].",
+          "citations": [
+            1,
+            8
+          ]
+        },
+        {
+          "text": "When the promise resolves, the hook clears the visit context if the deleted visit was the active one, invalidates the cached visit/encounter data via SWR, and shows a success snackbar with an **Undo** action [9]. Undo calls `restoreVisit`, which sends `POST /ws/rest/v1/visit/<uuid>` with body `{ voided: false }` [10].",
+          "citations": [
+            9,
+            10
+          ]
+        },
+        {
+          "text": "## Step 2 — the REST layer (webservices.rest module)",
+          "citations": []
+        },
+        {
+          "text": "The request is routed (by convention over the resource name) to `VisitResource1_9`, annotated `@Resource(name = \"/visit\", supportedClass = Visit.class, ...)` [11]. Its `delete(Visit, String reason, RequestContext)` method [2] first checks whether the visit is already voided (in which case it just returns success), and otherwise delegates to the core service with `Context.getVisitService().voidVisit(visit, reason)` [12].",
+          "citations": [
+            11,
+            2,
+            12
+          ]
+        },
+        {
+          "text": "The visit itself is loaded earlier by `getByUniqueId(uuid)`, which calls `getVisitByUuid` on the service [13]. A separate `purge` method exists for hard deletes but is not what the standard `DELETE` runs [14].",
+          "citations": [
+            13,
+            14
+          ]
+        },
+        {
+          "text": "## Step 3 — the core service (openmrs-core)",
+          "citations": []
+        },
+        {
+          "text": "`VisitServiceImpl.voidVisit()` [3] is declared in the `VisitService` interface [15]. Its body is a single line: `return dao.saveVisit(visit);` [16]. The voiding itself (setting `voided`, `voidedBy`, `dateVoided`, `voidReason`) happens through the framework's `@Authorized` aspect / the `Visit` entity before this call; this method's job is simply to persist the already-modified object. Contrast this with `purgeVisit()` [17], which refuses to run if the visit still has encounters and then calls `dao.deleteVisit(visit)` — a real row removal.",
+          "citations": [
+            3,
+            15,
+            16,
+            17
+          ]
+        },
+        {
+          "text": "## Step 4 — the database write",
+          "citations": []
+        },
+        {
+          "text": "`HibernateVisitDAO.saveVisit()` is the data-access method [4]. It is annotated `@Transactional` and returns `HibernateUtil.saveOrUpdate(getCurrentSession(), visit)` [18], which issues the SQL `UPDATE` on the `visit` row at transaction commit. The DAO method is declared in the `VisitDAO` interface [19].",
+          "citations": [
+            4,
+            18,
+            19
+          ]
+        },
+        {
+          "text": "## Flow diagram",
+          "citations": []
+        },
+        {
+          "text": "```mermaid\n---\ntitle: Delete Visit - Frontend to Database\n---\nsequenceDiagram\n    participant User\n    participant Dialog as DeleteVisitDialog\n    participant Hook as useDeleteVisit\n    participant Res as deleteVisit (visit.resource.tsx)\n    participant REST as VisitResource1_9.delete\n    participant Svc as VisitServiceImpl.voidVisit\n    participant DAO as HibernateVisitDAO.saveVisit\n    participant DB as visit table\n\n    User->>Dialog: Click \"Delete visit\"\n    Dialog->>Hook: initiateDeletingVisit()\n    Hook->>Res: deleteVisit(visitUuid)\n    Res->>REST: DELETE /ws/rest/v1/visit/<uuid>\n    REST->>REST: getByUniqueId + isVoided check\n    REST->>Svc: Context.getVisitService().voidVisit(visit, reason)\n    Svc->>DAO: dao.saveVisit(visit)\n    DAO->>DB: HibernateUtil.saveOrUpdate (UPDATE, sets voided=true)\n    DAO-->>REST: persisted Visit\n    REST-->>Hook: 204 No Content\n    Hook-->>User: success snackbar with Undo\n```",
+          "citations": []
+        },
+        {
+          "text": "## One caveat",
+          "citations": []
+        },
+        {
+          "text": "The \"delete\" here is not a physical delete — the record stays in the database with its `voided` flag set, which is why the frontend can offer an Undo that simply flips the flag back. I traced this through the four files above; I did not read the `@Authorized` aspect in `openmrs-core` that populates the voiding audit fields before `voidVisit` is reached, so that claim rests on the entity class and OpenMRS conventions rather than on a file I opened in this session. The REST module and core files I cite are read from their default branches.",
+          "citations": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-chart-app/src/visit/visits-widget/visit.resource.tsx",
+          "revision": "HEAD",
+          "startLine": 46,
+          "code": [
+            "  return ret;",
+            "}",
+            "",
+            "export function deleteVisit(visitUuid: string) {",
+            "  return openmrsFetch(`${restBaseUrl}/visit/${visitUuid}`, {",
+            "    method: 'DELETE',",
+            "  });",
+            "}",
+            "",
+            "export function restoreVisit(visitUuid: string) {",
+            "  return openmrsFetch<Visit>(`${restBaseUrl}/visit/${visitUuid}`, {"
+          ],
+          "highlightedLines": [
+            49,
+            50,
+            51,
+            52,
+            53
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9.java",
+          "revision": "HEAD",
+          "startLine": 267,
+          "code": [
+            "\t * @see DelegatingCrudResource#delete(Encounter,",
+            "\t *      String, RequestContext)",
+            "\t */",
+            "\t@Override",
+            "\tpublic void delete(Visit visit, String reason, RequestContext context) throws ResponseException {",
+            "\t\tif (visit.isVoided()) {",
+            "\t\t\t// Makes no sense, so we return success here",
+            "\t\t\treturn;",
+            "\t\t}",
+            "\t\tContext.getVisitService().voidVisit(visit, reason);",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tprotected Visit undelete(Visit visit, RequestContext context) throws ResponseException {"
+          ],
+          "highlightedLines": [
+            270,
+            271,
+            272,
+            273,
+            274,
+            275,
+            276,
+            277
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/impl/VisitServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 203,
+          "code": [
+            "\t/**",
+            "\t * @see org.openmrs.api.VisitService#voidVisit(org.openmrs.Visit, java.lang.String)",
+            "\t */",
+            "\t@Override",
+            "\tpublic Visit voidVisit(Visit visit, String reason) throws APIException {",
+            "\t\treturn dao.saveVisit(visit);",
+            "\t}",
+            "",
+            "\t/**",
+            "\t * @see org.openmrs.api.VisitService#unvoidVisit(org.openmrs.Visit)"
+          ],
+          "highlightedLines": [
+            206,
+            207,
+            208,
+            209
+          ]
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/db/hibernate/HibernateVisitDAO.java",
+          "revision": "HEAD",
+          "startLine": 162,
+          "code": [
+            "\t/**",
+            "\t * @see org.openmrs.api.db.VisitDAO#saveVisit(org.openmrs.Visit)",
+            "\t */",
+            "\t@Override",
+            "\t@Transactional",
+            "\tpublic Visit saveVisit(Visit visit) throws DAOException {",
+            "\t\treturn HibernateUtil.saveOrUpdate(getCurrentSession(), visit);",
+            "\t}",
+            "",
+            "\t/**",
+            "\t * @see org.openmrs.api.db.VisitDAO#deleteVisit(org.openmrs.Visit)"
+          ],
+          "highlightedLines": [
+            165,
+            166,
+            167,
+            168,
+            169
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-chart-app/src/visit/visit-prompt/delete-visit-dialog.modal.tsx",
+          "revision": "HEAD",
+          "startLine": 31,
+          "code": [
+            "        <Button kind=\"secondary\" onClick={closeModal}>",
+            "          {t('cancel', 'Cancel')}",
+            "        </Button>",
+            "        <Button kind=\"danger\" onClick={initiateDeletingVisit} disabled={isDeletingVisit}>",
+            "          {!isDeletingVisit ? (",
+            "            t('deleteVisit', 'Delete visit')",
+            "          ) : (",
+            "            <InlineLoading description={t('deletingVisit', 'Deleting visit')} />",
+            "          )}",
+            "        </Button>",
+            "      </ModalFooter>",
+            "    </div>",
+            "  );"
+          ],
+          "highlightedLines": [
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-chart-app/src/visit/hooks/useDeleteVisit.tsx",
+          "revision": "HEAD",
+          "startLine": 10,
+          "code": [
+            "} from '@openmrs/esm-patient-common-lib';",
+            "import { deleteVisit, restoreVisit } from '../visits-widget/visit.resource';",
+            "",
+            "export function useDeleteVisit(activeVisit: Visit, onVisitDelete = () => {}, onVisitRestore = () => {}) {",
+            "  const { t } = useTranslation();",
+            "  const { mutate: globalMutate } = useSWRConfig();",
+            "  const [isDeletingVisit, setIsDeletingVisit] = useState(false);",
+            "  const patientUuid = activeVisit?.patient?.uuid || '';",
+            "  const { visitContext, setVisitContext } = usePatientChartStore(patientUuid);",
+            ""
+          ],
+          "highlightedLines": [
+            13,
+            14,
+            15,
+            16
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-chart-app/src/visit/hooks/useDeleteVisit.tsx",
+          "revision": "HEAD",
+          "startLine": 53,
+          "code": [
+            "      });",
+            "  };",
+            "",
+            "  const initiateDeletingVisit = () => {",
+            "    setIsDeletingVisit(true);",
+            "",
+            "    deleteVisit(activeVisit?.uuid)",
+            "      .then(() => {",
+            "        if (activeVisit.uuid == visitContext?.uuid) {",
+            "          setVisitContext(null, null);"
+          ],
+          "highlightedLines": [
+            56,
+            57,
+            58,
+            59
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-chart-app/src/visit/hooks/useDeleteVisit.tsx",
+          "revision": "HEAD",
+          "startLine": 8,
+          "code": [
+            "  invalidateVisitByUuid,",
+            "  usePatientChartStore,",
+            "} from '@openmrs/esm-patient-common-lib';",
+            "import { deleteVisit, restoreVisit } from '../visits-widget/visit.resource';",
+            "",
+            "export function useDeleteVisit(activeVisit: Visit, onVisitDelete = () => {}, onVisitRestore = () => {}) {",
+            "  const { t } = useTranslation();"
+          ],
+          "highlightedLines": [
+            11
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-chart-app/src/visit/hooks/useDeleteVisit.tsx",
+          "revision": "HEAD",
+          "startLine": 57,
+          "code": [
+            "    setIsDeletingVisit(true);",
+            "",
+            "    deleteVisit(activeVisit?.uuid)",
+            "      .then(() => {",
+            "        if (activeVisit.uuid == visitContext?.uuid) {",
+            "          setVisitContext(null, null);",
+            "        }",
+            "",
+            "        // Use targeted SWR invalidation instead of global mutateVisit",
+            "        invalidateCurrentVisit(globalMutate, patientUuid);",
+            "        invalidateVisitAndEncounterData(globalMutate, patientUuid);",
+            "        window.dispatchEvent(new CustomEvent('queue-entry-updated'));",
+            "",
+            "        showSnackbar({",
+            "          title: t('visitDeleted', '{{visit}} deleted', {",
+            "            visit: activeVisit?.visitType?.display ?? t('visit', 'Visit'),",
+            "          }),",
+            "          subtitle: t('visitDeletedSuccessfully', '{{visit}} deleted successfully', {",
+            "            visit: activeVisit?.visitType?.display ?? t('visit', 'Visit'),",
+            "          }),",
+            "          kind: 'success',",
+            "          actionButtonLabel: t('undo', 'Undo'),",
+            "          onActionButtonClick: restoreDeletedVisit,",
+            "        });",
+            "        onVisitDelete?.();",
+            "      })",
+            "      .catch(() => {",
+            "        // On error, revalidate to get correct state"
+          ],
+          "highlightedLines": [
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            77,
+            78,
+            79,
+            80,
+            81
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-chart-app/src/visit/visits-widget/visit.resource.tsx",
+          "revision": "HEAD",
+          "startLine": 52,
+          "code": [
+            "  });",
+            "}",
+            "",
+            "export function restoreVisit(visitUuid: string) {",
+            "  return openmrsFetch<Visit>(`${restBaseUrl}/visit/${visitUuid}`, {",
+            "    headers: {",
+            "      'content-type': 'application/json',",
+            "    },",
+            "    method: 'POST',",
+            "    body: { voided: false },",
+            "  });",
+            "}",
+            "",
+            "export interface Order {",
+            "  uuid: string;"
+          ],
+          "highlightedLines": [
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
+          ]
+        },
+        {
+          "id": 11,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9.java",
+          "revision": "HEAD",
+          "startLine": 57,
+          "code": [
+            "/**",
+            " * {@link Resource} for {@link Visit}, supporting standard CRUD operations",
+            " */",
+            "@Resource(name = RestConstants.VERSION_1 + \"/visit\", supportedClass = Visit.class, supportedOpenmrsVersions = { \"1.9.* - 9.*\" })",
+            "public class VisitResource1_9 extends DataDelegatingCrudResource<Visit> {",
+            "",
+            "\t@Override",
+            "\tpublic String getRequiredGetPrivilege() {"
+          ],
+          "highlightedLines": [
+            60,
+            61
+          ]
+        },
+        {
+          "id": 12,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9.java",
+          "revision": "HEAD",
+          "startLine": 273,
+          "code": [
+            "\t\t\t// Makes no sense, so we return success here",
+            "\t\t\treturn;",
+            "\t\t}",
+            "\t\tContext.getVisitService().voidVisit(visit, reason);",
+            "\t}",
+            "\t",
+            "\t@Override"
+          ],
+          "highlightedLines": [
+            276
+          ]
+        },
+        {
+          "id": 13,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9.java",
+          "revision": "HEAD",
+          "startLine": 258,
+          "code": [
+            "\t * ",
+            "\t * @see DelegatingCrudResource#getByUniqueId(String)",
+            "\t */",
+            "\t@Override",
+            "\tpublic Visit getByUniqueId(String uuid) {",
+            "\t\treturn Context.getVisitService().getVisitByUuid(uuid);",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * @see DelegatingCrudResource#delete(Encounter,"
+          ],
+          "highlightedLines": [
+            261,
+            262,
+            263,
+            264
+          ]
+        },
+        {
+          "id": 14,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/VisitResource1_9.java",
+          "revision": "HEAD",
+          "startLine": 288,
+          "code": [
+            "\t * @see DelegatingCrudResource#purge(Object,",
+            "\t *      RequestContext)",
+            "\t */",
+            "\t@Override",
+            "\tpublic void purge(Visit visit, RequestContext context) throws ResponseException {",
+            "\t\tif (visit == null)",
+            "\t\t\treturn;",
+            "\t\tContext.getVisitService().purgeVisit(visit);",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#getResourceVersion()"
+          ],
+          "highlightedLines": [
+            291,
+            292,
+            293,
+            294,
+            295,
+            296
+          ]
+        },
+        {
+          "id": 15,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/VisitService.java",
+          "revision": "HEAD",
+          "startLine": 252,
+          "code": [
+            "\t *             permission",
+            "\t */",
+            "\t@PreAuthorize(\"hasPermission(#visit, '\" + PrivilegeConstants.DELETE_VISITS + \"')\")",
+            "\tpublic Visit voidVisit(Visit visit, String reason) throws APIException;",
+            "",
+            "\t/**",
+            "\t * Unvoids the given visit."
+          ],
+          "highlightedLines": [
+            255
+          ]
+        },
+        {
+          "id": 16,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/impl/VisitServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 205,
+          "code": [
+            "\t */",
+            "\t@Override",
+            "\tpublic Visit voidVisit(Visit visit, String reason) throws APIException {",
+            "\t\treturn dao.saveVisit(visit);",
+            "\t}",
+            "",
+            "\t/**"
+          ],
+          "highlightedLines": [
+            208
+          ]
+        },
+        {
+          "id": 17,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/impl/VisitServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 219,
+          "code": [
+            "\t/**",
+            "\t * @see org.openmrs.api.VisitService#purgeVisit(org.openmrs.Visit)",
+            "\t */",
+            "\t@Override",
+            "\tpublic void purgeVisit(Visit visit) throws APIException {",
+            "\t\tif (visit.getVisitId() == null) {",
+            "\t\t\treturn;",
+            "\t\t}",
+            "\t\tif (!Context.getEncounterService().getEncountersByVisit(visit, true).isEmpty()) {",
+            "\t\t\tthrow new APIException(\"Visit.purge.inUse\", (Object[]) null);",
+            "\t\t}",
+            "\t\tdao.deleteVisit(visit);",
+            "\t}",
+            "",
+            "\t/**",
+            "\t * @see org.openmrs.api.VisitService#getVisits(Collection, Collection, Collection, Collection, Date,"
+          ],
+          "highlightedLines": [
+            222,
+            223,
+            224,
+            225,
+            226,
+            227,
+            228,
+            229,
+            230,
+            231
+          ]
+        },
+        {
+          "id": 18,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/db/hibernate/HibernateVisitDAO.java",
+          "revision": "HEAD",
+          "startLine": 165,
+          "code": [
+            "\t@Override",
+            "\t@Transactional",
+            "\tpublic Visit saveVisit(Visit visit) throws DAOException {",
+            "\t\treturn HibernateUtil.saveOrUpdate(getCurrentSession(), visit);",
+            "\t}",
+            "",
+            "\t/**"
+          ],
+          "highlightedLines": [
+            168
+          ]
+        },
+        {
+          "id": 19,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/db/VisitDAO.java",
+          "revision": "HEAD",
+          "startLine": 83,
+          "code": [
+            "\t * @see VisitService#saveVisit(Visit)",
+            "\t * @throws DAOException",
+            "\t */",
+            "\tpublic Visit saveVisit(Visit visit) throws DAOException;",
+            "",
+            "\t/**",
+            "\t * @see VisitService#purgeVisit(Visit)"
+          ],
+          "highlightedLines": [
+            86
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}

@@ -966,6 +966,18 @@ Order: S89 and S91 in parallel (disjoint files), then S90, then S92 after the hu
 - Checks on the tip: typecheck exit 0; shared 301, backend 86 (18 skipped), api 275 (14 skipped), contracts 25, ui 34 and 68, eval 137, originality tests 7 pass, 0 fail; api build exit 0; originality scan 0 hits; no registration snapshot, `outputs.json` or `tests/contract` file changed (23 files, +388 -53).
 - Budget: about 730k subagent tokens of 700k (slightly over: three fix rounds); about 120 minutes of 150. No paid call yet. S92 (the live verification) is not run; it needs the human's go-ahead.
 
+- **S92 run (2026-11-01, with the human's go-ahead; cap raised from $2 to $3 after the pilot).** The `falkon-live` stack was rebuilt from tip `b9a1dcd`'s code (`a8a41ee`), two Products on one index (42 repositories for the eval questions, the six billing repositories for the human-style questions), DeepSeek-V4.1-Flash through the human's DeepInfra account, knowledge base off. Pilot of 3, then 19 more; all 22 ran. Tokens: 6.54M input and 105k output, about $2.07 at a deliberately high $0.30 and $1.00 per million (no billing readout; the real price is probably lower). Stored answers: `live-chat/runs-c21/`; scripts: `live-chat/`.
+
+| Decision rule check | Before (`live-chat/findings.md`) | After |
+|---|---|---|
+| (a) answers labelled partial for the cap alone | 8 of 10 human-style, all 12 eval | 0 of 22 |
+| (b) history question uses a history tool | no history tool existed in chat | yes: `get_pull_request` and `search_diffs` on the payment-change question (only one question in the set asks for history, so this is thin evidence) |
+| (c) eval recall, stored view, 12 questions | 0.833 | 0.858 (strict file-and-line match; per question: seven at 1.00, one 0.80, three 0.50 and one more at 1.00; the three at 0.50 are the docs questions, one of which was 1.00 before) |
+| (d) literal marker in stored text | 1 of 22 | 0 of 22 |
+| (e) readable explanation for a human | to be judged by the human | answers run 391 to 1,090 words, open with a plain summary, use numbered headings, end with what was not verified; read `runs-c21/q02.thread.json` (flow), `q06` (why) and `q10` (absence) |
+
+Citations shown per answer rose from a hard 12 to 7 to 39 (average about 23). The absent-code question is still answered as absent and counted grounded, as before. Limits: n 12 and one run each, so +0.025 recall is within noise; one docs question lost a hit and one core-to-REST question gained two.
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).

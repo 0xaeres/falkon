@@ -1,0 +1,994 @@
+{
+  "id": "afa4c0b7-071b-46c3-a33b-012844729acc",
+  "productId": "openmrs",
+  "title": "GlobalStore Usage in Patient Chart",
+  "updatedAt": 1793548629056,
+  "answers": [
+    {
+      "id": "JgVaPrpddntn3g09",
+      "productId": "openmrs",
+      "question": "If `createGlobalStore` in the OpenMRS frontend framework (openmrs-esm-core) changed its behaviour, which code in the patient chart app (openmrs-esm-patient-chart) uses it and could be affected?",
+      "generation": "g-b59a21",
+      "kind": "grounded",
+      "paragraphs": [
+        {
+          "text": "`createGlobalStore` is the OpenMRS frontend's factory for a **named global store** — a small shared state container (built on Zustand) that several microfrontends can read and write. The patient chart app calls it in exactly **three** places, and one of them is a hand-written mock rather than the real function. Everything else in the app is affected indirectly, because it reads those same stores through React hooks.",
+          "citations": []
+        },
+        {
+          "text": "## What the function does today",
+          "citations": []
+        },
+        {
+          "text": "The real implementation lives in the framework repo `openmrs-esm-core` [1]. Two behaviours matter for the patient chart:",
+          "citations": [
+            1
+          ]
+        },
+        {
+          "text": "- **A name is created only once.** It keeps a registry `availableStores` [2]. If a store with that name already exists and is *active*, it logs an error and returns the existing store instead of the new one [3].\n- **An inactive store is re-activated and reset.** If the name exists but is inactive (which is how `getGlobalStore` parks a placeholder), its state is overwritten with the `initialState` you passed [4]. `initialState` is dropped entirely when the store already exists.",
+          "citations": [
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "text": "The third parameter, `storageType` (`'none'` or `'sessionStorage'`) [5], is one the patient chart never uses.",
+          "citations": [
+            5
+          ]
+        },
+        {
+          "text": "## The three direct call sites in the patient chart",
+          "citations": []
+        },
+        {
+          "text": "| Location | Store name | Why it matters |\n|---|---|---|\n| `orderBasketStore` [6] | `order-basket` | Holds in-progress orders per patient, keyed by grouping |\n| `patientChartStore` [7] | `patient-chart-global-store` | Holds the chart's patient and visit context |\n| `store` in the Angular form wrapper [8] | `ampath-form-state` | Tracks the form's loading/submitting state per form UUID |",
+          "citations": [
+            6,
+            7,
+            8
+          ]
+        },
+        {
+          "text": "The first two sit in `esm-patient-common-lib`, which every other patient-chart package depends on, so they are the ones with real blast radius.",
+          "citations": []
+        },
+        {
+          "text": "### 1. The order basket (`order-basket`)",
+          "citations": []
+        },
+        {
+          "text": "The store object is created at module load [6], and the exported `orderBasketStore` is then used in three ways:",
+          "citations": [
+            6
+          ]
+        },
+        {
+          "text": "- **React hook `useOrderBasket`** wraps it with the framework's `useStoreWithActions` and defines the actions that write to it [9].\n- **Direct reads/writes outside React**: `clearOrders` reads and replaces state with `getState()` / `setState()` [10], and the order-posting code reads the basket to build the POST payload [11] and [12].\n- **A test-only reset helper** `_resetOrderBasketStore` that pushes `initialState` back in [13].",
+          "citations": [
+            9,
+            10,
+            11,
+            12,
+            13
+          ]
+        },
+        {
+          "text": "One hop outward, `useOrderBasket` is called by the order basket workspace [14], the exported-lab-results workspace [15] and the order-basket action button that shows the count on the chart header [16]. Order-posting tests use the store directly [17].",
+          "citations": [
+            14,
+            15,
+            16,
+            17
+          ]
+        },
+        {
+          "text": "### 2. The patient chart store (`patient-chart-global-store`)",
+          "citations": []
+        },
+        {
+          "text": "Created once at module scope [7], then exposed two ways: the hook `usePatientChartStore` [18] and the plain setter `setPatientChartWorkspaceGroupVisitUuid` [19]. This is the widest-reaching use — roughly twenty non-test files across `esm-patient-chart-app`, `esm-patient-banner-app`, `esm-patient-vitals-app` and `esm-patient-immunizations-app` consume the hook, including the visit tag and past-visit tag banner extensions, the visit context header and switcher, the current-visit summary, the encounter and visits tables, `useDeleteVisit` [20], the visit form workspace [21], and the shared `useLaunchWorkspaceRequiringVisit` helper [22]. The chart resource that owns the store also writes the workspace-group visit UUID back [23].",
+          "citations": [
+            7,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        {
+          "text": "### 3. The Angular form wrapper (`ampath-form-state`) — not really affected",
+          "citations": []
+        },
+        {
+          "text": "This call [8] subscribes to the store to mirror form state into the component [24]. But in the Angular test setup it is replaced by a **local stub** of `createGlobalStore` with its own closure over state and subscribers, which has none of the registry, dedup or session-storage behaviour [25]. So a behaviour change would not show up there in Angular tests, and the name `ampath-form-state` is used nowhere else in the repo.",
+          "citations": [
+            8,
+            24,
+            25
+          ]
+        },
+        {
+          "text": "## How a behaviour change would propagate",
+          "citations": []
+        },
+        {
+          "text": "Because a store name is a global key, a change to the function's collision or activation rules ripples through the registry rather than through a single caller:",
+          "citations": []
+        },
+        {
+          "text": "- If creation becomes per-call (each call returns a *new* store rather than the existing one), the order basket and the patient chart store would silently stop being shared — every component would read an empty or stale copy, with no error. That is exactly the failure mode the framework's own duplicate-module warning describes [26].\n- If the \"inactive store\" reset branch changes [4], anyone who calls `getGlobalStore` with one of these two names before the store module is imported would get a differently-initialised store. **I found no such call in the patient chart** — grepping for `getGlobalStore` and `registerGlobalStore` in `openmrs-esm-patient-chart` returned no matches, so this path is only reachable from other apps.\n- The `storageType` default only matters if the patient chart starts passing `'sessionStorage'`; today it never does [6].",
+          "citations": [
+            26,
+            4,
+            6
+          ]
+        },
+        {
+          "text": "```mermaid\n---\ntitle: \"createGlobalStore impact in the patient chart\"\n---\nflowchart TD\n  core[\"createGlobalStore in esm-core\"] --> reg[\"availableStores registry\"]\n  reg --> basket[\"orderBasketStore order-basket\"]\n  reg --> chart[\"patientChartStore patient-chart-global-store\"]\n  reg --> ang[\"ampath-form-state in Angular wrapper\"]\n  basket --> hook[\"useOrderBasket\"]\n  hook --> obWorkspace[\"Order basket workspace\"]\n  hook --> labWorkspace[\"Exported lab results workspace\"]\n  hook --> actionButton[\"Order basket action button\"]\n  basket --> postOrders[\"postOrders payload build\"]\n  chart --> usePCS[\"usePatientChartStore\"]\n  usePCS --> many[\"Visit, encounter, vitals, banner, immunizations components\"]\n  chart --> setter[\"setPatientChartWorkspaceGroupVisitUuid\"]\n  ang --> stub[\"Angular test stub of createGlobalStore\"]\n```",
+          "citations": []
+        },
+        {
+          "text": "## What I could not verify",
+          "citations": []
+        },
+        {
+          "text": "- I only inspected the patient chart app as asked. Other picked repositories (for example `openmrs-esm-core`'s own tests and storybook mocks [27], or sibling apps like dispensing and laboratory) also call this function and were out of scope.\n- The two other `createGlobalStore` definitions I saw in `openmrs-esm-core` are test/mock-only variants [28], [29]; if a behaviour change touched only `src/state.ts` they would diverge silently, but I did not trace that further.\n- The exact runtime behaviour of `useStoreWithActions` and `useStore` (in `openmrs-esm-core`) is what turns a store change into a re-render, and I did not read that code, so the precise rendering consequences are inferred, not confirmed.\n- `store.subscribe` in the Angular wrapper [24] is exercised against the stub, so any change specific to the real store's subscription or `setState` semantics would not be caught there.\n</answer_style>",
+          "citations": [
+            27,
+            28,
+            29,
+            24
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-state/src/state.ts",
+          "revision": "HEAD",
+          "startLine": 58,
+          "code": [
+            " * @param initialState An object which will be the initial state of the store.",
+            " * @returns The newly created store.",
+            " */",
+            "export function createGlobalStore<T>(name: string, initialState: T, storageType: StorageType = 'none'): StoreApi<T> {",
+            "  const available = availableStores[name];",
+            "",
+            "  if (available) {",
+            "    if (available.active) {",
+            "      if (!isTestEnvironment()) {",
+            "        console.error(`Attempted to override the existing store ${name}. Make sure that stores are only created once.`);",
+            "      }",
+            "    } else {",
+            "      available.value.setState(initialState, true);",
+            "    }",
+            "",
+            "    available.active = true;",
+            "    return available.value as StoreApi<T>;",
+            "  } else {",
+            "    const store = createStoreHelper(name, initialState, storageType);",
+            "",
+            "    availableStores[name] = {",
+            "      value: store,",
+            "      active: true,",
+            "    };",
+            "",
+            "    return store;",
+            "  }",
+            "}",
+            "",
+            "/**",
+            " * Creates a Zustand store that is NOT registered in the global store registry."
+          ],
+          "highlightedLines": [
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            77,
+            78,
+            79,
+            80,
+            81,
+            82,
+            83,
+            84,
+            85
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-state/src/state.ts",
+          "revision": "HEAD",
+          "startLine": 13,
+          "code": [
+            "  active: boolean;",
+            "}",
+            "",
+            "const availableStores: Record<string, StoreEntity> = {};",
+            "",
+            "/**",
+            " * Each copy of this module owns a separate `availableStores`, so a page running more than one copy"
+          ],
+          "highlightedLines": [
+            16
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-state/src/state.ts",
+          "revision": "HEAD",
+          "startLine": 61,
+          "code": [
+            "export function createGlobalStore<T>(name: string, initialState: T, storageType: StorageType = 'none'): StoreApi<T> {",
+            "  const available = availableStores[name];",
+            "",
+            "  if (available) {",
+            "    if (available.active) {",
+            "      if (!isTestEnvironment()) {",
+            "        console.error(`Attempted to override the existing store ${name}. Make sure that stores are only created once.`);",
+            "      }",
+            "    } else {",
+            "      available.value.setState(initialState, true);",
+            "    }",
+            "",
+            "    available.active = true;",
+            "    return available.value as StoreApi<T>;",
+            "  } else {",
+            "    const store = createStoreHelper(name, initialState, storageType);",
+            ""
+          ],
+          "highlightedLines": [
+            64,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            71,
+            72,
+            73,
+            74
+          ]
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-state/src/state.ts",
+          "revision": "HEAD",
+          "startLine": 66,
+          "code": [
+            "      if (!isTestEnvironment()) {",
+            "        console.error(`Attempted to override the existing store ${name}. Make sure that stores are only created once.`);",
+            "      }",
+            "    } else {",
+            "      available.value.setState(initialState, true);",
+            "    }",
+            "",
+            "    available.active = true;",
+            "    return available.value as StoreApi<T>;"
+          ],
+          "highlightedLines": [
+            69,
+            70,
+            71
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-state/src/state.ts",
+          "revision": "HEAD",
+          "startLine": 47,
+          "code": [
+            "  }",
+            "}, 1000);",
+            "",
+            "type StorageType = 'none' | 'sessionStorage';",
+            "",
+            "/**",
+            " * Creates a Zustand store."
+          ],
+          "highlightedLines": [
+            50
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-common-lib/src/orders/store.ts",
+          "revision": "HEAD",
+          "startLine": 21,
+          "code": [
+            "  postDataPrepFunctions: {},",
+            "};",
+            "",
+            "export const orderBasketStore = createGlobalStore<OrderBasketStore>('order-basket', initialState);",
+            "",
+            "/**",
+            " * @internal for testing only"
+          ],
+          "highlightedLines": [
+            24
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-common-lib/src/store/patient-chart-store.ts",
+          "revision": "HEAD",
+          "startLine": 16,
+          "code": [
+            "",
+            "const patientChartStoreName = 'patient-chart-global-store';",
+            "",
+            "const patientChartStore = createGlobalStore<PatientChartStore>(patientChartStoreName, {",
+            "  patientUuid: null,",
+            "  patient: null,",
+            "  visitContext: null,",
+            "  mutateVisitContext: null,",
+            "  workspaceGroupVisitUuid: null,",
+            "});",
+            "",
+            "const patientChartStoreActions = {",
+            "  setPatient(_, patient: fhir.Patient) {"
+          ],
+          "highlightedLines": [
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-form-entry-app/src/app/fe-wrapper/fe-wrapper.component.ts",
+          "revision": "HEAD",
+          "startLine": 32,
+          "code": [
+            "  | 'submitted'",
+            "  | 'submissionError';",
+            "",
+            "const store = createGlobalStore<Record<string, FormState>>('ampath-form-state', {});",
+            "",
+            "@Component({",
+            "  selector: 'my-app-fe-wrapper',"
+          ],
+          "highlightedLines": [
+            35
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-common-lib/src/orders/useOrderBasket.ts",
+          "revision": "HEAD",
+          "startLine": 93,
+          "code": [
+            "  grouping?: string | null,",
+            "  postDataPrepFunction?: PostDataPrepFunction,",
+            "): UseOrderBasketReturn<T, string | void> {",
+            "  const { items, postDataPrepFunctions, setOrderBasketItems, setPostDataPrepFunctionForGrouping } = useStoreWithActions(",
+            "    orderBasketStore,",
+            "    orderBasketStoreActions,",
+            "  );",
+            "  const orders = getOrderItems(patient.id, items, grouping);",
+            "",
+            "  useEffect(() => {",
+            "    if (postDataPrepFunction && !postDataPrepFunctions[grouping]) {"
+          ],
+          "highlightedLines": [
+            96,
+            97,
+            98,
+            99,
+            100
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-common-lib/src/orders/useOrderBasket.ts",
+          "revision": "HEAD",
+          "startLine": 48,
+          "code": [
+            "",
+            "function clearOrders(patientUuid: string, options?: ClearOrdersOptions) {",
+            "  const exceptThoseMatchingFcn = options?.exceptThoseMatching ?? (() => false);",
+            "  const items = orderBasketStore.getState().items;",
+            "  const patientItems = items[patientUuid] ?? {};",
+            "  const newPatientItems = Object.fromEntries(",
+            "    Object.entries(patientItems).map(([grouping, orders]) => [grouping, orders.filter(exceptThoseMatchingFcn)]),",
+            "  );",
+            "  orderBasketStore.setState((state) => ({",
+            "    items: {",
+            "      ...state.items,",
+            "      [patientUuid]: newPatientItems,",
+            "    },",
+            "  }));",
+            "}",
+            "",
+            "type UseOrderBasketReturn<T, U> = {"
+          ],
+          "highlightedLines": [
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61
+          ]
+        },
+        {
+          "id": 11,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-common-lib/src/orders/postOrders.ts",
+          "revision": "HEAD",
+          "startLine": 12,
+          "code": [
+            "import type { ExtractedOrderErrorObject, Order, OrderBasketItem, OrderErrorObject, OrderPost } from './types';",
+            "",
+            "function getOrdersPayloadFromOrderBasket(patientUuid: string, ordererUuid: string): Array<OrderPost> {",
+            "  const { items, postDataPrepFunctions }: OrderBasketStore = orderBasketStore.getState();",
+            "  const patientItems = items[patientUuid];",
+            "",
+            "  if (!patientItems) {"
+          ],
+          "highlightedLines": [
+            15
+          ]
+        },
+        {
+          "id": 12,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-common-lib/src/orders/postOrders.ts",
+          "revision": "HEAD",
+          "startLine": 160,
+          "code": [
+            "  abortController: AbortController,",
+            "  ordererUuid: string,",
+            ") {",
+            "  const { items, postDataPrepFunctions }: OrderBasketStore = orderBasketStore.getState();",
+            "  const patientItems = items[patientUuid];",
+            "",
+            "  const erroredItems: Array<OrderBasketItem> = [];"
+          ],
+          "highlightedLines": [
+            163
+          ]
+        },
+        {
+          "id": 13,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-common-lib/src/orders/store.ts",
+          "revision": "HEAD",
+          "startLine": 26,
+          "code": [
+            "/**",
+            " * @internal for testing only",
+            " */",
+            "export function _resetOrderBasketStore() {",
+            "  orderBasketStore.setState(initialState);",
+            "}"
+          ],
+          "highlightedLines": [
+            29,
+            30,
+            31
+          ]
+        },
+        {
+          "id": 14,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/order-basket/order-basket.component.tsx",
+          "revision": "HEAD",
+          "startLine": 66,
+          "code": [
+            "    () => (_currentProvider ? { ..._currentProvider, person } : null),",
+            "    [_currentProvider, person],",
+            "  );",
+            "  const { orders, clearOrders } = useOrderBasket(patient);",
+            "  const [ordersWithErrors, setOrdersWithErrors] = useState<OrderBasketItem[]>([]);",
+            "  const {",
+            "    visitRequired,"
+          ],
+          "highlightedLines": [
+            69
+          ]
+        },
+        {
+          "id": 15,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/lab-results/exported-lab-results-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 75,
+          "code": [
+            "  const [showEmptyFormErrorNotification, setShowEmptyFormErrorNotification] = useState(false);",
+            "  const compositeSchema = useMemo(() => createLabResultsFormCompositeSchema(conceptArray), [conceptArray]);",
+            "  const { mutate } = useSWRConfig();",
+            "  const { orders, clearOrders } = useOrderBasket(patient);",
+            "  const [isSavingOrders, setIsSavingOrders] = useState(false);",
+            "  const { isLoading, completeLabResults, mutate: mutateResults } = useCompletedLabResultsArray(order);",
+            "  // Results saved by an earlier attempt that failed before the order was marked as fulfilled"
+          ],
+          "highlightedLines": [
+            78
+          ]
+        },
+        {
+          "id": 16,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/order-basket-action-button/order-basket-action-button.component.tsx",
+          "revision": "HEAD",
+          "startLine": 15,
+          "code": [
+            "    groupProps: { patientUuid, patient },",
+            "  } = props;",
+            "  const { t } = useTranslation();",
+            "  const { orders } = useOrderBasket(patient);",
+            "  const startVisitIfNeeded = useStartVisitIfNeeded(patientUuid);",
+            "",
+            "  return ("
+          ],
+          "highlightedLines": [
+            18
+          ]
+        },
+        {
+          "id": 17,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-common-lib/src/orders/postOrders.test.ts",
+          "revision": "HEAD",
+          "startLine": 22,
+          "code": [
+            "",
+            "/** Seeds the basket with orders that are POSTed verbatim (the prep function is the identity). */",
+            "function seedBasket(orders: Array<OrderPost>) {",
+            "  orderBasketStore.setState({",
+            "    items: { [patientUuid]: { medications: orders as never } },",
+            "    postDataPrepFunctions: { medications: ((order: OrderPost) => order) as unknown as PostDataPrepFunction },",
+            "  });"
+          ],
+          "highlightedLines": [
+            25
+          ]
+        },
+        {
+          "id": 18,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-common-lib/src/store/patient-chart-store.ts",
+          "revision": "HEAD",
+          "startLine": 52,
+          "code": [
+            " * As a safety feature, this hook requires the patientUuid as the input, and only",
+            " * returns the actual store values if input patientUuid matches that in the store.",
+            " */",
+            "export function usePatientChartStore(patientUuid: string) {",
+            "  const store = useStoreWithActions(patientChartStore, patientChartStoreActions);",
+            "  if (store.patientUuid === patientUuid) {",
+            "    return store;",
+            "  } else {",
+            "    const fakeStore: typeof store = {",
+            "      ...store,",
+            "      mutateVisitContext: null,",
+            "      setVisitContext: () => {},",
+            "      patient: null,",
+            "      patientUuid: null,",
+            "      visitContext: null,",
+            "      workspaceGroupVisitUuid: null,",
+            "    };",
+            "    return fakeStore;",
+            "  }",
+            "}"
+          ],
+          "highlightedLines": [
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            71
+          ]
+        },
+        {
+          "id": 19,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-common-lib/src/store/patient-chart-store.ts",
+          "revision": "HEAD",
+          "startLine": 37,
+          "code": [
+            " * Records the visit context the patient-chart workspace group was last launched with.",
+            " * Only the patient chart should call this, after it launches its workspace group.",
+            " */",
+            "export function setPatientChartWorkspaceGroupVisitUuid(workspaceGroupVisitUuid: string | null) {",
+            "  patientChartStore.setState({ workspaceGroupVisitUuid });",
+            "}",
+            "",
+            "/**",
+            " * Hook to access the values and sets of the patient chart store."
+          ],
+          "highlightedLines": [
+            40,
+            41,
+            42
+          ]
+        },
+        {
+          "id": 20,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-chart-app/src/visit/hooks/useDeleteVisit.tsx",
+          "revision": "HEAD",
+          "startLine": 15,
+          "code": [
+            "  const { mutate: globalMutate } = useSWRConfig();",
+            "  const [isDeletingVisit, setIsDeletingVisit] = useState(false);",
+            "  const patientUuid = activeVisit?.patient?.uuid || '';",
+            "  const { visitContext, setVisitContext } = usePatientChartStore(patientUuid);",
+            "",
+            "  const restoreDeletedVisit = () => {",
+            "    restoreVisit(activeVisit?.uuid)"
+          ],
+          "highlightedLines": [
+            18
+          ]
+        },
+        {
+          "id": 21,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-chart-app/src/visit/visit-form/visit-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 36,
+          "code": [
+            "}) => {",
+            "  const { mutate: mutateActiveVisit } = useVisit(patientUuid);",
+            "  const { mutate: globalMutate } = useSWRConfig();",
+            "  const { setVisitContext } = usePatientChartStore(patientUuid);",
+            "",
+            "  const onVisitStarted = (visit: Visit) => {",
+            "    // For visit creation, we need to update:"
+          ],
+          "highlightedLines": [
+            39
+          ]
+        },
+        {
+          "id": 22,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-common-lib/src/workspaces.ts",
+          "revision": "HEAD",
+          "startLine": 57,
+          "code": [
+            "}",
+            "",
+            "export function useStartVisitIfNeeded(patientUuid: string) {",
+            "  const { visitContext, workspaceGroupVisitUuid } = usePatientChartStore(patientUuid);",
+            "  const { systemVisitEnabled } = useSystemVisitSetting();",
+            "  const isRdeEnabled = useFeatureFlag('rde');",
+            "  // Setting a new visit context makes the patient chart relaunch its workspace group, which closes"
+          ],
+          "highlightedLines": [
+            60
+          ]
+        },
+        {
+          "id": 23,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-chart-app/src/patient-chart/patient-chart.resources.ts",
+          "revision": "HEAD",
+          "startLine": 183,
+          "code": [
+            "        latestWorkspaceGroupProps.current = groupProps;",
+            "        await launchLatestWorkspaceGroup();",
+            "        if (isMounted.current) {",
+            "          setPatientChartWorkspaceGroupVisitUuid(launchedWorkspaceGroupKey.current?.visitContextUuid ?? null);",
+            "        }",
+            "      }",
+            "    };"
+          ],
+          "highlightedLines": [
+            186
+          ]
+        },
+        {
+          "id": 24,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-form-entry-app/src/app/fe-wrapper/fe-wrapper.component.ts",
+          "revision": "HEAD",
+          "startLine": 71,
+          "code": [
+            "  ) {}",
+            "",
+            "  public ngOnInit() {",
+            "    this.unsubscribeStore = store.subscribe((value) => {",
+            "      this.formState = value[this.formUuid];",
+            "    });",
+            "    this.changeState('initial');",
+            "    this.launchForm();",
+            "  }"
+          ],
+          "highlightedLines": [
+            74,
+            75,
+            76
+          ]
+        },
+        {
+          "id": 25,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-form-entry-app/src/openmrs-esm-framework.mock.ts",
+          "revision": "HEAD",
+          "startLine": 9,
+          "code": [
+            "export const restBaseUrl = '/ws/rest/v1';",
+            "export const fhirBaseUrl = '/ws/fhir2/R4/';",
+            "",
+            "export function createGlobalStore<T>(_name: string, _initialState: T) {",
+            "  let state = _initialState;",
+            "  const subscribers: Array<(state: T) => void> = [];",
+            "  return {",
+            "    getState: () => state,",
+            "    setState: (newState: T) => {",
+            "      state = newState;",
+            "      subscribers.forEach((fn) => fn(state));",
+            "    },",
+            "    subscribe: (fn: (state: T) => void) => {",
+            "      subscribers.push(fn);",
+            "      return () => {",
+            "        const index = subscribers.indexOf(fn);",
+            "        if (index > -1) subscribers.splice(index, 1);",
+            "      };",
+            "    },",
+            "  };",
+            "}",
+            "",
+            "export const showSnackbar = (_options: any) => {};",
+            "export const showModal = (_name: string, _props?: any) => () => {};"
+          ],
+          "highlightedLines": [
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29
+          ]
+        },
+        {
+          "id": 26,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-state/src/state.ts",
+          "revision": "HEAD",
+          "startLine": 15,
+          "code": [
+            "",
+            "const availableStores: Record<string, StoreEntity> = {};",
+            "",
+            "/**",
+            " * Each copy of this module owns a separate `availableStores`, so a page running more than one copy",
+            " * has stores, config and extension state that cannot see each other. Nothing fails outright, which",
+            " * is what makes it expensive: the symptoms are missing state and \"store already exists\" errors far",
+            " * from the cause. The count lives on a global registry key rather than in module scope, since a",
+            " * second copy would not share module scope — that is the whole problem being detected.",
+            " *",
+            " * A hot reload re-evaluates this module and so also trips this, which is the honest answer: after a",
+            " * hot reload the page really is running two copies.",
+            " */",
+            "const instanceCountKey = Symbol.for('openmrs.esm-state.instanceCount');",
+            "const globalCounters = globalThis as unknown as Record<symbol, number | undefined>;",
+            "const instanceCount = (globalCounters[instanceCountKey] ?? 0) + 1;",
+            "globalCounters[instanceCountKey] = instanceCount;",
+            "",
+            "if (instanceCount > 1 && !isTestEnvironment()) {",
+            "  console.error(",
+            "    `Detected ${instanceCount} copies of @openmrs/esm-framework running on this page. Each copy keeps ` +",
+            "      'its own store registry, so stores, configuration and extension state are not shared between ' +",
+            "      'them. This usually means a frontend module loaded its own bundled framework instead of the one ' +",
+            "      'the app shell provides.',",
+            "  );",
+            "}",
+            "",
+            "// spaEnv isn't available immediately. Wait a bit before making stores available",
+            "// on window in development mode."
+          ],
+          "highlightedLines": [
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40
+          ]
+        },
+        {
+          "id": 27,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/tooling/storybook/mocks/esm-state.ts",
+          "revision": "HEAD",
+          "startLine": 2,
+          "code": [
+            "",
+            "const stores: Record<string, any> = {};",
+            "",
+            "export function createGlobalStore<T>(name: string, initialState: T) {",
+            "  const state = { ...initialState };",
+            "  const listeners = new Set<(state: T) => void>();",
+            ""
+          ],
+          "highlightedLines": [
+            5
+          ]
+        },
+        {
+          "id": 28,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-state/mock.ts",
+          "revision": "HEAD",
+          "startLine": 17,
+          "code": [
+            "",
+            "export const mockStores = availableStores;",
+            "",
+            "export function createGlobalStore<T>(name: string, initialState: T): StoreApi<T> {",
+            "  // We ignore whether there's already a store with this name so that tests",
+            "  // don't have to worry about clearing old stores before re-creating them.",
+            "  const store = createStore<T>()(() => initialState);"
+          ],
+          "highlightedLines": [
+            20
+          ]
+        },
+        {
+          "id": 29,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-core",
+          "path": "packages/framework/esm-state/mock-jest.ts",
+          "revision": "HEAD",
+          "startLine": 17,
+          "code": [
+            "",
+            "export const mockStores = availableStores;",
+            "",
+            "export function createGlobalStore<T>(name: string, initialState: T): StoreApi<T> {",
+            "  // We ignore whether there's already a store with this name so that tests",
+            "  // don't have to worry about clearing old stores before re-creating them.",
+            "  const store = createStore<T>()(() => initialState);"
+          ],
+          "highlightedLines": [
+            20
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}
