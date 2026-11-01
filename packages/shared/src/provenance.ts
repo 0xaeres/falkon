@@ -50,7 +50,7 @@ export interface Discussion {
   files: DiscussionFile[];
 }
 
-export type LinkSource = "merge-commit-sha" | "squash-subject" | "merge-subject" | "body-ref" | "ticket-pattern" | "commit-pulls-api";
+export type LinkSource = "merge-commit-sha" | "squash-subject" | "merge-subject" | "body-ref" | "ticket-pattern" | "comment-ticket-pattern" | "commit-pulls-api";
 
 /** commit → pr (the commit-subject and merge-commit rules), pr → ticket, pr → pr (body references). */
 export interface Link {
