@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { GIT_BRIEF_RECIPES } from "./brief";
@@ -51,4 +52,9 @@ test("history recipes follow the flags and name no absent tool", () => {
 test("reply and render parts are unchanged", () => {
   assert.ok(human().includes(`${RENDER_PROMPT}\n\n${REPLY_PROMPT}`));
   assert.ok(agent().includes(`${RENDER_PROMPT}\n\n${REPLY_PROMPT}`));
+});
+
+test("callers pass the audience explicitly: UI chat is human, ask_codebase is agent", () => {
+  assert.match(readFileSync(new URL("./uiChat.ts", import.meta.url), "utf8"), /audience: "human"/);
+  assert.match(readFileSync(new URL("./chat.ts", import.meta.url), "utf8"), /audience: "agent"/);
 });
