@@ -864,6 +864,48 @@ R1 kept after a clean review and one quality round (comment placement, a stale e
 
 Still open: `scripts/ops-smoke.sh` after the tag change (Docker network was intermittent; it built fine later, so it can run now); the full originality scan (`ORIGINALITY_REF_DIR`); whether the two bare-`grep` runs count as leaks; the unexplained fall of ticket-to-code recall (0.97 to 0.88) between the git-history arm and the combined arm; pull request comments are still not parsed for ticket keys (one stored question needs it).
 
+## Cycle 20: close the cycle 19 open items (human, 2026-11-01; loop-planned)
+
+Roadmap note: the agent tier foundation planned above as cycle 20 (D166) moves to the next cycle; this cycle only closes the open items of 19c. No agent tool work, no dependency, no push.
+
+Gate 1: approved by the human on 2026-11-01. The human does not know the reference directory path; the loop builds it from the local reference image with the recipe in `.scratch/falkon-mvp/originality.md` (image is local, no network), in the scratch directory, never in the repo.
+
+Human answers at the grill: the bare-`grep` runs are not leaks; ticket keys in pull request comments are to be parsed; `docs/cycle19-plan` is merged to `main` locally at the end, without a push; the originality reference directory path is still to be given.
+
+**S83. Ops smoke on a working network.** Tier mechanical. Agent claude (needs Docker and network). Blocked by: none.
+- Goal: run `scripts/ops-smoke.sh` on the cycle 19c tip to confirm the tag change and default-on flags survive the full stack.
+- Done: the script exits 0 and prints PASS for every step including teardown; if the image build fails on a registry reset, retry once, then record the failure and stop (no fix attempt on the network).
+- Verify: the script itself. Scope: no file changes.
+
+**S84. Full originality scan.** Tier mechanical. Agent claude. Blocked by: none (the loop builds the reference set from the local image per the recipe; paths scanned may have changed since cycle 9: check the scan list in `tests/originality/originality.ts`).
+- Goal: `ORIGINALITY_REF_DIR=<dir> pnpm originality` on the tip.
+- Done: exit 0, or each hit listed with file and reference; fixing a hit is a new slice the human approves (rewriting shipped prompt or tool text in own words, D9). Scope: none.
+
+**S85. Bare `grep` runs are not leaks.** Tier standard. Agent claude. Blocked by: none.
+- Goal: the harness leak check treats a call to a tool named bare `grep` (not an MCP tool, nothing executed outside the server) as a failed tool call, not a leak; real leaks (a shell or file read outside the MCP server) still flag.
+- Scope: `tests/eval/` leak pattern (`harness.ts` and where the runner or report reads it), its tests, and regenerated reports for cycle 19b (no model call).
+- Done: tests with the real shape of `hist-a-08` and `hist-a-13` (bare `grep`) show no leak; a test with a real leak shape (a `Bash` or `Read` tool use) still flags; the cycle 15 flagged run stays flagged; the cycle 19b pooled verdict is no longer withheld by those two runs (the remaining cycle 15 leak may still withhold it: report which).
+- Adversarial cases: a tool named `grep` inside an MCP prefix; mixed-case `Grep`; a bare `grep` that succeeded in a transcript; an empty transcript.
+- Verify: `cd tests/eval && pnpm test`; `pnpm typecheck`.
+
+**S86. Why did ticket-to-code recall fall (0.97 to 0.88)?** Tier standard. Agent claude, analysis only. Blocked by: none.
+- Goal: from the stored runs in `eval-runs-c19/`, name the cause for each ticket-to-code question whose score differs between the git-history arm and the combined arm (n 7 and 5 in the reports; check which questions overlap): noise (one run, same tools), a tool regression, or a different question set.
+- Done: a short note appended to `why-analysis-c19.md`; a regression found becomes a proposed slice, not a fix. No paid call (decision, loop, to veto).
+
+**S87. Ticket keys from pull request comments.** Tier standard. Agent claude. Blocked by: none.
+- Goal: a ticket key written only in a comment on a pull request appears in the `tickets` of `get_pull_request` and `get_provenance` (source recorded as its own value, so a comment key is distinguishable from a title or body key), as stored question `hist-a-11` (key RESTWS-1038 in a comment) needs. First locate where comments are held at import and at link time (scout) and choose the smallest place; if the links are built at import, say whether stored data needs a re-import.
+- Scope: `packages/shared/src/provenance.ts`, the mapper that holds comments, `historyTools.ts` only if the output source field must change, tests. The flags-off list never changes.
+- Done: a test built from the real shape of that question fails first and passes; the default and flags-off registration snapshots stay byte-identical (stop for the human if one must change); `get_pull_request` still lists title/body keys first.
+- Adversarial cases: a key in a bot or quoted reply; a lower-case key; a key of a project the operator did not configure; thousands of comments (the scan is bounded, no unbounded read on the request path); a comment on a pull request outside the Product scope; the same key in body and comment (listed once, body source wins); a deleted or empty comment.
+- Verify: `pnpm typecheck`; shared tests (minus `opsSmoke`); api tests; api build.
+
+**S88. Merge `docs/cycle19-plan` into `main`.** Tier mechanical. Agent claude. Blocked by: S85, S87, and the human's approval at gate 2.
+- Goal: after the cycle tip passes all checks, merge to `main` locally. No push (human decision).
+- Done: `main` equals the tip; checks pass on `main`.
+
+Order: S83, S85, S86, S87 start in parallel (S83 uses Docker and no files; S85 `tests/eval/`; S86 notes; S87 `packages/shared`). S84 runs when the path arrives. Then S88 at landing.
+Limits: the loop decides alone the cause in S86, the exact source value in S87, and reruns of the smoke script. It stops for the human on a changed snapshot, a hit in the originality scan, a paid call, a dependency, or any push. Budget: 600k subagent tokens and 150 minutes (recent cycles used about 1.0M tokens for four to six slices; this one has two code slices and three runs).
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).
