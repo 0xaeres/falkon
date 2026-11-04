@@ -103,10 +103,10 @@ const logArgv = (a: Common, v: ReturnType<typeof checkFilters>, head: string[], 
 
 const notFound = (name: string) => `repository "${name}" not found`;
 
-/** Repositories: the named ones, else the chat's selection, else every visible one. A name the scope excludes reads like a missing one. At most `lim.repos` are looked up. */
+/** Repositories: the named ones, else the chat's selection (an empty one is no selection, as in `repoSet`), else every visible one. A name the scope excludes reads like a missing one. At most `lim.repos` are looked up. */
 async function pickRepos(requested: string[] | undefined, ctx: ToolContext, lim: Lim) {
   const visible = (await ctx.deps.listRepos({ sort: "name", direction: "asc" })).filter((r) => ctx.scope.allows(r.name));
-  const wanted = [...new Set(requested ?? ctx.selectedRepos ?? visible.map((r) => r.name))];
+  const wanted = [...new Set(requested ?? (ctx.selectedRepos?.length ? ctx.selectedRepos : undefined) ?? visible.map((r) => r.name))];
   const names = wanted.slice(0, lim.repos);
   const gaps: string[] = wanted.length > names.length ? [`${wanted.length - names.length} repositories skipped: at most ${lim.repos} are read per call`] : [];
   const repos: ToolRepo[] = [];

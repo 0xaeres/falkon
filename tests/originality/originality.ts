@@ -87,7 +87,7 @@ const root = resolve(fileURLToPath(import.meta.url), "../../..");
 export function shippedFiles(): string[] {
   const p = (s: string) => join(root, s);
   return [
-    ...["prompt", "impact", "evidence", "brief"].map((n) => p(`packages/api/src/engine/ask/${n}.ts`)),
+    ...["prompt", "impact", "evidence", "brief", "recipes"].map((n) => p(`packages/api/src/engine/ask/${n}.ts`)),
     p("packages/shared/src/toolText.json"),
     p("packages/shared/src/tools.ts"),
     ...["gitToolText", "historyToolText"].map((n) => p(`packages/shared/src/${n}.json`)),

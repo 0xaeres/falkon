@@ -1,0 +1,826 @@
+{
+  "id": "d0dabc92-5387-4f8e-ab81-c20a1156ffe9",
+  "productId": "openmrs",
+  "title": "Lab Order Fulfiller Status Save Flow",
+  "updatedAt": 1793548755882,
+  "answers": [
+    {
+      "id": "87oegSaiRd5G1Jyo",
+      "productId": "openmrs",
+      "question": "When a user saves the fulfiller status and comment of a lab order in the patient chart, what code runs from the frontend request down to the database write? List the frontend function that sends the request, the server-side REST handler, the core service implementation, and the data-access method.",
+      "generation": "g-b59a21",
+      "kind": "grounded",
+      "paragraphs": [
+        {
+          "text": "Saving the fulfiller status and comment of a lab order in the patient chart crosses two repositories: the React frontend in **openmrs-esm-patient-chart** and the OpenMRS backend split across **openmrs-module-webservices.rest** (the REST layer) and **openmrs-core** (service and database access). The chain has four named steps you asked about.",
+          "citations": []
+        },
+        {
+          "text": "## 1. Frontend function that sends the request",
+          "citations": []
+        },
+        {
+          "text": "The lab results form component `ExportedLabResultsForm` is what the user sees. When the user clicks Save, its submit handler `saveLabResults` runs [1]. This handler builds two payloads:",
+          "citations": [
+            1
+          ]
+        },
+        {
+          "text": "- `orderDiscontinuationPayload`, which stops the existing order [2]\n- `resultsStatusPayload`, which is exactly the fulfiller status and comment: `{ fulfillerStatus: 'COMPLETED', fulfillerComment: 'Test Results Entered' }` [3]",
+          "citations": [
+            2,
+            3
+          ]
+        },
+        {
+          "text": "Depending on whether results already exist, the handler calls either `updateOrderResult` (fresh entry) [4] or `completeOrderWithSavedResults` (finishing an earlier partial attempt) [5]. Both end in the same helper, which is the function that actually pushes the fulfiller status and comment to the server:",
+          "citations": [
+            4,
+            5
+          ]
+        },
+        {
+          "text": "- `updateOrderFulfillerDetails` issues `POST {restBaseUrl}/order/{orderUuid}/fulfillerdetails/` with the payload as the JSON body [6]",
+          "citations": [
+            6
+          ]
+        },
+        {
+          "text": "So on the frontend, the function sending the request is `updateOrderFulfillerDetails` [6].",
+          "citations": [
+            6
+          ]
+        },
+        {
+          "text": "## 2. Server-side REST handler",
+          "citations": []
+        },
+        {
+          "text": "The URL `/order/{uuid}/fulfillerdetails/` maps to a **sub-resource** of the Order resource, defined by the `@SubResource` annotation on `FulfillerDetailsResource2_3` [7]. On a POST, the REST framework calls its `save` method, which forwards the three fields to the core service [8].",
+          "citations": [
+            7,
+            8
+          ]
+        },
+        {
+          "text": "The request body is bound into a small delegate object, `FulfillerDetails2_3`, which extends `FulfillerDetails2_2` and adds an accession number alongside `fulfillerStatus` and `fulfillerComment` [9]. The older `FulfillerDetails2_2` holds the two fields you asked about [10].",
+          "citations": [
+            9,
+            10
+          ]
+        },
+        {
+          "text": "## 3. Core service implementation",
+          "citations": []
+        },
+        {
+          "text": "The handler calls `OrderService.updateOrderFulfillerStatus(...)`, defined on the service interface [11] and implemented in `OrderServiceImpl`. The 4-argument overload copies the status, comment and accession number onto the `Order` object (each guarded by a null check) and then calls `saveOrderInternal` [12].",
+          "citations": [
+            11,
+            12
+          ]
+        },
+        {
+          "text": "## 4. Data-access method",
+          "citations": []
+        },
+        {
+          "text": "`saveOrderInternal` handles the order-number and auto-expire bookkeeping, then hands off to the DAO [13]. The DAO interface declares `saveOrder` [14], and the Hibernate implementation is where the write reaches the database: it delegates to `HibernateUtil.saveOrUpdate` on the current Hibernate session, which issues the INSERT/UPDATE for the order row [15].",
+          "citations": [
+            13,
+            14,
+            15
+          ]
+        },
+        {
+          "text": "## Full flow at a glance",
+          "citations": []
+        },
+        {
+          "text": "```mermaid\n---\ntitle: Lab order fulfiller save path\n---\nflowchart TD\n  UI[\"Lab results form confirm\"] --> Save[\"saveLabResults builds payloads\"]\n  Save --> Helper[\"updateOrderFulfillerDetails POSTs\"]\n  Helper --> Rest[\"FulfillerDetailsResource2_3 save\"]\n  Rest --> Svc[\"OrderServiceImpl.updateOrderFulfillerStatus\"]\n  Svc --> Internal[\"saveOrderInternal\"]\n  Internal --> Dao[\"HibernateOrderDAO.saveOrder\"]\n  Dao --> Db[\"Hibernate saveOrUpdate writes order row\"]\n```",
+          "citations": []
+        },
+        {
+          "text": "Worth noting: the fulfiller status update is a **second** request. The same handler first saves the observations and discontinues the order in one `POST /encounter/{uuid}` call, so the backend commits or rolls back those together, and only then posts the fulfiller details [16].",
+          "citations": [
+            16
+          ]
+        },
+        {
+          "text": "## What I could not verify",
+          "citations": []
+        },
+        {
+          "text": "- I read the patient-chart frontend, the webservices.rest sub-resource and the openmrs-core service/DAO from their default branches. I did not confirm which tagged releases contain these exact versions.\n- Hibernate's `saveOrUpdate` mapping of the `Order` entity to its table and columns (the SQL itself) lives in mapping files I did not open; the statement above ends at the Hibernate session call.",
+          "citations": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/lab-results/exported-lab-results-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 209,
+          "code": [
+            "    );",
+            "  }",
+            "",
+            "  const saveLabResults = async (formValues: Record<string, unknown>) => {",
+            "    const isEmptyForm = Object.values(formValues).every(",
+            "      (value) => value === '' || value === null || value === undefined,",
+            "    );",
+            "    if (isEmptyForm) {",
+            "      setShowEmptyFormErrorNotification(true);",
+            "      return;",
+            "    }",
+            "",
+            "    const showNotification = (kind: 'error' | 'success', message: string) => {",
+            "      showSnackbar({",
+            "        title:",
+            "          kind === 'success'",
+            "            ? t('saveLabResults', 'Save lab results')",
+            "            : t('errorSavingLabResults', 'Error saving lab results'),",
+            "        kind: kind,",
+            "        subtitle: message,",
+            "      });",
+            "    };",
+            "",
+            "    const getErrorMessage = (err: { responseBody?: { error?: { message?: string } }; message?: string }) =>",
+            "      err?.responseBody?.error?.message ?? err?.message;",
+            "",
+            "    const orderDiscontinuationPayload = {",
+            "      previousOrder: order.uuid,",
+            "      type: 'testorder',",
+            "      action: 'DISCONTINUE',",
+            "      careSetting: order.careSetting.uuid,",
+            "      encounter: order.encounter.uuid,",
+            "      patient: order.patient.uuid,",
+            "      concept: order.concept.uuid,",
+            "      orderer: order.orderer,",
+            "    };",
+            "    const resultsStatusPayload = {",
+            "      fulfillerStatus: 'COMPLETED',",
+            "      fulfillerComment: 'Test Results Entered',",
+            "    };",
+            "",
+            "    // Check the backend rather than the loaded results, which may not have refreshed since a failed attempt",
+            "    let savedResults = completeLabResults;"
+          ],
+          "highlightedLines": [
+            212,
+            213,
+            214,
+            215,
+            216,
+            217,
+            218,
+            219,
+            220,
+            221,
+            222,
+            223,
+            224,
+            225,
+            226,
+            227,
+            228,
+            229,
+            230,
+            231,
+            232,
+            233,
+            234,
+            235,
+            236,
+            237,
+            238,
+            239,
+            240,
+            241,
+            242,
+            243,
+            244,
+            245,
+            246,
+            247,
+            248
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/lab-results/exported-lab-results-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 232,
+          "code": [
+            "    const getErrorMessage = (err: { responseBody?: { error?: { message?: string } }; message?: string }) =>",
+            "      err?.responseBody?.error?.message ?? err?.message;",
+            "",
+            "    const orderDiscontinuationPayload = {",
+            "      previousOrder: order.uuid,",
+            "      type: 'testorder',",
+            "      action: 'DISCONTINUE',",
+            "      careSetting: order.careSetting.uuid,",
+            "      encounter: order.encounter.uuid,",
+            "      patient: order.patient.uuid,",
+            "      concept: order.concept.uuid,",
+            "      orderer: order.orderer,",
+            "    };",
+            "    const resultsStatusPayload = {",
+            "      fulfillerStatus: 'COMPLETED',",
+            "      fulfillerComment: 'Test Results Entered',"
+          ],
+          "highlightedLines": [
+            235,
+            236,
+            237,
+            238,
+            239,
+            240,
+            241,
+            242,
+            243,
+            244
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/lab-results/exported-lab-results-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 242,
+          "code": [
+            "      concept: order.concept.uuid,",
+            "      orderer: order.orderer,",
+            "    };",
+            "    const resultsStatusPayload = {",
+            "      fulfillerStatus: 'COMPLETED',",
+            "      fulfillerComment: 'Test Results Entered',",
+            "    };",
+            "",
+            "    // Check the backend rather than the loaded results, which may not have refreshed since a failed attempt",
+            "    let savedResults = completeLabResults;"
+          ],
+          "highlightedLines": [
+            245,
+            246,
+            247,
+            248
+          ]
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/lab-results/exported-lab-results-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 329,
+          "code": [
+            "    const obsPayload = createCompositeObservationPayload(conceptArray, order, formValues, 'FINAL');",
+            "",
+            "    try {",
+            "      await updateOrderResult(",
+            "        order.uuid,",
+            "        order.encounter.uuid,",
+            "        obsPayload,",
+            "        resultsStatusPayload,",
+            "        orderDiscontinuationPayload,",
+            "        abortController,",
+            "      );",
+            "",
+            "      // Invalidate all caches before closing workspace",
+            "      mutateOrderData();"
+          ],
+          "highlightedLines": [
+            332,
+            333,
+            334,
+            335,
+            336,
+            337,
+            338,
+            339
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/lab-results/exported-lab-results-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 297,
+          "code": [
+            "",
+            "      if (completesEarlierAttempt) {",
+            "        try {",
+            "          await completeOrderWithSavedResults(",
+            "            order.uuid,",
+            "            resultsStatusPayload,",
+            "            orderDiscontinuationPayload,",
+            "            abortController,",
+            "          );",
+            "        } catch (err) {",
+            "          showNotification('error', getErrorMessage(err));",
+            "          return setShowEmptyFormErrorNotification(false);"
+          ],
+          "highlightedLines": [
+            300,
+            301,
+            302,
+            303,
+            304,
+            305
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/lab-results/lab-results.resource.ts",
+          "revision": "HEAD",
+          "startLine": 324,
+          "code": [
+            "  return updateOrderFulfillerDetails(orderUuid, fulfillerPayload, abortController);",
+            "}",
+            "",
+            "function updateOrderFulfillerDetails(orderUuid: string, fulfillerPayload: any, abortController: AbortController) {",
+            "  return openmrsFetch(`${restBaseUrl}/order/${orderUuid}/fulfillerdetails/`, {",
+            "    method: 'POST',",
+            "    headers: {",
+            "      'Content-Type': 'application/json',",
+            "    },",
+            "    signal: abortController.signal,",
+            "    body: fulfillerPayload,",
+            "  });",
+            "}",
+            "",
+            "export function createObservationPayload(",
+            "  concept: LabOrderConcept,"
+          ],
+          "highlightedLines": [
+            327,
+            328,
+            329,
+            330,
+            331,
+            332,
+            333,
+            334,
+            335,
+            336
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_3/FulfillerDetailsResource2_3.java",
+          "revision": "HEAD",
+          "startLine": 31,
+          "code": [
+            " * fulfiller_status and accession number (supplants FulfillerDetails2_2 which only supported",
+            " * updating fulfiller_comment and fulfiller_status)",
+            " */",
+            "@SubResource(parent = OrderResource2_2.class, path = \"fulfillerdetails\", supportedClass = FulfillerDetails2_3.class, supportedOpenmrsVersions = {",
+            "        \"2.3.* - 9.*\" })",
+            "public class FulfillerDetailsResource2_3 extends DelegatingSubResource<FulfillerDetails2_3, Order, OrderResource2_2> {",
+            "",
+            "    @Override",
+            "    public FulfillerDetails2_3 newDelegate() {"
+          ],
+          "highlightedLines": [
+            34,
+            35,
+            36
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_3/FulfillerDetailsResource2_3.java",
+          "revision": "HEAD",
+          "startLine": 40,
+          "code": [
+            "        return new FulfillerDetails2_3();",
+            "    }",
+            "",
+            "    @Override",
+            "    public FulfillerDetails2_3 save(FulfillerDetails2_3 delegate) {",
+            "        Context.getOrderService().updateOrderFulfillerStatus(delegate.getOrder(), delegate.getFulfillerStatus(),",
+            "                delegate.getFulfillerComment(), delegate.getAccessionNumber());",
+            "        return null;",
+            "    }",
+            "",
+            "    @Override",
+            "    public DelegatingResourceDescription getRepresentationDescription(Representation rep) {"
+          ],
+          "highlightedLines": [
+            43,
+            44,
+            45,
+            46,
+            47,
+            48
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_3/FulfillerDetails2_3.java",
+          "revision": "HEAD",
+          "startLine": 15,
+          "code": [
+            " * Backing object for FulfillerDetailsResource2_3, expands FulfillerDetails2_2 to add Accession",
+            " * Number",
+            " */",
+            "public class FulfillerDetails2_3 extends FulfillerDetails2_2 {",
+            "\t",
+            "\tprivate String accessionNumber;",
+            "\t",
+            "\tpublic String getAccessionNumber() {",
+            "\t\treturn accessionNumber;",
+            "\t}",
+            "\t",
+            "\tpublic void setAccessionNumber(String accessionNumber) {",
+            "\t\tthis.accessionNumber = accessionNumber;",
+            "\t}",
+            "}"
+          ],
+          "highlightedLines": [
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/FulfillerDetails2_2.java",
+          "revision": "HEAD",
+          "startLine": 17,
+          "code": [
+            " */",
+            "public class FulfillerDetails2_2 {",
+            "\t",
+            "\tprivate Order.FulfillerStatus fulfillerStatus;",
+            "\t",
+            "\tprivate String fulfillerComment;",
+            "\t",
+            "\tprivate Order order;",
+            "\t"
+          ],
+          "highlightedLines": [
+            20,
+            21,
+            22
+          ]
+        },
+        {
+          "id": 11,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/OrderService.java",
+          "revision": "HEAD",
+          "startLine": 364,
+          "code": [
+            "\t *             permission",
+            "\t */",
+            "\t@PreAuthorize(\"hasPermission(#order, '\" + PrivilegeConstants.EDIT_ORDERS + \"')\")",
+            "\tpublic Order updateOrderFulfillerStatus(Order order, Order.FulfillerStatus orderFulfillerStatus,",
+            "\t        String fullFillerComment);",
+            "",
+            "\t/**",
+            "\t * Updates the fulfillerStatus of an order and the related comment and finally persists it",
+            "\t * <p>",
+            "\t * <strong>Should</strong> set the new fulfillerStatus<br/>",
+            "\t * <strong>Should</strong> set the new fulFillerComment<br/>",
+            "\t * <strong>Should</strong> set the new accessionNumber<br/>",
+            "\t * <strong>Should</strong> not update fulfillerStatus or fulFillerComment or accessionNumber if null",
+            "\t * passed in to that field<br/>",
+            "\t * <strong>Should</strong> save the changed order",
+            "\t *",
+            "\t * @param order order whose fulfillerStatus should be changed",
+            "\t * @param orderFulfillerStatus describes the new Order.FulfillerStatus the order should be set to",
+            "\t * @param fullFillerComment is a string which describes a comment that is set while changing the",
+            "\t *            FulfillerStatus",
+            "\t * @param accessionNumber is the accession number to set",
+            "\t * @return the Order that is updated with an according fulfillerStatus and fulFillerComment and",
+            "\t *         accession number",
+            "\t * @throws org.springframework.security.access.AccessDeniedException if the current user lacks",
+            "\t *             permission",
+            "\t */",
+            "\t@PreAuthorize(\"hasPermission(#order, '\" + PrivilegeConstants.EDIT_ORDERS + \"')\")",
+            "\tpublic Order updateOrderFulfillerStatus(Order order, Order.FulfillerStatus orderFulfillerStatus,",
+            "\t        String fullFillerComment, String accessionNumber);",
+            "",
+            "\t/**"
+          ],
+          "highlightedLines": [
+            367,
+            368,
+            369,
+            370,
+            371,
+            372,
+            373,
+            374,
+            375,
+            376,
+            377,
+            378,
+            379,
+            380,
+            381,
+            382,
+            383,
+            384,
+            385,
+            386,
+            387,
+            388,
+            389,
+            390,
+            391
+          ]
+        },
+        {
+          "id": 12,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 550,
+          "code": [
+            "\t\treturn updateOrderFulfillerStatus(order, orderFulfillerStatus, fullFillerComment, null);",
+            "\t}",
+            "",
+            "\t@Override",
+            "\tpublic Order updateOrderFulfillerStatus(Order order, FulfillerStatus orderFulfillerStatus, String fullFillerComment,",
+            "\t        String accessionNumber) {",
+            "",
+            "\t\tif (orderFulfillerStatus != null) {",
+            "\t\t\torder.setFulfillerStatus(orderFulfillerStatus);",
+            "\t\t}",
+            "",
+            "\t\tif (fullFillerComment != null) {",
+            "\t\t\torder.setFulfillerComment(fullFillerComment);",
+            "\t\t}",
+            "",
+            "\t\tif (accessionNumber != null) {",
+            "\t\t\torder.setAccessionNumber(accessionNumber);",
+            "\t\t}",
+            "",
+            "\t\treturn saveOrderInternal(order, null);",
+            "\t}",
+            "",
+            "\t/**",
+            "\t * @see org.openmrs.api.OrderService#getOrder(java.lang.Integer)"
+          ],
+          "highlightedLines": [
+            553,
+            554,
+            555,
+            556,
+            557,
+            558,
+            559,
+            560,
+            561,
+            562,
+            563,
+            564,
+            565,
+            566,
+            567,
+            568,
+            569,
+            570
+          ]
+        },
+        {
+          "id": 13,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/impl/OrderServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 347,
+          "code": [
+            "\t\treturn DateUtils.addSeconds(date, -1);",
+            "\t}",
+            "",
+            "\tprivate Order saveOrderInternal(Order order, OrderContext orderContext) {",
+            "\t\tif (order.getOrderId() == null) {",
+            "\t\t\tif (order.getOrderNumber() == null) {",
+            "\t\t\t\tsetProperty(order, \"orderNumber\", getOrderNumberGenerator().getNewOrderNumber(orderContext));",
+            "\t\t\t}",
+            "",
+            "\t\t\t//DC orders should auto expire upon creating them",
+            "\t\t\tif (DISCONTINUE == order.getAction()) {",
+            "\t\t\t\torder.setAutoExpireDate(order.getDateActivated());",
+            "\t\t\t} else if (order.getAutoExpireDate() != null) {",
+            "\t\t\t\tCalendar cal = Calendar.getInstance();",
+            "\t\t\t\tcal.setTime(order.getAutoExpireDate());",
+            "\t\t\t\tint hours = cal.get(Calendar.HOUR_OF_DAY);",
+            "\t\t\t\tint minutes = cal.get(Calendar.MINUTE);",
+            "\t\t\t\tint seconds = cal.get(Calendar.SECOND);",
+            "\t\t\t\tcal.get(Calendar.MILLISECOND);",
+            "\t\t\t\t//roll autoExpireDate to end of day (23:59:59) if no time portion is specified",
+            "\t\t\t\tif (hours == 0 && minutes == 0 && seconds == 0) {",
+            "\t\t\t\t\tcal.set(Calendar.HOUR_OF_DAY, 23);",
+            "\t\t\t\t\tcal.set(Calendar.MINUTE, 59);",
+            "\t\t\t\t\tcal.set(Calendar.SECOND, 59);",
+            "\t\t\t\t\t// the OpenMRS database is only precise to the second",
+            "\t\t\t\t\tcal.set(Calendar.MILLISECOND, 0);",
+            "\t\t\t\t\torder.setAutoExpireDate(cal.getTime());",
+            "\t\t\t\t}",
+            "\t\t\t}",
+            "\t\t}",
+            "",
+            "\t\treturn dao.saveOrder(order);",
+            "\t}",
+            "",
+            "\tprivate void setProperty(Order order, String propertyName, Object value) {",
+            "\t\tBoolean isAccessible = null;"
+          ],
+          "highlightedLines": [
+            350,
+            351,
+            352,
+            353,
+            354,
+            355,
+            356,
+            357,
+            358,
+            359,
+            360,
+            361,
+            362,
+            363,
+            364,
+            365,
+            366,
+            367,
+            368,
+            369,
+            370,
+            371,
+            372,
+            373,
+            374,
+            375,
+            376,
+            377,
+            378,
+            379
+          ]
+        },
+        {
+          "id": 14,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/db/OrderDAO.java",
+          "revision": "HEAD",
+          "startLine": 44,
+          "code": [
+            "\t/**",
+            "\t * @see org.openmrs.api.OrderService#saveOrder(org.openmrs.Order, org.openmrs.api.OrderContext)",
+            "\t */",
+            "\tpublic Order saveOrder(Order order) throws DAOException;",
+            "",
+            "\t/**",
+            "\t * @see org.openmrs.api.OrderService#purgeOrder(Order)"
+          ],
+          "highlightedLines": [
+            47
+          ]
+        },
+        {
+          "id": 15,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/db/hibernate/HibernateOrderDAO.java",
+          "revision": "HEAD",
+          "startLine": 89,
+          "code": [
+            "\t * @see org.openmrs.api.db.OrderDAO#saveOrder(org.openmrs.Order)",
+            "\t * @see org.openmrs.api.OrderService#saveOrder(org.openmrs.Order, org.openmrs.api.OrderContext)",
+            "\t */",
+            "\t@Override",
+            "\tpublic Order saveOrder(Order order) throws DAOException {",
+            "\t\treturn HibernateUtil.saveOrUpdate(sessionFactory.getCurrentSession(), order);",
+            "\t}",
+            "",
+            "\t/**",
+            "\t * @see org.openmrs.api.db.OrderDAO#deleteOrder(org.openmrs.Order)"
+          ],
+          "highlightedLines": [
+            92,
+            93,
+            94,
+            95
+          ]
+        },
+        {
+          "id": 16,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-esm-patient-chart",
+          "path": "packages/esm-patient-orders-app/src/lab-results/lab-results.resource.ts",
+          "revision": "HEAD",
+          "startLine": 271,
+          "code": [
+            "  return (encounter.obs ?? []).filter((obs) => obs.order?.uuid === order.uuid);",
+            "}",
+            "",
+            "/**",
+            " * Saves the results and discontinues the order in a single encounter request, so the backend",
+            " * commits or rolls back both together, then marks the order as fulfilled.",
+            " */",
+            "export async function updateOrderResult(",
+            "  orderUuid: string,",
+            "  encounterUuid: string,",
+            "  obsPayload: any,",
+            "  fulfillerPayload: any,",
+            "  orderPayload: OrderDiscontinuationPayload,",
+            "  abortController: AbortController,",
+            ") {",
+            "  await openmrsFetch(`${restBaseUrl}/encounter/${encounterUuid}`, {",
+            "    method: 'POST',",
+            "    headers: {",
+            "      'Content-Type': 'application/json',",
+            "    },",
+            "    signal: abortController.signal,",
+            "    body: { ...obsPayload, orders: [orderPayload] },",
+            "  });",
+            "",
+            "  return updateOrderFulfillerDetails(orderUuid, fulfillerPayload, abortController);",
+            "}",
+            "",
+            "/**",
+            " * Completes an order whose results were saved by an earlier attempt that did not finish."
+          ],
+          "highlightedLines": [
+            274,
+            275,
+            276,
+            277,
+            278,
+            279,
+            280,
+            281,
+            282,
+            283,
+            284,
+            285,
+            286,
+            287,
+            288,
+            289,
+            290,
+            291,
+            292,
+            293,
+            294,
+            295,
+            296
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}

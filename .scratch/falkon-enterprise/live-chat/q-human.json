@@ -1,0 +1,12 @@
+[
+ {"id":"q01","kind":"overview","text":"I'm new to the OpenMRS O3 codebase. What does the billing feature consist of, and which repositories implement it?"},
+ {"id":"q02","kind":"flow","text":"When a cashier records a payment for a patient bill in the billing app, what happens from the button click in the UI down to the database write? Walk me through it."},
+ {"id":"q03","kind":"locate","text":"Where in the code are bill line items priced from a stock item or billable service, and how does that pricing get applied?"},
+ {"id":"q04","kind":"concept","text":"How do the frontend apps talk to the OpenMRS backend, REST or FHIR? Show me where each is used in the patient management app."},
+ {"id":"q05","kind":"docs","text":"Where is the form engine documented, and how does the form engine library implement rendering of obs fields?"},
+ {"id":"q06","kind":"why","text":"Why does the billing module have a cash point concept? Explain what it is used for and where it appears in code."},
+ {"id":"q07","kind":"howto","text":"If I wanted to add a new payment mode in the billing system, which files across the repositories would I need to touch?"},
+ {"id":"q08","kind":"fhir","text":"How does the FHIR2 module map an OpenMRS Patient to a FHIR Patient resource? Explain the translator and its main mappings."},
+ {"id":"q09","kind":"history","text":"What was the most recent significant change to the billing module's bill payment handling, and why was it made?"},
+ {"id":"q10","kind":"abstain","text":"Where is the Kubernetes operator that provisions the billing cron job?"}
+]

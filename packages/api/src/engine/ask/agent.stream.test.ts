@@ -18,7 +18,7 @@ test("without postProcess the stream carries no extra parts", async () => {
   const fake = await fakeOpenAi([{ text: "<!--answer-->\nhello" }]);
   try {
     let saved: unknown[] = [];
-    const out = await chunks(await createMessageStream({ messages: [user], selectedRepos: [], scope: scopeFor(["*"]), model: model(fake.url), onFinish: (m) => void (saved = m) }));
+    const out = await chunks(await createMessageStream({ audience: "human", messages: [user], selectedRepos: [], scope: scopeFor(["*"]), model: model(fake.url), onFinish: (m) => void (saved = m) }));
     assert.deepEqual(out.filter((c) => c.type.startsWith("data-")), []);
     assert.equal(out.at(-1)!.type, "finish");
     assert.equal((saved.at(-1) as { parts: { type: string }[] }).parts.some((p) => p.type.startsWith("data-")), false);
@@ -32,7 +32,7 @@ test("postProcess gets the final text, sources and step-cap flag, and its parts 
     let seen: unknown;
     const out = await chunks(
       await createMessageStream({
-        messages: [user], selectedRepos: [], scope: scopeFor([]), model: model(fake.url),
+        audience: "human", messages: [user], selectedRepos: [], scope: scopeFor([]), model: model(fake.url),
         onFinish: (m) => void (saved = m as never),
         postProcess: async (ctx) => ((seen = ctx), [{ type: "data-evidence", data: { n: 1 } }, { type: "data-answer", data: { ok: true } }]),
       }),
@@ -49,7 +49,7 @@ test("stepCapHit is true when the run used all its steps (a model that never sto
   const fake = await fakeOpenAi([{ tool: "read_file", args: { repo: "x", path: "a.ts" } }]);
   try {
     let seen: { stepCapHit?: boolean } = {};
-    await chunks(await createMessageStream({ messages: [user], selectedRepos: [], scope: scopeFor([]), model: model(fake.url), postProcess: async (ctx) => ((seen = ctx), []) }));
+    await chunks(await createMessageStream({ audience: "human", messages: [user], selectedRepos: [], scope: scopeFor([]), model: model(fake.url), postProcess: async (ctx) => ((seen = ctx), []) }));
     assert.equal(seen.stepCapHit, true);
   } finally { fake.close(); }
 });

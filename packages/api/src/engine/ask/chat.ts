@@ -77,7 +77,7 @@ export async function askCodebase(o: { query: string; repos?: string[]; language
   let final: UIMessage[] = [];
   // A thread of a Product stores what the UI chat stores (answer and evidence parts), so its page renders the answer.
   const postProcess = o.product ? await evidenceFor(o.product, o.scope) : undefined;
-  const stream = await createMessageStream({ messages: [user], selectedRepos: repos, scope: o.scope, model, onFinish: (m) => void (final = m), postProcess });
+  const stream = await createMessageStream({ messages: [user], selectedRepos: repos, scope: o.scope, model, onFinish: (m) => void (final = m), postProcess, audience: "agent" });
   const [, name] = await Promise.all([drain(stream), chatName(o.query, model)]);
   // The chat may have been deleted while the agent ran: the answer still returns, without a link.
   const saved = await prisma.chat.update({ where: { id: chat.id }, data: { messages: final as object[], name } }).then(() => true, (e: { code?: string }) => {

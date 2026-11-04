@@ -958,6 +958,26 @@ Limits: no dependency, no push, no snapshot change with both history flags `off`
 
 Order: S89 and S91 in parallel (disjoint files), then S90, then S92 after the human's go-ahead at gate 2 or earlier on request.
 
+### Cycle 21 results (built on `loop/falkon-enterprise-c21`, tip `a8a41ee`; awaiting gate 2)
+
+- **S89 kept (one fix round).** Chat's tool list is derived from the shared, pull request and git registries (the current ten first, then three pull request tools, then seven git tools; 20 with both flags on), gated by the same exactly-`off` rule as MCP, helper `familyOn` moved to `packages/api/src/engine/toolFamily.ts`. A parity test builds the MCP side from a real registration and fails when a tool is added there and not to chat (proved with a temporary fake tool). The review found one blocking bug: chat passes an empty selected-repositories list when none is selected, and the git tools read that as "no repositories"; fixed in `pickRepos` in `packages/shared/src/gitTools.ts` (an empty selection is no selection, as in `repoSet`), outside the slice's stated scope, MCP output unchanged. Decided: a history tool naming a repository outside the *selected* list but inside the caller's scope returns data, like `read_file` (scope is the boundary, ADR P9).
+- **S91 kept (one follow-up round).** `MAX_EVIDENCE` is 40 (a citation past it still falls back to a bare path with the partial reason). A literal marker in a non-reply answer is gone: the text is cut at the first later marker line outside a fence (first answer kept), a leading run of marker lines is skipped. 40 evidence windows measure 92,518 bytes stored.
+- **S90 kept (one fix round).** `dynamicPrompt` takes a required audience (UI chat `human`, `ask_codebase` `agent`); the static prompt lost "Be clear and very concise" and is byte-identical for both; the human block starts after the answer tag with a plain-language summary, explains what, why and how repositories fit, defines terms, walks flows, says what was not read, and is exempt for conversational messages; the agent block is terse and location-first. History recipes follow the flags (pull request recipe in `recipes.ts`, git recipes moved there to avoid an import cycle). The review found two blocking prompt bugs (a recipe naming a git tool with only the history flag on; "start with a summary" not mentioning the answer tag), both fixed with tests over all flag combinations.
+- Checks on the tip: typecheck exit 0; shared 301, backend 86 (18 skipped), api 275 (14 skipped), contracts 25, ui 34 and 68, eval 137, originality tests 7 pass, 0 fail; api build exit 0; originality scan 0 hits; no registration snapshot, `outputs.json` or `tests/contract` file changed (23 files, +388 -53).
+- Budget: about 730k subagent tokens of 700k (slightly over: three fix rounds); about 120 minutes of 150. No paid call yet. S92 (the live verification) is not run; it needs the human's go-ahead.
+
+- **S92 run (2026-11-01, with the human's go-ahead; cap raised from $2 to $3 after the pilot).** The `falkon-live` stack was rebuilt from tip `b9a1dcd`'s code (`a8a41ee`), two Products on one index (42 repositories for the eval questions, the six billing repositories for the human-style questions), DeepSeek-V4.1-Flash through the human's DeepInfra account, knowledge base off. Pilot of 3, then 19 more; all 22 ran. Tokens: 6.54M input and 105k output, about $2.07 at a deliberately high $0.30 and $1.00 per million (no billing readout; the real price is probably lower). Stored answers: `live-chat/runs-c21/`; scripts: `live-chat/`.
+
+| Decision rule check | Before (`live-chat/findings.md`) | After |
+|---|---|---|
+| (a) answers labelled partial for the cap alone | 8 of 10 human-style, all 12 eval | 0 of 22 |
+| (b) history question uses a history tool | no history tool existed in chat | yes: `get_pull_request` and `search_diffs` on the payment-change question (only one question in the set asks for history, so this is thin evidence) |
+| (c) eval recall, stored view, 12 questions | 0.833 | 0.858 (strict file-and-line match; per question: eight at 1.00, one at 0.80, three at 0.50; the three at 0.50 are the docs questions, one of which was 1.00 before) |
+| (d) literal marker in stored text | 1 of 22 | 0 of 22 |
+| (e) readable explanation for a human | to be judged by the human | answers run 391 to 1,090 words, open with a plain summary, use numbered headings, end with what was not verified; read `runs-c21/q02.thread.json` (flow), `q06` (why) and `q10` (absence) |
+
+Citations shown per answer rose from a hard 12 to 7 to 39 (average about 23). The absent-code question is still answered as absent and counted grounded, as before. Limits: n 12 and one run each, so +0.025 recall is within noise; one docs question lost a hit and one core-to-REST question gained two.
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).

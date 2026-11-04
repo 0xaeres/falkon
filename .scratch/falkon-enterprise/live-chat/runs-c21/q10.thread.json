@@ -1,0 +1,322 @@
+{
+  "id": "3c1bf2fe-189b-40dc-91c7-d0b1026a9488",
+  "productId": "billing",
+  "title": "Kubernetes Billing Cron Job Operator",
+  "updatedAt": 1793549465657,
+  "answers": [
+    {
+      "id": "mj14tASjqE4nKmCc",
+      "productId": "billing",
+      "question": "Where is the Kubernetes operator that provisions the billing cron job?",
+      "generation": "g-ab363e",
+      "kind": "grounded",
+      "paragraphs": [
+        {
+          "text": "There is **no Kubernetes operator** for a billing cron job anywhere in the repositories you selected. I searched all six repos directly for the pieces an operator would have to contain, and none of them exist here.",
+          "citations": []
+        },
+        {
+          "text": "**What I looked for**",
+          "citations": []
+        },
+        {
+          "text": "- Any `CronJob` / `cronjob` / `cron_job` resource — no matches at all.\n- Kubernetes, Helm and `Deployment` manifests — the only hit was an unrelated test constant (`PERSON_MIDDLE_NAME`) in `github.com/openmrs/openmrs-module-fhir2`.\n- Operator toolkits and controller code — `controller-runtime`, `kubebuilder`, `operator-sdk`, `Reconcile`, `CustomResource`, CRDs. The only `reconcile` hits are business logic for refund status in the billing module, e.g. `reconcileBillStatus` [1], which is nothing to do with Kubernetes controllers.\n- A file listing of `github.com/openmrs/openmrs-module-billing` [2] and `github.com/openmrs/openmrs-esm-billing-app` [3] — neither has a Go module, chart directory or operator project layout.",
+          "citations": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "text": "**What actually schedules billing work**",
+          "citations": []
+        },
+        {
+          "text": "The closest thing to a \"billing cron job\" in these repos is an in-application scheduled task that runs inside OpenMRS itself, not in Kubernetes. It is `AutoCloseTimesheetsTask`, a Java class extending OpenMRS's `AbstractTask` [4]. Its `execute()` method calls `ITimesheetService.closeOpenTimesheets()` to close any open cashier timesheets [5]. OpenMRS's own scheduler — not a Kubernetes controller — decides when this runs; the Liquibase changelog even has a commented-out block that would have registered a `schedulable_class` for it [6].",
+          "citations": [
+            4,
+            5,
+            6
+          ]
+        },
+        {
+          "text": "The only real cron expressions in the selected repos are GitHub Actions schedules in CI workflow files, for example the Transifex translation pull [7] in the billing app. Those are repository automations, not cluster jobs.",
+          "citations": [
+            7
+          ]
+        },
+        {
+          "text": "**Why it is not here**",
+          "citations": []
+        },
+        {
+          "text": "These six repositories are the O3 frontend apps, the legacy Billing backend module, the FHIR2 module and the documentation site. A Kubernetes operator is a separate Go/Helm project, so it would live in its own repository that is not in the set you gave me — most likely under a deployment/infrastructure repo in the `openmrs` org rather than in any of these.",
+          "citations": []
+        },
+        {
+          "text": "**Caveats**",
+          "citations": []
+        },
+        {
+          "text": "I could only search the six repositories listed. I saw no fetch/index errors, and my searches returned results for the others in the same calls, so the absence is real within these repos — but I cannot rule out an operator existing in a different OpenMRS repository outside the selection. If you can point me at the deployment or infra repo (or tell me a repo name containing \"operator\" or \"helm\"), I can look there.",
+          "citations": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "billing",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/impl/BillRefundServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 105,
+          "code": [
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\tprivate void reconcileBillStatus(Integer billId) {",
+            "\t\tif (billId == null) {",
+            "\t\t\treturn;",
+            "\t\t}"
+          ],
+          "highlightedLines": [
+            108
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "billing",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "pom.xml",
+          "revision": "HEAD",
+          "startLine": 1,
+          "code": [
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+            "<project xmlns=\"http://maven.apache.org/POM/4.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd\">",
+            "\t<modelVersion>4.0.0</modelVersion>",
+            "",
+            "\t<parent>",
+            "\t\t<groupId>org.openmrs.maven.parents</groupId>",
+            "\t\t<artifactId>maven-parent-openmrs-module</artifactId>",
+            "\t\t<version>2.3.0</version>",
+            "\t</parent>",
+            "",
+            "\t<groupId>org.openmrs.module</groupId>",
+            "\t<artifactId>billing</artifactId>",
+            "\t<version>2.5.1-SNAPSHOT</version>",
+            "\t<packaging>pom</packaging>",
+            "\t<name>OpenMRS Billing Module</name>",
+            "\t<description>Module to provide basic billing functionality</description>",
+            "\t<url>https://github.com/openmrs/openmrs-module-billing</url>",
+            "",
+            "\t<developers>",
+            "\t\t<developer>",
+            "\t\t\t<name>OpenMRS</name>",
+            "\t\t</developer>",
+            "\t</developers>",
+            "",
+            "\t<scm>",
+            "\t\t<connection>scm:git:git@github.com:openmrs/openmrs-module-billing.git</connection>",
+            "\t\t<developerConnection>scm:git:git@github.com:openmrs/openmrs-module-billing.git</developerConnection>",
+            "\t\t<url>scm:git:git@github.com:openmrs/openmrs-module-billing.git</url>",
+            "\t\t<tag>HEAD</tag>",
+            "\t</scm>"
+          ],
+          "highlightedLines": []
+        },
+        {
+          "id": 3,
+          "productId": "billing",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "package.json",
+          "revision": "HEAD",
+          "startLine": 1,
+          "code": [
+            "{",
+            "  \"name\": \"@openmrs/esm-billing-app\",",
+            "  \"version\": \"1.4.0\",",
+            "  \"description\": \"O3 frontend module for handling billing concerns in healthcare settings\",",
+            "  \"browser\": \"dist/openmrs-esm-billing-app.js\",",
+            "  \"main\": \"src/index.ts\",",
+            "  \"source\": true,",
+            "  \"license\": \"MPL-2.0\",",
+            "  \"homepage\": \"https://github.com/openmrs/openmrs-esm-billing-app#readme\",",
+            "  \"scripts\": {",
+            "    \"start\": \"openmrs develop\",",
+            "    \"analyze\": \"rspack --mode=production --env.analyze=true\",",
+            "    \"build\": \"rspack --mode production\",",
+            "    \"debug\": \"npm run serve\",",
+            "    \"extract-translations\": \"i18next 'src/**/*.component.tsx' 'src/**/*.workspace.tsx' 'src/**/*.modal.tsx' 'src/index.ts' --config ./tools/i18next-parser.config.js\",",
+            "    \"lint\": \"eslint src --max-warnings=0\",",
+            "    \"postinstall\": \"husky install\",",
+            "    \"prettier\": \"prettier --config prettier.config.js --write \\\"src/**/*.{ts,tsx,css,scss}\\\" \\\"e2e/**/*.ts\\\"\",",
+            "    \"serve\": \"rspack serve --mode=development\",",
+            "    \"test-e2e\": \"playwright test\",",
+            "    \"test\": \"cross-env TZ=UTC vitest run --passWithNoTests\",",
+            "    \"test:watch\": \"cross-env TZ=UTC vitest watch\",",
+            "    \"coverage\": \"cross-env TZ=UTC vitest run --coverage --passWithNoTests\",",
+            "    \"typescript\": \"tsc\",",
+            "    \"verify\": \"turbo lint && turbo typescript && turbo test --color --concurrency=5\"",
+            "  },",
+            "  \"browserslist\": [",
+            "    \"extends browserslist-config-openmrs\"",
+            "  ],",
+            "  \"keywords\": ["
+          ],
+          "highlightedLines": []
+        },
+        {
+          "id": 4,
+          "productId": "billing",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/tasks/AutoCloseTimesheetsTask.java",
+          "revision": "HEAD",
+          "startLine": 18,
+          "code": [
+            " * A scheduled task that automatically closes all open timesheets",
+            " */",
+            "@Slf4j",
+            "public class AutoCloseTimesheetsTask extends AbstractTask {",
+            "\t",
+            "\t@Override",
+            "\tpublic void execute() {"
+          ],
+          "highlightedLines": [
+            21
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "billing",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/tasks/AutoCloseTimesheetsTask.java",
+          "revision": "HEAD",
+          "startLine": 21,
+          "code": [
+            "public class AutoCloseTimesheetsTask extends AbstractTask {",
+            "\t",
+            "\t@Override",
+            "\tpublic void execute() {",
+            "\t\tif (!isExecuting) {",
+            "\t\t\tif (log.isDebugEnabled()) {",
+            "\t\t\t\tlog.debug(\"Starting Auto Close Timesheets Task...\");",
+            "\t\t\t}",
+            "\t\t\t",
+            "\t\t\tstartExecuting();",
+            "\t\t\t",
+            "\t\t\ttry {",
+            "\t\t\t\tITimesheetService timesheetService = Context.getService(ITimesheetService.class);",
+            "\t\t\t\t",
+            "\t\t\t\ttimesheetService.closeOpenTimesheets();",
+            "\t\t\t}",
+            "\t\t\tcatch (Exception e) {",
+            "\t\t\t\tlog.error(\"Error while auto closing open timesheets:\", e);",
+            "\t\t\t}",
+            "\t\t\tfinally {",
+            "\t\t\t\tstopExecuting();",
+            "\t\t\t}",
+            "\t\t}",
+            "\t}",
+            "}"
+          ],
+          "highlightedLines": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "billing",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/resources/liquibase.xml",
+          "revision": "HEAD",
+          "startLine": 724,
+          "code": [
+            "<!--\t<changeSet id=\"openhmis.cashier-001-v2.0.0-6\" author=\"pochu\">-->",
+            "<!--\t\t<preConditions onFail=\"MARK_RAN\">-->",
+            "<!--\t\t\t<sqlCheck expectedResult=\"0\">-->",
+            "<!--\t\t\t\tSELECT COUNT(*) FROM scheduler_task_config-->",
+            "<!--\t\t\t\tWHERE schedulable_class = 'org.openmrs.module.billing.tasks.api.cashier.AutoCloseTimesheetsTask'-->",
+            "<!--\t\t\t\tAnd name = 'Auto Close Open Timesheets Task'-->",
+            "<!--\t\t\t</sqlCheck>-->",
+            "<!--\t\t</preConditions>-->",
+            "<!--\t\t<comment>Inserting Auto Close Open Timesheets Task into 'schedule_task_config' table</comment>-->",
+            "<!--\t\t<insert tableName=\"scheduler_task_config\">-->",
+            "<!--\t\t\t<column name=\"name\" value=\"Auto Close Open Timesheets Task\" />-->",
+            "<!--\t\t\t<column name=\"description\" value=\"Stops all active visits that match the visit type(s) specified by the value of the global property 'autoCloseVisits.visitType'\" />-->",
+            "<!--\t\t\t<column name=\"schedulable_class\" value=\"org.openmrs.module.billing.tasks.api.cashier.AutoCloseTimesheetsTask\" />-->",
+            "<!--\t\t\t<column name=\"start_time_pattern\" value=\"MM/dd/yyyy HH:mm:ss\" />-->",
+            "<!--\t\t\t<column name=\"start_time\" valueDate=\"2011-11-28T23:49:59\" />-->",
+            "<!--\t\t\t<column name=\"repeat_interval\" value=\"86400\" />-->"
+          ],
+          "highlightedLines": [
+            727,
+            728,
+            729,
+            730,
+            731,
+            732,
+            733,
+            734,
+            735,
+            736
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "billing",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": ".github/workflows/tx-pull.yml",
+          "revision": "HEAD",
+          "startLine": 2,
+          "code": [
+            "  workflow_dispatch:  # Allow manual trigger",
+            "  schedule:",
+            "    # Runs daily at 8:30 PM UTC",
+            "    - cron: '30 20 * * *'",
+            "",
+            "name: \"Scheduled Transifex Update\"",
+            "",
+            "jobs:",
+            "  pull-translations-from-transifex:"
+          ],
+          "highlightedLines": [
+            5,
+            6,
+            7
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}

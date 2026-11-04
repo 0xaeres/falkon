@@ -8,6 +8,7 @@ import { IMPACT_INSTRUCTIONS } from "./ask/impact";
 import { configuredLanguageModels, languageModelsInfo } from "./ask/models";
 import { languageModelInfo } from "./ask/http";
 import { toolDeps } from "./tools";
+import { familyOn } from "./toolFamily";
 
 export const MCP_SERVER_NAME = "falkon-mcp-server";
 
@@ -26,9 +27,6 @@ For a chat shared with others (a Slack thread, say), pass visibility 'PUBLIC' so
 const RESEARCH_DESCRIPTION = "Prepare a repository-scoped research brief for your model to answer a code question with Falkon's search and read tools. Returns a workflow and citation guidance without calling a server model.";
 
 let warnedMode = false;
-
-/** A history tool family is on unless its variable is the text `off`, in any case, ignoring surrounding spaces; unset, empty, `0`, `false` and every other value leave it on (cycle 19c). */
-const familyOn = (name: "MCP_HISTORY_TOOLS" | "MCP_GIT_TOOLS") => process.env[name]?.trim().toLowerCase() !== "off";
 
 /** One MCP server per session, retaining the existing tool order, annotations and error text. */
 export async function createMcpServer(scope: Scope, product?: string) {

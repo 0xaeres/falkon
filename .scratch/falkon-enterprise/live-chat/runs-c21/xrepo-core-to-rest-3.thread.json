@@ -1,0 +1,510 @@
+{
+  "id": "cd3e25a3-6ba6-48a8-baba-346ea9780315",
+  "productId": "openmrs",
+  "title": "Impact of ConceptService.saveDrug Change",
+  "updatedAt": 1793548592219,
+  "answers": [
+    {
+      "id": "ODp1njRshq2TUuiM",
+      "productId": "openmrs",
+      "question": "If the behaviour of `ConceptService.saveDrug` in openmrs-core changed, which code in the REST web services module (openmrs-module-webservices.rest) uses it and could be affected?",
+      "generation": "g-b59a21",
+      "kind": "grounded",
+      "paragraphs": [
+        {
+          "text": "Changing `ConceptService.saveDrug` in openmrs-core would affect the REST web services module in three production resources plus one test class. In openmrs-core the method is declared on the API interface `ConceptService.saveDrug` [1], declared again on the DAO [2], and implemented in `ConceptServiceImpl.saveDrug`, which simply checks whether the service is locked and delegates to the DAO [3]. The actual persistence work lives in `HibernateConceptDAO.saveDrug` [4].",
+          "citations": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "text": "I searched the whole openmrs-module-webservices.rest repository for the symbol `saveDrug`, so the list below is complete for that module.",
+          "citations": []
+        },
+        {
+          "text": "## Confirmed call sites",
+          "citations": []
+        },
+        {
+          "text": "| Location | How it calls `saveDrug` | What a behaviour change would touch |\n|---|---|---|\n| `DrugResource1_8.save` [5] | `Context.getConceptService().saveDrug(delegate)` and returns the result | The `/drug` REST endpoint, and every create/update of a drug via REST |\n| `DrugReferenceMapResource1_10.save` [6] | Adds the map to the parent drug, then saves the drug | The `/drugreferencemap` endpoint; the map itself is persisted only as a side effect of saving the drug |\n| `DrugIngredientResource1_11.save` [7] | Adds the ingredient to the parent drug when missing, then saves the drug | The nested `/drug/{uuid}/ingredient` endpoint |\n| `DrugIngredientResource1_11.purge` [8] | Removes the ingredient from the drug, nulls its drug, then saves the drug | Deleting an ingredient through REST |\n| `DrugController1_10Test` [9] | Sets `strength`, saves, then reads the drug back through the controller | Two tests, `shouldIncludeStrengthInDefaultRepresentation` and `shouldIncludeStrengthInFullRepresentation`; they would fail if saving stopped persisting `strength` |",
+          "citations": [
+            5,
+            6,
+            7,
+            8,
+            9
+          ]
+        },
+        {
+          "text": "## Why the reach is wider than `DrugResource1_8`",
+          "citations": []
+        },
+        {
+          "text": "The `save` override sits on `DrugResource1_8` [10], which is the base class for the newer drug resources: `DrugResource1_10` extends it [11], `DrugResource1_11` extends `DrugResource1_10` [12], and `DrugResource1_12` extends `DrugResource1_11` [13]. None of them overrides `save`, so on OpenMRS 1.12 and above (the `1.12.* - 9.*` range on `DrugResource1_12`) the active `/drug` resource still inherits the `saveDrug` call. `DrugResource1_11` also routes the `ingredients` property through a `@PropertySetter` [14] and exposes `ingredients` as a sub-resource [15], which is what makes `DrugIngredientResource1_11` reachable.",
+          "citations": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        {
+          "text": "```archify\n{\"schema_version\":1,\"diagram_type\":\"architecture\",\"meta\":{\"title\":\"Who reaches ConceptService.saveDrug from webservices.rest\"},\"components\":[{\"id\":\"api\",\"type\":\"external\",\"label\":\"REST clients\",\"sublabel\":\"/drug, ingredient, drugreferencemap\",\"row\":0,\"col\":0},{\"id\":\"drug18\",\"type\":\"backend\",\"label\":\"DrugResource1_8\",\"sublabel\":\"save() calls saveDrug\",\"row\":1,\"col\":1},{\"id\":\"drug110\",\"type\":\"backend\",\"label\":\"DrugResource1_10\",\"sublabel\":\"extends 1_8\",\"row\":0,\"col\":2},{\"id\":\"drug111\",\"type\":\"backend\",\"label\":\"DrugResource1_11\",\"sublabel\":\"extends 1_10\",\"row\":1,\"col\":2},{\"id\":\"drug112\",\"type\":\"backend\",\"label\":\"DrugResource1_12\",\"sublabel\":\"extends 1_11\",\"row\":2,\"col\":2},{\"id\":\"ingredient\",\"type\":\"backend\",\"label\":\"DrugIngredientResource1_11\",\"sublabel\":\"save and purge call saveDrug\",\"row\":2,\"col\":0},{\"id\":\"refmap\",\"type\":\"backend\",\"label\":\"DrugReferenceMapResource1_10\",\"sublabel\":\"save calls saveDrug\",\"row\":3,\"col\":0},{\"id\":\"svc\",\"type\":\"backend\",\"label\":\"ConceptServiceImpl.saveDrug\",\"sublabel\":\"the changed method\",\"row\":3,\"col\":3},{\"id\":\"dao\",\"type\":\"database\",\"label\":\"HibernateConceptDAO.saveDrug\",\"row\":4,\"col\":3}],\"connections\":[{\"from\":\"api\",\"to\":\"drug18\",\"label\":\"CREATE or UPDATE drug\"},{\"from\":\"drug110\",\"to\":\"drug18\",\"label\":\"inherits save\"},{\"from\":\"drug111\",\"to\":\"drug110\",\"label\":\"inherits save\"},{\"from\":\"drug112\",\"to\":\"drug111\",\"label\":\"inherits save\"},{\"from\":\"api\",\"to\":\"ingredient\",\"label\":\"nested ingredient\"},{\"from\":\"api\",\"to\":\"refmap\",\"label\":\"drug reference map\"},{\"from\":\"drug18\",\"to\":\"svc\",\"label\":\"calls\"},{\"from\":\"ingredient\",\"to\":\"svc\",\"label\":\"calls\"},{\"from\":\"refmap\",\"to\":\"svc\",\"label\":\"calls\"},{\"from\":\"svc\",\"to\":\"dao\",\"label\":\"delegates\"}]}\n```",
+          "citations": []
+        },
+        {
+          "text": "## What I could not check",
+          "citations": []
+        },
+        {
+          "text": "I only searched openmrs-module-webservices.rest, and only for the literal name `saveDrug`. A behaviour change could also surface through reflection, Spring/Hibernate configuration, or through other modules or frontend clients (for example the O3 patient chart or dispensing app) that consume the `/drug`, `/drug/{uuid}/ingredient` and `/drugreferencemap` endpoints. Those are outside the scope of this question and were not read.",
+          "citations": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/ConceptService.java",
+          "revision": "HEAD",
+          "startLine": 177,
+          "code": [
+            "\t *             permission",
+            "\t */",
+            "\t@PreAuthorize(\"hasPermission(#drug, '\" + PrivilegeConstants.MANAGE_CONCEPTS + \"')\")",
+            "\tpublic Drug saveDrug(Drug drug) throws APIException;",
+            "",
+            "\t/**",
+            "\t * Completely purge a <code>Concept</code> or <code>ConceptNumeric</code> from the database. This"
+          ],
+          "highlightedLines": [
+            180
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/db/ConceptDAO.java",
+          "revision": "HEAD",
+          "startLine": 85,
+          "code": [
+            "\t/**",
+            "\t * @see org.openmrs.api.ConceptService#saveDrug(org.openmrs.Drug)",
+            "\t */",
+            "\tpublic Drug saveDrug(Drug drug) throws DAOException;",
+            "",
+            "\t/**",
+            "\t * @see org.openmrs.api.ConceptService#getConcept(java.lang.Integer)"
+          ],
+          "highlightedLines": [
+            88
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/impl/ConceptServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 270,
+          "code": [
+            "\t * @see org.openmrs.api.ConceptService#saveDrug(org.openmrs.Drug)",
+            "\t */",
+            "\t@Override",
+            "\tpublic Drug saveDrug(Drug drug) throws APIException {",
+            "\t\tcheckIfLocked();",
+            "\t\treturn dao.saveDrug(drug);",
+            "\t}",
+            "",
+            "\t/**",
+            "\t * @see org.openmrs.api.ConceptService#purgeConcept(Concept)"
+          ],
+          "highlightedLines": [
+            273,
+            274,
+            275,
+            276
+          ]
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-core",
+          "path": "api/src/main/java/org/openmrs/api/db/hibernate/HibernateConceptDAO.java",
+          "revision": "HEAD",
+          "startLine": 354,
+          "code": [
+            "\t * @see org.openmrs.api.db.ConceptDAO#saveDrug(org.openmrs.Drug)",
+            "\t */",
+            "\t@Override",
+            "\tpublic Drug saveDrug(Drug drug) throws DAOException {",
+            "\t\treturn HibernateUtil.saveOrUpdate(sessionFactory.getCurrentSession(), drug);",
+            "\t}",
+            ""
+          ],
+          "highlightedLines": [
+            357
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/DrugResource1_8.java",
+          "revision": "HEAD",
+          "startLine": 63,
+          "code": [
+            "\t/**",
+            "\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceHandler#save(Object)",
+            "\t */",
+            "\t@Override",
+            "\tpublic Drug save(Drug delegate) {",
+            "\t\treturn Context.getConceptService().saveDrug(delegate);",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#purge(Object,"
+          ],
+          "highlightedLines": [
+            66,
+            67,
+            68,
+            69
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/DrugReferenceMapResource1_10.java",
+          "revision": "HEAD",
+          "startLine": 41,
+          "code": [
+            "\t\treturn new DrugReferenceMap();",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic DrugReferenceMap save(DrugReferenceMap delegate) {",
+            "\t\tdelegate.getDrug().addDrugReferenceMap(delegate);",
+            "\t\tContext.getConceptService().saveDrug(delegate.getDrug());",
+            "\t\treturn delegate;",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic DrugReferenceMap getByUniqueId(String uniqueId) {"
+          ],
+          "highlightedLines": [
+            44,
+            45,
+            46,
+            47,
+            48,
+            49
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/DrugIngredientResource1_11.java",
+          "revision": "HEAD",
+          "startLine": 166,
+          "code": [
+            "\t/**",
+            "\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceHandler#save(Object)",
+            "\t */",
+            "\t@Override",
+            "\tpublic DrugIngredient save(DrugIngredient newIngredient) {",
+            "\t\t// make sure that the ingredient has actually been added to the drug",
+            "\t\tboolean needToAdd = true;",
+            "\t\tfor (DrugIngredient di : newIngredient.getDrug().getIngredients()) {",
+            "\t\t\tif (di.equals(newIngredient)) {",
+            "\t\t\t\tneedToAdd = false;",
+            "\t\t\t\tbreak;",
+            "\t\t\t}",
+            "\t\t}",
+            "\t\tif (needToAdd) {",
+            "\t\t\tnewIngredient.getDrug().getIngredients().add(newIngredient);",
+            "\t\t}",
+            "\t\t",
+            "\t\tContext.getConceptService().saveDrug(newIngredient.getDrug());",
+            "\t\treturn newIngredient;",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * Gets the display string for a concept name."
+          ],
+          "highlightedLines": [
+            169,
+            170,
+            171,
+            172,
+            173,
+            174,
+            175,
+            176,
+            177,
+            178,
+            179,
+            180,
+            181,
+            182,
+            183,
+            184,
+            185
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/DrugIngredientResource1_11.java",
+          "revision": "HEAD",
+          "startLine": 155,
+          "code": [
+            "\t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#purge(Object,",
+            "\t *      RequestContext)",
+            "\t */",
+            "\t@Override",
+            "\tpublic void purge(DrugIngredient ingredient, RequestContext context) throws ResponseException {",
+            "\t\tDrug drug = ingredient.getDrug();",
+            "\t\tdrug.getIngredients().remove(ingredient);",
+            "\t\tingredient.setDrug(null);",
+            "\t\tContext.getConceptService().saveDrug(drug);",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceHandler#save(Object)"
+          ],
+          "highlightedLines": [
+            158,
+            159,
+            160,
+            161,
+            162,
+            163,
+            164
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/DrugController1_10Test.java",
+          "revision": "HEAD",
+          "startLine": 130,
+          "code": [
+            "\t\tString drugUuid = \"8e2323fa-0fa0-461f-9b59-6765997d849d\";",
+            "\t\tDrug drug = conceptService.getDrugByUuid(drugUuid);",
+            "\t\tdrug.setStrength(\"full\");",
+            "\t\tconceptService.saveDrug(drug);",
+            "\t\tSimpleObject result = deserialize(handle(newGetRequest(getURI() + \"/\" + drugUuid)));",
+            "\t\tassertThat(\"full\", Matchers.is(PropertyUtils.getProperty(result, \"strength\")));",
+            "\t}",
+            "\t",
+            "\t@Test",
+            "\tpublic void shouldIncludeStrengthInFullRepresentation() throws Exception {",
+            "\t\texecuteDataSet(DRUG_SEARCH_TEST_DATA);",
+            "\t\tString drugUuid = \"8e2323fa-0fa0-461f-9b59-6765997d849d\";",
+            "\t\tDrug drug = conceptService.getDrugByUuid(drugUuid);",
+            "\t\tdrug.setStrength(\"full\");",
+            "\t\tconceptService.saveDrug(drug);",
+            "\t\tSimpleObject result = deserialize(handle(newGetRequest(getURI() + \"/\" + drugUuid, new Parameter(\"v\", \"full\"))));",
+            "\t\tassertThat(\"full\", Matchers.is(PropertyUtils.getProperty(result, \"strength\")));",
+            "\t}"
+          ],
+          "highlightedLines": [
+            133,
+            134,
+            135,
+            136,
+            137,
+            138,
+            139,
+            140,
+            141,
+            142,
+            143,
+            144
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/DrugResource1_8.java",
+          "revision": "HEAD",
+          "startLine": 36,
+          "code": [
+            "/**",
+            " * {@link Resource} for {@link Drug}, supporting standard CRUD operations",
+            " */",
+            "@Resource(name = RestConstants.VERSION_1 + \"/drug\", supportedClass = Drug.class, supportedOpenmrsVersions = { \"1.8.* - 1.9.*\" })",
+            "public class DrugResource1_8 extends MetadataDelegatingCrudResource<Drug> {",
+            "",
+            "\t@Override",
+            "\tpublic String getRequiredGetPrivilege() {"
+          ],
+          "highlightedLines": [
+            39,
+            40
+          ]
+        },
+        {
+          "id": 11,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_10/DrugResource1_10.java",
+          "revision": "HEAD",
+          "startLine": 26,
+          "code": [
+            " * {@link Resource} for {@link Drug},",
+            " * supporting standard CRUD operations",
+            " */",
+            "@Resource(name = RestConstants.VERSION_1 + \"/drug\", order = 3, supportedClass = Drug.class, supportedOpenmrsVersions = { \"1.10.*\" })",
+            "public class DrugResource1_10 extends DrugResource1_8 {",
+            "\t",
+            "\t/**",
+            "\t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#getResourceVersion()"
+          ],
+          "highlightedLines": [
+            29,
+            30
+          ]
+        },
+        {
+          "id": 12,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/DrugResource1_11.java",
+          "revision": "HEAD",
+          "startLine": 27,
+          "code": [
+            "/**",
+            " * {@link Resource} for {@link Drug}, supporting standard CRUD operations",
+            " */",
+            "@Resource(name = RestConstants.VERSION_1 + \"/drug\", order = 2, supportedClass = Drug.class, supportedOpenmrsVersions = {",
+            "        \"1.11.*\" })",
+            "public class DrugResource1_11 extends DrugResource1_10 {",
+            "\t",
+            "\t/**",
+            "\t * Sets ingredients on the given Drug."
+          ],
+          "highlightedLines": [
+            30,
+            31,
+            32
+          ]
+        },
+        {
+          "id": 13,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_12/DrugResource1_12.java",
+          "revision": "HEAD",
+          "startLine": 22,
+          "code": [
+            "/**",
+            " * {@link Resource} for {@link Drug}, supporting standard CRUD operations",
+            " */",
+            "@Resource(name = RestConstants.VERSION_1 + \"/drug\", order = 1, supportedClass = Drug.class, supportedOpenmrsVersions = {",
+            "        \"1.12.* - 9.*\" })",
+            "public class DrugResource1_12 extends DrugResource1_11 {",
+            "\t",
+            "\t/**",
+            "\t * @see DelegatingCrudResource#getRepresentationDescription(Representation)"
+          ],
+          "highlightedLines": [
+            25,
+            26,
+            27
+          ]
+        },
+        {
+          "id": 14,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/DrugResource1_11.java",
+          "revision": "HEAD",
+          "startLine": 37,
+          "code": [
+            "\t * @param instance",
+            "\t * @param ingredients",
+            "\t */",
+            "\t@PropertySetter(\"ingredients\")",
+            "\tpublic static void setIngredients(Drug instance, List<DrugIngredient> ingredients) {",
+            "\t\tfor (DrugIngredient ingredient : ingredients) {",
+            "\t\t\tingredient.setDrug(instance);",
+            "\t\t}",
+            "\t\tinstance.setIngredients(ingredients);",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * @see DelegatingCrudResource#getRepresentationDescription(Representation)"
+          ],
+          "highlightedLines": [
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46
+          ]
+        },
+        {
+          "id": 15,
+          "productId": "openmrs",
+          "generation": "g-b59a21",
+          "repository": "github.com/openmrs/openmrs-module-webservices.rest",
+          "path": "omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/DrugResource1_11.java",
+          "revision": "HEAD",
+          "startLine": 75,
+          "code": [
+            "\t/**",
+            "\t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#getPropertiesToExposeAsSubResources()",
+            "\t */",
+            "\t@Override",
+            "\tpublic List<String> getPropertiesToExposeAsSubResources() {",
+            "\t\treturn Arrays.asList(\"ingredients\");",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#getResourceVersion()"
+          ],
+          "highlightedLines": [
+            78,
+            79,
+            80,
+            81
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}

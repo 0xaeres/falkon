@@ -5,7 +5,7 @@ import { ANSWER_TAG, FILE_REFERENCE_REGEX, REPLY_TAG } from "./prompt";
 // data-evidence (cited source windows) and data-answer (paragraphs, citations, kind). Pure apart from `readFile`.
 // The shapes are @falkon/contracts' evidenceSchema and answerPartSchema; evidence.test.ts validates against them.
 
-export const MAX_EVIDENCE = 12;
+export const MAX_EVIDENCE = 40;
 const CONTEXT = 3;
 const MAX_WINDOW = 60;
 const DEFAULT_WINDOW = 30;
@@ -65,6 +65,21 @@ function paragraphs(text: string) {
   return out;
 }
 
+/** Keeps the text before the first marker line that follows some text (reply or answer tag, outside fences): after it the model writes a shorter duplicate summary, and the first block is the grounded one. */
+function firstAnswer(text: string) {
+  const kept: string[] = [];
+  let open = false;
+  for (const line of text.split("\n")) {
+    if (FENCE.test(line)) open = !open;
+    if (!open && (line.trim() === REPLY_TAG || line.trim() === ANSWER_TAG)) {
+      if (kept.join("").trim()) break; // a leading run of marker lines is skipped, not cut at
+      continue;
+    }
+    kept.push(line);
+  }
+  return kept.join("\n").trim();
+}
+
 function windowOf(content: string, range?: { start: number; end: number }): Window | undefined {
   const lines = content.length === 0 ? [] : content.replace(/\n$/, "").split("\n");
   if (!lines.length) return undefined;
@@ -90,7 +105,7 @@ export async function buildEvidence(i: EvidenceInput): Promise<Part[]> {
   // The marker counts only as the first line, exactly; anywhere else (prose, a fence, a quote) it is ordinary text.
   const firstLine = body.split("\n", 1)[0]!;
   const marked = firstLine.trim() === REPLY_TAG;
-  const answer = marked ? body.slice(firstLine.length).trim() : body;
+  const answer = firstAnswer(marked ? body.slice(firstLine.length) : body);
   const files = new Map<string, ToolSource>();
   for (const s of i.sources) if (s.type === "file" && !files.has(`${s.repo}\0${s.path}`)) files.set(`${s.repo}\0${s.path}`, s);
 
