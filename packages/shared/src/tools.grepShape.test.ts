@@ -33,21 +33,25 @@ const grep = (args: Record<string, unknown>) => toolDefinitions.grep.execute({ p
 const many = (n: number, lines = 1) => Array.from({ length: n }, (_, i) => file(`f${String(i).padStart(3, "0")}.ts`, lines));
 const fileHeaders = (out: string) => out.split("\n").filter((l) => l.startsWith("[")).length;
 
-test("more than 30 files: shows 30 and a 'more files' line; sources keep every file", async () => {
+test("more than 30 files: shows 30 and a 'more files' line; sources list only the shown files", async () => {
   hits = many(45);
   const r = await grep({});
   assert.equal(fileHeaders(r.output), 30);
-  assert.match(r.output, /\n\(15 more files; narrow the path, pattern or repo, or raise the limit\)/);
-  assert.equal(r.sources!.length, 45);
+  assert.match(r.output, /\n\(15 more files; narrow the path, pattern or repo\)/);
+  const paths = (r.sources as { path: string }[]).map((s) => s.path);
+  assert.equal(paths.length, 30);
+  assert.ok(paths.includes("f029.ts") && !paths.includes("f030.ts"), "a file past the cut is not a source");
 });
 
-test("limit raises the file count, never above the ceiling of 50", async () => {
+test("limit is the search's match cap, not the shown-file count: 30 files stay shown and the notice does not say raise", async () => {
   hits = many(70);
-  assert.equal(fileHeaders((await grep({ limit: 40 })).output), 40);
-  const r = await grep({ limit: 100 });
-  assert.equal(fileHeaders(r.output), 50);
-  assert.match(r.output, /\(20 more files;/);
-  assert.equal(r.sources!.length, 70);
+  for (const limit of [10, 40, 100]) {
+    const r = await grep({ limit });
+    assert.equal(fileHeaders(r.output), 30);
+    assert.match(r.output, /\(40 more files; narrow the path, pattern or repo\)/);
+    assert.doesNotMatch(r.output, /raise/);
+    assert.equal(r.sources!.length, 30);
+  }
 });
 
 test("more than 20 lines in a file: shows 20 and a per-file '(N more lines)' line, in Zoekt order", async () => {

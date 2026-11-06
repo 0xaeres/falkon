@@ -32,7 +32,7 @@ export function modelText(output: unknown, tool?: string): string {
 const STUBBED_TOOLS = new Set(["grep", "glob", "list_tree"]);
 const KEEP_STEPS = 3;
 
-/** The model's copy of the conversation with `grep`, `glob` and `list_tree` results older than the last three steps (one tool message each) cut to a stub line (D193); `read_file`, git and history results are never stubbed, and a stub that would not be smaller leaves the result whole. */
+/** The model's copy of the conversation with `grep`, `glob` and `list_tree` results older than the last three steps (one tool message each) cut to a stub line (D193); `read_file`, git and history results are never stubbed, an error result is never stubbed, and a stub that would not be smaller leaves the result whole. */
 export function stubOldSearchResults(messages: ModelMessage[]): ModelMessage[] {
   const inputs = new Map(messages.flatMap((m) => (m.role === "assistant" && Array.isArray(m.content) ? m.content : [])).flatMap((p) => (p.type === "tool-call" ? [[p.toolCallId, p.input] as const] : [])));
   let old = messages.filter((m) => m.role === "tool").length - KEEP_STEPS;
@@ -41,14 +41,14 @@ export function stubOldSearchResults(messages: ModelMessage[]): ModelMessage[] {
     return {
       ...m,
       content: m.content.map((p) => {
-        if (p.type !== "tool-result" || !STUBBED_TOOLS.has(p.toolName)) return p;
+        if (p.type !== "tool-result" || !STUBBED_TOOLS.has(p.toolName) || p.output.type === "error-text") return p; // an error hint may be what the model needs
         const o = p.output;
-        const text = o.type === "content" ? o.value.map((v) => (v.type === "text" ? v.text : "")).join("") : o.type === "text" || o.type === "error-text" ? o.value : undefined;
+        const text = o.type === "content" ? o.value.map((v) => (v.type === "text" ? v.text : "")).join("") : o.type === "text" ? o.value : undefined;
         if (text === undefined) return p;
         const size = Buffer.byteLength(text);
         const stub = `[${p.toolName} ${JSON.stringify(inputs.get(p.toolCallId))}: ${size} bytes; rerun to see]`;
         if (Buffer.byteLength(stub) >= size) return p;
-        return { ...p, output: o.type === "error-text" ? { type: "error-text" as const, value: stub } : { type: "text" as const, value: stub } };
+        return { ...p, output: { type: "text" as const, value: stub } };
       }),
     };
   });

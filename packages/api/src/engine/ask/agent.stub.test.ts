@@ -51,12 +51,11 @@ test("a result smaller than its stub stays whole", () => {
   assert.equal(texts(stubOldSearchResults(ms))[0], "no matches");
 });
 
-test("an error result is stubbed only when bigger than the stub, and stays an error", () => {
+test("an error result is never stubbed, however big", () => {
   const ms = [head, ...step(0, [{ tool: "grep", input: {}, out: "boom", error: true }]), ...step(1, [{ tool: "grep", input: {}, out: big("e"), error: true }]), ...[2, 3, 4].flatMap((i) => step(i, [{ tool: "grep", input: {}, out: "x" }]))];
   const got = stubOldSearchResults(ms).filter((m) => m.role === "tool").map((m) => (m.content as { output: { type: string; value: string } }[])[0]!.output);
   assert.deepEqual(got[0], { type: "error-text", value: "boom" });
-  assert.equal(got[1]!.type, "error-text");
-  assert.match(got[1]!.value, /^\[grep \{\}: 500 bytes; rerun to see\]$/);
+  assert.deepEqual(got[1], { type: "error-text", value: big("e") });
 });
 
 // ---- mock run ----

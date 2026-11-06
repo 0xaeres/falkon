@@ -1078,6 +1078,16 @@ Expected saving, stated before any measurement and to be replaced by S98 numbers
 
 Order: S98, then S99 and S100 (S100 after S99 for the shared `agent.ts`, or parallel in worktrees), then S101, then S102 after the human's go-ahead.
 
+### Cycle 23 results (built on `claude/nostalgic-margulis-051f18`; awaiting gate 2; paid pilot S102 not run)
+
+- **S98 kept.** Per-step log line and `steps` plus `totalCachedInputTokens` on message metadata; `live-chat/prefix.ts` prints fixed-prefix sizes; `tok.js` reads `steps`.
+- **S99 kept, shortening not done.** History and git tools and their two recipes are offered only when `isHistoryQuery` matches any user message of the chat; fixed prefix for a code question 49,277 B to 20,231 B (about 12.3k to 5.1k tokens, 59%). Shortening tool text was not done: `tests/contract/registration*.json` pin the shared descriptions (needs a human ruling: a chat-only text layer, or amend the pins).
+- **S100 kept (one fix round, plus a review round).** 16 KB cap on every tool result the model sees (`get_diff` exempt: own 30,000-byte cut); `grep` shows at most 30 files and 20 lines per file and lists only shown files as sources; step cap 30 with a forced answer on the last step. The shaping is in the shared `grep`, so MCP `grep` output is bounded the same way (needs the human's confirmation).
+- **S101 kept.** `grep`, `glob`, `list_tree` results older than the last three tool steps become a one-line stub in the model copy only; reads, git, history and error results are never stubbed.
+- Review (one reviewer on the whole diff): 3 blocking findings (`limit` coupling, grep sources, MCP output change), all fixed or documented; non-blocking left: wide history word list, stubbing breaks a provider prefix cache from the stubbed message on (measure in S102), per-step log noise, `stepCapHit` true when a run ends exactly at the cap.
+- Checks at the tip: typecheck pass; api 306 pass 0 fail (14 skipped); shared 306 pass 0 fail; contracts 25 pass; originality unit tests 7 pass; originality scan not run (needs `ORIGINALITY_REF_DIR`; `agent.ts` added to its file list). No dependency, no snapshot change.
+- Open for the human: run the originality scan; rule on the MCP `grep` effect; chat-only tool text shortening; go-ahead for S102 (cap $0.95).
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).

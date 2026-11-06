@@ -166,9 +166,8 @@ async function toolSearch(ctx: ToolContext, q: Q, matches: number): Promise<Sear
 const actualMatches = (r: SearchResponse) => r.files.reduce((n, f) => n + f.chunks.reduce((m, c) => m + c.matchRanges.length, 0) + f.fileNameRanges.length, 0);
 
 const TRUNCATED_GREP = "(Output was cut short: narrow the path or pattern, name a repo, or raise the limit.)";
-/** Non-grouped grep output bounds (D191): files shown by default, the most `limit` may raise that to, and lines per file. */
+/** Non-grouped grep output bounds (D191): files shown and lines per file. `limit` stays the search's match cap. */
 const GREP_MAX_FILES = 30;
-const GREP_FILE_CEILING = 50;
 const GREP_MAX_LINES_PER_FILE = 20;
 const TRUNCATED_GLOB = "(Output was cut short: narrow the pattern, name a repo, or raise the limit.)";
 
@@ -205,16 +204,16 @@ const grep = define({
     }
     const n = actualMatches(r);
     const out = [`Found ${n} match${n !== 1 ? "es" : ""} in ${r.files.length} file${r.files.length !== 1 ? "s" : ""}`];
-    const shown = r.files.slice(0, Math.min(limit ?? GREP_MAX_FILES, GREP_FILE_CEILING));
+    const shown = r.files.slice(0, GREP_MAX_FILES);
     for (const f of shown) {
       out.push("", `[${f.repo}] ${f.path}:`);
       const lines = f.chunks.flatMap((c) => c.content.split("\n").flatMap((line, i) => (line.trim() ? [`  ${c.contentStart.lineNumber + i}: ${truncateLine(line)}`] : [])));
       out.push(...lines.slice(0, GREP_MAX_LINES_PER_FILE));
       if (lines.length > GREP_MAX_LINES_PER_FILE) out.push(`  (${lines.length - GREP_MAX_LINES_PER_FILE} more lines)`);
     }
-    if (shown.length < r.files.length) out.push("", `(${r.files.length - shown.length} more files; narrow the path, pattern or repo, or raise the limit)`);
+    if (shown.length < r.files.length) out.push("", `(${r.files.length - shown.length} more files; narrow the path, pattern or repo)`);
     if (!r.isSearchExhaustive) out.push("", TRUNCATED_GREP);
-    return { output: out.join("\n"), sources: r.files.map((f) => fileSource(f.repo, f.path, ref ?? "HEAD")) };
+    return { output: out.join("\n"), sources: shown.map((f) => fileSource(f.repo, f.path, ref ?? "HEAD")) };
   },
 });
 
