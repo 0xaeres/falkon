@@ -4,6 +4,7 @@ import { toolDeps } from "../tools";
 import { familyOn } from "../toolFamily";
 import { answerPart } from "./answer";
 import { aiModel, type LanguageModelConfig } from "./models";
+import { isHistoryQuery } from "./recipes";
 import { dynamicPrompt, STATIC_PROMPT, type Audience } from "./prompt";
 
 const MAX_STEPS = () => Number(process.env.FALKON_CHAT_MAX_STEP_COUNT ?? 100);
@@ -25,10 +26,12 @@ export function chatToolDefinitions(): [string, AnyToolDefinition][] {
   return [...core, ...all.filter(([n]) => !(CORE_TOOL_ORDER as readonly string[]).includes(n))];
 }
 
-/** The agent's tools: the shared definitions, scoped to the caller and the chat's selected repos. */
-export function agentTools(scope: Scope, selectedRepos: string[], onSource: (s: ToolSource) => void) {
+const HISTORY_FAMILY: readonly string[] = [...historyToolNames, ...gitToolNames];
+
+/** The agent's tools: the shared definitions, scoped to the caller and the chat's selected repos. `history: false` drops the pull request and git tools (D194). */
+export function agentTools(scope: Scope, selectedRepos: string[], onSource: (s: ToolSource) => void, history = true) {
   return Object.fromEntries(
-    chatToolDefinitions().map(([name, d]) => {
+    chatToolDefinitions().filter(([n]) => history || !HISTORY_FAMILY.includes(n)).map(([name, d]) => {
       return [
         name,
         tool({
@@ -117,7 +120,9 @@ export async function createMessageStream(o: {
   const { model, temperature } = await aiModel(o.model);
   const repos = [...o.selectedRepos].sort((a, b) => a.localeCompare(b));
   const query = o.messages.findLast((m) => m.role === "user")?.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ");
-  const dyn = dynamicPrompt({ repos, files: await mentionedFiles(o.messages, o.scope), query, diagrams: o.diagrams, audience: o.audience });
+  // History tools and recipes go with the whole conversation's user text (not only the last message), so a follow-up in a history chat keeps them.
+  const history = isHistoryQuery(o.messages.filter((m) => m.role === "user").flatMap((m) => m.parts.map((p) => (p.type === "text" ? p.text : ""))).join("\n"));
+  const dyn = dynamicPrompt({ repos, files: await mentionedFiles(o.messages, o.scope), query, diagrams: o.diagrams, audience: o.audience, history });
   return createUIMessageStream({
     originalMessages: o.messages,
     onFinish: async ({ messages }) => o.onFinish?.(messages),
@@ -130,7 +135,7 @@ export async function createMessageStream(o: {
         model,
         system: [{ role: "system", content: STATIC_PROMPT }, ...(dyn ? [{ role: "system" as const, content: dyn }] : [])],
         messages: modelMessages(o.messages),
-        tools: agentTools(o.scope, repos, (data) => (sources.push(data), writer.write({ type: "data-source", data }))),
+        tools: agentTools(o.scope, repos, (data) => (sources.push(data), writer.write({ type: "data-source", data })), history),
         temperature,
         abortSignal: o.abortSignal,
         stopWhen: [({ steps }) => steps.length >= MAX_STEPS()],

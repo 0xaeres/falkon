@@ -10,3 +10,16 @@ export const HISTORY_RECIPE = `The pull request and ticket tools are on, so for 
 - When you start from a commit, a pull request or a ticket, call get_provenance to reach the other two.
 - An empty ticket list on a pull request is not proof that no ticket exists: keys can sit in comments. Say what you read.
 - Pull request numbers, commit SHAs and ticket keys are plain text in the answer; only @file references are checked. State which of them you actually read.`;
+
+/** Words that make a conversation about history: commits, pull requests, tickets, who or when, releases. A plain "why" or "how" is not one. */
+const HISTORY_WORDS = /\b(commits?|pull requests?|prs?|tickets?|issues?|blame|histor(?:y|ical)|changed|changelog|diffs?|revisions?|releases?|released|branch(?:es)?|tags?|authors?|authored|contributors?|regressions?|introduced|merged|reverted|git|sha|who (?:wrote|added|removed|changed|introduced|touched|authored)|when (?:was|did|were)|why (?:was|did|were)|last (?:modified|updated|touched))\b/i;
+/** A ticket key such as PAY-123 (case-sensitive, so "pay-123" is not one). ponytail: also matches "SHA-256" or "UTF-8", which only costs the tool text. */
+const ISSUE_KEY = /\b[A-Z][A-Z0-9]+-\d+\b/;
+
+/**
+ * True when a question is about history. The chat offers the ten pull request and git tools and their two recipes only then (D194),
+ * so a code question does not pay for their text on every step. A false positive costs tokens, a false negative hides the tools,
+ * so the list errs wide. The caller passes the text of ALL user messages of the conversation, not only the last: a follow-up
+ * such as "and who wrote it?" or "what about the second one?" in a history chat keeps the tools.
+ */
+export const isHistoryQuery = (userText: string) => HISTORY_WORDS.test(userText) || ISSUE_KEY.test(userText);

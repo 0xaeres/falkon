@@ -132,7 +132,7 @@ The reader is another program or agent that will act on your answer. Be terse an
 };
 
 /** Per-chat context: selected repos and files the user mentioned. */
-export function dynamicPrompt({ repos, files, query, diagrams, audience }: { repos: string[]; files: { path: string; repo: string; language: string; revision: string; source: string }[]; query?: string; diagrams?: boolean; audience: Audience }) {
+export function dynamicPrompt({ repos, files, query, diagrams, audience, history = true }: { repos: string[]; files: { path: string; repo: string; language: string; revision: string; source: string }[]; query?: string; diagrams?: boolean; audience: Audience; /** False for a question that is not about history: the two history recipes are left out (the matching tools are filtered in agentTools). */ history?: boolean }) {
   const parts: string[] = [];
   if (repos.length > 0) {
     parts.push(d`
@@ -164,8 +164,8 @@ export function dynamicPrompt({ repos, files, query, diagrams, audience }: { rep
   parts.push(RENDER_PROMPT, REPLY_PROMPT);
   if (diagrams) parts.push(DIAGRAM_PROMPT);
   parts.push(AUDIENCE_PROMPT[audience]);
-  if (familyOn("MCP_HISTORY_TOOLS")) parts.push(HISTORY_RECIPE);
-  if (familyOn("MCP_GIT_TOOLS")) parts.push(GIT_BRIEF_RECIPES);
+  if (history && familyOn("MCP_HISTORY_TOOLS")) parts.push(HISTORY_RECIPE);
+  if (history && familyOn("MCP_GIT_TOOLS")) parts.push(GIT_BRIEF_RECIPES);
   // The recipe goes in this per-chat part, not STATIC_PROMPT: the static part stays byte-identical and prompt-cached, and only this part can see the question.
   if (query !== undefined && isImpactQuery(query)) parts.push(IMPACT_PROMPT);
   return parts.join("\n\n");
