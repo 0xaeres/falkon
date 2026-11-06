@@ -1,4 +1,4 @@
-import { createUIMessageStream, jsonSchema, NoSuchToolError, streamText, tool, type ModelMessage, type UIMessage } from "ai";
+import { createUIMessageStream, jsonSchema, NoSuchToolError, streamText, tool, type ModelMessage, type StepResult, type ToolSet, type UIMessage } from "ai";
 import { gitRead, gitToolDefinitions, gitToolNames, historyToolDefinitions, historyToolNames, toolDefinitions, toolJsonSchema, toolNames, type AnyToolDefinition, type Scope, type ToolSource } from "@falkon/shared";
 import { toolDeps } from "../tools";
 import { familyOn } from "../toolFamily";
@@ -52,6 +52,20 @@ export function agentTools(scope: Scope, selectedRepos: string[], onSource: (s: 
       ];
     }),
   );
+}
+
+/** One step's cost: tokens (0 when the provider reports none) and the UTF-8 bytes of each tool result text the model sees next. */
+export interface StepRecord { in: number; cached: number; out: number; toolBytes: { tool: string; bytes: number }[] }
+
+export function stepRecord(step: StepResult<ToolSet>): StepRecord {
+  const u = step.usage;
+  const toolBytes = step.content.flatMap((c) => {
+    if (c.type === "tool-error") return [{ tool: c.toolName, bytes: Buffer.byteLength(c.error instanceof Error ? c.error.message : String(c.error)) }];
+    if (c.type !== "tool-result") return [];
+    const out = (c.output as { output?: unknown } | undefined)?.output;
+    return [{ tool: c.toolName, bytes: Buffer.byteLength(typeof out === "string" ? out : JSON.stringify(c.output) ?? "") }];
+  });
+  return { in: u.inputTokens ?? 0, cached: u.inputTokenDetails?.cacheReadTokens ?? u.cachedInputTokens ?? 0, out: u.outputTokens ?? 0, toolBytes };
 }
 
 /** Model input for a conversation: user text, and only the answer part of earlier assistant turns. */
@@ -111,6 +125,7 @@ export async function createMessageStream(o: {
       writer.write({ type: "start" });
       const started = Date.now();
       const sources: ToolSource[] = [];
+      const steps: StepRecord[] = [];
       const result = streamText({
         model,
         system: [{ role: "system", content: STATIC_PROMPT }, ...(dyn ? [{ role: "system" as const, content: dyn }] : [])],
@@ -127,6 +142,11 @@ export async function createMessageStream(o: {
             if (lower !== toolCall.toolName && lower in tools) return { ...toolCall, toolName: lower };
           }
           return null;
+        },
+        onStepFinish: (step) => {
+          const r = stepRecord(step);
+          steps.push(r);
+          console.log(`[ask] step ${steps.length} in=${r.in} cached=${r.cached} out=${r.out} tools=${r.toolBytes.map((t) => `${t.tool}:${t.bytes}`).join(",")}`);
         },
         onError: ({ error }) => console.error("[ask]", error),
       });
@@ -147,6 +167,8 @@ export async function createMessageStream(o: {
           totalOutputTokens: usage.outputTokens ?? 0,
           totalResponseTimeMs: Date.now() - started,
           modelName: o.model.displayName ?? o.model.model,
+          steps,
+          totalCachedInputTokens: steps.reduce((n, s) => n + s.cached, 0),
         },
       });
       writer.write({ type: "finish" });

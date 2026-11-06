@@ -4,7 +4,7 @@ import http from "node:http";
 import type { AddressInfo } from "node:net";
 
 /** One model response: text, a tool call, or text that starts and waits: for `rest` to end it, or forever (for abort tests); or text and then an error event (a model failure mid-answer). */
-export type Turn = { text: string } | { tool: string; args: unknown } | { hang: string; rest?: Promise<string> } | { fail: string };
+export type Turn = ({ text: string } | { tool: string; args: unknown }) & { usage?: { in: number; cached?: number; out: number } } | { hang: string; rest?: Promise<string> } | { fail: string };
 
 export async function fakeOpenAi(initial: Turn[] = [], title: string | null = "A title") {
   let turns = initial;
@@ -28,6 +28,7 @@ export async function fakeOpenAi(initial: Turn[] = [], title: string | null = "A
     res.writeHead(200, { "content-type": "text/event-stream" });
     open.add(res);
     res.on("close", () => open.delete(res));
+    const u = "usage" in turn ? turn.usage : undefined;
     const send = (delta: object, finish: string | null = null) => res.write(`data: ${JSON.stringify({ ...base, choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
     if ("fail" in turn) {
       send({ role: "assistant", content: turn.fail });
@@ -44,7 +45,7 @@ export async function fakeOpenAi(initial: Turn[] = [], title: string | null = "A
       send({ role: "assistant", tool_calls: [{ index: 0, id: `call_${next}`, type: "function", function: { name: turn.tool, arguments: JSON.stringify(turn.args) } }] });
       send({}, "tool_calls");
     }
-    res.write(`data: ${JSON.stringify({ ...base, choices: [], usage: { prompt_tokens: 3, completion_tokens: 4, total_tokens: 7 } })}\n\ndata: [DONE]\n\n`);
+    res.write(`data: ${JSON.stringify({ ...base, choices: [], usage: { prompt_tokens: u?.in ?? 3, completion_tokens: u?.out ?? 4, total_tokens: (u?.in ?? 3) + (u?.out ?? 4), ...(u?.cached === undefined ? {} : { prompt_tokens_details: { cached_tokens: u.cached } }) } })}\n\ndata: [DONE]\n\n`);
     res.end();
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
