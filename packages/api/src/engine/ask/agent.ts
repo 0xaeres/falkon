@@ -7,7 +7,27 @@ import { aiModel, type LanguageModelConfig } from "./models";
 import { isHistoryQuery } from "./recipes";
 import { dynamicPrompt, STATIC_PROMPT, type Audience } from "./prompt";
 
-const MAX_STEPS = () => Number(process.env.FALKON_CHAT_MAX_STEP_COUNT ?? 100);
+const MAX_STEPS = () => Number(process.env.FALKON_CHAT_MAX_STEP_COUNT ?? 30);
+
+/** The most bytes of one tool result the model sees (D191). Sources sent to the UI are not capped. */
+export const MODEL_TOOL_OUTPUT_MAX_BYTES = 16_384;
+const NOTICE_RESERVE = 256;
+/** Tools that enforce their own, larger cut (get_diff: 30,000 bytes, middle removed, hidden files dropped from sources); the generic cut would remove the tail they keep and leave sources the model never saw. */
+const SELF_CUT_TOOLS = new Set(["get_diff"]);
+
+/** The text of a tool result as the model sees it: whole when within the cap, else cut at a line boundary (inside the line, at a character boundary, when one line is longer than the cap) plus a notice. */
+export function modelText(output: unknown, tool?: string): string {
+  const raw = (output as { output?: unknown } | undefined)?.output;
+  const full = typeof raw === "string" ? raw : JSON.stringify(output) ?? "";
+  const buf = Buffer.from(full);
+  if (buf.length <= MODEL_TOOL_OUTPUT_MAX_BYTES || (tool && SELF_CUT_TOOLS.has(tool))) return full;
+  const budget = MODEL_TOOL_OUTPUT_MAX_BYTES - NOTICE_RESERVE;
+  let end = buf.subarray(0, budget + 1).lastIndexOf(0x0a);
+  if (end <= 0) for (end = budget; end > 0 && (buf[end]! & 0xc0) === 0x80; end--); // inside one long line: back to a character start
+  const kept = buf.subarray(0, end).toString();
+  const lines = (s: string) => s.split("\n").length;
+  return `${kept}\n[output cut: ${buf.length - end} bytes, ${lines(full) - lines(kept)} lines dropped; narrow with path, pattern or repo, or read with offset and limit]`;
+}
 
 /** The first ten tools, in the order the model has always seen them; every other registered tool follows in registry order. */
 const CORE_TOOL_ORDER = ["read_file", "list_branches", "list_commits", "list_repos", "get_diff", "grep", "glob", "find_symbol_references", "find_symbol_definitions", "list_tree"] as const;
@@ -50,7 +70,7 @@ export function agentTools(scope: Scope, selectedRepos: string[], onSource: (s: 
             return r;
           },
           // The model sees only the text; sources go to the UI as data parts.
-          toModelOutput: ({ output }) => ({ type: "content", value: [{ type: "text", text: (output as { output: string }).output }] }),
+          toModelOutput: ({ output }) => ({ type: "content", value: [{ type: "text", text: modelText(output, name) }] }),
         }),
       ];
     }),
@@ -65,8 +85,7 @@ export function stepRecord(step: StepResult<ToolSet>): StepRecord {
   const toolBytes = step.content.flatMap((c) => {
     if (c.type === "tool-error") return [{ tool: c.toolName, bytes: Buffer.byteLength(c.error instanceof Error ? c.error.message : String(c.error)) }];
     if (c.type !== "tool-result") return [];
-    const out = (c.output as { output?: unknown } | undefined)?.output;
-    return [{ tool: c.toolName, bytes: Buffer.byteLength(typeof out === "string" ? out : JSON.stringify(c.output) ?? "") }];
+    return [{ tool: c.toolName, bytes: Buffer.byteLength(modelText(c.output, c.toolName)) }];
   });
   return { in: u.inputTokens ?? 0, cached: u.inputTokenDetails?.cacheReadTokens ?? u.cachedInputTokens ?? 0, out: u.outputTokens ?? 0, toolBytes };
 }
@@ -140,6 +159,8 @@ export async function createMessageStream(o: {
         abortSignal: o.abortSignal,
         stopWhen: [({ steps }) => steps.length >= MAX_STEPS()],
         toolChoice: "auto",
+        // The last allowed step may not call a tool, so a capped run still ends with an answer (D192).
+        prepareStep: ({ stepNumber }) => (stepNumber === MAX_STEPS() - 1 ? { toolChoice: "none" } : undefined),
         // A model that capitalises a tool name gets the lowercase tool.
         experimental_repairToolCall: async ({ toolCall, tools, error }) => {
           if (NoSuchToolError.isInstance(error)) {
