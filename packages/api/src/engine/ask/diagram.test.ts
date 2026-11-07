@@ -17,6 +17,8 @@ test("a valid archify block becomes a data-diagram part that matches the contrac
   const data = diagramPartSchema.parse(part!.data);
   assert.equal(data.type, "workflow");
   assert.match(data.html, /<svg/);
+  assert.doesNotMatch(data.html, /diagram-container/); // the compact page, not archify's viewer
+  assert.ok(data.html.length < 100_000, `${data.html.length} bytes`);
   assert.equal(data.source, example);
 });
 

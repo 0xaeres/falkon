@@ -23,6 +23,32 @@ export type ArchifyResult = { ok: true; type: ArchifyType; html: string } | { ok
 const hasRemoteBrand = (doc: Record<string, unknown>) =>
   Object.values(doc).some((v) => Array.isArray(v) && v.some((n) => n && typeof n === "object" && typeof (n as { brand?: unknown }).brand === "object" && (n as { brand?: unknown }).brand !== null));
 
+/** Layout limits models trip over, fixed before rendering: an unsized workflow node is 92px wide and the renderer rejects a
+ * label that overflows it (sized here to its longest line, about 7px a character, mono); sequence messages must start at y 160,
+ * and sequence participant boxes are a fixed 86px unless columns spread to the drawing's width. */
+const fitLayout = (doc: Record<string, unknown>) => {
+  if (doc.diagram_type === "workflow" && Array.isArray(doc.nodes))
+    return {
+      ...doc,
+      nodes: doc.nodes.map((n: Record<string, unknown>) => {
+        if (!n || typeof n !== "object" || n.width !== undefined) return n;
+        const chars = Math.max(...[n.label, n.sublabel].map((t) => (typeof t === "string" ? t.length : 0)));
+        return { ...n, width: Math.max(92, Math.ceil(chars * 7.2) + 28) };
+      }),
+    };
+  if (doc.diagram_type === "sequence" && Array.isArray(doc.messages)) {
+    const ys = doc.messages.map((m: { y?: unknown }) => m?.y).filter((y): y is number => typeof y === "number");
+    const shift = ys.length ? Math.max(0, 160 - Math.min(...ys)) : 0;
+    const meta = doc.meta as Record<string, unknown>;
+    return {
+      ...doc,
+      meta: { column_fit: "spread", ...meta },
+      messages: shift ? doc.messages.map((m: Record<string, unknown>) => (typeof m?.y === "number" ? { ...m, y: m.y + shift } : m)) : doc.messages,
+    };
+  }
+  return doc;
+};
+
 /** Fonts are about 90KB of every page; the viewer falls back to the system monospace stack. */
 const stripFonts = (html: string) => html.replace(/@font-face\s*\{[^}]*\}/g, "");
 
@@ -41,8 +67,9 @@ export async function renderArchify(source: string): Promise<ArchifyResult> {
   if (hasRemoteBrand(doc)) return { ok: false, reason: "remote brand marks are not allowed" };
   const meta = doc.meta && typeof doc.meta === "object" ? (doc.meta as Record<string, unknown>) : undefined;
   if (!meta) return { ok: false, reason: "missing meta" };
-  // The output path is required by the schema but only names the file; it is fixed here.
-  const input = { ...doc, meta: { ...meta, output: "diagram.html" } };
+  // The output path is required by the schema but only names the file; it is fixed here. Trace motion is always on.
+  const fitted = fitLayout(doc);
+  const input = { ...fitted, meta: { ...(fitted.meta as Record<string, unknown>), output: "diagram.html", animation: "trace" } };
   const dir = await mkdtemp(join(tmpdir(), "falkon-archify-"));
   try {
     const inPath = join(dir, "in.json");

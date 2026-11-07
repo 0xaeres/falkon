@@ -8,18 +8,19 @@ import { viewBoxOf } from "../src/features/chat/archify-block";
 const source = '{"schema_version":2,"diagram_type":"workflow","meta":{"title":"Loop"}}';
 const diagram: Diagram = {
   type: "workflow",
-  html: '<!doctype html><svg viewBox="0 0 800 400"></svg><script>window.x=1</script>',
+  html: '<!doctype html><html><head><style>.a{}</style></head><body><svg viewBox="0 0 800 400"></svg><script>window.x=1</script></body></html>',
   source,
 };
 const fence = "```archify\n" + source + "\n```";
 const render = (text: string, final = true, diagrams: Diagram[] = [diagram]) => renderToStaticMarkup(<Markdown text={text} final={final} diagrams={diagrams} />);
 
-test("a finished archify fence shows the rendered diagram in a sandboxed iframe with the toolbar", () => {
+test("a finished archify fence shows the compact diagram page in a sandboxed iframe with its title and controls", () => {
   const html = render(fence);
   assert.match(html, /<iframe[^>]*sandbox="allow-scripts"/);
-  assert.doesNotMatch(html, /allow-same-origin/);
-  assert.match(html, /srcDoc|srcdoc/i);
-  assert.match(html, /aspect-ratio:\s*800 \/ 540/);
+  assert.doesNotMatch(html, /sandbox="[^"]*allow-same-origin/);
+  assert.match(html, /aspect-ratio:\s*800 \/ 400/);
+  assert.match(html, />Loop</);
+  assert.doesNotMatch(html, /window\.x/); // the stored page's own script is not carried over
   for (const label of ["View source", "Copy source", "Download HTML", "Open full screen"]) assert.match(html, new RegExp(`aria-label="${label}"`));
 });
 
