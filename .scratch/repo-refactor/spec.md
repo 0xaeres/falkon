@@ -103,3 +103,11 @@ Every slice has a scope, runnable verify commands and an observable done conditi
 ## Gate 1
 
 Approved by the human on 2026-11-07 (all seven slices, limits and budget as written).
+
+## Cycle 1 results (slices S1 to S3 kept; landed on `main` 2026-11-07, human approved with +loop +project)
+
+- S1 `9ee75f5` (Falkon) and `58477b3` (falkon-eval), S2 `384cd30` (Falkon) and `cff93eb` (falkon-eval), S3 `e315195`. Baseline numbers are in `baseline.md`.
+- Open for cycle 2, unanswered at approval, so the digest's recommendations stand as defaults until the human says otherwise: add a Falkon-side test that the root `package.json` and shipped files carry no predecessor name (the eval harness's own check can no longer read Falkon); copy the recorded floor (`.scratch/falkon-mvp/eval-floor`, 84 files, about 3.2 MB) into `falkon-eval` so its tests run without `FALKON_DIR`; aim S7 at the chat route's first-load JavaScript (511 KB gzip) and the Docker image only, since request p95 is at most 11 ms.
+- Left in the main checkout, not deleted: `tests/eval/.local/` (three eval stack state directories with their tokens; regenerable with the harness's `stack up`, which now lives in `falkon-eval`).
+- Cycle 2 plan: S4 (multi-stage Dockerfile) and S5 (UI split) in parallel, then S6, then S7.
+
