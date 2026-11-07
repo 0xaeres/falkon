@@ -1,0 +1,920 @@
+data: {"type":"start","messageId":"M5Hzw96mx7Gyh5MW"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"'ll investigate how O3 frontend modules"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" declare configuration schemas, looking at both"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the docs and the implementation.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-1a6ee265-3493-4807-af4a-5411a9c76646","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-1a6ee265-3493-4807-af4a-5411a9c76646","inputTextDelta":"{\"pattern\": \"config-schema\", \"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\", \"limit\": 50}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-1a6ee265-3493-4807-af4a-5411a9c76646","toolName":"grep","input":{"pattern":"config-schema","repo":"github.com/openmrs/openmrs-contrib-o3-docs","limit":50}}
+
+data: {"type":"tool-input-start","toolCallId":"call-01616373-d9c4-4afb-92f1-114cdadaca5c","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-01616373-d9c4-4afb-92f1-114cdadaca5c","inputTextDelta":"{\"pattern\": \"config-schema\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"limit\": 60}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-01616373-d9c4-4afb-92f1-114cdadaca5c","toolName":"grep","input":{"pattern":"config-schema","repo":"github.com/openmrs/openmrs-esm-core","limit":60}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/core-concepts.mdx","name":"core-concepts.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/core-concepts.mdx","name":"core-concepts.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/key-repositories.mdx","name":"key-repositories.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/key-repositories.mdx","name":"key-repositories.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configure-o3/overview.mdx","name":"overview.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/configure-o3/overview.mdx","name":"overview.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/frontend-modules/overview.mdx","name":"overview.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/frontend-modules/overview.mdx","name":"overview.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/add-a-left-panel-to-o3.mdx","name":"add-a-left-panel-to-o3.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/recipes/add-a-left-panel-to-o3.mdx","name":"add-a-left-panel-to-o3.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/create-a-frontend-module.mdx","name":"create-a-frontend-module.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/recipes/create-a-frontend-module.mdx","name":"create-a-frontend-module.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/migration-guides/migrate-to-core-v5.mdx","name":"migrate-to-core-v5.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/migration-guides/migrate-to-core-v5.mdx","name":"migrate-to-core-v5.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/coding-conventions/code-organization.mdx","name":"code-organization.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/coding-conventions/code-organization.mdx","name":"code-organization.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/add-links-to-the-home-page-left-panel.mdx","name":"add-links-to-the-home-page-left-panel.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/recipes/add-links-to-the-home-page-left-panel.mdx","name":"add-links-to-the-home-page-left-panel.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/frontend-modules/unit-and-integration-testing.mdx","name":"unit-and-integration-testing.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/frontend-modules/unit-and-integration-testing.mdx","name":"unit-and-integration-testing.mdx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-1a6ee265-3493-4807-af4a-5411a9c76646","output":{"output":"Found 50 matches in 22 files\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/core-concepts.mdx:\n  86: - `src/config-schema.ts` - where the module’s configuration properties live\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/core-concepts.mdx:\n  91: - `src/config-schema.ts` - où se trouvent les propriétés de configuration du module\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/key-repositories.mdx:\n  52: By default, you'll see an active visits widget and a widget for the appointments scheduled for that day in the UI. The [configuration schema](https://github.com/openmrs/openmrs-esm-patient-management/blob/main/packages/esm-home-app/src/config-schema.ts) for the home app allows developers and implementers to configure which URL to navigate the user to after they click on a search result following a patient search. By default, the user will get navigated to the patient chart. The side menu and home dashboard expose extension slots into which dashboards from the [Patient Management](/docs/key-repositories#patient-management) repo plug into. These include dashboards for Appointments, Laboratory Patient Lists, Service Queues and Wards.\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/key-repositories.mdx:\n  52: Par défaut, vous verrez un widget de visites actives et un widget pour les rendez-vous programmés pour ce jour dans l'interface utilisateur. Le [schéma de configuration](https://github.com/openmrs/openmrs-esm-patient-management/blob/main/packages/esm-home-app/src/config-schema.ts) pour l'application home permet aux développeurs et aux implémenteurs de configurer quelle URL utiliser pour naviguer l'utilisateur après qu'ils cliquent sur un résultat de recherche suite à une recherche de patient. Par défaut, l'utilisateur sera dirigé vers le dossier patient. Le menu latéral et le tableau de bord d'accueil exposent des slots d'extension dans lesquels se branchent les tableaux de bord du dépôt [Patient management](/docs/key-repositories#gestion-des-patients). Ceux-ci incluent des tableaux de bord pour les Rendez-vous, les Listes de patients de laboratoire, les Files d'attente de service et les Services.\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/configuration-system.mdx:\n  283: import { configSchema } from \"./config-schema\";\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/configuration-system.mdx:\n  283: import { configSchema } from \"./config-schema\";\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/configure-o3/overview.mdx:\n  158: Per-app configuration is available in O3 via the built-in [configuration system](/docs/configuration-system). Each frontend module can define its own configuration schema in a `config-schema.ts` file inside its `src` directory. The following snippet is drawn from the Programs frontend module's config-schema:\n  160: ```tsx filename=\"src/config-schema.ts\"\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/configure-o3/overview.mdx:\n  158: La configuration par application est disponible dans O3 via le [système de configuration](/docs/configuration-system) intégré. Chaque module frontend peut définir son propre schéma de configuration dans un fichier `config-schema.ts` à l'intérieur de son répertoire `src`. L'extrait suivant est tiré du config-schema du module frontend Programs :\n  160: ```tsx filename=\"src/config-schema.ts\"\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/frontend-modules/overview.mdx:\n  62: - `config-schema.ts` - where the module's configuration properties live\n  76:         <FileTree.File name=\"config-schema.ts\" />\n  91:   - A `config-schema.ts` file that defines the module's configuration schema\n  203: import { configSchema } from \"./config-schema\";\n  314: - **Configuration schema** – `config-schema.ts` defines the module’s configurable options. The app shell loads and merges config at runtime, so changes here affect how implementers can tailor behavior. Learn more in the [Configuration system guide](/docs/configuration-system).\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/frontend-modules/overview.mdx:\n  55: - `config-schema.ts` - où vivent les propriétés de configuration du module\n  69:         <FileTree.File name=\"config-schema.ts\" />\n  84:   - Un fichier `config-schema.ts` qui définit le schéma de configuration du module\n  195: import { configSchema } from \"./config-schema\";\n  305: - **Schéma de configuration** – `config-schema.ts` définit les options configurables du module. L’app shell charge et fusionne la config au runtime, ce qui contrôle le comportement côté implémentation. Voir le [guide du système de configuration](/docs/configuration-system).\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/recipes/add-a-left-panel-to-o3.mdx:\n  132: import { configSchema } from \"./config-schema\";\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/recipes/add-a-left-panel-to-o3.mdx:\n  132: import { configSchema } from \"./config-schema\";\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/recipes/create-a-frontend-module.mdx:\n  76: - `src/config-schema.ts` defines runtime configuration.\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/recipes/create-a-frontend-module.mdx:\n  76: - `src/config-schema.ts` définit la configuration runtime.\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/migration-guides/migrate-to-core-v5.mdx:\n  36: import { configSchema } from \"./config-schema\";\n  122: import { configSchema } from \"./config-schema\";\n  449: import { configSchema } from \"./config-schema\";\n  529: import { configSchema } from \"./config-schema\";\n  610: import { configSchema } from \"./config-schema\";\n  648: import { configSchema } from \"./config-schema\";\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/migration-guides/migrate-to-core-v5.mdx:\n  37: import { configSchema } from \"./config-schema\";\n  374: import { configSchema } from \"./config-schema\" ;\n  468: import { configSchema } from \"./config-schema\";\n  549: import { configSchema } from \"./config-schema\";\n  586: import { configSchema } from \"./config-schema\";\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/coding-conventions/code-organization.mdx:\n  38:   - `routes.json`, `config-schema.ts`, and lifecycle exports wired to `@openmrs/esm-framework`\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/coding-conventions/code-organization.mdx:\n  38:   - `routes.json`, `config-schema.ts` et exports de lifecycle reliés à `@openmrs/esm-framework`\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/recipes/add-links-to-the-home-page-left-panel.mdx:\n  114: import { configSchema } from \"./config-schema\";\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/recipes/add-links-to-the-home-page-left-panel.mdx:\n  114: import { configSchema } from \"./config-schema\";\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/frontend-modules/unit-and-integration-testing.mdx:\n  429: import type { PatientRegistrationConfig } from \"../config-schema\";\n  438: import type { PatientRegistrationConfig } from \"../config-schema\";\n  451:   import type { PatientRegistrationConfig } from \"../config-schema\";\n  460:   import type { PatientRegistrationConfig } from \"../config-schema\";\n  477: import type { PatientRegistrationConfig } from \"../config-schema\";\n  493: import type { PatientRegistrationConfig } from \"../config-schema\";\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/frontend-modules/unit-and-integration-testing.mdx:\n  428: import type { PatientRegistrationConfig } from \"../config-schema\";\n  437: import type { PatientRegistrationConfig } from \"../config-schema\";\n  450:   import type { PatientRegistrationConfig } from \"../config-schema\";\n\n(Output was cut short: narrow the path or pattern, name a repo, or raise the limit.)","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/core-concepts.mdx","name":"core-concepts.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/core-concepts.mdx","name":"core-concepts.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/key-repositories.mdx","name":"key-repositories.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/key-repositories.mdx","name":"key-repositories.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configure-o3/overview.mdx","name":"overview.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/configure-o3/overview.mdx","name":"overview.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/frontend-modules/overview.mdx","name":"overview.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/frontend-modules/overview.mdx","name":"overview.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/add-a-left-panel-to-o3.mdx","name":"add-a-left-panel-to-o3.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/recipes/add-a-left-panel-to-o3.mdx","name":"add-a-left-panel-to-o3.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/create-a-frontend-module.mdx","name":"create-a-frontend-module.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/recipes/create-a-frontend-module.mdx","name":"create-a-frontend-module.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/migration-guides/migrate-to-core-v5.mdx","name":"migrate-to-core-v5.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/migration-guides/migrate-to-core-v5.mdx","name":"migrate-to-core-v5.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/coding-conventions/code-organization.mdx","name":"code-organization.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/coding-conventions/code-organization.mdx","name":"code-organization.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/add-links-to-the-home-page-left-panel.mdx","name":"add-links-to-the-home-page-left-panel.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/recipes/add-links-to-the-home-page-left-panel.mdx","name":"add-links-to-the-home-page-left-panel.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/frontend-modules/unit-and-integration-testing.mdx","name":"unit-and-integration-testing.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/frontend-modules/unit-and-integration-testing.mdx","name":"unit-and-integration-testing.mdx","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-api/src/setup.ts","name":"setup.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/index.ts","name":"index.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/logo.component.tsx","name":"logo.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/tooling/storybook/.storybook/main.ts","name":"main.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/tooling/storybook/mocks/esm-config.ts","name":"esm-config.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/index.ts","name":"index.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-api/src/openmrs-fetch.ts","name":"openmrs-fetch.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/public.ts","name":"public.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/config-schema.ts","name":"config-schema.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/internal.ts","name":"internal.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/__mocks__/config.mock.ts","name":"config.mock.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/footer.component.tsx","name":"footer.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-primary-navigation-app/src/index.ts","name":"index.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/datepicker/hooks.ts","name":"hooks.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/login/login.component.tsx","name":"login.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/patient-photo/usePatientPhoto.ts","name":"usePatientPhoto.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/interfaces/StyleguideConfigObject.md","name":"StyleguideConfigObject.md","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/page-header/page-header.component.tsx","name":"page-header.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/two-factor-auth/two-factor-auth.component.tsx","name":"two-factor-auth.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/redirect-logout/redirect-logout.component.tsx","name":"redirect-logout.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-primary-navigation-app/src/components/logo/logo.component.tsx","name":"logo.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/diagnosis-tags/diagnosis-tags.component.tsx","name":"diagnosis-tags.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/location-picker/location-picker-view.component.tsx","name":"location-picker-view.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/two-factor-auth/two-factor-auth-link.extension.tsx","name":"two-factor-auth-link.extension.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/login-page-wrapper/login-page-wrapper.component.tsx","name":"login-page-wrapper.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/patient-banner/patient-info/patient-banner-patient-identifiers.component.tsx","name":"patient-banner-patient-identifiers.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/two-factor-auth/verification-challenge/totp-verification-challenge-page.component.tsx","name":"totp-verification-challenge-page.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/config-schema.test.ts","name":"config-schema.test.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/two-factor-auth/two-factor-auth.test.tsx","name":"two-factor-auth.test.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-primary-navigation-app/src/components/logo/logo.test.tsx","name":"logo.test.tsx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-01616373-d9c4-4afb-92f1-114cdadaca5c","output":{"output":"Found 56 matches in 32 files\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-api/src/setup.ts:\n  3: import { configSchema } from './config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/index.ts:\n  2: import { configSchema } from './config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/logo.component.tsx:\n  4: import { type ConfigSchema } from './config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/tooling/storybook/.storybook/main.ts:\n  75:           '@openmrs/esm-styleguide/src/config-schema': path.resolve(\n  77:             'esm-styleguide/src/config-schema.ts',\n\n[github.com/openmrs/openmrs-esm-core] packages/tooling/storybook/mocks/esm-config.ts:\n  3: // enum and validators that config-schema.ts imports at definition time.\n  67:     // The config-schema module is imported at build time by Rspack, which\n  73:       const { esmStyleGuideSchema } = require('@openmrs/esm-styleguide/src/config-schema');\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-styleguide/src/index.ts:\n  5: import { esmStyleGuideSchema } from './config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-api/src/openmrs-fetch.ts:\n  6: import { defaultRedirectAuthFailureUrl, type EsmApiConfigObject } from './config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-styleguide/src/public.ts:\n  1: export { type StyleguideConfigObject } from './config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/config-schema.ts:\n  5: } from './two-factor-auth/two-factor-auth-config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-styleguide/src/internal.ts:\n  3: export * from './config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/__mocks__/config.mock.ts:\n  1: import { type ConfigSchema } from '../src/config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/footer.component.tsx:\n  5: import { type ConfigSchema } from './config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-primary-navigation-app/src/index.ts:\n  9: import { configSchema } from './config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-styleguide/src/datepicker/hooks.ts:\n  6: import { type StyleguideConfigObject } from '../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/login/login.component.tsx:\n  12: import { type ConfigSchema } from '../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-styleguide/src/patient-photo/usePatientPhoto.ts:\n  5: import { type StyleguideConfigObject } from '../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/docs/interfaces/StyleguideConfigObject.md:\n  5: Defined in: [packages/framework/esm-styleguide/src/config-schema.ts:4](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-styleguide/src/config-schema.ts#L4)\n  13: Defined in: [packages/framework/esm-styleguide/src/config-schema.ts:5](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-styleguide/src/config-schema.ts#L5)\n  21: Defined in: [packages/framework/esm-styleguide/src/config-schema.ts:6](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-styleguide/src/config-schema.ts#L6)\n  29: Defined in: [packages/framework/esm-styleguide/src/config-schema.ts:7](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-styleguide/src/config-schema.ts#L7)\n  37: Defined in: [packages/framework/esm-styleguide/src/config-schema.ts:23](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-styleguide/src/config-schema.ts#L23)\n  53: Defined in: [packages/framework/esm-styleguide/src/config-schema.ts:8](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-styleguide/src/config-schema.ts#L8)\n  65: Defined in: [packages/framework/esm-styleguide/src/config-schema.ts:11](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-styleguide/src/config-schema.ts#L11)\n  73: Defined in: [packages/framework/esm-styleguide/src/config-schema.ts:12](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-styleguide/src/config-schema.ts#L12)\n  89: Defined in: [packages/framework/esm-styleguide/src/config-schema.ts:16](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-styleguide/src/config-schema.ts#L16)\n  97: Defined in: [packages/framework/esm-styleguide/src/config-schema.ts:17](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-styleguide/src/config-schema.ts#L17)\n  109: Defined in: [packages/framework/esm-styleguide/src/config-schema.ts:20](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-styleguide/src/config-schema.ts#L20)\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-styleguide/src/page-header/page-header.component.tsx:\n  5: import { type StyleguideConfigObject } from '../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/two-factor-auth/two-factor-auth.component.tsx:\n  13: import type { ConfigSchema } from '../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/redirect-logout/redirect-logout.component.tsx:\n  5: import { type ConfigSchema } from '../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-primary-navigation-app/src/components/logo/logo.component.tsx:\n  3: import { type ConfigSchema } from '../../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-styleguide/src/diagnosis-tags/diagnosis-tags.component.tsx:\n  7: import type { StyleguideConfigObject } from '../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/location-picker/location-picker-view.component.tsx:\n  16: import type { ConfigSchema } from '../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/two-factor-auth/two-factor-auth-link.extension.tsx:\n  5: import type { ConfigSchema } from '../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/login-page-wrapper/login-page-wrapper.component.tsx:\n  6: import type { ConfigSchema } from '../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-styleguide/src/patient-banner/patient-info/patient-banner-patient-identifiers.component.tsx:\n  5: import { type StyleguideConfigObject } from '../../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/two-factor-auth/verification-challenge/totp-verification-challenge-page.component.tsx:\n  13: import type { ConfigSchema } from '../../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/config-schema.test.ts:\n  3: import { configSchema } from './config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/two-factor-auth/two-factor-auth.test.tsx:\n  7: import type { ConfigSchema } from '../config-schema';\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-primary-navigation-app/src/components/logo/logo.test.tsx:\n  6: import { type ConfigSchema } from '../../config-schema';\n\n(2 more files; narrow the path, pattern or repo)","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-api/src/setup.ts","name":"setup.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/index.ts","name":"index.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/logo.component.tsx","name":"logo.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/tooling/storybook/.storybook/main.ts","name":"main.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/tooling/storybook/mocks/esm-config.ts","name":"esm-config.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/index.ts","name":"index.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-api/src/openmrs-fetch.ts","name":"openmrs-fetch.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/public.ts","name":"public.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/config-schema.ts","name":"config-schema.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/internal.ts","name":"internal.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/__mocks__/config.mock.ts","name":"config.mock.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/footer.component.tsx","name":"footer.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-primary-navigation-app/src/index.ts","name":"index.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/datepicker/hooks.ts","name":"hooks.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/login/login.component.tsx","name":"login.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/patient-photo/usePatientPhoto.ts","name":"usePatientPhoto.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/interfaces/StyleguideConfigObject.md","name":"StyleguideConfigObject.md","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/page-header/page-header.component.tsx","name":"page-header.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/two-factor-auth/two-factor-auth.component.tsx","name":"two-factor-auth.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/redirect-logout/redirect-logout.component.tsx","name":"redirect-logout.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-primary-navigation-app/src/components/logo/logo.component.tsx","name":"logo.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/diagnosis-tags/diagnosis-tags.component.tsx","name":"diagnosis-tags.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/location-picker/location-picker-view.component.tsx","name":"location-picker-view.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/two-factor-auth/two-factor-auth-link.extension.tsx","name":"two-factor-auth-link.extension.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/login-page-wrapper/login-page-wrapper.component.tsx","name":"login-page-wrapper.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/patient-banner/patient-info/patient-banner-patient-identifiers.component.tsx","name":"patient-banner-patient-identifiers.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/two-factor-auth/verification-challenge/totp-verification-challenge-page.component.tsx","name":"totp-verification-challenge-page.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/config-schema.test.ts","name":"config-schema.test.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/two-factor-auth/two-factor-auth.test.tsx","name":"two-factor-auth.test.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-primary-navigation-app/src/components/logo/logo.test.tsx","name":"logo.test.tsx","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" found key documentation. Let me read the configuration system"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" doc and the frontend modules overview.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-0ec4280b-ac77-4395-a012-77fb8acafcee","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-0ec4280b-ac77-4395-a012-77fb8acafcee","inputTextDelta":"{\"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\", \"path\": \"content/en-US/docs/configuration-system.mdx\", \"offset\": 220, \"limit\": 160}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-0ec4280b-ac77-4395-a012-77fb8acafcee","toolName":"read_file","input":{"path":"content/en-US/docs/configuration-system.mdx","repo":"github.com/openmrs/openmrs-contrib-o3-docs","ref":"HEAD","offset":220,"limit":160}}
+
+data: {"type":"tool-input-start","toolCallId":"call-e7b575b4-ac46-4939-8f56-849c863b606a","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-e7b575b4-ac46-4939-8f56-849c863b606a","inputTextDelta":"{\"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\", \"path\": \"content/en-US/docs/configure-o3/overview.mdx\", \"offset\": 130, \"limit\": 120}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-e7b575b4-ac46-4939-8f56-849c863b606a","toolName":"read_file","input":{"path":"content/en-US/docs/configure-o3/overview.mdx","repo":"github.com/openmrs/openmrs-contrib-o3-docs","ref":"HEAD","offset":130,"limit":120}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configure-o3/overview.mdx","name":"overview.mdx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-e7b575b4-ac46-4939-8f56-849c863b606a","output":{"output":"<repo>github.com/openmrs/openmrs-contrib-o3-docs</repo>\n<path>content/en-US/docs/configure-o3/overview.mdx</path>\n<url>undefined</url>\n<content>\n130: - Changes to global properties packaged into the backend WAR require rebuilding the backend WAR\n131: - Changes to global properties in the application data directory take effect on the next backend restart (no rebuild needed)\n132: - For a comprehensive list of available global properties, see the [OpenMRS Global Properties documentation](https://wiki.openmrs.org/display/docs/Global+Properties) or check the documentation for specific modules\n133: \n134: <Callout emoji=\"💡\" type=\"info\">\n135:   **Concept dictionary management**: The recommended approach for managing concept dictionaries in OpenMRS is to set up your own organization and resources in [Open Concept Lab (OCL)](https://app.openconceptlab.org/). This allows you to standardize concept management across your implementation, create and maintain your own concept sets, and export them as ZIP files for inclusion in content packages. The [CIEL dictionary](https://app.openconceptlab.org/#/orgs/CIEL/sources/CIEL/) is the standard concept dictionary containing thousands of clinical concepts—you can reference CIEL concepts in your OCL resources or create organization-specific concepts. When configuring drugs, forms, or other metadata, you can search OCL to find concept UUIDs and manage your concept sets through your OCL organization.\n136: </Callout>\n137: \n138: **File organization**: Configuration files are organized by domain in subdirectories (e.g., `configuration/concepts/`, `configuration/locations/`, `configuration/drugs/`, `configuration/ampathforms/`). Each domain has specific file format requirements and naming conventions documented in the Initializer README. Files can be organized in nested directory structures, and Initializer will process them in alphabetical order if no explicit order is specified.\n139: \n140: **Practical examples**:\n141: - **Locations CSV** - Each row defines a location with UUID, name, description, parent location, and flags (e.g., whether it's a login location)\n142: - **Drugs CSV** - Each row creates a drug entry with UUID, name, concept UUID (from CIEL/OCL), form concept, and strength (e.g., \"Paracetamol 500mg tablet\")\n143: - **Forms JSON** - Forms built in Form Builder can be exported as JSON and placed in the forms configuration directory\n144: - **Form translations** - Separate translation files map form label texts to translated strings for different languages\n145: \n146: **Runtime control**: The Initializer module provides runtime properties that allow you to:\n147: - Enable or disable specific domains during initialization\n148: - Control loading behavior (e.g., fail-fast vs. continue on errors)\n149: - Configure logging verbosity\n150: - Filter files using wildcard patterns\n151: \n152: For detailed information on file formats, naming conventions, domain-specific requirements, and runtime properties, see the [Initializer module's README](https://github.com/mekomsolutions/openmrs-module-initializer#openmrs-initializer-module). The README includes specific sub-documentation for each config file type (e.g., drugs CSV, locations, form translations).\n153: \n154: **Getting help**: If you have questions or encounter issues with Initializer configuration, the OpenMRS community recommends posting on the [OpenMRS Talk forum](https://talk.openmrs.org/) and tagging your topic with \"initializer\" so community members can help.\n155: \n156: ## Configuring individual frontend modules\n157: \n158: Per-app configuration is available in O3 via the built-in [configuration system](/docs/configuration-system). Each frontend module can define its own configuration schema in a `config-schema.ts` file inside its `src` directory. The following snippet is drawn from the Programs frontend module's config-schema:\n159: \n160: ```tsx filename=\"src/config-schema.ts\"\n161: import { Type } from '@openmrs/esm-framework';\n162: \n163: export const configSchema = {\n164:   hideAddProgramButton: {\n165:     _type: Type.Boolean,\n166:     _default: false,\n167:   },\n168:   showProgramStatusField: {\n169:     _type: Type.Boolean,\n170:     _description:\n171:       'Whether to show the Program status field in the Record program enrollment and Edit program enrollment forms. If set to true, the `Program status` field is displayed in the Programs datatable',\n172:     _default: false,\n173:   },\n174: };\n175: \n176: export interface ConfigObject {\n177:   hideAddProgramButton: boolean;\n178:   showProgramStatusField: boolean;\n179: }\n180: ```\n181: \n182: The properties specified in the config schema allow implementers to tailor the behavior of the module to their needs. The configuration system also allows implementers to specify default values for the various configuration properties. \n183: \n\n(Output capped at 5KB. Showing lines 130-183 of 391. Use offset=184 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configure-o3/overview.mdx","name":"overview.mdx","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-0ec4280b-ac77-4395-a012-77fb8acafcee","output":{"output":"<repo>github.com/openmrs/openmrs-contrib-o3-docs</repo>\n<path>content/en-US/docs/configuration-system.mdx</path>\n<url>undefined</url>\n<content>\n220:   const config = await getConfig(\"@openmrs/esm-hologram-doctor\");\n221:   return \"Hello, my name is Dr. \" + config.virtualProvider.name.given.join(\" \");\n222: }\n223: ```\n224: \n225: The content of config will be pulled from the config files, falling back to the defaults for configuration elements for which no values have been provided.\n226: \n227: **How configuration values are merged:**\n228: \n229: When multiple configuration sources provide values for the same key, they are merged with the following precedence (later sources override earlier ones):\n230: \n231: 1. **Defaults** from the schema definition\n232: 2. **Configuration files** (merged in the order they are loaded)\n233: 3. **Temporary config** from the Implementer Tools UI (highest precedence)\n234: \n235: This means that if you set a value in a config file and then change it using the Implementer Tools, the Implementer Tools value will take effect. Similarly, if the same key appears in multiple config files, the value from the last file loaded will be used.\n236: \n237: Nested objects are merged deeply, but arrays are replaced as whole values. If a later config source provides an array for a key, it replaces the earlier array rather than merging by index.\n238: \n239: #### React support\n240: \n241: A React Hook is provided to hide the asynchronicity of config loading. The `useConfig` hook automatically determines which module's configuration to load based on the `ComponentContext`, which is set when you use `getSyncLifecycle` or `getAsyncLifecycle` with a `moduleName`.\n242: \n243: ```ts\n244: import HologramDoctor from \"./hologram-doctor.component\";\n245: \n246: export const hologramDoctor = getSyncLifecycle(HologramDoctor, {\n247:   featureName: 'hologram doctor',\n248:   moduleName: '@openmrs/esm-hologram-doctor',\n249: });\n250: ```\n251: \n252: You can then get the config tree as an object using the `useConfig` React hook:\n253: \n254: ```ts\n255: import { useConfig } from \"@openmrs/esm-framework\";\n256: \n257: export default function DoctorGreeting() {\n258:   const config = useConfig();\n259:   const greeting = \"Hello, my name is Dr. \" + config.virtualProvider.name.given.join(\" \");\n260:   return <div>{greeting}</div>;\n261: }\n262: ```\n263: \n264: The `useConfig` hook automatically:\n265: - Loads the module's configuration based on the `moduleName` from the `ComponentContext`\n266: - Merges extension-specific configuration when used within an extension component\n267: - Falls back to defaults for configuration elements for which no values have been provided\n268: \n269: **Loading configuration from another module:**\n270: \n271: You can optionally load configuration from a different module using the `externalModuleName` option. This should only be used when absolutely necessary, as it can create coupling between modules:\n272: \n273: ```ts\n274: const otherModuleConfig = useConfig({ externalModuleName: \"@openmrs/esm-other-module\" });\n275: ```\n276: \n277: **Registering config schemas:**\n278: \n279: In Core v5+ modules, config schemas should be registered in the `startupApp()` function:\n280: \n281: ```ts\n282: import { defineConfigSchema } from \"@openmrs/esm-framework\";\n283: import { configSchema } from \"./config-schema\";\n284: \n285: const moduleName = \"@openmrs/esm-hologram-doctor\";\n286: \n287: export function startupApp() {\n288:   defineConfigSchema(moduleName, configSchema);\n289: }\n290: ```\n291: \n292: This ensures the schema is registered before the module's components are rendered.\n293: \n294: **Automatic schema features:**\n295: \n296: Every module automatically receives an implicit schema that includes two reserved configuration keys:\n297: \n298: - **`Display conditions`** - Used by the extension system to control extension visibility (only relevant for extensions)\n299: - **`Translation overrides`** - Used for per-language translation overrides. See [Configure translations](/docs/configure-o3/configure-translations) for details on how implementers use this feature.\n300: \n301: This implicit schema is available immediately, even before you call `defineConfigSchema()`. This allows translation overrides to be loaded early, which is important because the translation system requires them before modules can fully initialize. When you define your custom schema, it is automatically merged with the implicit schema, so you don't need to (and should not) define these reserved keys yourself.\n302: \n303: #### Support in other frameworks (Angular, Vue, Svelte, etc.)\n304: \n305: This hasn't been implemented yet, but you are welcome to implement it! See the [Contributing guide](/docs/frontend-modules/contributing).\n306: \n307: #### Typing\n308: \n309: It is nice to be able to have type validation for your use of configuration. To accomplish this, define an interface alongside your config schema.\n310: \n311: ```ts\n312: import { defineConfigSchema, Type } from \"@openmrs/esm-framework\";\n313: \n314: defineConfigSchema(\"@openmrs/esm-hologram-doctor\", {\n315:   hologram: {\n316:     color: {\n317:       _type: Type.Boolean,\n318:       _default: false,\n319:       _description: \"Whether the hologram supports color display.\",\n320:     },\n321:   },\n322: });\n323: \n324: export interface HologramDoctorConfig {\n325:   hologram: {\n326:     color: boolean;\n327:   };\n328: }\n329: ```\n330: \n331: You can then use this typing information when calling the config functions:\n332: \n333: ```ts\n334: const config = useConfig<HologramDoctorConfig>();\n335: ```\n336: \n337: #### Extension-specific configuration\n338: \n339: Extensions can have their own configuration schemas that are separate from their parent module's configuration. This is useful when an extension needs configuration options that don't apply to the module as a whole.\n340: \n\n(Output capped at 5KB. Showing lines 220-340 of 439. Use offset=341 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" have the core docs. Now let me read the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" beginning of configuration-system.mdx (for"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the whole flow including implementer overrides) and the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" frontend-modules overview, plus a real implementation"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" example.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-85c2192b-8e75-4033-a8e5-ea6832a513e7","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-85c2192b-8e75-4033-a8e5-ea6832a513e7","inputTextDelta":"{\"limit\": 220, \"offset\": 1, \"path\": \"content/en-US/docs/configuration-system.mdx\", \"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-85c2192b-8e75-4033-a8e5-ea6832a513e7","toolName":"read_file","input":{"path":"content/en-US/docs/configuration-system.mdx","repo":"github.com/openmrs/openmrs-contrib-o3-docs","ref":"HEAD","offset":1,"limit":220}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-85c2192b-8e75-4033-a8e5-ea6832a513e7","output":{"output":"<repo>github.com/openmrs/openmrs-contrib-o3-docs</repo>\n<path>content/en-US/docs/configuration-system.mdx</path>\n<url>undefined</url>\n<content>\n1: import { Callout } from \"nextra/components\";\n2: \n3: # The Configuration System\n4: \n5: Introduced by [RFC-14](https://github.com/openmrs/openmrs-rfc-frontend/blob/master/text/0014-configuration.md), the configuration system provides a framework for making frontend modules configurable by implementers without requiring code changes. It enables developers to define schemas that specify what configuration options are available, their types, defaults, and validation rules.\n6: \n7: <Callout emoji=\"ℹ️\" type=\"info\">\n8:   **For implementers**: If you're looking to configure an existing O3 instance (changing logos, translations, module settings, etc.), see the [Configure O3](/docs/configure-o3/overview) guide instead. This guide is for **developers** who want to make their modules configurable.\n9: </Callout>\n10: \n11: ## Using the Configuration System\n12: \n13: A framework is provided to make configurability easier for developers and configuring easier for implementers.\n14: \n15: **For implementers**: To learn how to configure your O3 instance, see the [Configure O3](/docs/configure-o3/overview) guide, which covers practical configuration tasks like branding, translations, and module-specific settings.\n16: \n17: ### How to make a frontend module configurable\n18: \n19: You should use the OpenMRS Frontend Framework to make modules configurable.\n20: \n21: The main task is to create a config schema for your module. The config schema is what tells the framework what configuration files should look like, including defaults and validations.\n22: \n23: **Note**: Configuration schemas are optional. If your module doesn't need any configuration options (for example, if it's a library module like the [React Form Engine](https://github.com/openmrs/openmrs-esm-form-engine-lib) that receives all its configuration through props or function parameters), you don't need to define a schema. The configuration system will still work; modules without schemas use the implicit schema for `Display conditions` and `Translation overrides`.\n24: \n25: #### Designing a schema\n26: \n27: You’ll probably start with some idea of what you want configs for your module to look like. Try and put yourself in the implementer’s shoes and imagine what features they will expect to be configurable, and what they might expect the configuration property to be called. Assume they don’t know anything about the internal workings of your module.\n28: \n29: By way of example, let’s say we’re building a module for a virtual provider functionality at a very futuristic hospital. Maybe we want an implementer to be able to write the following in their config file:\n30: \n31: ```ts\n32: \"@openmrs/esm-hologram-doctor\": {\n33:   \"hologram\": {\n34:     \"color\": true\n35:   },\n36:   \"virtualProvider\": {\n37:     \"name\": {\n38:       \"given\": [\"Qui\", \"Gon\"]\n39:     }\n40:   },\n41:   \"robots\": [\n42:     { \"name\": \"R2-D2\", \"homeworld\": \"Naboo\" },\n43:     { \"name\": \"BB-8\", \"homeworld\": \"Hosnian Prime\" }\n44:   ]\n45: }\n46: ```\n47: \n48: In the following section, we’ll see how to write a config schema that supports these config elements.\n49: \n50: #### Defining a schema\n51: \n52: We’ll start with just that first nested config element from above, `hologram.color`. We must provide defaults for all of the values—in OpenMRS Frontend 3.0, all configuration is optional. All modules should do something reasonable out of the box.\n53: \n54: ```ts\n55: import { defineConfigSchema, Type } from \"@openmrs/esm-framework\";\n56: \n57: defineConfigSchema(\"@openmrs/esm-hologram-doctor\", {\n58:   hologram: {\n59:     color: {\n60:       _type: Type.Boolean,\n61:       _default: false,\n62:       _description: \"Whether the hologram supports color display.\"\n63:     }\n64:   }\n65: });\n66: ```\n67: \n68: Note that each configuration element should have an object for a value, and that this object must define the properties for that element. Do not do this:\n69: \n70: ```ts\n71: // This is wrong. `salutation` is a raw value, not a schema object.\n72: defineConfigSchema(\"@openmrs/esm-hologram-doctor\", {\n73:   hologram: {\n74:     salutation: \"Some friendly default salutation!\"\n75:   }\n76: });\n77: ```\n78: \n79: The words prefixed with `_` are schema keywords. Do not prefix the names of your config elements with underscores. Especially do not use a schema keyword as a config element name.\n80: \n81: **Reserved configuration keys:**\n82: \n83: The following keys are reserved and cannot be used as configuration element names:\n84: - `Display conditions` - Used by the extension system for extension visibility control\n85: - `Translation overrides` - Used for per-language translation overrides\n86: \n87: These keys are automatically included in every module's implicit schema and will cause validation errors if you try to use them as custom configuration keys.\n88: \n89: ```ts\n90: // Don't do this. `_default` is a schema keyword, not a config element name.\n91: defineConfigSchema(\"@openmrs/esm-hologram-doctor\", {\n92:   hologram: {\n93:     salutation: {\n94:       _default: {\n95:         _default: \"Greetings\"\n96:       }\n97:     }\n98:   }\n99: });\n100: ```\n101: \n102: #### Typing\n103: \n104: While not strictly required in the current version, you should provide a type for every config element you define. The `_type` keyword accepts values from the Type enum.\n105: \n106: The available types are:\n107: - `Type.String` - String values\n108: - `Type.Number` - Numeric values\n109: - `Type.Boolean` - Boolean values (true/false)\n\n(Output capped at 5KB. Showing lines 1-109 of 439. Use offset=110 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"}]}}
+
+data: {"type":"tool-input-start","toolCallId":"call-8ef1ae53-e28a-4d51-a441-4b06640cc901","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-8ef1ae53-e28a-4d51-a441-4b06640cc901","inputTextDelta":"{\"limit\": 130, \"offset\": 180, \"path\": \"content/en-US/docs/frontend-modules/overview.mdx\", \"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-8ef1ae53-e28a-4d51-a441-4b06640cc901","toolName":"read_file","input":{"path":"content/en-US/docs/frontend-modules/overview.mdx","repo":"github.com/openmrs/openmrs-contrib-o3-docs","ref":"HEAD","offset":180,"limit":130}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/frontend-modules/overview.mdx","name":"overview.mdx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-8ef1ae53-e28a-4d51-a441-4b06640cc901","output":{"output":"<repo>github.com/openmrs/openmrs-contrib-o3-docs</repo>\n<path>content/en-US/docs/frontend-modules/overview.mdx</path>\n<url>undefined</url>\n<content>\n180:     \"vitest\": \"^4.1.2\"\n181:   },\n182:   \"packageManager\": \"yarn@4.10.3\"\n183: }\n184: ```\n185: \n186: Some key things to note from looking at this file include:\n187: \n188: - The `name` property which defines the name of the module. This property is used as the module’s unique identifier in the [import map](/docs/core-concepts#import-map).\n189: - The `browser` property which points to the entry point of the built bundle that gets served (what the app shell loads at runtime).\n190: - The `main` property which defines the [entry point](#the-application-entry-point-indexts) of the frontend module’s source code, which is typically `src/index.ts`.\n191: - The OpenMRS runtime packages are usually peer dependencies for consumers and `next` dev dependencies for local development.\n192: - `@carbon/react` is a `1.x` peer dependency so that the build shares the app shell's copy instead of bundling its own. A copy in `devDependencies` provides types and lets tests run.\n193: - The Rspack config and CLI packages are dev dependencies because they are build-time tooling, not runtime modules loaded by the app shell.\n194: - ESLint 9 and `@openmrs/eslint-config` are dev dependencies. Shared rules and repository-specific ignores live in the root `eslint.config.mjs`; see [Linting](/docs/frontend-modules/development#linting).\n195: - Current React frontend modules use Rspack and Vitest by default. Older modules may still have Webpack or Jest scripts while they are being migrated.\n196: \n197: ### The application entry point (`index.ts`)\n198: \n199: Frontend modules define their entry point in `src/index.ts`.\n200: \n201: ```ts\n202: import { defineConfigSchema, getAsyncLifecycle, getSyncLifecycle } from \"@openmrs/esm-framework\";\n203: import { configSchema } from \"./config-schema\";\n204: import ActivePrescriptionsSummary from \"./active-prescriptions-summary.component\";\n205: import { moduleName } from \"./constants\";\n206: \n207: export const importTranslation = require.context(\"../translations\", false, /.json$/, \"lazy\");\n208: \n209: const options = {\n210:   featureName: \"active-prescriptions\",\n211:   moduleName,\n212: };\n213: \n214: export function startupApp() {\n215:   defineConfigSchema(moduleName, configSchema);\n216: }\n217: \n218: export const root = getAsyncLifecycle(() => import(\"./root.component\"), options);\n219: \n220: export const activePrescriptionsSummary = getSyncLifecycle(ActivePrescriptionsSummary, options);\n221: ```\n222: \n223: This file is the entry point of the frontend module. It is the first file that gets executed when the frontend module gets loaded. It is responsible for setting up the frontend module and exporting the module’s configuration. Specifically, in this example:\n224: \n225: - It exports an `importTranslation` function which is used to load the module’s translations.\n226: - It also exports two named lifecycle functions, `root` and `activePrescriptionsSummary`. These names must match the component names declared in `routes.json`. The app shell calls them when the corresponding page or extension needs to render.\n227: - It also exports a `startupApp` function which is used to set up the frontend module. In this case, the frontend module's configuration schema is defined here. Modules that need breadcrumbs or other framework registration can do that in `startupApp` too.\n228: \n229: #### The `startupApp` function\n230: \n231: Many frontend modules define a function named `startupApp`. This function performs setup that should happen once, immediately before the module's first page, extension, modal, or workspace lifecycle is loaded. The `startupApp` function is where we commonly:\n232: \n233: - define the module's configuration schema\n234: - register breadcrumbs\n235: - run other load-time setup that must happen before the module's exported lifecycles are used\n236: \n237: Page and extension registration itself comes from `routes.json`, not from `startupApp`. If a module does not need load-time setup, `startupApp` can be omitted.\n238: \n239: #### The `importTranslation` function\n240: \n241: This is required when the module provides translations. It tells the frontend application how to load translation strings. Note that the first argument to `require.context` is a directory, `../translations`. That directory must exist at that location relative to the `index.ts` file.\n242: \n243: ### Static metadata in `routes.json`\n244: \n245: The `routes.json` file is used to set up the frontend module's static metadata. These include:\n246: \n247: - The `pages` that the frontend module provides\n248: - The `extensions` that the frontend module provides\n249: - The `modals`, `workspaces`, `workspaceGroups`, and `featureFlags` that the frontend module provides\n250: - The `backendDependencies` that the frontend module requires. This object tells the frontend application what OpenMRS server modules the frontend module depends on, and what versions. If these dependencies are not met, administrators will be alerted\n251: \n252: The structure of this static file is dictated by the OpenMRS Routes standard [JSON schema](https://json.openmrs.org/routes.schema.json).\n253: \n254: Before shipping a new page or extension, check whether `routes.json` should also declare:\n255: \n256: - `backendDependencies` or `optionalBackendDependencies` for required backend modules.\n257: - `privileges` for role-based access to an extension.\n258: - `featureFlags` and per-extension `featureFlag` values for work that should be hidden until enabled.\n\n(Output capped at 5KB. Showing lines 180-258 of 320. Use offset=259 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/frontend-modules/overview.mdx","name":"overview.mdx","revision":"HEAD"}]}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" want details on how implementers actually override config ("}
+
+data: {"type":"text-delta","id":"txt-0","delta":"the config files, `config.json`,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" import maps) and the validation keywords. Let me read"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the middle section of configuration-system.mdx and check"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the esm-core implementation for `defineConfig"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Schema` and `Type`.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-06ae12c9-8814-4264-aeb3-61f523f9b8a1","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-06ae12c9-8814-4264-aeb3-61f523f9b8a1","inputTextDelta":"{\"path\": \"content/en-US/docs/configuration-system.mdx\", \"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\", \"ref\": \"HEAD\", \"offset\": 109, \"limit\": 112}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-06ae12c9-8814-4264-aeb3-61f523f9b8a1","toolName":"read_file","input":{"path":"content/en-US/docs/configuration-system.mdx","repo":"github.com/openmrs/openmrs-contrib-o3-docs","ref":"HEAD","offset":109,"limit":112}}
+
+data: {"type":"tool-input-start","toolCallId":"call-0683a013-604c-484a-b2b0-e8a21907b7ff","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-0683a013-604c-484a-b2b0-e8a21907b7ff","inputTextDelta":"{\"pattern\": \"export function defineConfigSchema|export enum Type|export interface ConfigSchema|export type Validator\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"limit\": 30}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-0683a013-604c-484a-b2b0-e8a21907b7ff","toolName":"grep","input":{"pattern":"export function defineConfigSchema|export enum Type|export interface ConfigSchema|export type Validator","repo":"github.com/openmrs/openmrs-esm-core","limit":30}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-06ae12c9-8814-4264-aeb3-61f523f9b8a1","output":{"output":"<repo>github.com/openmrs/openmrs-contrib-o3-docs</repo>\n<path>content/en-US/docs/configuration-system.mdx</path>\n<url>undefined</url>\n<content>\n109: - `Type.Boolean` - Boolean values (true/false)\n110: - `Type.Array` - Arrays (requires `_elements` to specify the array element schema)\n111: - `Type.Object` - Freeform object values. When used with `_elements`, O3 validates and fills defaults for each value in the object.\n112: - `Type.UUID` - UUID strings\n113: - `Type.ConceptUuid` - Concept UUID strings\n114: - `Type.PersonAttributeTypeUuid` - Person attribute type UUID strings\n115: - `Type.PatientIdentifierTypeUuid` - Patient identifier type UUID strings\n116: \n117: These types are used both to validate input and to support special behavior in the implementer tools.\n118: \n119: #### Validators\n120: \n121: You should provide validators for your configuration elements wherever possible. This reduces the probability that implementers using your module will have hard-to-debug runtime errors. It gives you, the module developer, the opportunity to provide implementers with very helpful explanations about why their configuration doesn’t work.\n122: \n123: ```ts\n124: robot: {\n125:   name: {\n126:     _type: Type.String,\n127:     _default: \"R2D2\",\n128:     _description: \"What to call the robot\",\n129:     _validators: [\n130:       validator(n => /\\d/.test(n), \"Robots must have numbers in their names\")\n131:     ]\n132:   }\n133: }\n134: ```\n135: \n136: (Note that this piece of schema is not part of our above example. It only supports a single robot, whereas we need to allow the implementer to provide an array of robots).\n137: \n138: A validator can be created using the `validator` function, as above.\n139: \n140: The first argument is a function that takes the config value as its only argument. If the function returns `true`, validation passes. If it returns `false`, validation fails and the second argument to `validator` is used as the error message. You can also provide a custom validator function directly in `_validators`; direct validators should return `undefined` for success or an error string for failure.\n141: \n142: **Important**: When validation fails, the error is logged to the browser console, but the application continues to run. Invalid configuration values are still used—validation errors serve as warnings to help implementers identify and fix configuration problems, rather than preventing the application from starting.\n143: \n144: You can even validate nested objects:\n145: \n146: ```ts\n147: colorPicker: {\n148:   options: { _default: [\"green\", \"red\", \"blue\"] },\n149:   initial: { _default: \"green\" },\n150:   _description: \"The color picker for lightsabers\",\n151:   _validators: [\n152:     validator(o => o.options.includes(o.initial),\n153:       \"Initial must be one of the options\")\n154:   ]\n155: }\n156: ```\n157: \n158: For convenience, some common validators are provided out of the box, including [`inRange`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/inRange.md), [`oneOf`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/oneOf.md), and [`isUrlWithTemplateParameters`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/isUrlWithTemplateParameters.md).\n159: \n160: #### Arrays\n161: \n162: You can accept and validate arrays, and arrays containing objects, in your configuration schema. This is configured with the `_elements` parameter, used with `_type: Type.Array`. For example, a schema which would accept an array of strings up to 30 characters long would look like this:\n163: \n164: ```ts\n165: virtualProvider: {\n166:   name: {\n167:     given: {\n168:       _type: Type.Array,\n169:       _default: [\"Obi\", \"Wan\"],\n170:       _elements: {\n171:         _type: Type.String,\n172:         _validators: [validator(n => n.length < 30, \"Must be less than 30 characters\")]\n173:       }\n174:     },\n175:     _description: \"The name of the avatar. Does not have to be the name of the actual provider\"\n176:   },\n177:   _description: \"The avatar of the medical practitioner\"\n178: }\n179: ```\n180: \n181: Here is an example of a schema that expects an array of objects structured in a particular way.\n182: \n183: ```ts\n184: robots: {\n185:   _type: Type.Array,\n186:   _default: [\n187:     { name: \"R2-D2\", homeworld: \"Naboo\" },\n188:     { name: \"C-3PO\", homeworld: \"Tatooine\" }\n189:   ],\n190:   _description: \"The list of all available robots\",\n191:   _elements: {\n192:     name: {\n193:       _type: Type.String,\n194:       _description: \"What to call the robot\",\n195:       _validators: [robotNameValidator]\n196:     },\n197:     homeworld: {\n198:       _type: Type.String,\n199:       _description: \"Where the robot is from\",\n200:       _default: null  // not required\n201:     }\n202:   }\n203: }\n204: ```\n205: \n206: This schema validates the keys and value types of objects in the `robots` array. Unknown keys are logged as configuration errors, and defaults are filled in when an `_elements` entry provides an `_default`.\n207: \n208: Objects within arrays do not have to provide defaults for every key. If a field such as `name` is required for your module to work correctly, add a validator that checks each object and returns a helpful error message when the field is missing.\n209: \n210: #### Using config values\n211: \n212: ##### The generic way\n213: \n214: The config is fetched asynchronously using `getConfig(moduleName)`. Continuing the above example, we would have something like:\n215: \n216: ```ts\n217: import { getConfig } from \"@openmrs/esm-framework\";\n218: \n219: async function doctorGreeting() {\n220:   const config = await getConfig(\"@openmrs/esm-hologram-doctor\");\n\n(Showing lines 109-220 of 439. Use offset=221 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/mock.ts","name":"mock.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/types.ts","name":"types.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/mock-jest.ts","name":"mock-jest.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/tooling/storybook/mocks/esm-config.ts","name":"esm-config.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/config-schema.ts","name":"config-schema.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/module-config/module-config.ts","name":"module-config.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-0683a013-604c-484a-b2b0-e8a21907b7ff","output":{"output":"Found 13 matches in 6 files\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-config/mock.ts:\n  13: export enum Type {\n  27: export function defineConfigSchema(moduleName, schema) {\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-config/src/types.ts:\n  1: export enum Type {\n  17: export interface ConfigSchema {\n  65: export type Validator = (value: any) => void | string;\n  63: export type ValidatorFunction = (value: any) => boolean;\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-config/mock-jest.ts:\n  13: export enum Type {\n  29: export function defineConfigSchema(moduleName, schema) {\n\n[github.com/openmrs/openmrs-esm-core] packages/tooling/storybook/mocks/esm-config.ts:\n  6: export enum Type {\n  18: export interface ConfigSchema {\n  40: export function defineConfigSchema(_moduleName: string, _schema: any) {}\n\n[github.com/openmrs/openmrs-esm-core] packages/apps/esm-login-app/src/config-schema.ts:\n  154: export interface ConfigSchema {\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-config/src/module-config/module-config.ts:\n  369: export function defineConfigSchema(moduleName: string, schema: ConfigSchema) {","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/mock.ts","name":"mock.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/types.ts","name":"types.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/mock-jest.ts","name":"mock-jest.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/tooling/storybook/mocks/esm-config.ts","name":"esm-config.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/config-schema.ts","name":"config-schema.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/module-config/module-config.ts","name":"module-config.ts","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Now"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" let me read the actual implementation: the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" types file, defineConfigSchema in module-config.ts,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" and a real config-schema example from a module.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-a286ea98-ce2c-4234-9de6-03db908dd60f","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-a286ea98-ce2c-4234-9de6-03db908dd60f","inputTextDelta":"{\"path\": \"packages/framework/esm-config/src/types.ts\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"ref\": \"HEAD\", \"offset\": 1, \"limit\": 80}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-a286ea98-ce2c-4234-9de6-03db908dd60f","toolName":"read_file","input":{"path":"packages/framework/esm-config/src/types.ts","repo":"github.com/openmrs/openmrs-esm-core","ref":"HEAD","offset":1,"limit":80}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/types.ts","name":"types.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-a286ea98-ce2c-4234-9de6-03db908dd60f","output":{"output":"<repo>github.com/openmrs/openmrs-esm-core</repo>\n<path>packages/framework/esm-config/src/types.ts</path>\n<url>undefined</url>\n<content>\n1: export enum Type {\n2:   Array = 'Array',\n3:   Boolean = 'Boolean',\n4:   ConceptUuid = 'ConceptUuid',\n5:   Number = 'Number',\n6:   Object = 'Object',\n7:   String = 'String',\n8:   UUID = 'UUID',\n9:   PersonAttributeTypeUuid = 'PersonAttributeTypeUuid',\n10:   PatientIdentifierTypeUuid = 'PatientIdentifierTypeUuid',\n11: }\n12: \n13: // Full-powered typing for Config and Schema trees depends on being able to\n14: // have types like `string not \"_default\"`. There is an experimental PR\n15: // for this feature, https://github.com/microsoft/TypeScript/pull/29317\n16: // But it is not likely to be merged any time terribly soon. (Nov 11, 2020)\n17: export interface ConfigSchema {\n18:   [key: string]: ConfigSchema | ConfigValue;\n19:   _type?: Type;\n20:   _validators?: Array<Validator>;\n21:   _elements?: ConfigSchema;\n22: }\n23: \n24: export interface Config {\n25:   [moduleName: string]: { [key: string]: any };\n26: }\n27: \n28: export interface ConfigObject {\n29:   [key: string]: any;\n30:   /** Options that control when this extension is displayed  */\n31:   'Display conditions'?: DisplayConditionsConfigObject;\n32:   'Translation overrides'?: Record<string, Record<string, string>>;\n33: }\n34: \n35: export interface DisplayConditionsConfigObject {\n36:   /** The privileges a user should have to see this extension */\n37:   privileges?: string[];\n38:   /** An expression to evaluate whether or not the user should see this extension */\n39:   expression?: string;\n40: }\n41: \n42: export type ConfigValue = string | number | boolean | void | Array<any> | object;\n43: \n44: export interface ExtensionSlotConfig {\n45:   /** Additional extension IDs to assign to this slot, in addition to those `attach`ed in code. */\n46:   add?: Array<string>;\n47:   /** Extension IDs which were `attach`ed to the slot but which should not be assigned. */\n48:   remove?: Array<string>;\n49:   /** Overrides the default ordering of extensions. */\n50:   order?: Array<string>;\n51:   configure?: ExtensionSlotConfigureValueObject;\n52: }\n53: \n54: export interface ExtensionSlotConfigureValueObject {\n55:   [key: string]: object;\n56: }\n57: \n58: export type ProvidedConfig = {\n59:   source: string;\n60:   config: Config;\n61: };\n62: \n63: export type ValidatorFunction = (value: any) => boolean;\n64: \n65: export type Validator = (value: any) => void | string;\n66: \n\n(End of file - 66 lines total)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/types.ts","name":"types.ts","revision":"HEAD"}]}}
+
+data: {"type":"tool-input-start","toolCallId":"call-edcd7001-e4a3-44e6-8c26-9e3ab827fa71","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-edcd7001-e4a3-44e6-8c26-9e3ab827fa71","inputTextDelta":"{\"path\": \"packages/framework/esm-config/src/module-config/module-config.ts\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"ref\": \"HEAD\", \"offset\": 355, \"limit\": 40}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-edcd7001-e4a3-44e6-8c26-9e3ab827fa71","toolName":"read_file","input":{"path":"packages/framework/esm-config/src/module-config/module-config.ts","repo":"github.com/openmrs/openmrs-esm-core","ref":"HEAD","offset":355,"limit":40}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/module-config/module-config.ts","name":"module-config.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-edcd7001-e4a3-44e6-8c26-9e3ab827fa71","output":{"output":"<repo>github.com/openmrs/openmrs-esm-core</repo>\n<path>packages/framework/esm-config/src/module-config/module-config.ts</path>\n<url>undefined</url>\n<content>\n355:  */\n356: \n357: /**\n358:  * This defines a configuration schema for a module. The schema tells the\n359:  * configuration system how the module can be configured. It specifies\n360:  * what makes configuration valid or invalid.\n361:  *\n362:  * See [Configuration System](https://o3-docs.openmrs.org/en-US/docs/configuration-system)\n363:  * for more information about defining a config schema.\n364:  *\n365:  * @param moduleName Name of the module the schema is being defined for. Generally\n366:  *   should be the one in which the `defineConfigSchema` call takes place.\n367:  * @param schema The config schema for the module\n368:  */\n369: export function defineConfigSchema(moduleName: string, schema: ConfigSchema) {\n370:   validateConfigSchema(moduleName, schema);\n371:   const enhancedSchema = mergeDeepReplace(schema, implicitConfigSchema);\n372: \n373:   configInternalStore.setState((state) => ({\n374:     ...state,\n375:     schemas: { ...state.schemas, [moduleName]: enhancedSchema },\n376:     moduleLoaded: { ...state.moduleLoaded, [moduleName]: true },\n377:   }));\n378: }\n379: \n380: /**\n381:  * This alerts the configuration system that a module exists. This allows config to be\n382:  * processed, while still allowing the extension system to know whether the module has\n383:  * actually had its front bundle executed yet.\n384:  *\n385:  * This should only be used in esm-app-shell.\n386:  *\n387:  * @internal\n388:  * @param moduleName\n389:  */\n390: export function registerModuleWithConfigSystem(moduleName: string) {\n391:   configInternalStore.setState((state) => ({\n392:     ...state,\n393:     schemas: { ...state.schemas, [moduleName]: implicitConfigSchema },\n394:   }));\n\n(Showing lines 355-394 of 1310. Use offset=395 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/module-config/module-config.ts","name":"module-config.ts","revision":"HEAD"}]}}
+
+data: {"type":"tool-input-start","toolCallId":"call-6d1bf966-2f97-4bcb-8295-9a6791f04fa7","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-6d1bf966-2f97-4bcb-8295-9a6791f04fa7","inputTextDelta":"{\"path\": \"packages/apps/esm-login-app/src/config-schema.ts\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"ref\": \"HEAD\", \"offset\": 1, \"limit\": 60}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-6d1bf966-2f97-4bcb-8295-9a6791f04fa7","toolName":"read_file","input":{"path":"packages/apps/esm-login-app/src/config-schema.ts","repo":"github.com/openmrs/openmrs-esm-core","ref":"HEAD","offset":1,"limit":60}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/config-schema.ts","name":"config-schema.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-6d1bf966-2f97-4bcb-8295-9a6791f04fa7","output":{"output":"<repo>github.com/openmrs/openmrs-esm-core</repo>\n<path>packages/apps/esm-login-app/src/config-schema.ts</path>\n<url>undefined</url>\n<content>\n1: import { validators, Type, validator } from '@openmrs/esm-framework';\n2: import {\n3:   type TwoFactorAuthConfigObject,\n4:   twoFactorAuthConfigSchema,\n5: } from './two-factor-auth/two-factor-auth-config-schema';\n6: \n7: export const configSchema = {\n8:   provider: {\n9:     type: {\n10:       _type: Type.String,\n11:       _default: 'basic',\n12:       _description:\n13:         \"Selects the login mechanism to use. Choices are 'basic', 'oauth2' and 'custom'. On log out, the user is redirected to the login Url in 'custom' mode, but NOT in 'oauth2' mode. \" +\n14:         \"For 'custom' and 'oauth2', you'll also need to set the 'loginUrl' property.\",\n15:       _validators: [validators.oneOf(['basic', 'custom', 'oauth2'])],\n16:     },\n17:     loginUrl: {\n18:       _type: Type.String,\n19:       _default: '${openmrsSpaBase}/login',\n20:       _description: \"The URL to use to login. This is only used if the login type is 'oauth2' or 'custom'.\",\n21:       _validators: [validators.isUrl],\n22:     },\n23:     _validators: [\n24:       validator(\n25:         (provider: { type: string; loginUrl: string }) => {\n26:           if (provider.type === 'custom' || provider.type === 'oauth2') {\n27:             return provider.loginUrl !== '${openmrsSpaBase}/login';\n28:           }\n29:           return true;\n30:         },\n31:         (provider: { type: string }) =>\n32:           `Provider type '${provider.type}' requires an explicit loginUrl that is not the default SPA login route.`,\n33:       ),\n34:     ],\n35:   },\n36:   chooseLocation: {\n37:     enabled: {\n38:       _type: Type.Boolean,\n39:       _default: true,\n40:       _description:\n41:         \"Whether to show a 'Choose Location' screen after login. \" +\n42:         \"If true, the user will be taken to the URL set in the 'links.loginSuccess' config property after choosing a location.\",\n43:     },\n44:     locationsPerRequest: {\n45:       _type: Type.Number,\n46:       _default: 50,\n47:       _description: 'The number of results to fetch in each cycle of infinite scroll.',\n48:       _validators: [validator((v: unknown) => typeof v === 'number' && v > 0, 'Must be greater than zero')],\n49:     },\n50:     useLoginLocationTag: {\n51:       _type: Type.Boolean,\n52:       _default: true,\n53:       _description:\n54:         \"Whether to display only locations with the 'Login Location' tag. If false, all locations are shown.\",\n55:     },\n56:   },\n57:   links: {\n58:     loginSuccess: {\n59:       _type: Type.String,\n60:       _default: '${openmrsSpaBase}/home',\n\n(Showing lines 1-60 of 189. Use offset=61 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/config-schema.ts","name":"config-schema.ts","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" have the docs and implementation. Let me also check the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" remaining doc section on extension-specific config, and confirm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" where `validators`/`validator"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"`/`Type` are exported from"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the framework entry point, plus the implicit schema definition"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-1dbcdb7a-b0ac-4733-a6cd-b003e5bc0dc0","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-1dbcdb7a-b0ac-4733-a6cd-b003e5bc0dc0","inputTextDelta":"{\"path\": \"content/en-US/docs/configuration-system.mdx\", \"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\", \"ref\": \"HEAD\", \"offset\": 337, \"limit\": 103}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-1dbcdb7a-b0ac-4733-a6cd-b003e5bc0dc0","toolName":"read_file","input":{"path":"content/en-US/docs/configuration-system.mdx","repo":"github.com/openmrs/openmrs-contrib-o3-docs","ref":"HEAD","offset":337,"limit":103}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-1dbcdb7a-b0ac-4733-a6cd-b003e5bc0dc0","output":{"output":"<repo>github.com/openmrs/openmrs-contrib-o3-docs</repo>\n<path>content/en-US/docs/configuration-system.mdx</path>\n<url>undefined</url>\n<content>\n337: #### Extension-specific configuration\n338: \n339: Extensions can have their own configuration schemas that are separate from their parent module's configuration. This is useful when an extension needs configuration options that don't apply to the module as a whole.\n340: \n341: To define an extension-specific config schema, use `defineExtensionConfigSchema`:\n342: \n343: ```ts\n344: import { defineExtensionConfigSchema, Type } from \"@openmrs/esm-framework\";\n345: \n346: export function startupApp() {\n347:   defineExtensionConfigSchema(\"my-extension-name\", {\n348:     customSetting: {\n349:       _type: Type.String,\n350:       _default: \"default value\",\n351:       _description: \"A setting specific to this extension\"\n352:     }\n353:   });\n354: }\n355: ```\n356: \n357: The extension name should match the `name` property of the extension as defined in `routes.json`. When an extension has its own config schema, base values for that schema are provided under the extension name, not under the module name. `useConfig()` within that extension still returns the module's normal configuration plus the extension's configuration. Extension-specific values take precedence when the same top-level key exists in both places.\n358: \n359: **How extension configuration is resolved:**\n360: \n361: Extension configuration values are determined by merging multiple sources in this order:\n362: \n363: 1. **Extension's base configuration** - Values provided under the extension name when the extension has its own schema, or under the extension module name when it uses the module schema\n364: 2. **Slot-specific overrides** - Values from the `configure` object in the slot's configuration (highest precedence)\n365: \n366: This merging allows administrators to customize an extension's behavior differently for each slot where it appears. For example, the same extension could have different settings when used in a patient header versus a dashboard.\n367: \n368: The `configure` key must match the extension ID assigned to the slot. If you attach the same extension multiple times with instance IDs such as `my-extension#left` and `my-extension#right`, configure those full IDs separately.\n369: \n370: For example, this provides the extension's base configuration:\n371: \n372: ```json\n373: {\n374:   \"my-extension-name\": {\n375:     \"customSetting\": \"base value\"\n376:   }\n377: }\n378: ```\n379: \n380: Extension configuration can then be overridden per-slot using the `configure` object in the slot's configuration:\n381: \n382: ```json\n383: {\n384:   \"@openmrs/esm-my-module\": {\n385:     \"extensionSlots\": {\n386:       \"my-slot\": {\n387:         \"configure\": {\n388:           \"my-extension-name\": {\n389:             \"customSetting\": \"slot-specific value\"\n390:           }\n391:         }\n392:       }\n393:     }\n394:   }\n395: }\n396: ```\n397: \n398: ## Schema Reference\n399: \n400: `_default`\n401: \n402: All config elements must have a default (excluding elements within arrays or freeform objects governed by `_elements`).\n403: \n404: The default does not necessarily need to satisfy the `_type` or the `_validators` of the element, but this may change in future versions.\n405: \n406: `_type`\n407: \n408: One of the values from the Type enum. Used for validation and to help the implementer tools work with the element.\n409: \n410: Should always appear alongside `_default`.\n411: \n412: `_description`\n413: \n414: Helps implementers understand what the configuration element actually does and how it is intended to be used.\n415: \n416: Can be used anywhere within the schema structure.\n417: \n418: `_validators`\n419: \n420: An array of validator objects.\n421: \n422: Some common validators are provided, including [`inRange`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/inRange.md), [`oneOf`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/oneOf.md), and [`isUrlWithTemplateParameters`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/isUrlWithTemplateParameters.md).\n423: \n424: Custom validators should be created with the [`validator`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/validator.md) function.\n425: \n426: Can be used anywhere within the schema structure.\n427: \n428: `_elements`\n429: \n430: Only valid alongside `_type: Type.Array` or `_type: Type.Object`. A `_default` must also be provided at this level. For arrays, the value should be a schema for each array item. For freeform objects, the value should be a schema for each object value.\n431: \n432: ### API Documentation\n433: \n434: See the generated API docs for [`defineConfigSchema`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/defineConfigSchema.md), [`defineExtensionConfigSchema`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/defineExtensionConfigSchema.md), [`getConfig`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/getConfig.md), [`useConfig`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/useConfig.md), and [`validator`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/validator.md).\n435: \n436: ### The RFC\n437: \n\n(Output capped at 5KB. Showing lines 337-437 of 439. Use offset=438 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","name":"configuration-system.mdx","revision":"HEAD"}]}}
+
+data: {"type":"tool-input-start","toolCallId":"call-1fab727d-0362-4e74-a2e9-c35c47b22498","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-1fab727d-0362-4e74-a2e9-c35c47b22498","inputTextDelta":"{\"pattern\": \"implicitConfigSchema\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"limit\": 20}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-1fab727d-0362-4e74-a2e9-c35c47b22498","toolName":"grep","input":{"pattern":"implicitConfigSchema","repo":"github.com/openmrs/openmrs-esm-core","limit":20}}
+
+data: {"type":"tool-input-start","toolCallId":"call-00f7ca8f-2ca4-4958-9216-0add20cf24a7","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-00f7ca8f-2ca4-4958-9216-0add20cf24a7","inputTextDelta":"{\"pattern\": \"defineConfigSchema|validators|Type\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"path\": \"packages/framework/esm-framework/src\", \"limit\": 20}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-00f7ca8f-2ca4-4958-9216-0add20cf24a7","toolName":"grep","input":{"pattern":"defineConfigSchema|validators|Type","path":"packages/framework/esm-framework/src","repo":"github.com/openmrs/openmrs-esm-core","limit":20}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/module-config/module-config.ts","name":"module-config.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-1fab727d-0362-4e74-a2e9-c35c47b22498","output":{"output":"Found 7 matches in 1 file\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-config/src/module-config/module-config.ts:\n  1295: const implicitConfigSchema: ConfigSchema = {\n  371:   const enhancedSchema = mergeDeepReplace(schema, implicitConfigSchema);\n  393:     schemas: { ...state.schemas, [moduleName]: implicitConfigSchema },\n  447:   const enhancedSchema = mergeDeepReplace(schema, implicitConfigSchema);\n  980:   const config = setDefaults(implicitConfigSchema, inputConfig);\n  981:   runAllValidatorsInConfigTree(implicitConfigSchema, config, moduleName);\n  1293:  * The implicitConfigSchema is implicitly included in every configuration schema","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/module-config/module-config.ts","name":"module-config.ts","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/src/integration-tests/extension-config.test.tsx","name":"extension-config.test.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/src/integration-tests/extension-recomputation.test.tsx","name":"extension-recomputation.test.tsx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-00f7ca8f-2ca4-4958-9216-0add20cf24a7","output":{"output":"Found 20 matches in 2 files\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/src/integration-tests/extension-config.test.tsx:\n  23:   defineConfigSchema,\n  30:   Type,\n  69:     defineConfigSchema('esm-flintstone', {});\n  107:     defineConfigSchema('esm-flintstone', {\n  108:       town: { _type: Type.String, _default: 'Bedrock' },\n  156:     defineConfigSchema('esm-characters', {\n  157:       name: { _type: Type.String, _default: '(no-name)' },\n  201:     defineConfigSchema('esm-widgets', {\n  202:       concept: { _type: Type.String, _default: '(none)' },\n  248:     defineConfigSchema('esm-slaghoople', {});\n  283:     defineConfigSchema('esm-flintstone', { tie: { _default: 'green' } });\n  322:     defineConfigSchema('esm-flintstone', { clothes: { _default: 'leopard' } });\n  395:     defineConfigSchema('esm-bedrock', {});\n  396:     defineConfigSchema('esm-flintstones', {});\n  451:     defineConfigSchema('esm-bedrock', {});\n  502:     defineConfigSchema('esm-bedrock', {});\n  503:     defineConfigSchema('esm-flintstones', {});\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/src/integration-tests/extension-recomputation.test.tsx:\n  35:   defineConfigSchema,\n  65: function decorate(Component: React.ComponentType) {\n  84:     defineConfigSchema(moduleName, {});\n\n(Output was cut short: narrow the path or pattern, name a repo, or raise the limit.)","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/src/integration-tests/extension-config.test.tsx","name":"extension-config.test.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/src/integration-tests/extension-recomputation.test.tsx","name":"extension-recomputation.test.tsx","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" have enough. Let me quickly verify the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" implicit schema content and where the framework re-exports config"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" APIs, plus the docs index link for the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" config system page.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-3713908c-981e-46a4-8d1b-d42604bc1e9d","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-3713908c-981e-46a4-8d1b-d42604bc1e9d","inputTextDelta":"{\"path\": \"packages/framework/esm-config/src/module-config/module-config.ts\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"ref\": \"HEAD\", \"offset\": 1288, \"limit\": 23}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-3713908c-981e-46a4-8d1b-d42604bc1e9d","toolName":"read_file","input":{"path":"packages/framework/esm-config/src/module-config/module-config.ts","repo":"github.com/openmrs/openmrs-esm-core","ref":"HEAD","offset":1288,"limit":23}}
+
+data: {"type":"tool-input-start","toolCallId":"call-cf8fadb3-4701-4dac-bd9a-e4266e217ad3","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-cf8fadb3-4701-4dac-bd9a-e4266e217ad3","inputTextDelta":"{\"pattern\": \"esm-config\", \"path\": \"packages/framework/esm-framework/src/index.ts\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"limit\": 10}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-cf8fadb3-4701-4dac-bd9a-e4266e217ad3","toolName":"grep","input":{"pattern":"esm-config","path":"packages/framework/esm-framework/src/index.ts","repo":"github.com/openmrs/openmrs-esm-core","limit":10}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/module-config/module-config.ts","name":"module-config.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-3713908c-981e-46a4-8d1b-d42604bc1e9d","output":{"output":"<repo>github.com/openmrs/openmrs-esm-core</repo>\n<path>packages/framework/esm-config/src/module-config/module-config.ts</path>\n<url>undefined</url>\n<content>\n1288:     ],\n1289:   },\n1290: };\n1291: \n1292: /**\n1293:  * The implicitConfigSchema is implicitly included in every configuration schema\n1294:  */\n1295: const implicitConfigSchema: ConfigSchema = {\n1296:   'Display conditions': {\n1297:     privileges: {\n1298:       _description: 'The privilege(s) the user must have to use this extension',\n1299:       _type: Type.Array,\n1300:       _default: [],\n1301:     },\n1302:     expression: {\n1303:       _description: 'The expression that determines whether the extension is displayed',\n1304:       _type: Type.String,\n1305:       _default: undefined,\n1306:     },\n1307:   },\n1308:   ...translationOverridesSchema,\n1309: };\n1310: \n\n(End of file - 1310 lines total)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/module-config/module-config.ts","name":"module-config.ts","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/src/index.ts","name":"index.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-cf8fadb3-4701-4dac-bd9a-e4266e217ad3","output":{"output":"Found 1 match in 1 file\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/src/index.ts:\n  2: export * from '@openmrs/esm-config/src/public';","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/src/index.ts","name":"index.ts","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" have everything needed. Let me write the answer"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".\n\n<!--answer-->\nAn O3 frontend"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" module declares its configurable settings by writing"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" a **config schema** — a plain"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" JavaScript object whose leaves describe each setting's"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" type, default and validation rules — and registering"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" it with the framework in its entry point. Implement"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ers then override those settings by writing JSON,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" without touching code.\n\nThe documentation lives in the O"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"3 docs repo, in `configuration-system"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".mdx` (the developer-facing guide"}
+
+data: {"type":"text-delta","id":"txt-0","delta":") and `configure-o3/over"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"view.mdx` (the implementer"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-facing guide). The implementation lives in `open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-esm-core`, in the `@"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"openmrs/esm-config` package.\n\n## What"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the documentation says\n\nThe config system \""}
+
+data: {"type":"text-delta","id":"txt-0","delta":"provides a framework for making frontend modules"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" configurable by implementers without requiring code changes\" @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/openmrs-cont"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rib-o3-docs::content/en-US"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/docs/configuration-system.mdx:3"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-9}. It only applies to developers making"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" a module configurable; implementers configuring"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" an instance should read the Configure O3 guide @file"}
+
+data: {"type":"text-delta","id":"txt-0","delta":":{github.com/openmrs/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs-contrib-o3-docs::"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"content/en-US/docs/configuration-system.mdx:"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"15-15}.\n\nThe main task for"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" a module author is to \"create a config schema for"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" your module … what configuration files should look like, including"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" defaults and validations\" @file:{"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"github.com/openmrs/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-contrib-o3-docs::content"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/en-US/docs/configuration-system.mdx"}
+
+data: {"type":"text-delta","id":"txt-0","delta":":19-23}. Schemas are optional —"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" a pure library module can skip one @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-contrib-o3-docs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::content/en-US/docs/configuration-system"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".mdx:23-23}.\n\nTwo"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" implementer-facing docs cover the flip side: how"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" per-module configuration is written, shown"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" with the Programs module's `config-schema.ts`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" @file:{github.com/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs-contrib-o3-d"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ocs::content/en-US/docs/configure"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-o3/overview.mdx:"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"156-182}, and the fact that O3 ships"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" an implicit schema for every module, giving"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `Display conditions` and `Translation overrides` without"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the module declaring them @file:{github.com"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs/openmrs-contrib"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-o3-docs::content/en-US"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/docs/configuration-system.mdx:294"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-301}.\n\n## The schema file\n\n"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Each module keeps its schema in a `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"config-schema.ts` inside `src`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" @file:{github.com/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs-contrib-o3-d"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ocs::content/en-US/docs/configure"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-o3/overview.mdx:"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"158-158}. Every leaf is an"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" object, never a raw value, and carries"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `_`-prefixed keywords: `_type"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"`, `_default`, `_description"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"`, `_validators`, `_elements"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` @file:{github.com/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs/openmrs-contrib-o3"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-docs::content/en-US/docs/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"configuration-system.mdx:52-79"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"}. The full keyword reference is in the Schema"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" Reference section @file:{github.com/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/openmrs-contrib-o"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"3-docs::content/en-US/docs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/configuration-system.mdx:398-430"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"}.\n\nA real example is the login app"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"'s schema, which validates login modes with"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `validators.oneOf`, requires"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" an explicit `loginUrl` for custom/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"oauth2 providers, and supplies defaults like"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `'${openmrsSpa"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Base}/login'` @file:{github.com"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs/openmrs-esm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-core::packages/apps/esm-log"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"in-app/src/config-schema.ts:"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"7-35}. Types come from the `Type"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` enum — String, Number, Boolean, Array"}
+
+data: {"type":"text-delta","id":"txt-0","delta":", Object, UUID and several UUID subtypes"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" @file:{github.com/openmrs/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs-contrib-o3-docs::content"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/en-US/docs/configuration-system.mdx:106"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-117}.\n\n## Where the schema is registered"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"\n\nModules register the schema in `startupApp()"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"`, the once-per-module setup hook"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" @file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-contrib-o3-docs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::content/en-US/docs/frontend"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-modules/overview.mdx:229"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-237}. The call is `defineConfigSchema"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"(moduleName, configSchema)` @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-contrib-o3-docs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::content/en-US/docs/configuration-system"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".mdx:277-292}. `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"startupApp` is exported from `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"src/index.ts`, the module's entry"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" point @file:{github.com/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs/openmrs-contrib-o3"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-docs::content/en-US/docs/f"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rontend-modules/overview.m"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"dx:214-216}.\n\n## The"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" implementation\n\n`defineConfigSchema` is"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" defined in the config package @file:{github"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".com/openmrs/openmrs-es"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"m-core::packages/framework/esm-config"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/src/module-config/module-config.ts"}
+
+data: {"type":"text-delta","id":"txt-0","delta":":369-378}. It does three things:"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" validates the schema, merges it with the implicit schema"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" via `mergeDeepReplace`, and stores"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the result in the config store keyed"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" by module name, also flagging the module"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" as loaded @file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-esm-core::packages"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/framework/esm-config/src/module"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-config/module-config.ts:369-378}.\n\nThe"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" implicit schema is the small object holding `Display"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" conditions` and the translation overrides keys"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" @file:{github.com/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs-esm-core::pack"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ages/framework/esm-config/src/mod"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ule-config/module-config.ts:129"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"2-1309}. Because it is merged in"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" automatically, a module cannot redefine or conflict with those keys"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" @file:{github.com/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs-contrib-o3-docs::"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"content/en-US/docs/configuration-system.mdx:81"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-100}.\n\nThe schema shape itself is typed by `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ConfigSchema`, whose object index signature allows"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" nested schemas or values recursing to"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" any depth, alongside the optional `_type`,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `_validators` and `_"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"elements` keys @file:{github.com"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs/openmrs-esm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-core::packages/framework/esm-config/src"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/types.ts:17-22}. The"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `Type` enum and the validator types sit"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" in the same file @file:{github"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".com/openmrs/openmrs-es"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"m-core::packages/framework/es"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"m-config/src/types.ts:1-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"11}. All of it is re-exported to"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" modules through the framework's public entry point @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-esm-core::packages"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/framework/esm-framework/src/index"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".ts:2-2}, which is why"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" modules import `defineConfigSchema`, `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Type` and `validator` from `@open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/esm-framework`.\n\n##"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" How implementers override and consume settings\n\nValues are"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" merged with a fixed precedence: schema defaults,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" then config files in load order, then"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" temporary config from the Implementer Tools UI @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-contrib-o3-docs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::content/en-US/docs/configuration-system"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".mdx:227-237}. Nested objects"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" merge deeply but arrays are replaced wholesale @file:{github"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".com/openmrs/openmrs-cont"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rib-o3-docs::content/en"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-US/docs/configuration-system.mdx:"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"237-237}.\n\nModules then read the merged"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" result either asynchronously with `getConfig(module"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Name)` @file:{github.com/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/openmrs-contrib-o"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"3-docs::content/en-US/docs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/configuration-system.mdx:212-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"225} or, in React, with"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the `useConfig` hook, which"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" infers the module from the `ComponentContext` set"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" by `getSyncLifecycle`/`getAsync"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Lifecycle` and merges extension-specific config when"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" used inside an extension @file:{github.com"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs/openmrs-contrib"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-o3-docs::content/en-US"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/docs/configuration-system.mdx:239"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-267}. An interface can be declared"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" next to the schema and passed as a"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" type argument for typed access @file:{github"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".com/openmrs/openmrs-cont"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rib-o3-docs::content/en-US/docs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/configuration-system.mdx:307-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"335}.\n\nExtensions can additionally declare their own schema"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" with `defineExtensionConfigSchema`;"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the extension name must match its `name` in"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `routes.json`, values live under the extension name"}
+
+data: {"type":"text-delta","id":"txt-0","delta":", and per-slot `configure` overrides win"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" @file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-contrib-o3-docs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::content/en-US/docs/configuration-system"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".mdx:337-396}.\n\n## The"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" flow\n\n```mermaid\n---\ntitle: Config"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" schema to resolved setting\n---\nflowchart TD\n"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"  schema[\"src/config-schema.ts\"]"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" --> reg[\"startupApp calls defineConfigSchema\"]\n"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"  reg --> merge[\"mergeDeepReplace with implicit schema"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"\"]\n  merge --> store[\"config system"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" store\"]\n  impl[\"Implementer config files"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"\"] --> resolver[\"config resolver\"]\n "}
+
+data: {"type":"text-delta","id":"txt-0","delta":" tools[\"Implementer Tools temporary config\"] --> resolver"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"\n  store --> resolver\n  resolver --> hook"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"[\"useConfig or getConfig\"]\n "}
+
+data: {"type":"text-delta","id":"txt-0","delta":" hook --> component[\"Module component\"]\n```\n\n##"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" What I could not verify\n\nI did not open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the declaration of `defineExtensionConfigSchema` or"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the extension/slot config-resolution code in `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"esm-config`; those points are taken"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" from the documentation only. I also did not read the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" rest of the login app's schema beyond"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the first 60 lines, nor the validator"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" implementations (`oneOf`, `inRange`, `is"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"UrlWithTemplateParameters`), so their"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" internals are undocumented here."}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"finish-step"}
+
+data: {"type":"data-evidence","data":{"id":1,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":1,"code":["import { Callout } from \"nextra/components\";","","# The Configuration System","","Introduced by [RFC-14](https://github.com/openmrs/openmrs-rfc-frontend/blob/master/text/0014-configuration.md), the configuration system provides a framework for making frontend modules configurable by implementers without requiring code changes. It enables developers to define schemas that specify what configuration options are available, their types, defaults, and validation rules.","","<Callout emoji=\"ℹ️\" type=\"info\">","  **For implementers**: If you're looking to configure an existing O3 instance (changing logos, translations, module settings, etc.), see the [Configure O3](/docs/configure-o3/overview) guide instead. This guide is for **developers** who want to make their modules configurable.","</Callout>","","## Using the Configuration System",""],"highlightedLines":[3,4,5,6,7,8,9]}}
+
+data: {"type":"data-evidence","data":{"id":2,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":12,"code":["","A framework is provided to make configurability easier for developers and configuring easier for implementers.","","**For implementers**: To learn how to configure your O3 instance, see the [Configure O3](/docs/configure-o3/overview) guide, which covers practical configuration tasks like branding, translations, and module-specific settings.","","### How to make a frontend module configurable",""],"highlightedLines":[15]}}
+
+data: {"type":"data-evidence","data":{"id":3,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":16,"code":["","### How to make a frontend module configurable","","You should use the OpenMRS Frontend Framework to make modules configurable.","","The main task is to create a config schema for your module. The config schema is what tells the framework what configuration files should look like, including defaults and validations.","","**Note**: Configuration schemas are optional. If your module doesn't need any configuration options (for example, if it's a library module like the [React Form Engine](https://github.com/openmrs/openmrs-esm-form-engine-lib) that receives all its configuration through props or function parameters), you don't need to define a schema. The configuration system will still work; modules without schemas use the implicit schema for `Display conditions` and `Translation overrides`.","","#### Designing a schema",""],"highlightedLines":[19,20,21,22,23]}}
+
+data: {"type":"data-evidence","data":{"id":4,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":20,"code":["","The main task is to create a config schema for your module. The config schema is what tells the framework what configuration files should look like, including defaults and validations.","","**Note**: Configuration schemas are optional. If your module doesn't need any configuration options (for example, if it's a library module like the [React Form Engine](https://github.com/openmrs/openmrs-esm-form-engine-lib) that receives all its configuration through props or function parameters), you don't need to define a schema. The configuration system will still work; modules without schemas use the implicit schema for `Display conditions` and `Translation overrides`.","","#### Designing a schema",""],"highlightedLines":[23]}}
+
+data: {"type":"data-evidence","data":{"id":5,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configure-o3/overview.mdx","revision":"HEAD","startLine":153,"code":["","**Getting help**: If you have questions or encounter issues with Initializer configuration, the OpenMRS community recommends posting on the [OpenMRS Talk forum](https://talk.openmrs.org/) and tagging your topic with \"initializer\" so community members can help.","","## Configuring individual frontend modules","","Per-app configuration is available in O3 via the built-in [configuration system](/docs/configuration-system). Each frontend module can define its own configuration schema in a `config-schema.ts` file inside its `src` directory. The following snippet is drawn from the Programs frontend module's config-schema:","","```tsx filename=\"src/config-schema.ts\"","import { Type } from '@openmrs/esm-framework';","","export const configSchema = {","  hideAddProgramButton: {","    _type: Type.Boolean,","    _default: false,","  },","  showProgramStatusField: {","    _type: Type.Boolean,","    _description:","      'Whether to show the Program status field in the Record program enrollment and Edit program enrollment forms. If set to true, the `Program status` field is displayed in the Programs datatable',","    _default: false,","  },","};","","export interface ConfigObject {","  hideAddProgramButton: boolean;","  showProgramStatusField: boolean;","}","```","","The properties specified in the config schema allow implementers to tailor the behavior of the module to their needs. The configuration system also allows implementers to specify default values for the various configuration properties. ","","Implementers can make changes to frontend module configurations through the built-in implementer tools panel. Once you log into O3, clicking the caret arrow centered at the bottom of the screen will pull up the implementer tools. Alternatively, you can click on the cog icon in the navbar. Once open, you can look up configuration properties by searching through the configuration and modify them on the fly. Note that any tweaks made to the configuration through the implementer tools will be lost o",""],"highlightedLines":[156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182]}}
+
+data: {"type":"data-evidence","data":{"id":6,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":291,"code":["","This ensures the schema is registered before the module's components are rendered.","","**Automatic schema features:**","","Every module automatically receives an implicit schema that includes two reserved configuration keys:","","- **`Display conditions`** - Used by the extension system to control extension visibility (only relevant for extensions)","- **`Translation overrides`** - Used for per-language translation overrides. See [Configure translations](/docs/configure-o3/configure-translations) for details on how implementers use this feature.","","This implicit schema is available immediately, even before you call `defineConfigSchema()`. This allows translation overrides to be loaded early, which is important because the translation system requires them before modules can fully initialize. When you define your custom schema, it is automatically merged with the implicit schema, so you don't need to (and should not) define these reserved keys yourself.","","#### Support in other frameworks (Angular, Vue, Svelte, etc.)",""],"highlightedLines":[294,295,296,297,298,299,300,301]}}
+
+data: {"type":"data-evidence","data":{"id":7,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configure-o3/overview.mdx","revision":"HEAD","startLine":155,"code":["","## Configuring individual frontend modules","","Per-app configuration is available in O3 via the built-in [configuration system](/docs/configuration-system). Each frontend module can define its own configuration schema in a `config-schema.ts` file inside its `src` directory. The following snippet is drawn from the Programs frontend module's config-schema:","","```tsx filename=\"src/config-schema.ts\"","import { Type } from '@openmrs/esm-framework';"],"highlightedLines":[158]}}
+
+data: {"type":"data-evidence","data":{"id":8,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":49,"code":["","#### Defining a schema","","We’ll start with just that first nested config element from above, `hologram.color`. We must provide defaults for all of the values—in OpenMRS Frontend 3.0, all configuration is optional. All modules should do something reasonable out of the box.","","```ts","import { defineConfigSchema, Type } from \"@openmrs/esm-framework\";","","defineConfigSchema(\"@openmrs/esm-hologram-doctor\", {","  hologram: {","    color: {","      _type: Type.Boolean,","      _default: false,","      _description: \"Whether the hologram supports color display.\"","    }","  }","});","```","","Note that each configuration element should have an object for a value, and that this object must define the properties for that element. Do not do this:","","```ts","// This is wrong. `salutation` is a raw value, not a schema object.","defineConfigSchema(\"@openmrs/esm-hologram-doctor\", {","  hologram: {","    salutation: \"Some friendly default salutation!\"","  }","});","```","","The words prefixed with `_` are schema keywords. Do not prefix the names of your config elements with underscores. Especially do not use a schema keyword as a config element name.","","**Reserved configuration keys:**",""],"highlightedLines":[52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79]}}
+
+data: {"type":"data-evidence","data":{"id":9,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":395,"code":["}","```","","## Schema Reference","","`_default`","","All config elements must have a default (excluding elements within arrays or freeform objects governed by `_elements`).","","The default does not necessarily need to satisfy the `_type` or the `_validators` of the element, but this may change in future versions.","","`_type`","","One of the values from the Type enum. Used for validation and to help the implementer tools work with the element.","","Should always appear alongside `_default`.","","`_description`","","Helps implementers understand what the configuration element actually does and how it is intended to be used.","","Can be used anywhere within the schema structure.","","`_validators`","","An array of validator objects.","","Some common validators are provided, including [`inRange`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/inRange.md), [`oneOf`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/oneOf.md), and [`isUrlWithTemplateParameters`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/isUrlWithTemplateParameters.md).","","Custom validators should be created with the [`validator`](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-framework/docs/functions/validator.md) function.","","Can be used anywhere within the schema structure.","","`_elements`","","Only valid alongside `_type: Type.Array` or `_type: Type.Object`. A `_default` must also be provided at this level. For arrays, the value should be a schema for each array item. For freeform objects, the value should be a schema for each object value.","","### API Documentation",""],"highlightedLines":[398,399,400,401,402,403,404,405,406,407,408,409,410,411,412,413,414,415,416,417,418,419,420,421,422,423,424,425,426,427,428,429,430]}}
+
+data: {"type":"data-evidence","data":{"id":10,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/apps/esm-login-app/src/config-schema.ts","revision":"HEAD","startLine":4,"code":["  twoFactorAuthConfigSchema,","} from './two-factor-auth/two-factor-auth-config-schema';","","export const configSchema = {","  provider: {","    type: {","      _type: Type.String,","      _default: 'basic',","      _description:","        \"Selects the login mechanism to use. Choices are 'basic', 'oauth2' and 'custom'. On log out, the user is redirected to the login Url in 'custom' mode, but NOT in 'oauth2' mode. \" +","        \"For 'custom' and 'oauth2', you'll also need to set the 'loginUrl' property.\",","      _validators: [validators.oneOf(['basic', 'custom', 'oauth2'])],","    },","    loginUrl: {","      _type: Type.String,","      _default: '${openmrsSpaBase}/login',","      _description: \"The URL to use to login. This is only used if the login type is 'oauth2' or 'custom'.\",","      _validators: [validators.isUrl],","    },","    _validators: [","      validator(","        (provider: { type: string; loginUrl: string }) => {","          if (provider.type === 'custom' || provider.type === 'oauth2') {","            return provider.loginUrl !== '${openmrsSpaBase}/login';","          }","          return true;","        },","        (provider: { type: string }) =>","          `Provider type '${provider.type}' requires an explicit loginUrl that is not the default SPA login route.`,","      ),","    ],","  },","  chooseLocation: {","    enabled: {","      _type: Type.Boolean,"],"highlightedLines":[7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]}}
+
+data: {"type":"data-evidence","data":{"id":11,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":103,"code":["","While not strictly required in the current version, you should provide a type for every config element you define. The `_type` keyword accepts values from the Type enum.","","The available types are:","- `Type.String` - String values","- `Type.Number` - Numeric values","- `Type.Boolean` - Boolean values (true/false)","- `Type.Array` - Arrays (requires `_elements` to specify the array element schema)","- `Type.Object` - Freeform object values. When used with `_elements`, O3 validates and fills defaults for each value in the object.","- `Type.UUID` - UUID strings","- `Type.ConceptUuid` - Concept UUID strings","- `Type.PersonAttributeTypeUuid` - Person attribute type UUID strings","- `Type.PatientIdentifierTypeUuid` - Patient identifier type UUID strings","","These types are used both to validate input and to support special behavior in the implementer tools.","","#### Validators",""],"highlightedLines":[106,107,108,109,110,111,112,113,114,115,116,117]}}
+
+data: {"type":"data-evidence","data":{"id":12,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/frontend-modules/overview.mdx","revision":"HEAD","startLine":226,"code":["- It also exports two named lifecycle functions, `root` and `activePrescriptionsSummary`. These names must match the component names declared in `routes.json`. The app shell calls them when the corresponding page or extension needs to render.","- It also exports a `startupApp` function which is used to set up the frontend module. In this case, the frontend module's configuration schema is defined here. Modules that need breadcrumbs or other framework registration can do that in `startupApp` too.","","#### The `startupApp` function","","Many frontend modules define a function named `startupApp`. This function performs setup that should happen once, immediately before the module's first page, extension, modal, or workspace lifecycle is loaded. The `startupApp` function is where we commonly:","","- define the module's configuration schema","- register breadcrumbs","- run other load-time setup that must happen before the module's exported lifecycles are used","","Page and extension registration itself comes from `routes.json`, not from `startupApp`. If a module does not need load-time setup, `startupApp` can be omitted.","","#### The `importTranslation` function",""],"highlightedLines":[229,230,231,232,233,234,235,236,237]}}
+
+data: {"type":"data-evidence","data":{"id":13,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":274,"code":["const otherModuleConfig = useConfig({ externalModuleName: \"@openmrs/esm-other-module\" });","```","","**Registering config schemas:**","","In Core v5+ modules, config schemas should be registered in the `startupApp()` function:","","```ts","import { defineConfigSchema } from \"@openmrs/esm-framework\";","import { configSchema } from \"./config-schema\";","","const moduleName = \"@openmrs/esm-hologram-doctor\";","","export function startupApp() {","  defineConfigSchema(moduleName, configSchema);","}","```","","This ensures the schema is registered before the module's components are rendered.","","**Automatic schema features:**",""],"highlightedLines":[277,278,279,280,281,282,283,284,285,286,287,288,289,290,291,292]}}
+
+data: {"type":"data-evidence","data":{"id":14,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/frontend-modules/overview.mdx","revision":"HEAD","startLine":211,"code":["  moduleName,","};","","export function startupApp() {","  defineConfigSchema(moduleName, configSchema);","}","","export const root = getAsyncLifecycle(() => import(\"./root.component\"), options);",""],"highlightedLines":[214,215,216]}}
+
+data: {"type":"data-evidence","data":{"id":15,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/module-config/module-config.ts","revision":"HEAD","startLine":366,"code":[" *   should be the one in which the `defineConfigSchema` call takes place."," * @param schema The config schema for the module"," */","export function defineConfigSchema(moduleName: string, schema: ConfigSchema) {","  validateConfigSchema(moduleName, schema);","  const enhancedSchema = mergeDeepReplace(schema, implicitConfigSchema);","","  configInternalStore.setState((state) => ({","    ...state,","    schemas: { ...state.schemas, [moduleName]: enhancedSchema },","    moduleLoaded: { ...state.moduleLoaded, [moduleName]: true },","  }));","}","","/**"," * This alerts the configuration system that a module exists. This allows config to be"],"highlightedLines":[369,370,371,372,373,374,375,376,377,378]}}
+
+data: {"type":"data-evidence","data":{"id":16,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/module-config/module-config.ts","revision":"HEAD","startLine":1289,"code":["  },","};","","/**"," * The implicitConfigSchema is implicitly included in every configuration schema"," */","const implicitConfigSchema: ConfigSchema = {","  'Display conditions': {","    privileges: {","      _description: 'The privilege(s) the user must have to use this extension',","      _type: Type.Array,","      _default: [],","    },","    expression: {","      _description: 'The expression that determines whether the extension is displayed',","      _type: Type.String,","      _default: undefined,","    },","  },","  ...translationOverridesSchema,","};"],"highlightedLines":[1292,1293,1294,1295,1296,1297,1298,1299,1300,1301,1302,1303,1304,1305,1306,1307,1308,1309]}}
+
+data: {"type":"data-evidence","data":{"id":17,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":78,"code":["","The words prefixed with `_` are schema keywords. Do not prefix the names of your config elements with underscores. Especially do not use a schema keyword as a config element name.","","**Reserved configuration keys:**","","The following keys are reserved and cannot be used as configuration element names:","- `Display conditions` - Used by the extension system for extension visibility control","- `Translation overrides` - Used for per-language translation overrides","","These keys are automatically included in every module's implicit schema and will cause validation errors if you try to use them as custom configuration keys.","","```ts","// Don't do this. `_default` is a schema keyword, not a config element name.","defineConfigSchema(\"@openmrs/esm-hologram-doctor\", {","  hologram: {","    salutation: {","      _default: {","        _default: \"Greetings\"","      }","    }","  }","});","```","","#### Typing",""],"highlightedLines":[81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100]}}
+
+data: {"type":"data-evidence","data":{"id":18,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/types.ts","revision":"HEAD","startLine":14,"code":["// have types like `string not \"_default\"`. There is an experimental PR","// for this feature, https://github.com/microsoft/TypeScript/pull/29317","// But it is not likely to be merged any time terribly soon. (Nov 11, 2020)","export interface ConfigSchema {","  [key: string]: ConfigSchema | ConfigValue;","  _type?: Type;","  _validators?: Array<Validator>;","  _elements?: ConfigSchema;","}","","export interface Config {","  [moduleName: string]: { [key: string]: any };"],"highlightedLines":[17,18,19,20,21,22]}}
+
+data: {"type":"data-evidence","data":{"id":19,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-config/src/types.ts","revision":"HEAD","startLine":1,"code":["export enum Type {","  Array = 'Array',","  Boolean = 'Boolean',","  ConceptUuid = 'ConceptUuid',","  Number = 'Number',","  Object = 'Object',","  String = 'String',","  UUID = 'UUID',","  PersonAttributeTypeUuid = 'PersonAttributeTypeUuid',","  PatientIdentifierTypeUuid = 'PatientIdentifierTypeUuid',","}","","// Full-powered typing for Config and Schema trees depends on being able to","// have types like `string not \"_default\"`. There is an experimental PR"],"highlightedLines":[1,2,3,4,5,6,7,8,9,10,11]}}
+
+data: {"type":"data-evidence","data":{"id":20,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/src/index.ts","revision":"HEAD","startLine":1,"code":["export * from '@openmrs/esm-api/src/public';","export * from '@openmrs/esm-config/src/public';","export * from '@openmrs/esm-context/src/public';","export * from '@openmrs/esm-dynamic-loading/src/public';","export * from '@openmrs/esm-emr-api/src/public';"],"highlightedLines":[2]}}
+
+data: {"type":"data-evidence","data":{"id":21,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":224,"code":["","The content of config will be pulled from the config files, falling back to the defaults for configuration elements for which no values have been provided.","","**How configuration values are merged:**","","When multiple configuration sources provide values for the same key, they are merged with the following precedence (later sources override earlier ones):","","1. **Defaults** from the schema definition","2. **Configuration files** (merged in the order they are loaded)","3. **Temporary config** from the Implementer Tools UI (highest precedence)","","This means that if you set a value in a config file and then change it using the Implementer Tools, the Implementer Tools value will take effect. Similarly, if the same key appears in multiple config files, the value from the last file loaded will be used.","","Nested objects are merged deeply, but arrays are replaced as whole values. If a later config source provides an array for a key, it replaces the earlier array rather than merging by index.","","#### React support",""],"highlightedLines":[227,228,229,230,231,232,233,234,235,236,237]}}
+
+data: {"type":"data-evidence","data":{"id":22,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":234,"code":["","This means that if you set a value in a config file and then change it using the Implementer Tools, the Implementer Tools value will take effect. Similarly, if the same key appears in multiple config files, the value from the last file loaded will be used.","","Nested objects are merged deeply, but arrays are replaced as whole values. If a later config source provides an array for a key, it replaces the earlier array rather than merging by index.","","#### React support",""],"highlightedLines":[237]}}
+
+data: {"type":"data-evidence","data":{"id":23,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":209,"code":["","#### Using config values","","##### The generic way","","The config is fetched asynchronously using `getConfig(moduleName)`. Continuing the above example, we would have something like:","","```ts","import { getConfig } from \"@openmrs/esm-framework\";","","async function doctorGreeting() {","  const config = await getConfig(\"@openmrs/esm-hologram-doctor\");","  return \"Hello, my name is Dr. \" + config.virtualProvider.name.given.join(\" \");","}","```","","The content of config will be pulled from the config files, falling back to the defaults for configuration elements for which no values have been provided.","","**How configuration values are merged:**",""],"highlightedLines":[212,213,214,215,216,217,218,219,220,221,222,223,224,225]}}
+
+data: {"type":"data-evidence","data":{"id":24,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":236,"code":["","Nested objects are merged deeply, but arrays are replaced as whole values. If a later config source provides an array for a key, it replaces the earlier array rather than merging by index.","","#### React support","","A React Hook is provided to hide the asynchronicity of config loading. The `useConfig` hook automatically determines which module's configuration to load based on the `ComponentContext`, which is set when you use `getSyncLifecycle` or `getAsyncLifecycle` with a `moduleName`.","","```ts","import HologramDoctor from \"./hologram-doctor.component\";","","export const hologramDoctor = getSyncLifecycle(HologramDoctor, {","  featureName: 'hologram doctor',","  moduleName: '@openmrs/esm-hologram-doctor',","});","```","","You can then get the config tree as an object using the `useConfig` React hook:","","```ts","import { useConfig } from \"@openmrs/esm-framework\";","","export default function DoctorGreeting() {","  const config = useConfig();","  const greeting = \"Hello, my name is Dr. \" + config.virtualProvider.name.given.join(\" \");","  return <div>{greeting}</div>;","}","```","","The `useConfig` hook automatically:","- Loads the module's configuration based on the `moduleName` from the `ComponentContext`","- Merges extension-specific configuration when used within an extension component","- Falls back to defaults for configuration elements for which no values have been provided","","**Loading configuration from another module:**",""],"highlightedLines":[239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267]}}
+
+data: {"type":"data-evidence","data":{"id":25,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":304,"code":["","This hasn't been implemented yet, but you are welcome to implement it! See the [Contributing guide](/docs/frontend-modules/contributing).","","#### Typing","","It is nice to be able to have type validation for your use of configuration. To accomplish this, define an interface alongside your config schema.","","```ts","import { defineConfigSchema, Type } from \"@openmrs/esm-framework\";","","defineConfigSchema(\"@openmrs/esm-hologram-doctor\", {","  hologram: {","    color: {","      _type: Type.Boolean,","      _default: false,","      _description: \"Whether the hologram supports color display.\",","    },","  },","});","","export interface HologramDoctorConfig {","  hologram: {","    color: boolean;","  };","}","```","","You can then use this typing information when calling the config functions:","","```ts","const config = useConfig<HologramDoctorConfig>();","```","","#### Extension-specific configuration",""],"highlightedLines":[307,308,309,310,311,312,313,314,315,316,317,318,319,320,321,322,323,324,325,326,327,328,329,330,331,332,333,334,335]}}
+
+data: {"type":"data-evidence","data":{"id":26,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/configuration-system.mdx","revision":"HEAD","startLine":334,"code":["const config = useConfig<HologramDoctorConfig>();","```","","#### Extension-specific configuration","","Extensions can have their own configuration schemas that are separate from their parent module's configuration. This is useful when an extension needs configuration options that don't apply to the module as a whole.","","To define an extension-specific config schema, use `defineExtensionConfigSchema`:","","```ts","import { defineExtensionConfigSchema, Type } from \"@openmrs/esm-framework\";","","export function startupApp() {","  defineExtensionConfigSchema(\"my-extension-name\", {","    customSetting: {","      _type: Type.String,","      _default: \"default value\",","      _description: \"A setting specific to this extension\"","    }","  });","}","```","","The extension name should match the `name` property of the extension as defined in `routes.json`. When an extension has its own config schema, base values for that schema are provided under the extension name, not under the module name. `useConfig()` within that extension still returns the module's normal configuration plus the extension's configuration. Extension-specific values take precedence when the same top-level key exists in both places.","","**How extension configuration is resolved:**","","Extension configuration values are determined by merging multiple sources in this order:","","1. **Extension's base configuration** - Values provided under the extension name when the extension has its own schema, or under the extension module name when it uses the module schema","2. **Slot-specific overrides** - Values from the `configure` object in the slot's configuration (highest precedence)","","This merging allows administrators to customize an extension's behavior differently for each slot where it appears. For example, the same extension could have different settings when used in a patient header versus a dashboard.","","The `configure` key must match the extension ID assigned to the slot. If you attach the same extension multiple times with instance IDs such as `my-extension#left` and `my-extension#right`, configure those full IDs separately.","","For example, this provides the extension's base configuration:","","```json","{","  \"my-extension-name\": {","    \"customSetting\": \"base value\"","  }","}","```","","Extension configuration can then be overridden per-slot using the `configure` object in the slot's configuration:","","```json","{","  \"@openmrs/esm-my-module\": {","    \"extensionSlots\": {","      \"my-slot\": {","        \"configure\": {","          \"my-extension-name\": {","            \"customSetting\": \"slot-specific value\"","          }","        }","      }","    }"],"highlightedLines":[337,338,339,340,341,342,343,344,345,346,347,348,349,350,351,352,353,354,355,356,357,358,359,360,361,362,363,364,365,366,367,368,369,370,371,372,373,374,375,376,377,378,379,380,381,382,383,384,385,386,387,388,389,390,391,392,393]}}
+
+data: {"type":"data-answer","data":{"kind":"grounded","generation":"g-b59a21","paragraphs":[{"text":"An O3 frontend module declares its configurable settings by writing a **config schema** — a plain JavaScript object whose leaves describe each setting's type, default and validation rules — and registering it with the framework in its entry point. Implementers then override those settings by writing JSON, without touching code.","citations":[]},{"text":"The documentation lives in the O3 docs repo, in `configuration-system.mdx` (the developer-facing guide) and `configure-o3/overview.mdx` (the implementer-facing guide). The implementation lives in `openmrs-esm-core`, in the `@openmrs/esm-config` package.","citations":[]},{"text":"## What the documentation says","citations":[]},{"text":"The config system \"provides a framework for making frontend modules configurable by implementers without requiring code changes\" [1]. It only applies to developers making a module configurable; implementers configuring an instance should read the Configure O3 guide [2].","citations":[1,2]},{"text":"The main task for a module author is to \"create a config schema for your module … what configuration files should look like, including defaults and validations\" [3]. Schemas are optional — a pure library module can skip one [4].","citations":[3,4]},{"text":"Two implementer-facing docs cover the flip side: how per-module configuration is written, shown with the Programs module's `config-schema.ts` [5], and the fact that O3 ships an implicit schema for every module, giving `Display conditions` and `Translation overrides` without the module declaring them [6].","citations":[5,6]},{"text":"## The schema file","citations":[]},{"text":"Each module keeps its schema in a `config-schema.ts` inside `src` [7]. Every leaf is an object, never a raw value, and carries `_`-prefixed keywords: `_type`, `_default`, `_description`, `_validators`, `_elements` [8]. The full keyword reference is in the Schema Reference section [9].","citations":[7,8,9]},{"text":"A real example is the login app's schema, which validates login modes with `validators.oneOf`, requires an explicit `loginUrl` for custom/oauth2 providers, and supplies defaults like `'${openmrsSpaBase}/login'` [10]. Types come from the `Type` enum — String, Number, Boolean, Array, Object, UUID and several UUID subtypes [11].","citations":[10,11]},{"text":"## Where the schema is registered","citations":[]},{"text":"Modules register the schema in `startupApp()`, the once-per-module setup hook [12]. The call is `defineConfigSchema(moduleName, configSchema)` [13]. `startupApp` is exported from `src/index.ts`, the module's entry point [14].","citations":[12,13,14]},{"text":"## The implementation","citations":[]},{"text":"`defineConfigSchema` is defined in the config package [15]. It does three things: validates the schema, merges it with the implicit schema via `mergeDeepReplace`, and stores the result in the config store keyed by module name, also flagging the module as loaded [15].","citations":[15]},{"text":"The implicit schema is the small object holding `Display conditions` and the translation overrides keys [16]. Because it is merged in automatically, a module cannot redefine or conflict with those keys [17].","citations":[16,17]},{"text":"The schema shape itself is typed by `ConfigSchema`, whose object index signature allows nested schemas or values recursing to any depth, alongside the optional `_type`, `_validators` and `_elements` keys [18]. The `Type` enum and the validator types sit in the same file [19]. All of it is re-exported to modules through the framework's public entry point [20], which is why modules import `defineConfigSchema`, `Type` and `validator` from `@openmrs/esm-framework`.","citations":[18,19,20]},{"text":"## How implementers override and consume settings","citations":[]},{"text":"Values are merged with a fixed precedence: schema defaults, then config files in load order, then temporary config from the Implementer Tools UI [21]. Nested objects merge deeply but arrays are replaced wholesale [22].","citations":[21,22]},{"text":"Modules then read the merged result either asynchronously with `getConfig(moduleName)` [23] or, in React, with the `useConfig` hook, which infers the module from the `ComponentContext` set by `getSyncLifecycle`/`getAsyncLifecycle` and merges extension-specific config when used inside an extension [24]. An interface can be declared next to the schema and passed as a type argument for typed access [25].","citations":[23,24,25]},{"text":"Extensions can additionally declare their own schema with `defineExtensionConfigSchema`; the extension name must match its `name` in `routes.json`, values live under the extension name, and per-slot `configure` overrides win [26].","citations":[26]},{"text":"## The flow","citations":[]},{"text":"```mermaid\n---\ntitle: Config schema to resolved setting\n---\nflowchart TD\n  schema[\"src/config-schema.ts\"] --> reg[\"startupApp calls defineConfigSchema\"]\n  reg --> merge[\"mergeDeepReplace with implicit schema\"]\n  merge --> store[\"config system store\"]\n  impl[\"Implementer config files\"] --> resolver[\"config resolver\"]\n  tools[\"Implementer Tools temporary config\"] --> resolver\n  store --> resolver\n  resolver --> hook[\"useConfig or getConfig\"]\n  hook --> component[\"Module component\"]\n```","citations":[]},{"text":"## What I could not verify","citations":[]},{"text":"I did not open the declaration of `defineExtensionConfigSchema` or the extension/slot config-resolution code in `esm-config`; those points are taken from the documentation only. I also did not read the rest of the login app's schema beyond the first 60 lines, nor the validator implementations (`oneOf`, `inRange`, `isUrlWithTemplateParameters`), so their internals are undocumented here.","citations":[]}],"gaps":[],"partialReasons":[],"abstention":null,"suggestions":[]}}
+
+data: {"type":"message-metadata","messageMetadata":{"totalTokens":132139,"totalInputTokens":128260,"totalOutputTokens":3879,"totalResponseTimeMs":43827,"modelName":"deepseek-ai/DeepSeek-V4.1-Flash","steps":[{"in":6830,"cached":6784,"out":179,"toolBytes":[{"tool":"grep","bytes":8016},{"tool":"grep","bytes":7403}]},{"in":11510,"cached":6784,"out":226,"toolBytes":[{"tool":"read_file","bytes":4938},{"tool":"read_file","bytes":5947}]},{"in":14632,"cached":11520,"out":250,"toolBytes":[{"tool":"read_file","bytes":5712},{"tool":"read_file","bytes":5719}]},{"in":18056,"cached":14592,"out":265,"toolBytes":[{"tool":"read_file","bytes":5830},{"tool":"grep","bytes":1180}]},{"in":15955,"cached":6912,"out":382,"toolBytes":[{"tool":"read_file","bytes":2507},{"tool":"read_file","bytes":1912},{"tool":"read_file","bytes":2727}]},{"in":18606,"cached":15872,"out":345,"toolBytes":[{"tool":"read_file","bytes":5690},{"tool":"grep","bytes":663},{"tool":"grep","bytes":1410}]},{"in":21167,"cached":18560,"out":257,"toolBytes":[{"tool":"read_file","bytes":876},{"tool":"grep","bytes":162}]},{"in":21504,"cached":15488,"out":1975,"toolBytes":[]}],"totalCachedInputTokens":96512}}
+
+data: {"type":"finish"}
+
+data: [DONE]
+

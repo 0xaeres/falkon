@@ -1,0 +1,1030 @@
+data: {"type":"start","messageId":"L94gWohRmnXZsRAx"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"'ll look for date formatting utilities and their"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" docs across the O3 frontend repos.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-44182030-981a-4fd3-919d-fbdc0eb065a2","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-44182030-981a-4fd3-919d-fbdc0eb065a2","inputTextDelta":"{\"pattern\": \"formatDate|formatDatetime|formatTime\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"limit\": 80}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-44182030-981a-4fd3-919d-fbdc0eb065a2","toolName":"grep","input":{"pattern":"formatDate|formatDatetime|formatTime","repo":"github.com/openmrs/openmrs-esm-core","limit":80}}
+
+data: {"type":"tool-input-start","toolCallId":"call-5dbf0d54-ebe9-4440-8444-99aeb506da7a","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-5dbf0d54-ebe9-4440-8444-99aeb506da7a","inputTextDelta":"{\"pattern\": \"Today|yesterday\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"limit\": 60}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-5dbf0d54-ebe9-4440-8444-99aeb506da7a","toolName":"grep","input":{"pattern":"Today|yesterday","repo":"github.com/openmrs/openmrs-esm-core","limit":60}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/type-aliases/FormatDateOptions.md","name":"FormatDateOptions.md","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/isOmrsDateToday.md","name":"isOmrsDateToday.md","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/mock.tsx","name":"mock.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/API.md","name":"API.md","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/mock-jest.tsx","name":"mock-jest.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-react-utils/src/useVisit.ts","name":"useVisit.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatDate.md","name":"formatDate.md","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatPartialDate.md","name":"formatPartialDate.md","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/datepicker/month-year.component.tsx","name":"month-year.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-react-utils/src/useVisit.test.ts","name":"useVisit.test.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.test.ts","name":"date-util.test.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-5dbf0d54-ebe9-4440-8444-99aeb506da7a","output":{"output":"Found 55 matches in 12 files\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-utils/src/dates/date-util.ts:\n  64: export function isOmrsDateToday(date: DateInput) {\n  214:   noToday: false,\n  310:   const { calendar, mode, time, day, month, year, noToday, numberingSystem }: FormatDateOptions = {\n  327:   const isToday = dayjs(date).isToday();\n  15: import isToday from 'dayjs/plugin/isToday.js';\n  21: dayjs.extend(isToday);\n  65:   return dayjs(date).isToday();\n  201:    * (the default), then dates that are today will be formatted as \"Today\"\n  205:   noToday: boolean;\n  227:  *  - noToday: false\n  229:  * If the date is today then \"Today\" is produced (in the locale language).\n  230:  * This behavior can be disabled with `noToday: true`.\n  292:  *  - noToday: false\n  294:  * If the date is today then \"Today\" is produced (in the locale language).\n  295:  * This behavior can be disabled with `noToday: true`.\n  312:     ...{ noToday: _locale.language === 'am' ? true : false },\n  328:   if (isToday && !noToday) {\n  329:     // This produces the word \"Today\" in the language of `locale`\n  368:   if (time === true || (isToday && time === 'for today')) {\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/docs/type-aliases/FormatDateOptions.md:\n  62: ### noToday\n  64: > **noToday**: `boolean`\n  69: (the default), then dates that are today will be formatted as \"Today\"\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/docs/functions/isOmrsDateToday.md:\n  3: # Function: isOmrsDateToday()\n  1: [O3 Framework](../API.md) / isOmrsDateToday\n  5: > **isOmrsDateToday**(`date`): `boolean`\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/mock.tsx:\n  29:   isOmrsDateToday,\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/docs/API.md:\n  217: - [isOmrsDateToday](functions/isOmrsDateToday.md)\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/mock-jest.tsx:\n  28:   isOmrsDateToday,\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-react-utils/src/useVisit.ts:\n  5: import isToday from 'dayjs/plugin/isToday.js';\n  10: dayjs.extend(isToday);\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/docs/functions/formatDate.md:\n  18:  - noToday: false\n  20: If the date is today then \"Today\" is produced (in the locale language).\n  21: This behavior can be disabled with `noToday: true`.\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/docs/functions/formatPartialDate.md:\n  18:  - noToday: false\n  20: If the date is today then \"Today\" is produced (in the locale language).\n  21: This behavior can be disabled with `noToday: true`.\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-styleguide/src/datepicker/month-year.component.tsx:\n  22:       noToday: true,\n  50:       noToday: true,\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-react-utils/src/useVisit.test.ts:\n  76:     isToday: vi.fn(() => false),\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-utils/src/dates/date-util.test.ts:\n  54:   it(\"formats 'Today' with respect to the locale\", () => {\n  59:     expect(formatDate(testDate)).toMatch(/Today,\\s+03:22\\sPM/);\n  60:     expect(formatDate(testDate, { day: false })).toMatch(/Today,\\s03:22\\sPM/);\n  61:     expect(formatDate(testDate, { year: false })).toMatch(/Today,\\s03:22\\sPM/);\n  62:     expect(formatDate(testDate, { mode: 'wide' })).toMatch(/Today,\\s03:22\\sPM/);\n  158:     expect(formatDate(today, { time: true })).toMatch(/Today,\\s03:22\\sPM/);\n  159:     expect(formatDate(today, { time: false })).toEqual('Today');\n  160:     expect(formatDate(today, { time: 'for today' })).toMatch(/Today, 03:22\\sPM/);\n  183:     expect(formatDatetime(todayDate)).toMatch(/Today,\\s03:20\\sPM/i);\n  189:   it('does not handle today specially when `noToday` is passed', () => {\n  202:     expect(formatDate(testDate, { noToday: true }).replaceAll(/[\\u202F]/g, ' ')).toEqual(expected);","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/type-aliases/FormatDateOptions.md","name":"FormatDateOptions.md","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/isOmrsDateToday.md","name":"isOmrsDateToday.md","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/mock.tsx","name":"mock.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/API.md","name":"API.md","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/mock-jest.tsx","name":"mock-jest.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-react-utils/src/useVisit.ts","name":"useVisit.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatDate.md","name":"formatDate.md","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatPartialDate.md","name":"formatPartialDate.md","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/datepicker/month-year.component.tsx","name":"month-year.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-react-utils/src/useVisit.test.ts","name":"useVisit.test.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.test.ts","name":"date-util.test.ts","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatDate.md","name":"formatDate.md","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatTime.md","name":"formatTime.md","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatDatetime.md","name":"formatDatetime.md","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/mock.tsx","name":"mock.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/API.md","name":"API.md","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/mock-jest.tsx","name":"mock-jest.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/datepicker/month-year.component.tsx","name":"month-year.component.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.test.ts","name":"date-util.test.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-44182030-981a-4fd3-919d-fbdc0eb065a2","output":{"output":"Found 80 matches in 9 files\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-utils/src/dates/date-util.ts:\n  306: export function formatDate(date: Date, options?: Partial<FormatDateOptions>) {\n  396: export function formatTime(date: Date) {\n  416: export function formatDatetime(date: Date, options?: Partial<Omit<FormatDateOptions, 'time'>>) {\n  279:   return formatDate(date, options);\n  369:     localeString += `, ${formatTime(date)}`;\n  406:  * `formatDate`.\n  408:  * This is created by concatenating the results of `formatDate`\n  409:  * and `formatTime` with a comma and space. This agrees with the\n  413:  * @param options Optional formatting options (same as formatDate, except time is always included).\n  417:   return formatDate(date, { ...options, time: true });\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/docs/functions/formatDate.md:\n  3: # Function: formatDate()\n  1: [O3 Framework](../API.md) / formatDate\n  5: > **formatDate**(`date`, `options?`): `string`\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/docs/functions/formatTime.md:\n  3: # Function: formatTime()\n  1: [O3 Framework](../API.md) / formatTime\n  5: > **formatTime**(`date`): `string`\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/docs/functions/formatDatetime.md:\n  3: # Function: formatDatetime()\n  11: `formatDate`.\n  13: This is created by concatenating the results of `formatDate`\n  14: and `formatTime` with a comma and space. This agrees with the\n  29: Optional formatting options (same as formatDate, except time is always included).\n  1: [O3 Framework](../API.md) / formatDatetime\n  5: > **formatDatetime**(`date`, `options?`): `string`\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/mock.tsx:\n  22:   formatDate,\n  24:   formatTime,\n  23:   formatDatetime,\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/docs/API.md:\n  224: - [formatDate](functions/formatDate.md)\n  225: - [formatTime](functions/formatTime.md)\n  226: - [formatDatetime](functions/formatDatetime.md)\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/mock-jest.tsx:\n  21:   formatDate,\n  23:   formatTime,\n  22:   formatDatetime,\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-styleguide/src/datepicker/month-year.component.tsx:\n  11: import { formatDate } from '@openmrs/esm-utils';\n  17:     formatDate(date, {\n  45:     const month = formatDate(state.visibleRange.start.toDate(tz), {\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-utils/src/dates/date-util.test.ts:\n  9:   formatDate,\n  11:   formatTime,\n  59:     expect(formatDate(testDate)).toMatch(/Today,\\s+03:22\\sPM/);\n  60:     expect(formatDate(testDate, { day: false })).toMatch(/Today,\\s03:22\\sPM/);\n  61:     expect(formatDate(testDate, { year: false })).toMatch(/Today,\\s03:22\\sPM/);\n  62:     expect(formatDate(testDate, { mode: 'wide' })).toMatch(/Today,\\s03:22\\sPM/);\n  64:     expect(formatDate(testDate)).toEqual('Leo, 15:22');\n  66:     expect(formatDate(testDate)).toEqual('Сегодня, 15:22');\n  73:     expect(formatDate(testDate)).toEqual('09-Dec-2021');\n  74:     expect(formatDate(testDate, { day: false })).toEqual('Dec 2021');\n  75:     expect(formatDate(testDate, { year: false })).toEqual('09 Dec');\n  76:     expect(formatDate(testDate, { mode: 'wide' })).toEqual('09 — Dec — 2021');\n  77:     expect(formatDate(testDate, { mode: 'wide', year: false })).toEqual('09 — Dec');\n  79:     expect(formatDate(testDate)).toEqual('09 déc. 2021');\n  80:     expect(formatDate(testDate, { day: false })).toEqual('déc. 2021');\n  81:     expect(formatDate(testDate, { year: false })).toEqual('09 déc.');\n  82:     expect(formatDate(testDate, { mode: 'wide' })).toEqual('09 — déc. — 2021');\n  84:     expect(formatDate(testDate)).toEqual('09 Des 2021');\n  86:     expect(formatDate(testDate, { mode: 'wide' })).toMatch(/09\\s—\\sдек\\.\\s—\\s2021\\sг\\./);\n  105:     expect(formatDate(testDate)).toEqual('30-ኅዳር-2014');\n  (22 more lines)\n\n(Output was cut short: narrow the path or pattern, name a repo, or raise the limit.)","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatDate.md","name":"formatDate.md","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatTime.md","name":"formatTime.md","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatDatetime.md","name":"formatDatetime.md","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/mock.tsx","name":"mock.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/API.md","name":"API.md","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/mock-jest.tsx","name":"mock-jest.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-styleguide/src/datepicker/month-year.component.tsx","name":"month-year.component.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.test.ts","name":"date-util.test.ts","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" found the core implementation. Let me read"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the date utility and its docs.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-998eb4db-c587-405d-8989-4dc3866339a6","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-998eb4db-c587-405d-8989-4dc3866339a6","inputTextDelta":"{\"repo\": \"github.com/openmrs/openmrs-esm-core\", \"path\": \"packages/framework/esm-utils/src/dates/date-util.ts\", \"offset\": 180, \"limit\": 250}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-998eb4db-c587-405d-8989-4dc3866339a6","toolName":"read_file","input":{"path":"packages/framework/esm-utils/src/dates/date-util.ts","repo":"github.com/openmrs/openmrs-esm-core","ref":"HEAD","offset":180,"limit":250}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-998eb4db-c587-405d-8989-4dc3866339a6","output":{"output":"<repo>github.com/openmrs/openmrs-esm-core</repo>\n<path>packages/framework/esm-utils/src/dates/date-util.ts</path>\n<url>undefined</url>\n<content>\n180:   locale?: string;\n181:   /**\n182:    * - `standard`: \"03 Feb 2022\"\n183:    * - `wide`:     \"03 — Feb — 2022\"\n184:    */\n185:   mode: FormatDateMode;\n186:   /**\n187:    * Whether the time should be included in the output always (`true`),\n188:    * never (`false`), or only when the input date is today (`for today`).\n189:    */\n190:   time: true | false | 'for today';\n191:   /** Whether to include the day number */\n192:   day: boolean;\n193:   /** Whether to include the month number */\n194:   month: boolean;\n195:   /** Whether to include the year */\n196:   year: boolean;\n197:   /** The unicode numbering system to use */\n198:   numberingSystem?: string;\n199:   /**\n200:    * Disables the special handling of dates that are today. If false\n201:    * (the default), then dates that are today will be formatted as \"Today\"\n202:    * in the locale language. If true, then dates that are today will be\n203:    * formatted the same as all other dates.\n204:    */\n205:   noToday: boolean;\n206: };\n207: \n208: const defaultOptions: FormatDateOptions = {\n209:   mode: 'standard',\n210:   time: 'for today',\n211:   day: true,\n212:   month: true,\n213:   year: true,\n214:   noToday: false,\n215: };\n216: \n217: /**\n218:  * Formats the string representing a date, including partial representations of dates, according to the current\n219:  * locale and the given options.\n220:  *\n221:  * Default options:\n222:  *  - mode: \"standard\",\n223:  *  - time: \"for today\",\n224:  *  - day: true,\n225:  *  - month: true,\n226:  *  - year: true\n227:  *  - noToday: false\n228:  *\n229:  * If the date is today then \"Today\" is produced (in the locale language).\n230:  * This behavior can be disabled with `noToday: true`.\n231:  *\n232:  * When time is included, it is appended with a comma and a space. This\n233:  * agrees with the output of `Date.prototype.toLocaleString` for *most*\n234:  * locales.\n235:  *\n236:  * @param dateString The date string to parse and format.\n237:  * @param options Optional formatting options.\n238:  * @returns The formatted date string, or `null` if the input cannot be parsed.\n239:  */\n240: // TODO: Shouldn't throw on null input\n241: export function formatPartialDate(dateString: string, options: Partial<FormatDateOptions> = {}) {\n242:   const locale = getLocale();\n243:   let parsed: ReturnType<typeof attempt> & { date?: number } = attempt(dateString, locale);\n244: \n245:   if (parsed.invalid) {\n246:     console.warn(`Could not parse invalid date '${dateString}'`);\n247:     return null;\n248:   }\n249: \n250:   // hack here but any date interprets 2000-01, etc. as yyyy-dd rather than yyyy-mm\n251:   if (!isNil(parsed.day) && isNil(parsed.month)) {\n252:     parsed = Object.assign({}, omit(parsed, 'day'), { month: parsed.day });\n253:   }\n254: \n255:   // dayjs' object support uses 0-based months, whereas any-date-parser uses 1-based months\n256:   if (parsed.month) {\n257:     parsed.month -= 1;\n258:   }\n259: \n260:   // in dayjs day is day of week; in any-date-parser, its day of month, so we need to convert them\n261:   if (parsed.day) {\n262:     parsed = Object.assign({}, omit(parsed, 'day'), { date: parsed.day });\n263:   }\n264: \n265:   const date = dayjs().set(parsed).toDate();\n266: \n267:   if (isNil(parsed.year)) {\n268:     options.year = false;\n269:   }\n270: \n271:   if (isNil(parsed.month)) {\n272:     options.month = false;\n273:   }\n274: \n275:   if (isNil(parsed.date)) {\n276:     options.day = false;\n277:   }\n278: \n279:   return formatDate(date, options);\n280: }\n281: \n282: /**\n283:  * Formats the input date according to the current locale and the\n284:  * given options.\n285:  *\n286:  * Default options:\n287:  *  - mode: \"standard\",\n288:  *  - time: \"for today\",\n289:  *  - day: true,\n290:  *  - month: true,\n291:  *  - year: true\n292:  *  - noToday: false\n293:  *\n294:  * If the date is today then \"Today\" is produced (in the locale language).\n295:  * This behavior can be disabled with `noToday: true`.\n296:  *\n297:  * When time is included, it is appended with a comma and a space. This\n298:  * agrees with the output of `Date.prototype.toLocaleString` for *most*\n299:  * locales.\n300:  *\n301:  * @param date The date to format.\n302:  * @param options Optional formatting options.\n303:  * @returns The formatted date string.\n304:  */\n305: // TODO: Shouldn't throw on null input\n306: export function formatDate(date: Date, options?: Partial<FormatDateOptions>) {\n307:   let locale = options?.locale ?? getLocale();\n308:   const _locale = new Intl.Locale(locale);\n309: \n310:   const { calendar, mode, time, day, month, year, noToday, numberingSystem }: FormatDateOptions = {\n311:     ...defaultOptions,\n312:     ...{ noToday: _locale.language === 'am' ? true : false },\n313:     ...options,\n314:   };\n315: \n316:   const formatCalendar = calendar ?? getDefaultCalendar(_locale);\n317: \n318:   const formatterOptions: Intl.DateTimeFormatOptions = {\n319:     calendar: formatCalendar,\n320:     year: year ? 'numeric' : undefined,\n321:     month: month ? 'short' : undefined,\n322:     day: day ? '2-digit' : undefined,\n323:     numberingSystem,\n324:   };\n325: \n326:   let localeString: string;\n327:   const isToday = dayjs(date).isToday();\n328:   if (isToday && !noToday) {\n329:     // This produces the word \"Today\" in the language of `locale`\n330:     const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });\n331:     localeString = rtf.format(0, 'day');\n332:     localeString = localeString[0].toLocaleUpperCase(locale) + localeString.slice(1);\n333:   } else {\n334:     if (_locale.language === 'en') {\n335:       // This locale override is here rather than in `getLocale`\n336:       // because Americans should see AM/PM for times.\n337:       locale = 'en-GB';\n338:     }\n339: \n340:     const formatter = new Intl.DateTimeFormat(locale, formatterOptions);\n341:     let parts = formatter.formatToParts(date);\n342: \n\n(Output capped at 5KB. Showing lines 180-342 of 725. Use offset=343 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}]}}
+
+data: {"type":"tool-input-start","toolCallId":"call-303e1ef2-38b1-4e94-9cbb-52831371cf70","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-303e1ef2-38b1-4e94-9cbb-52831371cf70","inputTextDelta":"{\"repo\": \"github.com/openmrs/openmrs-esm-core\", \"path\": \"packages/framework/esm-framework/docs/functions/formatDate.md\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-303e1ef2-38b1-4e94-9cbb-52831371cf70","toolName":"read_file","input":{"path":"packages/framework/esm-framework/docs/functions/formatDate.md","repo":"github.com/openmrs/openmrs-esm-core","ref":"HEAD"}}
+
+data: {"type":"tool-input-start","toolCallId":"call-f2a03747-2405-48e6-af1f-120b63acbad1","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-f2a03747-2405-48e6-af1f-120b63acbad1","inputTextDelta":"{\"include\": \"*.{md,markdown}\", \"pattern\": \"formatDate|Today\", \"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-f2a03747-2405-48e6-af1f-120b63acbad1","toolName":"grep","input":{"pattern":"formatDate|Today","include":"*.{md,markdown}","repo":"github.com/openmrs/openmrs-contrib-o3-docs"}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatDate.md","name":"formatDate.md","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-303e1ef2-38b1-4e94-9cbb-52831371cf70","output":{"output":"<repo>github.com/openmrs/openmrs-esm-core</repo>\n<path>packages/framework/esm-framework/docs/functions/formatDate.md</path>\n<url>undefined</url>\n<content>\n1: [O3 Framework](../API.md) / formatDate\n2: \n3: # Function: formatDate()\n4: \n5: > **formatDate**(`date`, `options?`): `string`\n6: \n7: Defined in: [packages/framework/esm-utils/src/dates/date-util.ts:306](https://github.com/openmrs/openmrs-esm-core/blob/main/packages/framework/esm-utils/src/dates/date-util.ts#L306)\n8: \n9: Formats the input date according to the current locale and the\n10: given options.\n11: \n12: Default options:\n13:  - mode: \"standard\",\n14:  - time: \"for today\",\n15:  - day: true,\n16:  - month: true,\n17:  - year: true\n18:  - noToday: false\n19: \n20: If the date is today then \"Today\" is produced (in the locale language).\n21: This behavior can be disabled with `noToday: true`.\n22: \n23: When time is included, it is appended with a comma and a space. This\n24: agrees with the output of `Date.prototype.toLocaleString` for *most*\n25: locales.\n26: \n27: ## Parameters\n28: \n29: ### date\n30: \n31: `Date`\n32: \n33: The date to format.\n34: \n35: ### options?\n36: \n37: `Partial`\\<[`FormatDateOptions`](../type-aliases/FormatDateOptions.md)\\>\n38: \n39: Optional formatting options.\n40: \n41: ## Returns\n42: \n43: `string`\n44: \n45: The formatted date string.\n46: \n\n(End of file - 46 lines total)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/formatDate.md","name":"formatDate.md","revision":"HEAD"}]}}
+
+data: {"type":"tool-output-available","toolCallId":"call-f2a03747-2405-48e6-af1f-120b63acbad1","output":{"output":"No files found"}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" need the rest of `formatDate` ("}
+
+data: {"type":"text-delta","id":"txt-0","delta":"time handling and wide mode) and to"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" find where docs live for O3 front"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"end devs.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-b3b9629d-15bd-4638-b27f-7163f721961f","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-b3b9629d-15bd-4638-b27f-7163f721961f","inputTextDelta":"{\"path\": \"packages/framework/esm-utils/src/dates/date-util.ts\", \"ref\": \"HEAD\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"offset\": 343, \"limit\": 120}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-b3b9629d-15bd-4638-b27f-7163f721961f","toolName":"read_file","input":{"path":"packages/framework/esm-utils/src/dates/date-util.ts","repo":"github.com/openmrs/openmrs-esm-core","ref":"HEAD","offset":343,"limit":120}}
+
+data: {"type":"tool-input-start","toolCallId":"call-14818590-9515-415e-9ac5-864bd4510576","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-14818590-9515-415e-9ac5-864bd4510576","inputTextDelta":"{\"path\": \"packages/framework/esm-utils/src/dates/date-util.ts\", \"ref\": \"HEAD\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"offset\": 1, \"limit\": 100}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-14818590-9515-415e-9ac5-864bd4510576","toolName":"read_file","input":{"path":"packages/framework/esm-utils/src/dates/date-util.ts","repo":"github.com/openmrs/openmrs-esm-core","ref":"HEAD","offset":1,"limit":100}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-b3b9629d-15bd-4638-b27f-7163f721961f","output":{"output":"<repo>github.com/openmrs/openmrs-esm-core</repo>\n<path>packages/framework/esm-utils/src/dates/date-util.ts</path>\n<url>undefined</url>\n<content>\n343:     if ((_locale.language === 'en' || _locale.language === 'am') && mode == 'standard' && year && day) {\n344:       // Custom formatting for English and Amharic. Use hyphens instead of spaces.\n345:       parts = parts.map(formatParts('-'));\n346:     }\n347: \n348:     if (mode == 'wide') {\n349:       parts = parts.map(formatParts(' — ')); // space-emdash-space\n350:     }\n351: \n352:     // omit the era when using the Ethiopic calendar\n353:     if (formatterOptions.calendar === 'ethiopic') {\n354:       parts = parts.filter((part, idx, values) => {\n355:         if (\n356:           part.type === 'era' ||\n357:           (part.type === 'literal' && idx < values.length - 1 && values[idx + 1].type === 'era')\n358:         ) {\n359:           return false;\n360:         }\n361: \n362:         return true;\n363:       });\n364:     }\n365: \n366:     localeString = parts.map((p) => p.value).join('');\n367:   }\n368:   if (time === true || (isToday && time === 'for today')) {\n369:     localeString += `, ${formatTime(date)}`;\n370:   }\n371:   return localeString;\n372: }\n373: \n374: // Internal curried call-back for map()\n375: const formatParts = (separator: string) => {\n376:   return (part: Intl.DateTimeFormatPart, idx: number, values: Array<Intl.DateTimeFormatPart>) => {\n377:     if (part.type !== 'literal' || part.value !== ' ') {\n378:       return part;\n379:     }\n380: \n381:     if (idx < values.length - 1 && values[idx + 1].type === 'era') {\n382:       return part;\n383:     }\n384: \n385:     return { type: 'literal', value: separator } as Intl.DateTimeFormatPart;\n386:   };\n387: };\n388: \n389: /**\n390:  * Formats the input as a time, according to the current locale.\n391:  * 12-hour or 24-hour clock depends on locale.\n392:  *\n393:  * @param date The date whose time portion should be formatted.\n394:  * @returns The formatted time string (e.g., \"2:30 PM\" or \"14:30\").\n395:  */\n396: export function formatTime(date: Date) {\n397:   return date.toLocaleTimeString(getLocale(), {\n398:     hour: '2-digit',\n399:     minute: '2-digit',\n400:   });\n401: }\n402: \n403: /**\n404:  * Formats the input into a string showing the date and time, according\n405:  * to the current locale. The `mode` parameter is as described for\n406:  * `formatDate`.\n407:  *\n408:  * This is created by concatenating the results of `formatDate`\n409:  * and `formatTime` with a comma and space. This agrees with the\n410:  * output of `Date.prototype.toLocaleString` for *most* locales.\n411:  *\n412:  * @param date The date to format.\n413:  * @param options Optional formatting options (same as formatDate, except time is always included).\n414:  * @returns The formatted date and time string.\n415:  */\n416: export function formatDatetime(date: Date, options?: Partial<Omit<FormatDateOptions, 'time'>>) {\n417:   return formatDate(date, { ...options, time: true });\n418: }\n419: \n420: /**\n421:  * Converts a calendar date to the equivalent locale calendar date.\n422:  * @returns CalendarDate\n423:  */\n424: export function convertToLocaleCalendar(\n425:   date: CalendarDate | CalendarDateTime | ZonedDateTime,\n426:   locale: string | Intl.Locale,\n427: ) {\n428:   let locale_ = typeof locale === 'string' ? new Intl.Locale(locale) : locale;\n429:   const localCalendarName = getDefaultCalendar(locale_);\n430: \n431:   return localCalendarName ? toCalendar(date, createCalendar(localCalendarName)) : date;\n432: }\n433: \n434: /**\n435:  * Formats the input duration according to the current locale.\n436:  *\n437:  * @param duration The duration to format (DurationInput object).\n438:  * @param options Optional options for formatting.\n439:  * @returns The formatted duration string.\n440:  */\n441: export function formatDuration(duration: Intl.DurationInput, options?: Intl.DurationFormatOptions) {\n442:   const formatter = new Intl.DurationFormat(getLocale(), options);\n443:   return formatter.format(duration);\n444: }\n445: \n446: /**\n447:  * Parses a date input into a dayjs object. String inputs are interpreted using\n448:  * any-date-parser with corrections for its month/day representation differences\n449:  * with dayjs. Non-string inputs are passed directly to dayjs.\n450:  *\n451:  * @param dateInput The date to parse.\n452:  * @param referenceDate Used as the base when resolving partial string dates (e.g., '2000' resolves missing fields from this date).\n453:  * @returns A dayjs object, or null if the string could not be parsed.\n454:  */\n455: export function parseDateInput(dateInput: dayjs.ConfigType, referenceDate: dayjs.Dayjs): dayjs.Dayjs | null {\n456:   if (dateInput == null) {\n457:     return null;\n458:   }\n459: \n460:   if (typeof dateInput === 'string') {\n461:     const locale = getLocale();\n462:     let parsedDate = attempt(dateInput, locale);\n\n(Showing lines 343-462 of 725. Use offset=463 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-14818590-9515-415e-9ac5-864bd4510576","output":{"output":"<repo>github.com/openmrs/openmrs-esm-core</repo>\n<path>packages/framework/esm-utils/src/dates/date-util.ts</path>\n<url>undefined</url>\n<content>\n1: /**\n2:  * @module\n3:  * @category Date and Time\n4:  */\n5: import {\n6:   type CalendarDate,\n7:   type CalendarDateTime,\n8:   type CalendarIdentifier,\n9:   type ZonedDateTime,\n10:   createCalendar,\n11:   toCalendar,\n12: } from '@internationalized/date';\n13: import { attempt } from 'any-date-parser';\n14: import dayjs from 'dayjs';\n15: import isToday from 'dayjs/plugin/isToday.js';\n16: import objectSupport from 'dayjs/plugin/objectSupport.js';\n17: import utc from 'dayjs/plugin/utc.js';\n18: import { isNil, omit } from 'lodash-es';\n19: import { getLocale } from '../';\n20: \n21: dayjs.extend(isToday);\n22: dayjs.extend(utc);\n23: dayjs.extend(objectSupport);\n24: \n25: export type DateInput = string | number | Date;\n26: \n27: const isoFormat = 'YYYY-MM-DDTHH:mm:ss.SSSZZ';\n28: \n29: /**\n30:  * This function checks whether a date string is the OpenMRS ISO format.\n31:  * The format should be YYYY-MM-DDTHH:mm:ss.SSSZZ\n32:  */\n33: export function isOmrsDateStrict(omrsPayloadString: string): boolean {\n34:   // omrs format 2018-03-19T00:00:00.000+0300\n35:   if (omrsPayloadString === null || omrsPayloadString === undefined || omrsPayloadString.trim().length !== 28) {\n36:     return false;\n37:   }\n38:   omrsPayloadString = omrsPayloadString.trim();\n39: \n40:   // 11th character will always be T\n41:   if (omrsPayloadString[10] !== 'T') {\n42:     return false;\n43:   }\n44: \n45:   // checking time format\n46:   if (omrsPayloadString[13] !== ':' || omrsPayloadString[16] !== ':' || omrsPayloadString[19] !== '.') {\n47:     return false;\n48:   }\n49: \n50:   // checking UTC offset format\n51:   if (!(omrsPayloadString[23] === '+' || omrsPayloadString[23] === '-')) {\n52:     return false;\n53:   }\n54: \n55:   return dayjs(omrsPayloadString, isoFormat).isValid();\n56: }\n57: \n58: /**\n59:  * Checks if the provided date is today.\n60:  *\n61:  * @param date The date to check.\n62:  * @returns `true` if the date is today, `false` otherwise.\n63:  */\n64: export function isOmrsDateToday(date: DateInput) {\n65:   return dayjs(date).isToday();\n66: }\n67: \n68: /**\n69:  * Converts the object to a date object if it is an OpenMRS ISO date time string.\n70:  * Otherwise returns null.\n71:  */\n72: export function toDateObjectStrict(omrsDateString: string): Date | null {\n73:   if (!isOmrsDateStrict(omrsDateString)) {\n74:     return null;\n75:   }\n76: \n77:   return dayjs(omrsDateString, isoFormat).toDate();\n78: }\n79: \n80: /**\n81:  * Formats the input to OpenMRS ISO format: \"YYYY-MM-DDTHH:mm:ss.SSSZZ\".\n82:  */\n83: export function toOmrsIsoString(date: DateInput, toUTC = false): string {\n84:   let d = dayjs(date);\n85: \n86:   if (toUTC) {\n87:     d = d.utc();\n88:   }\n89: \n90:   return d.format(isoFormat);\n91: }\n92: \n93: /**\n94:  * Utility function to parse an arbitrary string into a date.\n95:  * Uses `dayjs(dateString)`.\n96:  */\n97: export function parseDate(dateString: string) {\n98:   return dayjs(dateString).toDate();\n99: }\n100: \n\n(Showing lines 1-100 of 725. Use offset=101 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" need the `getLocale()` implementation and the docs that"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" explain this to app developers.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-eac6f01c-f146-4453-b5ba-dfee4f046329","toolName":"find_symbol_definitions"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-eac6f01c-f146-4453-b5ba-dfee4f046329","inputTextDelta":"{\"repo\": \"github.com/openmrs/openmrs-esm-core\", \"symbol\": \"getLocale\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-eac6f01c-f146-4453-b5ba-dfee4f046329","toolName":"find_symbol_definitions","input":{"symbol":"getLocale","repo":"github.com/openmrs/openmrs-esm-core"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/get-locale.ts","name":"get-locale.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/tooling/storybook/mocks/esm-react-utils.ts","name":"esm-react-utils.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-react-utils/mock.tsx","name":"mock.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-react-utils/mock-jest.tsx","name":"mock-jest.tsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/getLocale.md","name":"getLocale.md","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-eac6f01c-f146-4453-b5ba-dfee4f046329","output":{"output":"Found 6 definitions in 6 files\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-utils/src/get-locale.ts:\n  7: export function getLocale() {\n\n[github.com/openmrs/openmrs-esm-core] packages/tooling/storybook/mocks/esm-react-utils.ts:\n  148: export function getLocale() {\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-react-utils/mock.tsx:\n  144: export const getLocale = vi.fn(() => 'en');\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-utils/src/dates/date-util.ts:\n  165:   const locale_ = locale ?? getLocale();\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-react-utils/mock-jest.tsx:\n  139: export const getLocale = jest.fn().mockReturnValue('en');\n\n[github.com/openmrs/openmrs-esm-core] packages/framework/esm-framework/docs/functions/getLocale.md:\n  3: # Function: getLocale()","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/get-locale.ts","name":"get-locale.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/tooling/storybook/mocks/esm-react-utils.ts","name":"esm-react-utils.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-react-utils/mock.tsx","name":"mock.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-react-utils/mock-jest.tsx","name":"mock-jest.tsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-framework/docs/functions/getLocale.md","name":"getLocale.md","revision":"HEAD"}]}}
+
+data: {"type":"tool-input-start","toolCallId":"call-5c6970d9-32bc-4219-89b7-52ce5643f94c","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-5c6970d9-32bc-4219-89b7-52ce5643f94c","inputTextDelta":"{\"limit\": 40, \"pattern\": \"formatDate|formatDate\", \"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-5c6970d9-32bc-4219-89b7-52ce5643f94c","toolName":"grep","input":{"pattern":"formatDate|formatDate","repo":"github.com/openmrs/openmrs-contrib-o3-docs","limit":40}}
+
+data: {"type":"tool-input-start","toolCallId":"call-75515065-0a51-4522-9db3-da3553840148","toolName":"list_tree"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-75515065-0a51-4522-9db3-da3553840148","inputTextDelta":"{\"depth\": 2, \"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-75515065-0a51-4522-9db3-da3553840148","toolName":"list_tree","input":{"repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"","ref":"HEAD","depth":2,"includeFiles":true,"includeDirectories":true,"maxEntries":1000}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/format-dates.mdx","name":"format-dates.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/recipes/format-dates.mdx","name":"format-dates.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/forms-in-o3/expressions-validation-and-logic.mdx","name":"expressions-validation-and-logic.mdx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/forms-in-o3/expressions-validation-and-logic.mdx","name":"expressions-validation-and-logic.mdx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-5c6970d9-32bc-4219-89b7-52ce5643f94c","output":{"output":"Found 36 matches in 4 files\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/recipes/format-dates.mdx:\n  7: ### formatDate\n  12: formatDate(date: Date, options?: {\n  28: By default, `formatDate` uses `{ mode: \"standard\", time: \"for today\", day: true, month: true, year: true, noToday: false }`. If the date is today, then `Today` is produced instead of the actual day in the locale language, and the time is appended because the default `time` option is `\"for today\"`. Pass `{ time: false }` to suppress the time for today's date, or `{ noToday: true }` to format today like any other date.\n  32: Here's an example of how to use `formatDate` with a `Date` object:\n  35: import { formatDate } from \"@openmrs/esm-framework\";\n  38:   return <span>{formatDate(appointment.scheduledDate, { mode: \"standard\" })}</span>;\n  46: Use `formatPartialDate` when a value may contain only a year or a year and month. This is common for approximate clinical dates. It parses the string using the current locale, hides date parts that were not present in the input, and then delegates formatting to `formatDate`.\n  63: `formatDatetime` accepts the same options as `formatDate` except for `time`, which is always included:\n  151: import { formatDate, parseDate } from \"@openmrs/esm-framework\";\n  154:   return <span>{formatDate(parseDate(encounter.encounterDateTime))}</span>;\n  190: O3 can format dates using locale-specific calendars. The app shell registers implementation-level calendar preferences from the styleguide `preferredCalendar` configuration, and `formatDate` also accepts a `calendar` option for one-off overrides.\n  58: ### formatDatetime\n  66: formatDatetime(date: Date, options?: Partial<Omit<FormatDateOptions, \"time\">>): string\n  69: Here's an example of how to use `formatDatetime`:\n  72: import { formatDatetime } from \"@openmrs/esm-framework\";\n  75:   return <span>{formatDatetime(appointment.scheduledDate)}</span>;\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/recipes/format-dates.mdx:\n  7: ### formatDate\n  12: formatDate(date: Date, options?: {\n  28: Par défaut, `formatDate` utilise `{ mode: \"standard\", time: \"for today\", day: true, month: true, year: true, noToday: false }`. Si la date est aujourd'hui, `Today` est produit à la place du jour réel dans la langue locale, et l'heure est ajoutée parce que l'option `time` vaut `\"for today\"` par défaut. Passez `{ time: false }` pour masquer l'heure pour la date du jour, ou `{ noToday: true }` pour formater aujourd'hui comme une date ordinaire.\n  32: Voici un exemple d'utilisation de `formatDate` avec un objet `Date` :\n  35: import { formatDate } from \"@openmrs/esm-framework\";\n  38:   return <span>{formatDate(appointment.scheduledDate, { mode: \"standard\" })}</span>;\n  46: Utilisez `formatPartialDate` lorsqu'une valeur peut ne contenir qu'une année, ou une année et un mois. C'est fréquent pour des dates cliniques approximatives. La fonction analyse la chaîne avec la locale courante, masque les parties absentes de l'entrée, puis délègue le formatage à `formatDate`.\n  63: `formatDatetime` accepte les mêmes options que `formatDate`, sauf `time`, qui est toujours inclus:\n  151: import { formatDate, parseDate } from \"@openmrs/esm-framework\";\n  154:   return <span>{formatDate(parseDate(encounter.encounterDateTime))}</span>;\n  190: O3 peut formater les dates avec des calendriers propres à une locale. Le shell de l'application enregistre les préférences de calendrier de l'implémentation depuis la configuration styleguide `preferredCalendar`, et `formatDate` accepte aussi une option `calendar` pour les remplacements ponctuels.\n  58: ### formatDatetime\n  66: formatDatetime(date: Date, options?: Partial<Omit<FormatDateOptions, \"time\">>): string\n  69: Voici un exemple d’utilisation de `formatDatetime` :\n  72: import { formatDatetime } from \"@openmrs/esm-framework\";\n  75:   return <span>{formatDatetime(appointment.scheduledDate)}</span>;\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/en-US/docs/forms-in-o3/expressions-validation-and-logic.mdx:\n  44: | `formatDate(value, format?)` | A formatted string; throws when a non-`Date` value cannot be parsed. |\n\n[github.com/openmrs/openmrs-contrib-o3-docs] content/fr-FR/docs/forms-in-o3/expressions-validation-and-logic.mdx:\n  41: | `formatDate(value, format?)` | Chaîne formatée; lève une erreur lorsqu'une valeur non-`Date` ne peut pas être analysée. |","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/format-dates.mdx","name":"format-dates.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/recipes/format-dates.mdx","name":"format-dates.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/forms-in-o3/expressions-validation-and-logic.mdx","name":"expressions-validation-and-logic.mdx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/forms-in-o3/expressions-validation-and-logic.mdx","name":"expressions-validation-and-logic.mdx","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":".gitignore","name":".gitignore","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":".npmrc","name":".npmrc","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":".nvmrc","name":".nvmrc","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"LICENSE","name":"LICENSE","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"mdx-components.js","name":"mdx-components.js","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"next-env.d.ts","name":"next-env.d.ts","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"next.config.mjs","name":"next.config.mjs","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"package.json","name":"package.json","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"pnpm-lock.yaml","name":"pnpm-lock.yaml","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"pnpm-workspace.yaml","name":"pnpm-workspace.yaml","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"postcss.config.js","name":"postcss.config.js","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"README.md","name":"README.md","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"styles.css","name":"styles.css","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"tsconfig.json","name":"tsconfig.json","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/adaptive-logo.jsx","name":"adaptive-logo.jsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/api-docs.jsx","name":"api-docs.jsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/head.jsx","name":"head.jsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/latest-release.jsx","name":"latest-release.jsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/nav-logo.jsx","name":"nav-logo.jsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/path-cards.jsx","name":"path-cards.jsx","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/use-locales-map.js","name":"use-locales-map.js","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"patches/nextra-theme-docs@4.6.1.patch","name":"nextra-theme-docs@4.6.1.patch","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-144x144.png","name":"android-icon-144x144.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-192x192.png","name":"android-icon-192x192.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-36x36.png","name":"android-icon-36x36.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-48x48.png","name":"android-icon-48x48.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-72x72.png","name":"android-icon-72x72.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-96x96.png","name":"android-icon-96x96.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/app-menu-items-hover.png","name":"app-menu-items-hover.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/app-menu-items.png","name":"app-menu-items.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-114x114.png","name":"apple-icon-114x114.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-120x120.png","name":"apple-icon-120x120.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-144x144.png","name":"apple-icon-144x144.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-152x152.png","name":"apple-icon-152x152.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-180x180.png","name":"apple-icon-180x180.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-57x57.png","name":"apple-icon-57x57.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-60x60.png","name":"apple-icon-60x60.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-72x72.png","name":"apple-icon-72x72.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-76x76.png","name":"apple-icon-76x76.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-precomposed.png","name":"apple-icon-precomposed.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon.png","name":"apple-icon.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/browserconfig.xml","name":"browserconfig.xml","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/button.png","name":"button.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/CNAME","name":"CNAME","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/favicon-16x16.png","name":"favicon-16x16.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/favicon-32x32.png","name":"favicon-32x32.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/favicon-96x96.png","name":"favicon-96x96.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/favicon.ico","name":"favicon.ico","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/feature-flag.png","name":"feature-flag.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/left-panel-home.png","name":"left-panel-home.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/logo-dark.svg","name":"logo-dark.svg","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/logo-light.svg","name":"logo-light.svg","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/manifest.json","name":"manifest.json","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ms-icon-144x144.png","name":"ms-icon-144x144.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ms-icon-150x150.png","name":"ms-icon-150x150.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ms-icon-310x310.png","name":"ms-icon-310x310.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ms-icon-70x70.png","name":"ms-icon-70x70.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/named-export-error.png","name":"named-export-error.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/nav-logo.svg","name":"nav-logo.svg","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/navbar.png","name":"navbar.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/o3-architecture.svg","name":"o3-architecture.svg","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/patient-lists-app.png","name":"patient-lists-app.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/release-workflow.jpeg","name":"release-workflow.jpeg","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/siderail-icon.png","name":"siderail-icon.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ward-allocation.png","name":"ward-allocation.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ward-page.png","name":"ward-page.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/widget-title-underline-color.png","name":"widget-title-underline-color.png","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"scripts/check-forms-doc-ownership.mjs","name":"check-forms-doc-ownership.mjs","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"scripts/check-forms-doc-ownership.test.mjs","name":"check-forms-doc-ownership.test.mjs","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"scripts/fetch-releases.mjs","name":"fetch-releases.mjs","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"scripts/post-export.mjs","name":"post-export.mjs","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"scripts/remark-localize-links.mjs","name":"remark-localize-links.mjs","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"translations/text.js","name":"text.js","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-75515065-0a51-4522-9db3-da3553840148","output":{"output":"/\n  .github/\n    workflows/\n  app/\n    _dictionaries/\n    [lang]/\n  components/\n    adaptive-logo.jsx\n    api-docs.jsx\n    head.jsx\n    latest-release.jsx\n    nav-logo.jsx\n    path-cards.jsx\n    use-locales-map.js\n  content/\n    en-US/\n    fr-FR/\n  patches/\n    nextra-theme-docs@4.6.1.patch\n  public/\n    android-icon-144x144.png\n    android-icon-192x192.png\n    android-icon-36x36.png\n    android-icon-48x48.png\n    android-icon-72x72.png\n    android-icon-96x96.png\n    app-menu-items-hover.png\n    app-menu-items.png\n    apple-icon-114x114.png\n    apple-icon-120x120.png\n    apple-icon-144x144.png\n    apple-icon-152x152.png\n    apple-icon-180x180.png\n    apple-icon-57x57.png\n    apple-icon-60x60.png\n    apple-icon-72x72.png\n    apple-icon-76x76.png\n    apple-icon-precomposed.png\n    apple-icon.png\n    browserconfig.xml\n    button.png\n    CNAME\n    favicon-16x16.png\n    favicon-32x32.png\n    favicon-96x96.png\n    favicon.ico\n    feature-flag.png\n    left-panel-home.png\n    logo-dark.svg\n    logo-light.svg\n    manifest.json\n    ms-icon-144x144.png\n    ms-icon-150x150.png\n    ms-icon-310x310.png\n    ms-icon-70x70.png\n    named-export-error.png\n    nav-logo.svg\n    navbar.png\n    o3-architecture.svg\n    patient-lists-app.png\n    release-workflow.jpeg\n    siderail-icon.png\n    ward-allocation.png\n    ward-page.png\n    widget-title-underline-color.png\n  scripts/\n    fixtures/\n    check-forms-doc-ownership.mjs\n    check-forms-doc-ownership.test.mjs\n    fetch-releases.mjs\n    post-export.mjs\n    remark-localize-links.mjs\n  translations/\n    text.js\n  .gitignore\n  .npmrc\n  .nvmrc\n  LICENSE\n  mdx-components.js\n  next-env.d.ts\n  next.config.mjs\n  package.json\n  pnpm-lock.yaml\n  pnpm-workspace.yaml\n  postcss.config.js\n  README.md\n  styles.css\n  tsconfig.json","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":".gitignore","name":".gitignore","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":".npmrc","name":".npmrc","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":".nvmrc","name":".nvmrc","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"LICENSE","name":"LICENSE","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"mdx-components.js","name":"mdx-components.js","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"next-env.d.ts","name":"next-env.d.ts","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"next.config.mjs","name":"next.config.mjs","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"package.json","name":"package.json","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"pnpm-lock.yaml","name":"pnpm-lock.yaml","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"pnpm-workspace.yaml","name":"pnpm-workspace.yaml","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"postcss.config.js","name":"postcss.config.js","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"README.md","name":"README.md","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"styles.css","name":"styles.css","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"tsconfig.json","name":"tsconfig.json","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/adaptive-logo.jsx","name":"adaptive-logo.jsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/api-docs.jsx","name":"api-docs.jsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/head.jsx","name":"head.jsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/latest-release.jsx","name":"latest-release.jsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/nav-logo.jsx","name":"nav-logo.jsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/path-cards.jsx","name":"path-cards.jsx","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"components/use-locales-map.js","name":"use-locales-map.js","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"patches/nextra-theme-docs@4.6.1.patch","name":"nextra-theme-docs@4.6.1.patch","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-144x144.png","name":"android-icon-144x144.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-192x192.png","name":"android-icon-192x192.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-36x36.png","name":"android-icon-36x36.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-48x48.png","name":"android-icon-48x48.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-72x72.png","name":"android-icon-72x72.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/android-icon-96x96.png","name":"android-icon-96x96.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/app-menu-items-hover.png","name":"app-menu-items-hover.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/app-menu-items.png","name":"app-menu-items.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-114x114.png","name":"apple-icon-114x114.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-120x120.png","name":"apple-icon-120x120.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-144x144.png","name":"apple-icon-144x144.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-152x152.png","name":"apple-icon-152x152.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-180x180.png","name":"apple-icon-180x180.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-57x57.png","name":"apple-icon-57x57.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-60x60.png","name":"apple-icon-60x60.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-72x72.png","name":"apple-icon-72x72.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-76x76.png","name":"apple-icon-76x76.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon-precomposed.png","name":"apple-icon-precomposed.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/apple-icon.png","name":"apple-icon.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/browserconfig.xml","name":"browserconfig.xml","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/button.png","name":"button.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/CNAME","name":"CNAME","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/favicon-16x16.png","name":"favicon-16x16.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/favicon-32x32.png","name":"favicon-32x32.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/favicon-96x96.png","name":"favicon-96x96.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/favicon.ico","name":"favicon.ico","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/feature-flag.png","name":"feature-flag.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/left-panel-home.png","name":"left-panel-home.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/logo-dark.svg","name":"logo-dark.svg","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/logo-light.svg","name":"logo-light.svg","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/manifest.json","name":"manifest.json","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ms-icon-144x144.png","name":"ms-icon-144x144.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ms-icon-150x150.png","name":"ms-icon-150x150.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ms-icon-310x310.png","name":"ms-icon-310x310.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ms-icon-70x70.png","name":"ms-icon-70x70.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/named-export-error.png","name":"named-export-error.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/nav-logo.svg","name":"nav-logo.svg","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/navbar.png","name":"navbar.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/o3-architecture.svg","name":"o3-architecture.svg","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/patient-lists-app.png","name":"patient-lists-app.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/release-workflow.jpeg","name":"release-workflow.jpeg","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/siderail-icon.png","name":"siderail-icon.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ward-allocation.png","name":"ward-allocation.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/ward-page.png","name":"ward-page.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"public/widget-title-underline-color.png","name":"widget-title-underline-color.png","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"scripts/check-forms-doc-ownership.mjs","name":"check-forms-doc-ownership.mjs","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"scripts/check-forms-doc-ownership.test.mjs","name":"check-forms-doc-ownership.test.mjs","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"scripts/fetch-releases.mjs","name":"fetch-releases.mjs","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"scripts/post-export.mjs","name":"post-export.mjs","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"scripts/remark-localize-links.mjs","name":"remark-localize-links.mjs","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"translations/text.js","name":"text.js","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" found the docs recipe. Let me read"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the full docs page, the `getLocale` implementation"}
+
+data: {"type":"text-delta","id":"txt-0","delta":", and the `FormatDateOptions` type definition"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-f3020dc7-ccfc-4ef9-ab23-b10794088220","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-f3020dc7-ccfc-4ef9-ab23-b10794088220","inputTextDelta":"{\"path\": \"content/en-US/docs/recipes/format-dates.mdx\", \"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\", \"ref\": \"HEAD\", \"limit\": 120}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-f3020dc7-ccfc-4ef9-ab23-b10794088220","toolName":"read_file","input":{"path":"content/en-US/docs/recipes/format-dates.mdx","repo":"github.com/openmrs/openmrs-contrib-o3-docs","ref":"HEAD","limit":120}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/format-dates.mdx","name":"format-dates.mdx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-f3020dc7-ccfc-4ef9-ab23-b10794088220","output":{"output":"<repo>github.com/openmrs/openmrs-contrib-o3-docs</repo>\n<path>content/en-US/docs/recipes/format-dates.mdx</path>\n<url>undefined</url>\n<content>\n1: # Formatting dates\n2: \n3: OpenMRS provides several utilities to work with dates. These utilities have been designed with locale sensitivity in mind. Acceptable date formats vary by language and region, and the functions are intended to accommodate that variation.\n4: \n5: ## Utilities for formatting dates for display\n6: \n7: ### formatDate\n8: \n9: This utility accepts a `Date` object and returns a string. It formats the input date according to the current locale and the given parameters:\n10: \n11: ```ts\n12: formatDate(date: Date, options?: {\n13:   mode?: \"standard\" | \"wide\",\n14:   time?: boolean | \"for today\",\n15:   day?: boolean,\n16:   month?: boolean,\n17:   year?: boolean,\n18:   noToday?: boolean,\n19:   locale?: string,\n20:   calendar?: string,\n21:   numberingSystem?: string\n22: }): string\n23: ```\n24: \n25: The mode parameter can be set to `standard` or `wide`.\n26: For English dates, `standard` mode displays a date such as `16-May-2023`, while `wide` mode displays a date such as `16 — May — 2023`. Other locales may use locale-specific month names, calendars, and punctuation.\n27: \n28: By default, `formatDate` uses `{ mode: \"standard\", time: \"for today\", day: true, month: true, year: true, noToday: false }`. If the date is today, then `Today` is produced instead of the actual day in the locale language, and the time is appended because the default `time` option is `\"for today\"`. Pass `{ time: false }` to suppress the time for today's date, or `{ noToday: true }` to format today like any other date.\n29: \n30: When the `time` option is set to `true`, the time is appended with a comma and a space, e.g. `16-May-2023, 08:21`. This format agrees with the output of `Date.prototype.toLocaleString` for most locales.\n31: \n32: Here's an example of how to use `formatDate` with a `Date` object:\n33: \n34: ```tsx\n35: import { formatDate } from \"@openmrs/esm-framework\";\n36: \n37: function AppointmentDetails({ appointment }: AppointmentDetailsProps) {\n38:   return <span>{formatDate(appointment.scheduledDate, { mode: \"standard\" })}</span>;\n39: }\n40: ```\n41: \n42: For an English locale, the returned value would be a string in the format `18-May-2023`.\n43: \n44: ### formatPartialDate\n45: \n46: Use `formatPartialDate` when a value may contain only a year or a year and month. This is common for approximate clinical dates. It parses the string using the current locale, hides date parts that were not present in the input, and then delegates formatting to `formatDate`.\n47: \n48: ```ts\n49: formatPartialDate(dateString: string, options?: Partial<FormatDateOptions>): string | null\n50: ```\n51: \n52: ```ts\n53: formatPartialDate(\"2021\"); // \"2021\"\n54: formatPartialDate(\"2021-04\"); // \"Apr 2021\"\n55: formatPartialDate(\"2021-04-09\"); // \"09-Apr-2021\"\n56: ```\n57: \n58: ### formatDatetime\n59: \n60: This utility function accepts a `Date` object and returns a `string`.\n61: It formats the input date to display both the date and time, separated by a comma, according to the current locale and the given options.\n62: \n63: `formatDatetime` accepts the same options as `formatDate` except for `time`, which is always included:\n64: \n65: ```ts\n66: formatDatetime(date: Date, options?: Partial<Omit<FormatDateOptions, \"time\">>): string\n67: ```\n68: \n69: Here's an example of how to use `formatDatetime`:\n70: \n71: ```tsx\n72: import { formatDatetime } from \"@openmrs/esm-framework\";\n73: \n74: function AppointmentDetails({ appointment }: AppointmentDetailsProps) {\n75:   return <span>{formatDatetime(appointment.scheduledDate)}</span>;\n76: }\n77: ```\n78: \n79: For an English locale, the returned value would be a string such as `18-May-2023, 08:21`.\n80: \n81: ### formatTime\n82: \n83: This utility function accepts a `Date` object and returns a string. It formats the time according to the current locale using the 12- or 24-hour format.\n84: \n85: ```ts\n86: formatTime(date: Date): string\n87: ```\n88: \n89: Here's an example of how to use `formatTime`:\n90: \n91: ```tsx\n92: import { formatTime } from \"@openmrs/esm-framework\";\n93: \n94: function AppointmentDetails({ appointment }: AppointmentDetailsProps) {\n95:   return <span>{formatTime(appointment.scheduledDate)}</span>;\n96: }\n97: ```\n98: \n99: The returned value depends on the locale. For example, it may be `08:21` in a 24-hour locale or `08:21 AM` in a 12-hour locale.\n100: \n101: ### Durations\n102: \n103: Use `formatDuration` when you already have a structured `Intl.DurationInput` value, or `formatDurationBetween` when you want to calculate and format the duration between two dates.\n104: \n105: ```ts\n106: formatDuration(duration: Intl.DurationInput, options?: Intl.DurationFormatOptions): string\n107: formatDurationBetween(\n108:   startDate: dayjs.ConfigType,\n109:   endDate?: dayjs.ConfigType,\n110:   options?: DurationUnit | DurationOptionsWithFormat\n111: ): string | null\n112: ```\n113: \n114: ```ts\n115: import { formatDurationBetween } from \"@openmrs/esm-framework\";\n116: \n117: formatDurationBetween(\"2022-01-01\", \"2024-07-30\"); // \"2 yrs\"\n118: formatDurationBetween(\"2022-01-01\", \"2024-07-30\", {\n119:   largestUnit: \"years\",\n120:   smallestUnit: \"days\",\n\n(Showing lines 1-120 of 193. Use offset=121 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/format-dates.mdx","name":"format-dates.mdx","revision":"HEAD"}]}}
+
+data: {"type":"tool-input-start","toolCallId":"call-f2bdc82c-0209-41a8-96a6-02dfee5a0b3f","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-f2bdc82c-0209-41a8-96a6-02dfee5a0b3f","inputTextDelta":"{\"path\": \"packages/framework/esm-utils/src/get-locale.ts\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"ref\": \"HEAD\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-f2bdc82c-0209-41a8-96a6-02dfee5a0b3f","toolName":"read_file","input":{"path":"packages/framework/esm-utils/src/get-locale.ts","repo":"github.com/openmrs/openmrs-esm-core","ref":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/get-locale.ts","name":"get-locale.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-f2bdc82c-0209-41a8-96a6-02dfee5a0b3f","output":{"output":"<repo>github.com/openmrs/openmrs-esm-core</repo>\n<path>packages/framework/esm-utils/src/get-locale.ts</path>\n<url>undefined</url>\n<content>\n1: import { toLanguageTag } from './language-tag';\n2: \n3: /**\n4:  * Returns the current locale of the application.\n5:  * @returns string\n6:  */\n7: export function getLocale() {\n8:   // i18next detects the language from the `lang` attribute, a `?lang=` parameter, localStorage or\n9:   // the browser, none of which is guaranteed to be a BCP 47 tag, so normalize before returning.\n10:   const detected = window.i18next.language;\n11:   let language = toLanguageTag(detected) ?? detected;\n12:   // Hack for `ht` until all browsers update their unicode support with ht to fr mapping.\n13:   // See https://unicode-org.atlassian.net/browse/CLDR-14956\n14:   if (language === 'ht') {\n15:     language = 'fr-HT';\n16:   }\n17:   return language;\n18: }\n19: \n\n(End of file - 19 lines total)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/get-locale.ts","name":"get-locale.ts","revision":"HEAD"}]}}
+
+data: {"type":"tool-input-start","toolCallId":"call-e59d6c45-ea0c-42c6-acfb-2ba81cfef5d3","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-e59d6c45-ea0c-42c6-acfb-2ba81cfef5d3","inputTextDelta":"{\"path\": \"packages/framework/esm-utils/src/dates/date-util.ts\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"ref\": \"HEAD\", \"limit\": 80, \"offset\": 120}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-e59d6c45-ea0c-42c6-acfb-2ba81cfef5d3","toolName":"read_file","input":{"path":"packages/framework/esm-utils/src/dates/date-util.ts","repo":"github.com/openmrs/openmrs-esm-core","ref":"HEAD","offset":120,"limit":80}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-e59d6c45-ea0c-42c6-acfb-2ba81cfef5d3","output":{"output":"<repo>github.com/openmrs/openmrs-esm-core</repo>\n<path>packages/framework/esm-utils/src/dates/date-util.ts</path>\n<url>undefined</url>\n<content>\n120:     }\n121: \n122:     if (locale.region) {\n123:       const key = `${locale.language}-${locale.region}`;\n124:       if (this.#registry.has(key)) {\n125:         return this.#registry.get(key);\n126:       }\n127:     }\n128: \n129:     if (locale.language && this.#registry.has(locale.language)) {\n130:       return this.#registry.get(locale.language);\n131:     }\n132: \n133:     const defaultCalendar = new Intl.DateTimeFormat(locale.toString()).resolvedOptions().calendar as CalendarIdentifier;\n134: \n135:     // cache this result\n136:     this.#registry.set(`${locale.language}${locale.region ? `-${locale.region}` : ''}`, defaultCalendar);\n137: \n138:     return defaultCalendar;\n139:   }\n140: }\n141: \n142: const registeredLocaleCalendars = new LocaleCalendars();\n143: \n144: /**\n145:  * Provides the name of the calendar to associate, as a default, with the given base locale.\n146:  *\n147:  * @example\n148:  * ```\n149:  * registerDefaultCalendar('en', 'buddhist') // sets the default calendar for the 'en' locale to Buddhist.\n150:  * ```\n151:  *\n152:  * @param locale the locale to register this calendar for\n153:  * @param calendar the calendar to use for this registration\n154:  */\n155: export function registerDefaultCalendar(locale: string, calendar: CalendarIdentifier) {\n156:   registeredLocaleCalendars.register(locale, calendar);\n157: }\n158: \n159: /**\n160:  * Retrieves the default calendar for the specified locale if any.\n161:  *\n162:  * @param locale the locale to look-up\n163:  */\n164: export function getDefaultCalendar(locale: Intl.Locale | string | undefined) {\n165:   const locale_ = locale ?? getLocale();\n166: \n167:   return registeredLocaleCalendars.getCalendar(locale_ instanceof Intl.Locale ? locale_ : new Intl.Locale(locale_));\n168: }\n169: \n170: export type FormatDateMode = 'standard' | 'wide';\n171: \n172: export type FormatDateOptions = {\n173:   /**\n174:    * The calendar to use when formatting this date.\n175:    */\n176:   calendar?: string;\n177:   /**\n178:    * The locale to use when formatting this date\n179:    */\n180:   locale?: string;\n181:   /**\n182:    * - `standard`: \"03 Feb 2022\"\n183:    * - `wide`:     \"03 — Feb — 2022\"\n184:    */\n185:   mode: FormatDateMode;\n186:   /**\n187:    * Whether the time should be included in the output always (`true`),\n188:    * never (`false`), or only when the input date is today (`for today`).\n189:    */\n190:   time: true | false | 'for today';\n191:   /** Whether to include the day number */\n192:   day: boolean;\n193:   /** Whether to include the month number */\n194:   month: boolean;\n195:   /** Whether to include the year */\n196:   year: boolean;\n197:   /** The unicode numbering system to use */\n198:   numberingSystem?: string;\n199:   /**\n\n(Showing lines 120-199 of 725. Use offset=200 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" have the whole picture. Let me confirm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the calendar registration and `formatDurationBetween` in"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the same file, plus the remaining docs page"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" about calendars.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-cd98cb8d-c0c8-494c-a7d3-351f3cc53ac9","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-cd98cb8d-c0c8-494c-a7d3-351f3cc53ac9","inputTextDelta":"{\"path\": \"content/en-US/docs/recipes/format-dates.mdx\", \"repo\": \"github.com/openmrs/openmrs-contrib-o3-docs\", \"limit\": 75, \"offset\": 121, \"ref\": \"HEAD\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-cd98cb8d-c0c8-494c-a7d3-351f3cc53ac9","toolName":"read_file","input":{"path":"content/en-US/docs/recipes/format-dates.mdx","repo":"github.com/openmrs/openmrs-contrib-o3-docs","ref":"HEAD","offset":121,"limit":75}}
+
+data: {"type":"tool-input-start","toolCallId":"call-446d2a9d-d01b-4315-ab07-31937790b78e","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-446d2a9d-d01b-4315-ab07-31937790b78e","inputTextDelta":"{\"path\": \"packages/framework/esm-utils/src/dates/date-util.ts\", \"repo\": \"github.com/openmrs/openmrs-esm-core\", \"limit\": 30, \"offset\": 100, \"ref\": \"HEAD\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-446d2a9d-d01b-4315-ab07-31937790b78e","toolName":"read_file","input":{"path":"packages/framework/esm-utils/src/dates/date-util.ts","repo":"github.com/openmrs/openmrs-esm-core","ref":"HEAD","offset":100,"limit":30}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/format-dates.mdx","name":"format-dates.mdx","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-cd98cb8d-c0c8-494c-a7d3-351f3cc53ac9","output":{"output":"<repo>github.com/openmrs/openmrs-contrib-o3-docs</repo>\n<path>content/en-US/docs/recipes/format-dates.mdx</path>\n<url>undefined</url>\n<content>\n121:   formatOptions: { style: \"long\" },\n122: }); // \"2 years, 6 months, 29 days\"\n123: ```\n124: \n125: The lower-level `duration` helper returns the structured `Intl.DurationInput` object instead of formatted text. It uses the same auto-selection thresholds as `formatDurationBetween` and accepts singular or plural unit names, such as `\"year\"` or `\"years\"`.\n126: \n127: ### isOmrsDateStrict\n128: \n129: This utility strictly checks whether a date string matches the OpenMRS payload date-time format. The format should be `YYYY-MM-DDTHH:mm:ss.SSSZZ`.\n130: It accepts an `omrsPayloadString` and returns a `boolean`.\n131: \n132: ```ts\n133:   isOmrsDateStrict(omrsPayloadString: string): boolean\n134: ```\n135: \n136: ### isOmrsDateToday\n137: \n138: This utility checks if the provided date is today. Accepts a `DateInput` and returns a `boolean`.\n139: \n140: ```ts\n141:   isOmrsDateToday(date: DateInput): boolean\n142: ```\n143: \n144: ### parseDate\n145: \n146: This utility function parses an arbitrary `dateString` into a `Date`. It uses `dayjs(dateString)`.\n147: \n148: Here's an example of how to use `parseDate` with an OpenMRS date-time string:\n149: \n150: ```tsx\n151: import { formatDate, parseDate } from \"@openmrs/esm-framework\";\n152: \n153: function EncounterDate({ encounter }: EncounterDateProps) {\n154:   return <span>{formatDate(parseDate(encounter.encounterDateTime))}</span>;\n155: }\n156: ```\n157: \n158: For an English locale, the returned value would be a string in the format `18-May-2023`.\n159: \n160: ### toDateObjectStrict\n161: \n162: This utility function converts an OpenMRS payload date-time string to a `Date` object. It accepts `omrsDateString` and returns a `Date` or `null`.\n163: \n164: ```ts\n165:   toDateObjectStrict(omrsDateString: string): Date | null\n166: ```\n167: \n168: ### toOmrsIsoString\n169: \n170: This utility function formats the input `date` to a `string` using the format `YYYY-MM-DDTHH:mm:ss.SSSZZ`. It is mostly used to format dates before submitting data in payloads.\n171: \n172: ```ts\n173:   toOmrsIsoString(date: DateInput, toUTC?: boolean): string\n174: ```\n175: \n176: The `toUTC` parameter is optional and defaults to `false`. When set to `true`, the date will be converted to UTC before formatting.\n177: \n178: Here's an example of how to use `toOmrsIsoString` in a payload:\n179: \n180: ```ts\n181: body: {\n182:   visit: visitUuid,\n183:   patientUuid: patientUuid,\n184:   startedAt: toOmrsIsoString(new Date()),\n185: }\n186: ```\n187: \n188: ### Locale calendars\n189: \n190: O3 can format dates using locale-specific calendars. The app shell registers implementation-level calendar preferences from the styleguide `preferredCalendar` configuration, and `formatDate` also accepts a `calendar` option for one-off overrides.\n191: \n192: Use `registerDefaultCalendar(locale, calendar)` to register a default calendar for a locale, `getDefaultCalendar(locale)` to inspect the resolved calendar, and `convertToLocaleCalendar(date, locale)` when working with `@internationalized/date` calendar values.\n193: \n\n(End of file - 193 lines total)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/format-dates.mdx","name":"format-dates.mdx","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-446d2a9d-d01b-4315-ab07-31937790b78e","output":{"output":"<repo>github.com/openmrs/openmrs-esm-core</repo>\n<path>packages/framework/esm-utils/src/dates/date-util.ts</path>\n<url>undefined</url>\n<content>\n100: \n101: /**\n102:  * Internal cache for per-locale calendars\n103:  */\n104: class LocaleCalendars {\n105:   #registry = new Map<string, CalendarIdentifier>();\n106: \n107:   constructor() {}\n108: \n109:   register(locale: string, calendar: CalendarIdentifier) {\n110:     this.#registry.set(locale, calendar);\n111:   }\n112: \n113:   getCalendar(locale: Intl.Locale): CalendarIdentifier | undefined {\n114:     if (!Boolean(locale)) {\n115:       return undefined;\n116:     }\n117: \n118:     if (locale.calendar) {\n119:       return locale.calendar as CalendarIdentifier;\n120:     }\n121: \n122:     if (locale.region) {\n123:       const key = `${locale.language}-${locale.region}`;\n124:       if (this.#registry.has(key)) {\n125:         return this.#registry.get(key);\n126:       }\n127:     }\n128: \n129:     if (locale.language && this.#registry.has(locale.language)) {\n\n(Showing lines 100-129 of 725. Use offset=130 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","name":"date-util.ts","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"<!--"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"answer-->\nThe O3 frontend formats"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" dates through one utility, `formatDate`,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" which lives in the framework package `@open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/esm-framework` ("}
+
+data: {"type":"text-delta","id":"txt-0","delta":"a shared library of UI/utility code that"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" all O3 apps import). It is locale"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-aware because it delegates the actual formatting to the browser's"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" built-in `Intl` API rather"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" than hard-coding patterns, and it special"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-cases \"today\" by producing the word for"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" today in the active language.\n\n## Where"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" it lives\n\n| Piece | Location |\n|---|---|\n|"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" Implementation | `packages/framework/esm-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"utils/src/dates/date-util"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".ts` in `github.com/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs/openmrs-esm-core`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" |\n| Generated API doc | `packages"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/framework/esm-framework/docs/f"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"unctions/formatDate.md` |\n| Developer guide |"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `content/en-US/docs/recipes/format-dates"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".mdx` in `github.com/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/openmrs-contrib-o"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"3-docs` |\n\nThe developer-facing"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" documentation is the recipe \"Formatting dates"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"\", which describes the same defaults and behaviour"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" as the code @file:{github.com/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs-contrib-o3-d"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ocs::content/en-US/docs/recipes/format"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-dates.mdx:1-42"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"}. There is a French translation of it at"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" @file:{github.com/openmrs/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs-contrib-o3-docs::"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"content/fr-FR/docs/recipes"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/format-dates.mdx:28"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-28}.\n\n## Step by step:"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" how a date becomes a display string\n\n1. **"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"The app calls `formatDate(date, options)`**"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" @file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-esm-core::packages/framework"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/esm-utils/src/dates/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"date-util.ts:306-314"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"}. The options are merged over `defaultOptions`, which"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" is `{ mode: 'standard', time"}
+
+data: {"type":"text-delta","id":"txt-0","delta":": 'for today', day: true"}
+
+data: {"type":"text-delta","id":"txt-0","delta":", month: true, year: true"}
+
+data: {"type":"text-delta","id":"txt-0","delta":", noToday: false }` @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-esm-core::packages"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/framework/esm-utils/src/d"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ates/date-util.ts:208"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-215}.\n\n2. **The locale is resolved"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"** with `getLocale()` unless the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" caller passed one. `getLocale()` reads `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"window.i18next.language` — the language i"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"18next picked from the `lang`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" attribute, a `?lang=` URL"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" parameter, localStorage or the browser — normal"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"izes it to a BCP 47 tag"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" (the standard \"language-REGION\" form"}
+
+data: {"type":"text-delta","id":"txt-0","delta":", e.g. `en-GB"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"`), and patches the Haitian Creole tag"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `ht` to `fr-HT` @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/openmrs-es"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"m-core::packages/framework/esm-utils"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/src/get-locale.ts:7"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-18}. The result is wrapped in"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" an `Intl.Locale` for structured"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" access @file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-esm-core::packages/framework"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/esm-utils/src/dates/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"date-util.ts:307-308}.\n\n3"}
+
+data: {"type":"text-delta","id":"txt-0","delta":". **The calendar is chosen.** `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"getDefaultCalendar` returns the calendar registered for"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the locale, or falls back to the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" browser's resolved default calendar for that locale @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-esm-core::packages"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/framework/esm-utils/src/d"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ates/date-util.ts:164"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-168}. Registrations live in the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `LocaleCalendars` class, which looks"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" up a language-region key first,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" then the bare language, and caches the browser"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" default @file:{github.com/openmrs/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs-esm-core::packages/f"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ramework/esm-utils/src/dates"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/date-util.ts:104-139}. Cal"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"endars can be registered with `register"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"DefaultCalendar(locale, calendar)` @file:{"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"github.com/openmrs/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-esm-core::packages/framework"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/esm-utils/src/dates/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"date-util.ts:155-157};"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the O3 shell does this from the style"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"guide's `preferredCalendar` config"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" @file:{github.com/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs-contrib-o3-d"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ocs::content/en-US/docs/recipes/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"format-dates.mdx:188-192}.\n\n4"}
+
+data: {"type":"text-delta","id":"txt-0","delta":". **\"Today\" handling.** The date"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" is tested with dayjs's `is"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Today` plugin @file:{github.com/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs-esm-core::packages/framework"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/esm-utils/src/dates/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"date-util.ts:21-23"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"}. If it is today and `noToday` is"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" not set, the word for \"today\""}
+
+data: {"type":"text-delta","id":"txt-0","delta":" is produced by `Intl.Rel"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ativeTimeFormat` with `numeric: 'auto'"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"`, which yields the localized word (e"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".g. \"Today\", \"Heute"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"\") rather than a relative phrase, and the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" first letter is upper-cased in a"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" locale-correct way @file:{github.com/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/openmrs-esm-core"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::packages/framework/esm-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"utils/src/dates/date-util"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".ts:327-332}. `noToday` also"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" defaults to `true` for Amhar"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ic (`am`), where localized \"today\" handling"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" is skipped @file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-esm-core::packages/framework"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/esm-utils/src/dates/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"date-util.ts:310-314"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"}.\n\n5. **Ordinary dates are formatted**"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" by building `Intl.DateTimeFormatOptions` from"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the `year`/`month`/`day"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"`/`numberingSystem` options"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" and formatting into parts with `Intl.DateTimeFormat.format"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ToParts` @file:{github.com"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs/openmrs-esm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-core::packages/framework/esm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-utils/src/dates/date-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"util.ts:318-324}. For English"}
+
+data: {"type":"text-delta","id":"txt-0","delta":", the locale is swapped to `en"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-GB` so that times show as"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" AM/PM but the day-month order stays"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" non-American @file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-esm-core::packages"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/framework/esm-utils/src/d"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ates/date-util.ts:334"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-338}.\n\n6. **Separators and"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" cleanup.** For English and Amharic in"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `standard` mode with both year and day present"}
+
+data: {"type":"text-delta","id":"txt-0","delta":", the spaces between parts are replaced with hyp"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"hens (giving `16-May-2023`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"); in `wide` mode the separator"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" becomes an em dash with spaces (`16"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" — May — 2023`) @file:{github"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".com/openmrs/openmrs-es"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"m-core::packages/framework/esm-utils"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/src/dates/date-util.ts"}
+
+data: {"type":"text-delta","id":"txt-0","delta":":343-350}. The `format"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Parts` helper does that replacement while leaving"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the separator before an era alone @file:{github"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".com/openmrs/openmrs-es"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"m-core::packages/framework/es"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"m-utils/src/dates/date"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-util.ts:375-387}."}
+
+data: {"type":"text-delta","id":"txt-0","delta":" For the Ethiopic calendar the era marker and"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" its preceding separator are stripped @file:{github.com"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs/openmrs-esm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-core::packages/framework/esm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-utils/src/dates/date-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"util.ts:352-364}. Parts"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" are then joined into the final string @file"}
+
+data: {"type":"text-delta","id":"txt-0","delta":":{github.com/openmrs/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs-esm-core::packages/f"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ramework/esm-utils/src/dates"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/date-util.ts:366-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"366}.\n\n7. **Time is appended"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"** with a comma and a space when `time`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" is `true`, or when the date is today and"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `time` is `'for today"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"'` — which is why \"Today,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" 08:21\" appears by default @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-esm-core::packages/framework"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/esm-utils/src/dates/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"date-util.ts:368-371"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"}. The time itself comes from `formatTime"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"`, which uses `toLocaleTimeString"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` with 2-digit hour and minute, so"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" 12- or 24-hour display"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" follows the locale @file:{github.com"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs/openmrs-esm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-core::packages/framework/esm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-utils/src/dates/date-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"util.ts:396-401}.\n\nThe"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" full option shape is documented in the `FormatDateOptions"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` type, including the `noToday"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` flag and the `time: true"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" | false | 'for today'`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" tri-state @file:{github.com/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/openmrs-esm-core"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::packages/framework/esm-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"utils/src/dates/date-util"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".ts:170-206}.\n\n```m"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ermaid\n---\ntitle: formatDate decision"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" flow\n---\nflowchart TD\n "}
+
+data: {"type":"text-delta","id":"txt-0","delta":" call[\"formatDate(date, options)\"]"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" --> locale[\"Resolve locale via getLocale\"]\n"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"  locale --> calendar[\"Resolve calendar"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" via getDefaultCalendar\"]\n  calendar -->"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" today{\"Is the date today and not noToday?\""}
+
+data: {"type":"text-delta","id":"txt-0","delta":"}\n  today -->|yes| word"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"[\"Intl.RelativeTimeFormat numeric"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" auto gives the localized word for Today\"]\n  today"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" -->|no| fmt[\"Intl.DateTime"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Format formatToParts\"]\n  fmt --> sep[\""}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Replace separators for en and am,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" or use em dash in wide mode\"]\n  sep"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" --> join[\"Join parts into a string\"]\n  word"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" --> timeq{\"Include time?\"}\n  join"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" --> timeq\n  timeq -->"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"|\"time true or today with for today\""}
+
+data: {"type":"text-delta","id":"txt-0","delta":"| append[\"Append comma and formatTime output"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"\"]\n  timeq -->|no| done"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"[\"Return the string\"]\n  append -->"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" done\n```\n\n## Related helpers in the same file"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"\n\n`formatDatetime` simply calls `formatDate"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` with `time: true` @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-esm-core::packages/framework"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/esm-utils/src/dates/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"date-util.ts:416-418}. `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"formatPartialDate` handles values that may only have"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" a year or year-month (common for approximate clinical dates"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"): it parses the string with `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"any-date-parser` using the current"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" locale, turns off the option for any"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" part that was missing, and delegates to `formatDate"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` @file:{github.com/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs/openmrs-esm-core::"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"packages/framework/esm-utils"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/src/dates/date-util.ts"}
+
+data: {"type":"text-delta","id":"txt-0","delta":":241-280}. `isOm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rsDateToday` exposes the same day"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"js `isToday` check on its own @file"}
+
+data: {"type":"text-delta","id":"txt-0","delta":":{github.com/openmrs/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs-esm-core::packages/f"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ramework/esm-utils/src/dates"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/date-util.ts:64-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"66}.\n\n## What I could not verify\n\nI read"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the English docs recipe and its French counterpart,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the generated `formatDate` API page, `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"get-locale.ts` and `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"date-util.ts`; I did"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" not trace every O3 app that consumes these"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" utilities, and I did not read the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" shell code that maps the styleguide `pre"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ferredCalendar` setting onto `registerDefault"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Calendar`, so the exact wiring of that config is described"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" from the docs only @file:{github.com/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/openmrs-contrib-o"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"3-docs::content/en-US/docs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/recipes/format-dates.mdx:188"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-190}."}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"finish-step"}
+
+data: {"type":"data-evidence","data":{"id":1,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/format-dates.mdx","revision":"HEAD","startLine":1,"code":["# Formatting dates","","OpenMRS provides several utilities to work with dates. These utilities have been designed with locale sensitivity in mind. Acceptable date formats vary by language and region, and the functions are intended to accommodate that variation.","","## Utilities for formatting dates for display","","### formatDate","","This utility accepts a `Date` object and returns a string. It formats the input date according to the current locale and the given parameters:","","```ts","formatDate(date: Date, options?: {","  mode?: \"standard\" | \"wide\",","  time?: boolean | \"for today\",","  day?: boolean,","  month?: boolean,","  year?: boolean,","  noToday?: boolean,","  locale?: string,","  calendar?: string,","  numberingSystem?: string","}): string","```","","The mode parameter can be set to `standard` or `wide`.","For English dates, `standard` mode displays a date such as `16-May-2023`, while `wide` mode displays a date such as `16 — May — 2023`. Other locales may use locale-specific month names, calendars, and punctuation.","","By default, `formatDate` uses `{ mode: \"standard\", time: \"for today\", day: true, month: true, year: true, noToday: false }`. If the date is today, then `Today` is produced instead of the actual day in the locale language, and the time is appended because the default `time` option is `\"for today\"`. Pass `{ time: false }` to suppress the time for today's date, or `{ noToday: true }` to format today like any other date.","","When the `time` option is set to `true`, the time is appended with a comma and a space, e.g. `16-May-2023, 08:21`. This format agrees with the output of `Date.prototype.toLocaleString` for most locales.","","Here's an example of how to use `formatDate` with a `Date` object:","","```tsx","import { formatDate } from \"@openmrs/esm-framework\";","","function AppointmentDetails({ appointment }: AppointmentDetailsProps) {","  return <span>{formatDate(appointment.scheduledDate, { mode: \"standard\" })}</span>;","}","```","","For an English locale, the returned value would be a string in the format `18-May-2023`.","","### formatPartialDate",""],"highlightedLines":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42]}}
+
+data: {"type":"data-evidence","data":{"id":2,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/fr-FR/docs/recipes/format-dates.mdx","revision":"HEAD","startLine":25,"code":["Le paramètre mode peut être réglé sur `standard` ou `wide`.","Pour les dates en anglais, le mode `standard` affiche une date comme `16-May-2023`, tandis que le mode `wide` affiche une date comme `16 — May — 2023`. Les autres locales peuvent utiliser des noms de mois, des calendriers et une ponctuation propres à la locale.","","Par défaut, `formatDate` utilise `{ mode: \"standard\", time: \"for today\", day: true, month: true, year: true, noToday: false }`. Si la date est aujourd'hui, `Today` est produit à la place du jour réel dans la langue locale, et l'heure est ajoutée parce que l'option `time` vaut `\"for today\"` par défaut. Passez `{ time: false }` pour masquer l'heure pour la date du jour, ou `{ noToday: true }` pour formater aujourd'hui comme une date ordinaire.","","Lorsque l'option `time` vaut `true`, l'heure est ajoutée avec une virgule et un espace, par exemple `16-May-2023, 08:21`. Ce format correspond à la sortie de `Date.prototype.toLocaleString` pour la plupart des langues.",""],"highlightedLines":[28]}}
+
+data: {"type":"data-evidence","data":{"id":3,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":303,"code":[" * @returns The formatted date string."," */","// TODO: Shouldn't throw on null input","export function formatDate(date: Date, options?: Partial<FormatDateOptions>) {","  let locale = options?.locale ?? getLocale();","  const _locale = new Intl.Locale(locale);","","  const { calendar, mode, time, day, month, year, noToday, numberingSystem }: FormatDateOptions = {","    ...defaultOptions,","    ...{ noToday: _locale.language === 'am' ? true : false },","    ...options,","  };","","  const formatCalendar = calendar ?? getDefaultCalendar(_locale);",""],"highlightedLines":[306,307,308,309,310,311,312,313,314]}}
+
+data: {"type":"data-evidence","data":{"id":4,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":205,"code":["  noToday: boolean;","};","","const defaultOptions: FormatDateOptions = {","  mode: 'standard',","  time: 'for today',","  day: true,","  month: true,","  year: true,","  noToday: false,","};","","/**"," * Formats the string representing a date, including partial representations of dates, according to the current"],"highlightedLines":[208,209,210,211,212,213,214,215]}}
+
+data: {"type":"data-evidence","data":{"id":5,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/get-locale.ts","revision":"HEAD","startLine":4,"code":[" * Returns the current locale of the application."," * @returns string"," */","export function getLocale() {","  // i18next detects the language from the `lang` attribute, a `?lang=` parameter, localStorage or","  // the browser, none of which is guaranteed to be a BCP 47 tag, so normalize before returning.","  const detected = window.i18next.language;","  let language = toLanguageTag(detected) ?? detected;","  // Hack for `ht` until all browsers update their unicode support with ht to fr mapping.","  // See https://unicode-org.atlassian.net/browse/CLDR-14956","  if (language === 'ht') {","    language = 'fr-HT';","  }","  return language;","}"],"highlightedLines":[7,8,9,10,11,12,13,14,15,16,17,18]}}
+
+data: {"type":"data-evidence","data":{"id":6,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":304,"code":[" */","// TODO: Shouldn't throw on null input","export function formatDate(date: Date, options?: Partial<FormatDateOptions>) {","  let locale = options?.locale ?? getLocale();","  const _locale = new Intl.Locale(locale);","","  const { calendar, mode, time, day, month, year, noToday, numberingSystem }: FormatDateOptions = {","    ...defaultOptions,"],"highlightedLines":[307,308]}}
+
+data: {"type":"data-evidence","data":{"id":7,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":161,"code":[" *"," * @param locale the locale to look-up"," */","export function getDefaultCalendar(locale: Intl.Locale | string | undefined) {","  const locale_ = locale ?? getLocale();","","  return registeredLocaleCalendars.getCalendar(locale_ instanceof Intl.Locale ? locale_ : new Intl.Locale(locale_));","}","","export type FormatDateMode = 'standard' | 'wide';",""],"highlightedLines":[164,165,166,167,168]}}
+
+data: {"type":"data-evidence","data":{"id":8,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":101,"code":["/**"," * Internal cache for per-locale calendars"," */","class LocaleCalendars {","  #registry = new Map<string, CalendarIdentifier>();","","  constructor() {}","","  register(locale: string, calendar: CalendarIdentifier) {","    this.#registry.set(locale, calendar);","  }","","  getCalendar(locale: Intl.Locale): CalendarIdentifier | undefined {","    if (!Boolean(locale)) {","      return undefined;","    }","","    if (locale.calendar) {","      return locale.calendar as CalendarIdentifier;","    }","","    if (locale.region) {","      const key = `${locale.language}-${locale.region}`;","      if (this.#registry.has(key)) {","        return this.#registry.get(key);","      }","    }","","    if (locale.language && this.#registry.has(locale.language)) {","      return this.#registry.get(locale.language);","    }","","    const defaultCalendar = new Intl.DateTimeFormat(locale.toString()).resolvedOptions().calendar as CalendarIdentifier;","","    // cache this result","    this.#registry.set(`${locale.language}${locale.region ? `-${locale.region}` : ''}`, defaultCalendar);","","    return defaultCalendar;","  }","}","","const registeredLocaleCalendars = new LocaleCalendars();"],"highlightedLines":[104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139]}}
+
+data: {"type":"data-evidence","data":{"id":9,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":152,"code":[" * @param locale the locale to register this calendar for"," * @param calendar the calendar to use for this registration"," */","export function registerDefaultCalendar(locale: string, calendar: CalendarIdentifier) {","  registeredLocaleCalendars.register(locale, calendar);","}","","/**"," * Retrieves the default calendar for the specified locale if any."],"highlightedLines":[155,156,157]}}
+
+data: {"type":"data-evidence","data":{"id":10,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/format-dates.mdx","revision":"HEAD","startLine":185,"code":["}","```","","### Locale calendars","","O3 can format dates using locale-specific calendars. The app shell registers implementation-level calendar preferences from the styleguide `preferredCalendar` configuration, and `formatDate` also accepts a `calendar` option for one-off overrides.","","Use `registerDefaultCalendar(locale, calendar)` to register a default calendar for a locale, `getDefaultCalendar(locale)` to inspect the resolved calendar, and `convertToLocaleCalendar(date, locale)` when working with `@internationalized/date` calendar values."],"highlightedLines":[188,189,190,191,192]}}
+
+data: {"type":"data-evidence","data":{"id":11,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":18,"code":["import { isNil, omit } from 'lodash-es';","import { getLocale } from '../';","","dayjs.extend(isToday);","dayjs.extend(utc);","dayjs.extend(objectSupport);","","export type DateInput = string | number | Date;",""],"highlightedLines":[21,22,23]}}
+
+data: {"type":"data-evidence","data":{"id":12,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":324,"code":["  };","","  let localeString: string;","  const isToday = dayjs(date).isToday();","  if (isToday && !noToday) {","    // This produces the word \"Today\" in the language of `locale`","    const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });","    localeString = rtf.format(0, 'day');","    localeString = localeString[0].toLocaleUpperCase(locale) + localeString.slice(1);","  } else {","    if (_locale.language === 'en') {","      // This locale override is here rather than in `getLocale`"],"highlightedLines":[327,328,329,330,331,332]}}
+
+data: {"type":"data-evidence","data":{"id":13,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":307,"code":["  let locale = options?.locale ?? getLocale();","  const _locale = new Intl.Locale(locale);","","  const { calendar, mode, time, day, month, year, noToday, numberingSystem }: FormatDateOptions = {","    ...defaultOptions,","    ...{ noToday: _locale.language === 'am' ? true : false },","    ...options,","  };","","  const formatCalendar = calendar ?? getDefaultCalendar(_locale);",""],"highlightedLines":[310,311,312,313,314]}}
+
+data: {"type":"data-evidence","data":{"id":14,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":315,"code":["","  const formatCalendar = calendar ?? getDefaultCalendar(_locale);","","  const formatterOptions: Intl.DateTimeFormatOptions = {","    calendar: formatCalendar,","    year: year ? 'numeric' : undefined,","    month: month ? 'short' : undefined,","    day: day ? '2-digit' : undefined,","    numberingSystem,","  };","","  let localeString: string;","  const isToday = dayjs(date).isToday();"],"highlightedLines":[318,319,320,321,322,323,324]}}
+
+data: {"type":"data-evidence","data":{"id":15,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":331,"code":["    localeString = rtf.format(0, 'day');","    localeString = localeString[0].toLocaleUpperCase(locale) + localeString.slice(1);","  } else {","    if (_locale.language === 'en') {","      // This locale override is here rather than in `getLocale`","      // because Americans should see AM/PM for times.","      locale = 'en-GB';","    }","","    const formatter = new Intl.DateTimeFormat(locale, formatterOptions);","    let parts = formatter.formatToParts(date);"],"highlightedLines":[334,335,336,337,338]}}
+
+data: {"type":"data-evidence","data":{"id":16,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":340,"code":["    const formatter = new Intl.DateTimeFormat(locale, formatterOptions);","    let parts = formatter.formatToParts(date);","","    if ((_locale.language === 'en' || _locale.language === 'am') && mode == 'standard' && year && day) {","      // Custom formatting for English and Amharic. Use hyphens instead of spaces.","      parts = parts.map(formatParts('-'));","    }","","    if (mode == 'wide') {","      parts = parts.map(formatParts(' — ')); // space-emdash-space","    }","","    // omit the era when using the Ethiopic calendar","    if (formatterOptions.calendar === 'ethiopic') {"],"highlightedLines":[343,344,345,346,347,348,349,350]}}
+
+data: {"type":"data-evidence","data":{"id":17,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":372,"code":["}","","// Internal curried call-back for map()","const formatParts = (separator: string) => {","  return (part: Intl.DateTimeFormatPart, idx: number, values: Array<Intl.DateTimeFormatPart>) => {","    if (part.type !== 'literal' || part.value !== ' ') {","      return part;","    }","","    if (idx < values.length - 1 && values[idx + 1].type === 'era') {","      return part;","    }","","    return { type: 'literal', value: separator } as Intl.DateTimeFormatPart;","  };","};","","/**"," * Formats the input as a time, according to the current locale."],"highlightedLines":[375,376,377,378,379,380,381,382,383,384,385,386,387]}}
+
+data: {"type":"data-evidence","data":{"id":18,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":349,"code":["      parts = parts.map(formatParts(' — ')); // space-emdash-space","    }","","    // omit the era when using the Ethiopic calendar","    if (formatterOptions.calendar === 'ethiopic') {","      parts = parts.filter((part, idx, values) => {","        if (","          part.type === 'era' ||","          (part.type === 'literal' && idx < values.length - 1 && values[idx + 1].type === 'era')","        ) {","          return false;","        }","","        return true;","      });","    }","","    localeString = parts.map((p) => p.value).join('');","  }"],"highlightedLines":[352,353,354,355,356,357,358,359,360,361,362,363,364]}}
+
+data: {"type":"data-evidence","data":{"id":19,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":363,"code":["      });","    }","","    localeString = parts.map((p) => p.value).join('');","  }","  if (time === true || (isToday && time === 'for today')) {","    localeString += `, ${formatTime(date)}`;"],"highlightedLines":[366]}}
+
+data: {"type":"data-evidence","data":{"id":20,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":365,"code":["","    localeString = parts.map((p) => p.value).join('');","  }","  if (time === true || (isToday && time === 'for today')) {","    localeString += `, ${formatTime(date)}`;","  }","  return localeString;","}","","// Internal curried call-back for map()"],"highlightedLines":[368,369,370,371]}}
+
+data: {"type":"data-evidence","data":{"id":21,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":393,"code":[" * @param date The date whose time portion should be formatted."," * @returns The formatted time string (e.g., \"2:30 PM\" or \"14:30\")."," */","export function formatTime(date: Date) {","  return date.toLocaleTimeString(getLocale(), {","    hour: '2-digit',","    minute: '2-digit',","  });","}","","/**"," * Formats the input into a string showing the date and time, according"],"highlightedLines":[396,397,398,399,400,401]}}
+
+data: {"type":"data-evidence","data":{"id":22,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":167,"code":["  return registeredLocaleCalendars.getCalendar(locale_ instanceof Intl.Locale ? locale_ : new Intl.Locale(locale_));","}","","export type FormatDateMode = 'standard' | 'wide';","","export type FormatDateOptions = {","  /**","   * The calendar to use when formatting this date.","   */","  calendar?: string;","  /**","   * The locale to use when formatting this date","   */","  locale?: string;","  /**","   * - `standard`: \"03 Feb 2022\"","   * - `wide`:     \"03 — Feb — 2022\"","   */","  mode: FormatDateMode;","  /**","   * Whether the time should be included in the output always (`true`),","   * never (`false`), or only when the input date is today (`for today`).","   */","  time: true | false | 'for today';","  /** Whether to include the day number */","  day: boolean;","  /** Whether to include the month number */","  month: boolean;","  /** Whether to include the year */","  year: boolean;","  /** The unicode numbering system to use */","  numberingSystem?: string;","  /**","   * Disables the special handling of dates that are today. If false","   * (the default), then dates that are today will be formatted as \"Today\"","   * in the locale language. If true, then dates that are today will be","   * formatted the same as all other dates.","   */","  noToday: boolean;","};","","const defaultOptions: FormatDateOptions = {","  mode: 'standard',"],"highlightedLines":[170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206]}}
+
+data: {"type":"data-evidence","data":{"id":23,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":413,"code":[" * @param options Optional formatting options (same as formatDate, except time is always included)."," * @returns The formatted date and time string."," */","export function formatDatetime(date: Date, options?: Partial<Omit<FormatDateOptions, 'time'>>) {","  return formatDate(date, { ...options, time: true });","}","","/**"," * Converts a calendar date to the equivalent locale calendar date."],"highlightedLines":[416,417,418]}}
+
+data: {"type":"data-evidence","data":{"id":24,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":238,"code":[" * @returns The formatted date string, or `null` if the input cannot be parsed."," */","// TODO: Shouldn't throw on null input","export function formatPartialDate(dateString: string, options: Partial<FormatDateOptions> = {}) {","  const locale = getLocale();","  let parsed: ReturnType<typeof attempt> & { date?: number } = attempt(dateString, locale);","","  if (parsed.invalid) {","    console.warn(`Could not parse invalid date '${dateString}'`);","    return null;","  }","","  // hack here but any date interprets 2000-01, etc. as yyyy-dd rather than yyyy-mm","  if (!isNil(parsed.day) && isNil(parsed.month)) {","    parsed = Object.assign({}, omit(parsed, 'day'), { month: parsed.day });","  }","","  // dayjs' object support uses 0-based months, whereas any-date-parser uses 1-based months","  if (parsed.month) {","    parsed.month -= 1;","  }","","  // in dayjs day is day of week; in any-date-parser, its day of month, so we need to convert them","  if (parsed.day) {","    parsed = Object.assign({}, omit(parsed, 'day'), { date: parsed.day });","  }","","  const date = dayjs().set(parsed).toDate();","","  if (isNil(parsed.year)) {","    options.year = false;","  }","","  if (isNil(parsed.month)) {","    options.month = false;","  }","","  if (isNil(parsed.date)) {","    options.day = false;","  }","","  return formatDate(date, options);","}","","/**"," * Formats the input date according to the current locale and the"],"highlightedLines":[241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,278,279,280]}}
+
+data: {"type":"data-evidence","data":{"id":25,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-esm-core","path":"packages/framework/esm-utils/src/dates/date-util.ts","revision":"HEAD","startLine":61,"code":[" * @param date The date to check."," * @returns `true` if the date is today, `false` otherwise."," */","export function isOmrsDateToday(date: DateInput) {","  return dayjs(date).isToday();","}","","/**"," * Converts the object to a date object if it is an OpenMRS ISO date time string."],"highlightedLines":[64,65,66]}}
+
+data: {"type":"data-evidence","data":{"id":26,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-contrib-o3-docs","path":"content/en-US/docs/recipes/format-dates.mdx","revision":"HEAD","startLine":185,"code":["}","```","","### Locale calendars","","O3 can format dates using locale-specific calendars. The app shell registers implementation-level calendar preferences from the styleguide `preferredCalendar` configuration, and `formatDate` also accepts a `calendar` option for one-off overrides.","","Use `registerDefaultCalendar(locale, calendar)` to register a default calendar for a locale, `getDefaultCalendar(locale)` to inspect the resolved calendar, and `convertToLocaleCalendar(date, locale)` when working with `@internationalized/date` calendar values."],"highlightedLines":[188,189,190]}}
+
+data: {"type":"data-answer","data":{"kind":"grounded","generation":"g-b59a21","paragraphs":[{"text":"The O3 frontend formats dates through one utility, `formatDate`, which lives in the framework package `@openmrs/esm-framework` (a shared library of UI/utility code that all O3 apps import). It is locale-aware because it delegates the actual formatting to the browser's built-in `Intl` API rather than hard-coding patterns, and it special-cases \"today\" by producing the word for today in the active language.","citations":[]},{"text":"## Where it lives","citations":[]},{"text":"| Piece | Location |\n|---|---|\n| Implementation | `packages/framework/esm-utils/src/dates/date-util.ts` in `github.com/openmrs/openmrs-esm-core` |\n| Generated API doc | `packages/framework/esm-framework/docs/functions/formatDate.md` |\n| Developer guide | `content/en-US/docs/recipes/format-dates.mdx` in `github.com/openmrs/openmrs-contrib-o3-docs` |","citations":[]},{"text":"The developer-facing documentation is the recipe \"Formatting dates\", which describes the same defaults and behaviour as the code [1]. There is a French translation of it at [2].","citations":[1,2]},{"text":"## Step by step: how a date becomes a display string","citations":[]},{"text":"1. **The app calls `formatDate(date, options)`** [3]. The options are merged over `defaultOptions`, which is `{ mode: 'standard', time: 'for today', day: true, month: true, year: true, noToday: false }` [4].","citations":[3,4]},{"text":"2. **The locale is resolved** with `getLocale()` unless the caller passed one. `getLocale()` reads `window.i18next.language` — the language i18next picked from the `lang` attribute, a `?lang=` URL parameter, localStorage or the browser — normalizes it to a BCP 47 tag (the standard \"language-REGION\" form, e.g. `en-GB`), and patches the Haitian Creole tag `ht` to `fr-HT` [5]. The result is wrapped in an `Intl.Locale` for structured access [6].","citations":[5,6]},{"text":"3. **The calendar is chosen.** `getDefaultCalendar` returns the calendar registered for the locale, or falls back to the browser's resolved default calendar for that locale [7]. Registrations live in the `LocaleCalendars` class, which looks up a language-region key first, then the bare language, and caches the browser default [8]. Calendars can be registered with `registerDefaultCalendar(locale, calendar)` [9]; the O3 shell does this from the styleguide's `preferredCalendar` config [10].","citations":[7,8,9,10]},{"text":"4. **\"Today\" handling.** The date is tested with dayjs's `isToday` plugin [11]. If it is today and `noToday` is not set, the word for \"today\" is produced by `Intl.RelativeTimeFormat` with `numeric: 'auto'`, which yields the localized word (e.g. \"Today\", \"Heute\") rather than a relative phrase, and the first letter is upper-cased in a locale-correct way [12]. `noToday` also defaults to `true` for Amharic (`am`), where localized \"today\" handling is skipped [13].","citations":[11,12,13]},{"text":"5. **Ordinary dates are formatted** by building `Intl.DateTimeFormatOptions` from the `year`/`month`/`day`/`numberingSystem` options and formatting into parts with `Intl.DateTimeFormat.formatToParts` [14]. For English, the locale is swapped to `en-GB` so that times show as AM/PM but the day-month order stays non-American [15].","citations":[14,15]},{"text":"6. **Separators and cleanup.** For English and Amharic in `standard` mode with both year and day present, the spaces between parts are replaced with hyphens (giving `16-May-2023`); in `wide` mode the separator becomes an em dash with spaces (`16 — May — 2023`) [16]. The `formatParts` helper does that replacement while leaving the separator before an era alone [17]. For the Ethiopic calendar the era marker and its preceding separator are stripped [18]. Parts are then joined into the final string [19].","citations":[16,17,18,19]},{"text":"7. **Time is appended** with a comma and a space when `time` is `true`, or when the date is today and `time` is `'for today'` — which is why \"Today, 08:21\" appears by default [20]. The time itself comes from `formatTime`, which uses `toLocaleTimeString` with 2-digit hour and minute, so 12- or 24-hour display follows the locale [21].","citations":[20,21]},{"text":"The full option shape is documented in the `FormatDateOptions` type, including the `noToday` flag and the `time: true | false | 'for today'` tri-state [22].","citations":[22]},{"text":"```mermaid\n---\ntitle: formatDate decision flow\n---\nflowchart TD\n  call[\"formatDate(date, options)\"] --> locale[\"Resolve locale via getLocale\"]\n  locale --> calendar[\"Resolve calendar via getDefaultCalendar\"]\n  calendar --> today{\"Is the date today and not noToday?\"}\n  today -->|yes| word[\"Intl.RelativeTimeFormat numeric auto gives the localized word for Today\"]\n  today -->|no| fmt[\"Intl.DateTimeFormat formatToParts\"]\n  fmt --> sep[\"Replace separators for en and am, or use em dash in wide mode\"]\n  sep --> join[\"Join parts into a string\"]\n  word --> timeq{\"Include time?\"}\n  join --> timeq\n  timeq -->|\"time true or today with for today\"| append[\"Append comma and formatTime output\"]\n  timeq -->|no| done[\"Return the string\"]\n  append --> done\n```","citations":[]},{"text":"## Related helpers in the same file","citations":[]},{"text":"`formatDatetime` simply calls `formatDate` with `time: true` [23]. `formatPartialDate` handles values that may only have a year or year-month (common for approximate clinical dates): it parses the string with `any-date-parser` using the current locale, turns off the option for any part that was missing, and delegates to `formatDate` [24]. `isOmrsDateToday` exposes the same dayjs `isToday` check on its own [25].","citations":[23,24,25]},{"text":"## What I could not verify","citations":[]},{"text":"I read the English docs recipe and its French counterpart, the generated `formatDate` API page, `get-locale.ts` and `date-util.ts`; I did not trace every O3 app that consumes these utilities, and I did not read the shell code that maps the styleguide `preferredCalendar` setting onto `registerDefaultCalendar`, so the exact wiring of that config is described from the docs only [26].","citations":[26]}],"gaps":[],"partialReasons":[],"abstention":null,"suggestions":[]}}
+
+data: {"type":"message-metadata","messageMetadata":{"totalTokens":103500,"totalInputTokens":99655,"totalOutputTokens":3845,"totalResponseTimeMs":31085,"modelName":"deepseek-ai/DeepSeek-V4.1-Flash","steps":[{"in":6839,"cached":4992,"out":178,"toolBytes":[{"tool":"grep","bytes":4013},{"tool":"grep","bytes":4169}]},{"in":9754,"cached":6784,"out":275,"toolBytes":[{"tool":"read_file","bytes":6095},{"tool":"read_file","bytes":1366},{"tool":"grep","bytes":14}]},{"in":12640,"cached":9728,"out":273,"toolBytes":[{"tool":"read_file","bytes":4944},{"tool":"read_file","bytes":3134}]},{"in":15644,"cached":12544,"out":218,"toolBytes":[{"tool":"find_symbol_definitions","bytes":840},{"tool":"grep","bytes":4444},{"tool":"list_tree","bytes":1772}]},{"in":15512,"cached":6912,"out":340,"toolBytes":[{"tool":"read_file","bytes":5320},{"tool":"read_file","bytes":927},{"tool":"read_file","bytes":2940}]},{"in":18802,"cached":15488,"out":273,"toolBytes":[{"tool":"read_file","bytes":3207},{"tool":"read_file","bytes":1076}]},{"in":20464,"cached":18816,"out":2288,"toolBytes":[]}],"totalCachedInputTokens":75264}}
+
+data: {"type":"finish"}
+
+data: [DONE]
+

@@ -1100,6 +1100,20 @@ Three human-style questions, one run each (`live-chat/runs-c23/`, runner `run-c2
 
 Findings: (1) the gating works as measured (step 1 is 6.3k tokens for code questions, 14.4k for the history question); (2) total input per question is 250k to 277k, only about 12% under the 300k S92 average, so decision rule (a) (at least 30% lower) is **missed**; the S92 average covers 7 to 15 steps and different questions, so this is not a same-question comparison, and the old behaviour on these three questions would have cost roughly 7.3k tokens more per step (about 95k to 100k) for q02 and q03, but that is an estimate; (3) what remains is `read_file` results piling up (two or three reads of up to 5.7 KB per step, never stubbed) over 9 to 14 steps, and the step count itself; (4) the provider (DeepInfra, DeepSeek-V4.1-Flash) reports cached input tokens, 72% to 82% of input here, so billed cost is likely well below the conservative rate (no billing readout; not counted on); (5) all three answers are grounded with no gaps, 11 to 37 evidence parts, and q09 used `get_pull_request`, `get_diff` and `list_commits`; line-level citation correctness was not scored (no gold for these questions). Rule (c) (no run ends on a tool call at the step cap) holds. Next levers, not built: stub or shorten old `read_file` results (risk: line numbers to cite), a lower `read_file` byte cap (5 KB), fewer steps by a prompt that asks for batched reads.
 
+### Cycle 23 accuracy check (2026-11-07, human go-ahead for 6 questions, cap $0.70; tip `7b29839`, 42 repositories, knowledge base off)
+
+Same five eval questions as the stored cycle 21 run, scored with the same strict stored-view function (`live-chat/score-stored.ts` reproduces the cycle 21 mean of 0.858 on the 12 stored threads). Stored answers: `live-chat/runs-c23-eval/`.
+
+| Question | Cycle 21 recall | Cycle 23 recall | Steps | Input tokens | Cached reported |
+|---|---|---|---|---|---|
+| core-to-rest-1 | 1.00 | 1.00 | 11 | 283,492 | 245,888 |
+| framework-to-chart-9 | 0.80 | 0.80 | 7 | 193,669 | 166,144 |
+| docs-30 | 0.50 | 0.50 | 7 | 99,655 | 75,264 |
+| docs-19 | 0.50 | 0.50 | 8 | 128,260 | 96,512 |
+| docs-20 | 0.50 | 0.50 | 15 | 295,438 | 231,168 |
+
+Result: recall equal on all five (mean 0.660 both); no regression, no gain, n = 5, one run each, so a small change would not show. The sixth question (trace-23) was not run: the spend guard stopped the run at $0.32. Input averaged about 200k per question on these five (cycle 21 per-question tokens were not stored, only the 300k average over 22). Spend on this check: $0.57 (a first run with a corpus missing the four gold repositories, $0.25, was invalid and discarded: the 42-repository corpus is the 38 repositories in `.local/eval/o3` plus `esm-core`, `esm-patient-chart` and `webservices.rest` from `.local/eval/xrepo` and the git checkout `.local/eval/openmrs-core`); with the pilot ($0.25) the cycle's paid total is about $0.82 of the $0.95 cap. The docs questions stay at 0.50 as before: that is a retrieval gap predating this cycle, not caused by it.
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).

@@ -1,0 +1,1158 @@
+data: {"type":"start","messageId":"UyctTlUPiQvP7W7g"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"'ll start by finding the declaration of `saveEncounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` in openmrs-core, then look"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" for its uses in the REST module.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-f94aa07c-d353-480c-9477-272d56a91df5","toolName":"find_symbol_definitions"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-f94aa07c-d353-480c-9477-272d56a91df5","inputTextDelta":"{\"symbol\": \"saveEncounter\", \"repo\": \"github.com/openmrs/openmrs-core\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-f94aa07c-d353-480c-9477-272d56a91df5","toolName":"find_symbol_definitions","input":{"symbol":"saveEncounter","repo":"github.com/openmrs/openmrs-core"}}
+
+data: {"type":"tool-input-start","toolCallId":"call-58a111b2-464c-44b5-9f9e-3b067728e254","toolName":"find_symbol_references"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-58a111b2-464c-44b5-9f9e-3b067728e254","inputTextDelta":"{\"symbol\": \"saveEncounter\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-58a111b2-464c-44b5-9f9e-3b067728e254","toolName":"find_symbol_references","input":{"symbol":"saveEncounter","repo":"github.com/openmrs/openmrs-module-webservices.rest"}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java","name":"OrderController1_10Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java","name":"EncounterController1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-58a111b2-464c-44b5-9f9e-3b067728e254","output":{"output":"Found 7 references in 5 files\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java:\n  190: \t\treturn Context.getEncounterService().saveEncounter(enc);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java:\n  84: \t\tContext.getEncounterService().saveEncounter(delegate);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java:\n  174: \t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());\n  186: \t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java:\n  355: \t\tes.saveEncounter(encounter);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java:\n  532: \t\tContext.getEncounterService().saveEncounter(enc);\n  553: \t\tContext.getEncounterService().saveEncounter(enc);","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java","name":"OrderController1_10Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java","name":"EncounterController1_9Test.java","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/db/EncounterDAO.java","name":"EncounterDAO.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/EncounterService.java","name":"EncounterService.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java","name":"EncounterServiceImpl.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/db/hibernate/HibernateEncounterDAO.java","name":"HibernateEncounterDAO.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-f94aa07c-d353-480c-9477-272d56a91df5","output":{"output":"Found 4 definitions in 4 files\n\n[github.com/openmrs/openmrs-core] api/src/main/java/org/openmrs/api/db/EncounterDAO.java:\n  37: \tpublic Encounter saveEncounter(Encounter encounter) throws DAOException;\n\n[github.com/openmrs/openmrs-core] api/src/main/java/org/openmrs/api/EncounterService.java:\n  87: \tpublic Encounter saveEncounter(Encounter encounter) throws APIException;\n\n[github.com/openmrs/openmrs-core] api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java:\n  101: \tpublic Encounter saveEncounter(Encounter encounter) throws APIException {\n\n[github.com/openmrs/openmrs-core] api/src/main/java/org/openmrs/api/db/hibernate/HibernateEncounterDAO.java:\n  80: \tpublic Encounter saveEncounter(Encounter encounter) throws DAOException {","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/db/EncounterDAO.java","name":"EncounterDAO.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/EncounterService.java","name":"EncounterService.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java","name":"EncounterServiceImpl.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/db/hibernate/HibernateEncounterDAO.java","name":"HibernateEncounterDAO.java","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" have the definition sites and the direct call"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" sites. Now let me read the core"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" implementation and each REST call site in context.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-e481fe76-061a-49f1-922e-edd4017cc89c","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-e481fe76-061a-49f1-922e-edd4017cc89c","inputTextDelta":"{\"repo\": \"github.com/openmrs/openmrs-core\", \"path\": \"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java\", \"offset\": 80, \"limit\": 80}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-e481fe76-061a-49f1-922e-edd4017cc89c","toolName":"read_file","input":{"path":"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java","repo":"github.com/openmrs/openmrs-core","ref":"HEAD","offset":80,"limit":80}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java","name":"EncounterServiceImpl.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-e481fe76-061a-49f1-922e-edd4017cc89c","output":{"output":"<repo>github.com/openmrs/openmrs-core</repo>\n<path>api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java</path>\n<url>undefined</url>\n<content>\n80: \t\tthis.dao = dao;\n81: \t}\n82: \n83: \t/**\n84: \t * @see org.openmrs.api.EncounterService#getEncountersByPatient(java.lang.String, boolean)\n85: \t */\n86: \t@Override\n87: \t@Transactional(readOnly = true)\n88: \tpublic List<Encounter> getEncountersByPatient(String query, boolean includeVoided) throws APIException {\n89: \t\tif (query == null) {\n90: \t\t\tthrow new IllegalArgumentException(\"The 'query' parameter is required and cannot be null\");\n91: \t\t}\n92: \n93: \t\treturn Context.getEncounterService()\n94: \t\t        .filterEncountersByViewPermissions(dao.getEncounters(query, null, null, null, includeVoided), null);\n95: \t}\n96: \n97: \t/**\n98: \t * @see org.openmrs.api.EncounterService#saveEncounter(org.openmrs.Encounter)\n99: \t */\n100: \t@Override\n101: \tpublic Encounter saveEncounter(Encounter encounter) throws APIException {\n102: \n103: \t\t// if authenticated user is not supposed to edit encounter of certain type\n104: \t\tfailIfDeniedToEdit(encounter);\n105: \n106: \t\t//If new encounter, try to assign a visit using the registered visit assignment handler.\n107: \t\tcreateVisitForNewEncounter(encounter);\n108: \n109: \t\t// check permissions\n110: \t\tboolean isNewEncounter = requirePrivilege(encounter);\n111: \n112: \t\t// This must be done after setting dateCreated etc on the obs because\n113: \t\t// of the way the ORM tools flush things and check for nullity\n114: \t\t// This also must be done before the save encounter so we can use the\n115: \t\t// orig date\n116: \t\t// after the save\n117: \t\tPatient p = encounter.getPatient();\n118: \t\tDate originalDate;\n119: \t\tLocation originalLocation = null;\n120: \n121: \t\tif (!isNewEncounter) {\n122: \t\t\t// fetch the datetime from the database prior to saving for this\n123: \t\t\t// encounter\n124: \t\t\t// to see if it has changed and change all obs after saving if so\n125: \t\t\toriginalDate = dao.getSavedEncounterDatetime(encounter);\n126: \t\t\tif (encounter.getLocation() != null) {\n127: \t\t\t\toriginalLocation = dao.getSavedEncounterLocation(encounter);\n128: \t\t\t}\n129: \t\t\t// Our data model duplicates the patient column to allow for\n130: \t\t\t// observations to\n131: \t\t\t// not have to look up the parent Encounter to find the patient\n132: \t\t\t// Therefore, encounter.patient must always equal\n133: \t\t\t// encounter.observations[0-n].patient\n134: \n135: \t\t\t// If we are changing encounter.encounterDatetime, then we need to\n136: \t\t\t// also apply that\n137: \t\t\t// to Obs that inherited their obsDatetime from the encounter in the\n138: \t\t\t// first place\n139: \n140: \t\t\tDate newDate = encounter.getEncounterDatetime();\n141: \t\t\tLocation newLocation = encounter.getLocation();\n142: \t\t\tfor (Obs obs : encounter.getAllFlattenedObs(true)) {\n143: \t\t\t\t// if the date was changed\n144: \t\t\t\tif (OpenmrsUtil.compare(originalDate, newDate) != 0\n145: \t\t\t\t        && OpenmrsUtil.compare(obs.getObsDatetime(), originalDate) == 0) {\n146: \n147: \t\t\t\t\t// if the obs datetime is the same as the\n148: \t\t\t\t\t// original encounter datetime, fix it\n149: \t\t\t\t\tobs.setObsDatetime(newDate);\n150: \n151: \t\t\t\t}\n152: \n153: \t\t\t\tif (!OpenmrsUtil.nullSafeEquals(newLocation, originalLocation)\n154: \t\t\t\t        && obs.getLocation().equals(originalLocation)) {\n155: \t\t\t\t\tobs.setLocation(newLocation);\n156: \t\t\t\t}\n157: \n158: \t\t\t\t// if the Person in the obs doesn't match the Patient in the\n159: \t\t\t\t// encounter, fix it\n\n(Showing lines 80-159 of 1032. Use offset=160 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java","name":"EncounterServiceImpl.java","revision":"HEAD"}]}}
+
+data: {"type":"tool-input-start","toolCallId":"call-bb2f0f83-323c-4251-ae75-f12360ec89cc","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-bb2f0f83-323c-4251-ae75-f12360ec89cc","inputTextDelta":"{\"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\", \"path\": \"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java\", \"offset\": 120, \"limit\": 110}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-bb2f0f83-323c-4251-ae75-f12360ec89cc","toolName":"read_file","input":{"path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","repo":"github.com/openmrs/openmrs-module-webservices.rest","ref":"HEAD","offset":120,"limit":110}}
+
+data: {"type":"tool-input-start","toolCallId":"call-b9630b63-b18d-4141-bde3-e6b9482dadd9","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-b9630b63-b18d-4141-bde3-e6b9482dadd9","inputTextDelta":"{\"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\", \"path\": \"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-b9630b63-b18d-4141-bde3-e6b9482dadd9","toolName":"read_file","input":{"path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","repo":"github.com/openmrs/openmrs-module-webservices.rest","ref":"HEAD"}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-bb2f0f83-323c-4251-ae75-f12360ec89cc","output":{"output":"<repo>github.com/openmrs/openmrs-module-webservices.rest</repo>\n<path>omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java</path>\n<url>undefined</url>\n<content>\n120: \t\t\tmodelImpl\n121: \t\t\t        .property(\"patient\", new RefProperty(\"#/definitions/PatientGet\")) //FIXME\n122: \t\t\t        .property(\"location\", new RefProperty(\"#/definitions/LocationGet\")) //FIXME\n123: \t\t\t        .property(\"form\", new RefProperty(\"#/definitions/FormGet\")) //FIXME\n124: \t\t\t        .property(\"encounterType\", new RefProperty(\"#/definitions/EncountertypeGet\")) //FIXME\n125: \t\t\t        .property(\"obs\", new ArrayProperty(new RefProperty(\"#/definitions/ObsGet\"))) //FIXME\n126: \t\t\t        .property(\"orders\", new ArrayProperty(new RefProperty(\"#/definitions/OrderGet\"))); //FIXME\n127: \t\t}\n128: \t\treturn modelImpl;\n129: \t}\n130: \t\n131: \t@Override\n132: \tpublic Model getCREATEModel(Representation rep) {\n133: \t\treturn new ModelImpl()\n134: \t\t        .property(\"patient\", new RefProperty(\"#/definitions/PatientCreate\"))\n135: \t\t        .property(\"encounterType\", new RefProperty(\"#/definitions/EncountertypeCreate\"))\n136: \t\t        .property(\"encounterDatetime\", new DateProperty())\n137: \t\t        .property(\"location\", new RefProperty(\"#/definitions/LocationCreate\"))\n138: \t\t        .property(\"form\", new RefProperty(\"#/definitions/FormCreate\"))\n139: \t\t        .property(\"provider\", new StringProperty())\n140: \t\t        .property(\"orders\", new ArrayProperty(new RefProperty(\"#/definitions/OrderCreate\")))\n141: \t\t        .property(\"obs\", new ArrayProperty(new RefProperty(\"#/definitions/ObsCreate\")))\n142: \t\t        \n143: \t\t        .required(\"patient\").required(\"encounterType\");\n144: \t}\n145: \t\n146: \t@Override\n147: \tpublic Model getUPDATEModel(Representation rep) {\n148: \t\treturn getCREATEModel(rep);\n149: \t}\n150: \t\n151: \t/**\n152: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#getCreatableProperties()\n153: \t * <strong>Should</strong> create an encounter type\n154: \t */\n155: \t@Override\n156: \tpublic DelegatingResourceDescription getCreatableProperties() {\n157: \t\tDelegatingResourceDescription description = new DelegatingResourceDescription();\n158: \t\t\n159: \t\tdescription.addProperty(\"encounterDatetime\"); // has a default value set, hence not required here\n160: \t\tdescription.addRequiredProperty(\"patient\");\n161: \t\tdescription.addRequiredProperty(\"encounterType\");\n162: \t\t\n163: \t\tdescription.addProperty(\"location\");\n164: \t\tdescription.addProperty(\"form\");\n165: \t\tdescription.addProperty(\"provider\");\n166: \t\tdescription.addProperty(\"orders\");\n167: \t\tdescription.addProperty(\"obs\");\n168: \t\t\n169: \t\treturn description;\n170: \t}\n171: \t\n172: \t/**\n173: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#newDelegate()\n174: \t */\n175: \t@Override\n176: \tpublic Encounter newDelegate() {\n177: \t\tEncounter enc = new Encounter();\n178: \t\t// default to now(), so a web client can create a real-time encounter based on the server time\n179: \t\tenc.setEncounterDatetime(new Date());\n180: \t\t// As of 2012-04-27 there is a bug in Encounter.getOrders() where, if null, it returns an empty list without keeping a reference to it\n181: \t\tenc.setOrders(new LinkedHashSet<Order>());\n182: \t\treturn enc;\n183: \t}\n184: \t\n185: \t/**\n186: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#save(Encounter)\n187: \t */\n188: \t@Override\n189: \tpublic Encounter save(Encounter enc) {\n190: \t\treturn Context.getEncounterService().saveEncounter(enc);\n191: \t}\n192: \t\n193: \t/**\n194: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#getByUniqueId(String)\n195: \t */\n196: \t@Override\n197: \tpublic Encounter getByUniqueId(String uuid) {\n198: \t\treturn Context.getEncounterService().getEncounterByUuid(uuid);\n199: \t}\n200: \t\n201: \t/**\n202: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#delete(Encounter,\n203: \t *      String, RequestContext)\n204: \t */\n205: \t@Override\n206: \tpublic void delete(Encounter enc, String reason, RequestContext context) throws ResponseException {\n207: \t\tif (enc.isVoided()) {\n208: \t\t\t// DELETE is idempotent, so we return success here\n209: \t\t\treturn;\n210: \t\t}\n211: \t\tContext.getEncounterService().voidEncounter(enc, reason);\n212: \t}\n213: \t\n214: \t/**\n215: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#undelete(Object,\n216: \t *      RequestContext)\n217: \t */\n218: \t@Override\n219: \tprotected Encounter undelete(Encounter enc, RequestContext context) throws ResponseException {\n220: \t\tif (enc.isVoided()) {\n221: \t\t\tenc = Context.getEncounterService().unvoidEncounter(enc);\n222: \t\t}\n223: \t\treturn enc;\n224: \t}\n225: \t\n226: \t/**\n227: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#purge(Encounter,\n228: \t *      RequestContext)\n229: \t */\n\n(Showing lines 120-229 of 305. Use offset=230 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-b9630b63-b18d-4141-bde3-e6b9482dadd9","output":{"output":"<repo>github.com/openmrs/openmrs-module-webservices.rest</repo>\n<path>omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java</path>\n<url>undefined</url>\n<content>\n1: /**\n2:  * This Source Code Form is subject to the terms of the Mozilla Public License,\n3:  * v. 2.0. If a copy of the MPL was not distributed with this file, You can\n4:  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under\n5:  * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.\n6:  *\n7:  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS\n8:  * graphic logo is a trademark of OpenMRS Inc.\n9:  */\n10: package org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_9;\n11: \n12: import org.openmrs.Encounter;\n13: import org.openmrs.EncounterProvider;\n14: import org.openmrs.api.context.Context;\n15: import org.openmrs.module.webservices.rest.web.RestConstants;\n16: import org.openmrs.module.webservices.rest.web.annotation.PropertyGetter;\n17: import org.openmrs.module.webservices.rest.web.annotation.PropertySetter;\n18: import org.openmrs.module.webservices.rest.web.annotation.Resource;\n19: import org.openmrs.module.webservices.rest.web.representation.DefaultRepresentation;\n20: import org.openmrs.module.webservices.rest.web.representation.FullRepresentation;\n21: import org.openmrs.module.webservices.rest.web.representation.Representation;\n22: import org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource;\n23: import org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceDescription;\n24: import org.openmrs.module.webservices.rest.web.response.ResourceDoesNotSupportOperationException;\n25: import org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_8.EncounterResource1_8;\n26: \n27: import java.util.LinkedHashSet;\n28: import java.util.List;\n29: import java.util.Set;\n30: \n31: /**\n32:  * {@link Resource} for {@link EncounterResource1_9}, supporting standard CRUD operations\n33:  */\n34: @Resource(name = RestConstants.VERSION_1 + \"/encounter\", supportedClass = Encounter.class, supportedOpenmrsVersions = {\n35:         \"1.9.* - 2.1.*\" })\n36: public class EncounterResource1_9 extends EncounterResource1_8 {\n37: \t\n38: \t/**\n39: \t * @see DelegatingCrudResource#getRepresentationDescription(Representation)\n40: \t */\n41: \t@Override\n42: \tpublic DelegatingResourceDescription getRepresentationDescription(Representation rep) {\n43: \t\tif (rep instanceof DefaultRepresentation) {\n44: \t\t\tDelegatingResourceDescription description = super.getRepresentationDescription(rep);\n45: \t\t\tdescription.addProperty(\"visit\", Representation.REF);\n46: \t\t\tdescription.removeProperty(\"provider\");\n47: \t\t\tdescription.addProperty(\"encounterProviders\", Representation.REF);\n48: \t\t\treturn description;\n49: \t\t} else if (rep instanceof FullRepresentation) {\n50: \t\t\tDelegatingResourceDescription description = super.getRepresentationDescription(rep);\n51: \t\t\tdescription.addProperty(\"visit\", Representation.DEFAULT);\n52: \t\t\tdescription.removeProperty(\"provider\");\n53: \t\t\tdescription.addProperty(\"encounterProviders\", Representation.DEFAULT);\n54: \t\t\treturn description;\n55: \t\t}\n56: \t\treturn null;\n57: \t}\n58: \t\n59: \t@Override\n60: \tpublic DelegatingResourceDescription getUpdatableProperties() throws ResourceDoesNotSupportOperationException {\n61: \t\tDelegatingResourceDescription description = super.getUpdatableProperties();\n62: \t\tdescription.addProperty(\"encounterProviders\");\n63: \t\treturn description;\n64: \t}\n65: \t\n66: \t/**\n67: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#getCreatableProperties()\n68: \t */\n69: \t@Override\n70: \tpublic DelegatingResourceDescription getCreatableProperties() {\n71: \t\tDelegatingResourceDescription description = super.getCreatableProperties();\n72: \t\tdescription.addProperty(\"visit\");\n73: \t\tdescription.addProperty(\"encounterProviders\");\n74: \t\treturn description;\n75: \t}\n76: \t\n77: \t@Override\n78: \tpublic Encounter save(Encounter delegate) {\n79: \t\t//This is a hack to save encounterProviders correctly. Without this they are created without encounter_id in\n80: \t\t//the database.\n81: \t\tfor (EncounterProvider ep : delegate.getEncounterProviders()) {\n82: \t\t\tep.setEncounter(delegate);\n83: \t\t}\n84: \t\tContext.getEncounterService().saveEncounter(delegate);\n85: \t\treturn delegate;\n86: \t}\n87: \t\n88: \t@PropertyGetter(\"encounterProviders\")\n89: \tpublic static Set<EncounterProvider> getActiveEncounterProviders(Encounter instance) {\n90: \t\tSet<EncounterProvider> encounterProviders = instance.getEncounterProviders();\n91: \t\tSet<EncounterProvider> providers = new LinkedHashSet<EncounterProvider>();\n92: \t\tfor (EncounterProvider encounterProvider : encounterProviders) {\n93: \t\t\tif (!encounterProvider.isVoided()) {\n94: \t\t\t\tproviders.add(encounterProvider);\n95: \t\t\t}\n96: \t\t}\n97: \t\treturn providers;\n98: \t}\n99: \n100: \t@PropertySetter(\"encounterProviders\")\n101: \tpublic void setEncounterProviders(Encounter instance, List<EncounterProvider> encounterProviders) {\n102: \t\tfor (EncounterProvider newEncounterProvider : encounterProviders) {\n103: \t\t\tboolean isProviderAlreadyPresent = false;\n104: \t\t\tfor (EncounterProvider existingProvider : instance.getEncounterProviders()) {\n105: \t\t\t\tif (existingProvider.getProvider().getUuid().equals(newEncounterProvider.getProvider().getUuid())\n106: \t\t\t\t\t\t&& existingProvider.getEncounterRole().getUuid().equals(newEncounterProvider.getEncounterRole().getUuid())) {\n107: \t\t\t\t\tisProviderAlreadyPresent = true;\n108: \t\t\t\t\tbreak;\n109: \t\t\t\t}\n110: \t\t\t}\n111: \t\t\tif (!isProviderAlreadyPresent) {\n112: \t\t\t\tinstance.getEncounterProviders().add(newEncounterProvider);\n113: \t\t\t}\n114: \t\t}\n115: \t}\n116: \t\n117: \t/**\n\n(Output capped at 5KB. Showing lines 1-117 of 126. Use offset=118 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Now"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the third call site, EncounterProviderResource1"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"_9, and its surrounding methods.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-5d958da6-3db7-410f-821e-f01852f01f89","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-5d958da6-3db7-410f-821e-f01852f01f89","inputTextDelta":"{\"path\": \"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\", \"offset\": 120, \"limit\": 100}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-5d958da6-3db7-410f-821e-f01852f01f89","toolName":"read_file","input":{"path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","repo":"github.com/openmrs/openmrs-module-webservices.rest","ref":"HEAD","offset":120,"limit":100}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-5d958da6-3db7-410f-821e-f01852f01f89","output":{"output":"<repo>github.com/openmrs/openmrs-module-webservices.rest</repo>\n<path>omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java</path>\n<url>undefined</url>\n<content>\n120: \t\t\t        .property(\"encounter\", new RefProperty(\"#/definitions/EncounterCreate\"))\n121: \t\t\t        .property(\"encounterRole\", new RefProperty(\"#/definitions/EncounterroleCreate\"));\n122: \t\t}\n123: \t\treturn model;\n124: \t}\n125: \t\n126: \t@Override\n127: \tpublic Model getUPDATEModel(Representation rep) {\n128: \t\treturn new ModelImpl()\n129: \t\t        .property(\"encounterRole\", new StringProperty())\n130: \t\t        .property(\"voided\", new BooleanProperty())\n131: \t\t        .property(\"voidReason\", new StringProperty());\n132: \t}\n133: \t\n134: \t@Override\n135: \tpublic Encounter getParent(EncounterProvider instance) {\n136: \t\treturn instance.getEncounter();\n137: \t}\n138: \t\n139: \t@Override\n140: \tpublic void setParent(EncounterProvider instance, Encounter parent) {\n141: \t\tinstance.setEncounter(parent);\n142: \t}\n143: \t\n144: \t@Override\n145: \tpublic PageableResult doGetAll(Encounter parent, RequestContext context) throws ResponseException {\n146: \t\tList<EncounterProvider> encounterProviders = new ArrayList<EncounterProvider>(parent.getEncounterProviders());\n147: \t\tif (!context.getIncludeAll()) {\n148: \t\t\tfor (Iterator<EncounterProvider> i = encounterProviders.iterator(); i.hasNext();) {\n149: \t\t\t\tif (i.next().getVoided()) {\n150: \t\t\t\t\ti.remove();\n151: \t\t\t\t}\n152: \t\t\t}\n153: \t\t}\n154: \t\treturn new NeedsPaging<EncounterProvider>(encounterProviders, context);\n155: \t}\n156: \t\n157: \t@Override\n158: \tpublic EncounterProvider getByUniqueId(String uniqueId) {\n159: \t\treturn Context.getService(RestHelperService.class).getObjectByUuid(EncounterProvider.class, uniqueId);\n160: \t}\n161: \t\n162: \t@Override\n163: \tprotected void delete(EncounterProvider delegate, String reason, RequestContext context) throws ResponseException {\n164: \t\t// workaround for removing providers until TRUNK-5017 is fixed\n165: \t\tfor (EncounterProvider encounterProvider : delegate.getEncounter().getEncounterProviders()) {\n166: \t\t\tif (encounterProvider.getEncounterRole().equals(delegate.getEncounterRole())\n167: \t\t\t        && encounterProvider.getProvider().equals(delegate.getProvider()) && !encounterProvider.isVoided()) {\n168: \t\t\t\tencounterProvider.setVoided(true);\n169: \t\t\t\tencounterProvider.setDateVoided(new Date());\n170: \t\t\t\tencounterProvider.setVoidedBy(Context.getAuthenticatedUser());\n171: \t\t\t}\n172: \t\t}\n173: \t\t\n174: \t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());\n175: \t}\n176: \t\n177: \t@Override\n178: \tpublic EncounterProvider newDelegate() {\n179: \t\treturn new EncounterProvider();\n180: \t}\n181: \t\n182: \t@Override\n183: \tpublic EncounterProvider save(EncounterProvider delegate) {\n184: \t\t\n185: \t\tdelegate.getEncounter().addProvider(delegate.getEncounterRole(), delegate.getProvider());\n186: \t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());\n187: \t\t\n188: \t\t// bit of a hack, but since addProvider does not return the provider added, we need to fetch it\n189: \t\t// so that the returned delegate has the proper persisted uuid\n190: \t\t// see: https://issues.openmrs.org/browse/RESTWS-638\n191: \t\tfor (EncounterProvider encounterProvider : delegate.getEncounter().getEncounterProviders()) {\n192: \t\t\tif (encounterProvider.getEncounterRole().equals(delegate.getEncounterRole())\n193: \t\t\t        && encounterProvider.getProvider().equals(delegate.getProvider()) && !encounterProvider.isVoided()) {\n194: \t\t\t\treturn encounterProvider;\n195: \t\t\t}\n196: \t\t}\n197: \t\t\n198: \t\t// should never get here, hopefully!\n199: \t\tthrow new APIException(\"Encounter Provider not properly saved\");\n200: \t}\n201: \t\n202: \t@Override\n203: \tpublic void purge(EncounterProvider delegate, RequestContext context) throws ResponseException {\n204: \t\tthrow new ResourceDoesNotSupportOperationException();\n205: \t}\n206: \t\n207: \t/**\n208: \t * Display string for EncounterProvider\n209: \t * \n210: \t * @param encounterProvider\n211: \t * @return String uuid\n212: \t */\n213: \t@PropertyGetter(\"display\")\n214: \tpublic String getDisplayString(EncounterProvider encounterProvider) {\n215: \t\tif (encounterProvider == null) {\n216: \t\t\treturn \"\";\n217: \t\t}\n218: \t\t\n219: \t\tProvider provider = encounterProvider.getProvider();\n\n(Showing lines 120-219 of 237. Use offset=220 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Now"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" I need to find what the resource classes"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" (`EncounterResource1_8`) depend"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" on internally, and check for other REST"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-module code that indirectly relies on core encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" saving (e.g. delegating resources"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" that bundle encounters). Let me also check the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" subclass chain and other encounter-related REST resources.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-5ba4828e-6e88-4c6f-8c5d-f052fcad0d5e","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-5ba4828e-6e88-4c6f-8c5d-f052fcad0d5e","inputTextDelta":"{\"pattern\": \"class EncounterResource1_1[0-9]|extends EncounterResource1_9|extends EncounterResource1_8\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-5ba4828e-6e88-4c6f-8c5d-f052fcad0d5e","toolName":"grep","input":{"pattern":"class EncounterResource1_1[0-9]|extends EncounterResource1_9|extends EncounterResource1_8","repo":"github.com/openmrs/openmrs-module-webservices.rest"}}
+
+data: {"type":"tool-input-start","toolCallId":"call-f6d51060-fb60-4abf-bbbf-29fe0065993e","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-f6d51060-fb60-4abf-bbbf-29fe0065993e","inputTextDelta":"{\"pattern\": \"EncounterService\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\", \"include\": \"*.java\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-f6d51060-fb60-4abf-bbbf-29fe0065993e","toolName":"grep","input":{"pattern":"EncounterService","include":"*.java","repo":"github.com/openmrs/openmrs-module-webservices.rest"}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2.java","name":"EncounterResource2_2.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-5ba4828e-6e88-4c6f-8c5d-f052fcad0d5e","output":{"output":"Found 2 matches in 2 files\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java:\n  36: public class EncounterResource1_9 extends EncounterResource1_8 {\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2.java:\n  33: public class EncounterResource2_2 extends EncounterResource1_9 {","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2.java","name":"EncounterResource2_2.java","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs2_0/EncounterSearchHandler2_0.java","name":"EncounterSearchHandler2_0.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8.java","name":"EncounterTypeResource1_8.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9.java","name":"EncounterRoleResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11.java","name":"EncounterRoleResource1_11.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_8/ConceptReferenceRangeResource2_8.java","name":"ConceptReferenceRangeResource2_8.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/VisitConfigurationController2_0.java","name":"VisitConfigurationController2_0.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/VisitController1_9Test.java","name":"VisitController1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_5/DiagnosisResource2_5Test.java","name":"DiagnosisResource2_5Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2Test.java","name":"EncounterResource2_2Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java","name":"OrderController1_10Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java","name":"EncounterController1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/DiagnosisController2_2Test.java","name":"DiagnosisController2_2Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/EncounterController2_0Test.java","name":"EncounterController2_0Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8Test.java","name":"EncounterTypeResource1_8Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9Test.java","name":"EncounterRoleResource1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/EncounterController2_2Test.java","name":"EncounterController2_2Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11Test.java","name":"EncounterRoleResource1_11Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9Test.java","name":"EncounterProviderResource1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/EncounterTypeController1_8Test.java","name":"EncounterTypeController1_8Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterRoleController1_9Test.java","name":"EncounterRoleController1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_11/EncounterRoleController1_11Test.java","name":"EncounterRoleController1_11Test.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-f6d51060-fb60-4abf-bbbf-29fe0065993e","output":{"output":"Found 73 matches in 24 files\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java:\n  23: import org.openmrs.api.EncounterService;\n  190: \t\treturn Context.getEncounterService().saveEncounter(enc);\n  198: \t\treturn Context.getEncounterService().getEncounterByUuid(uuid);\n  211: \t\tContext.getEncounterService().voidEncounter(enc, reason);\n  221: \t\t\tenc = Context.getEncounterService().unvoidEncounter(enc);\n  236: \t\tContext.getEncounterService().purgeEncounter(enc);\n  296: \t\t\tList<Encounter> encs = Context.getEncounterService().getEncountersByPatient(patient);\n  300: \t\treturn new ServiceSearcher<Encounter>(EncounterService.class, \"getEncounters\", \"getCountOfEncounters\").search(\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java:\n  84: \t\tContext.getEncounterService().saveEncounter(delegate);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs2_0/EncounterSearchHandler2_0.java:\n  92: \t\t\tList<Encounter> encounters = Context.getEncounterService().getEncounters(encounterSearchCriteria);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8.java:\n  71: \t\treturn Context.getEncounterService().saveEncounterType(encounterType);\n  82: \t\tEncounterType encounterType = Context.getEncounterService().getEncounterTypeByUuid(uuid);\n  85: \t\t\tencounterType = Context.getEncounterService().getEncounterType(uuid);\n  98: \t\tContext.getEncounterService().purgeEncounterType(encounterType);\n  106: \t\treturn new NeedsPaging<EncounterType>(Context.getEncounterService().getAllEncounterTypes(context.getIncludeAll()),\n  115: \t\treturn new NeedsPaging<EncounterType>(Context.getEncounterService().findEncounterTypes(context.getParameter(\"q\")),\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9.java:\n  69: \t\treturn Context.getEncounterService().saveEncounterRole(encounterRole);\n  80: \t\treturn Context.getEncounterService().getEncounterRoleByUuid(uuid);\n  93: \t\tContext.getEncounterService().purgeEncounterRole(encounterRole);\n  101: \t\treturn new NeedsPaging<EncounterRole>(Context.getEncounterService().getAllEncounterRoles(context.getIncludeAll()),\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11.java:\n  32: \t\treturn new NeedsPaging<EncounterRole>(Context.getEncounterService().getEncounterRolesByName(\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java:\n  174: \t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());\n  186: \t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_8/ConceptReferenceRangeResource2_8.java:\n  62: \t\t\tencounter = Context.getEncounterService().getEncounterByUuid(encounterUuid);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/VisitConfigurationController2_0.java:\n  18: import org.openmrs.api.EncounterService;\n  76: \t\tEncounterService encounterService = Context.getEncounterService();\n  179: \tprivate boolean isEncounterVisitsAssignmentHandlerValid(String encounterVisitsAssignmentHandler, EncounterService encounterService) {\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/VisitController1_9Test.java:\n  262:         Encounter encounter = Context.getEncounterService().getEncounterByUuid(voidedEncounterId);\n  263:         encounter = Context.getEncounterService().voidEncounter(encounter, \"test visit\");\n  276:         visit.getEncounters().add(Context.getEncounterService().getEncounterByUuid(encounterId));\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_5/DiagnosisResource2_5Test.java:\n  17: import org.openmrs.api.EncounterService;\n  32:     private EncounterService encounterService;\n  39:         this.encounterService = Context.getEncounterService();\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2Test.java:\n  35: \t\treturn Context.getEncounterService().getEncounterByUuid(getUuidProperty());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java:\n  22: import org.openmrs.api.EncounterService;\n  321: \t\tdcOrder.add(\"encounter\", Context.getEncounterService().getEncounter(6).getUuid());\n  349: \t\tEncounterService es = Context.getEncounterService();\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java:\n  26: import org.openmrs.api.EncounterService;\n  86: \t\tMap<Integer, List<Encounter>> allPatientEncounters = Context.getEncounterService().getAllEncounters(null);\n  185: \t\tEncounter newEncounter = Context.getEncounterService().getEncounterByUuid(newEncounterUuid);\n  343: \t\tEncounter newEncounter = Context.getEncounterService().getEncounterByUuid(\n  354: \t\tEncounterService es = Context.getEncounterService();\n  431: \t\tEncounter encounter = Context.getEncounterService().getEncounterByUuid(RestTestConstants1_9.SECOND_ENCOUNTER_UUID);\n  470: \t\tEncounterService es = Context.getEncounterService();\n  510: \t\tEncounterService es = Context.getEncounterService();\n  530: \t\tEncounter enc = Context.getEncounterService().getEncounterByUuid(RestTestConstants1_9.ENCOUNTER_UUID);\n  531: \t\tContext.getEncounterService().voidEncounter(enc, \"some reason\");\n  532: \t\tContext.getEncounterService().saveEncounter(enc);\n  535: \t\tList<Encounter> encs = Context.getEncounterService().getEncountersByPatient(patient);\n  551: \t\tEncounter enc = Context.getEncounterService().getEncounterByUuid(RestTestConstants1_9.ENCOUNTER_UUID);\n  552: \t\tContext.getEncounterService().voidEncounter(enc, \"bcbcb\");\n  553: \t\tContext.getEncounterService().saveEncounter(enc);\n  556: \t\tList<Encounter> encs = Context.getEncounterService().getEncountersByPatient(patient);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/DiagnosisController2_2Test.java:\n  59: \t\tthis.encounter = Context.getEncounterService().getEncounter(3); // from standard test dataset\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/EncounterController2_0Test.java:\n  107: \t\tMap<Integer, List<Encounter>> allPatientEncounters = Context.getEncounterService().getAllEncounters(null);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8Test.java:\n  21: \t\treturn Context.getEncounterService().getEncounterTypeByUuid(getUuidProperty());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9Test.java:\n  24: \t\treturn Context.getEncounterService().getEncounterRoleByUuid(getUuidProperty());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/EncounterController2_2Test.java:\n  48:         Map<Integer, List<Encounter>> allPatientEncounters = Context.getEncounterService().getAllEncounters(null);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11Test.java:\n  21: \t\treturn Context.getEncounterService().getEncounterRoleByUuid(getUuidProperty());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9Test.java:\n  18: import org.openmrs.api.EncounterService;\n  44: \tprivate EncounterService encounterService;\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/EncounterTypeController1_8Test.java:\n  23: import org.openmrs.api.EncounterService;\n  38: \tprivate EncounterService service;\n  57: \t\tthis.service = Context.getEncounterService();\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterRoleController1_9Test.java:\n  17: import org.openmrs.api.EncounterService;\n  35: \tprivate EncounterService service;\n  54: \t\tthis.service = Context.getEncounterService();\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_11/EncounterRoleController1_11Test.java:\n  51: \t\tEncounterRole encounterRole = Context.getEncounterService().getEncounterRoleByName(ROLE_NAME);","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs2_0/EncounterSearchHandler2_0.java","name":"EncounterSearchHandler2_0.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8.java","name":"EncounterTypeResource1_8.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9.java","name":"EncounterRoleResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11.java","name":"EncounterRoleResource1_11.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_8/ConceptReferenceRangeResource2_8.java","name":"ConceptReferenceRangeResource2_8.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/VisitConfigurationController2_0.java","name":"VisitConfigurationController2_0.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/VisitController1_9Test.java","name":"VisitController1_9Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_5/DiagnosisResource2_5Test.java","name":"DiagnosisResource2_5Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2Test.java","name":"EncounterResource2_2Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java","name":"OrderController1_10Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java","name":"EncounterController1_9Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/DiagnosisController2_2Test.java","name":"DiagnosisController2_2Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/EncounterController2_0Test.java","name":"EncounterController2_0Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8Test.java","name":"EncounterTypeResource1_8Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9Test.java","name":"EncounterRoleResource1_9Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/EncounterController2_2Test.java","name":"EncounterController2_2Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11Test.java","name":"EncounterRoleResource1_11Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9Test.java","name":"EncounterProviderResource1_9Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/EncounterTypeController1_8Test.java","name":"EncounterTypeController1_8Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterRoleController1_9Test.java","name":"EncounterRoleController1_9Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_11/EncounterRoleController1_11Test.java","name":"EncounterRoleController1_11Test.java","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Now"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" let me check the `EncounterResource2"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"_2` subclass (a save change"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" there would also route through core), plus whether any"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" REST resources save encounters indirectly via `visit`/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"`Diagnosis`/`Condition` resources or"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" use `saveEncounter` for bundled"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" sub-resources like obs/orders.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-1d6bb22a-8f8a-42a4-ac0e-fc7966f3a564","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-1d6bb22a-8f8a-42a4-ac0e-fc7966f3a564","inputTextDelta":"{\"path\": \"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2.java\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-1d6bb22a-8f8a-42a4-ac0e-fc7966f3a564","toolName":"read_file","input":{"path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2.java","repo":"github.com/openmrs/openmrs-module-webservices.rest","ref":"HEAD"}}
+
+data: {"type":"tool-input-start","toolCallId":"call-17998d8b-0a59-4596-8bf0-6e0edc7961dc","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-17998d8b-0a59-4596-8bf0-6e0edc7961dc","inputTextDelta":"{\"include\": \"*.java\", \"pattern\": \"saveEncounter|\\\\.save\\\\(.*[Ee]ncounter|encounterService\\\\.save|encounter\\\\.save\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-17998d8b-0a59-4596-8bf0-6e0edc7961dc","toolName":"grep","input":{"pattern":"saveEncounter|\\.save\\(.*[Ee]ncounter|encounterService\\.save|encounter\\.save","include":"*.java","repo":"github.com/openmrs/openmrs-module-webservices.rest"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2.java","name":"EncounterResource2_2.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-1d6bb22a-8f8a-42a4-ac0e-fc7966f3a564","output":{"output":"<repo>github.com/openmrs/openmrs-module-webservices.rest</repo>\n<path>omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2.java</path>\n<url>undefined</url>\n<content>\n1: /**\n2:  * This Source Code Form is subject to the terms of the Mozilla Public License,\n3:  * v. 2.0. If a copy of the MPL was not distributed with this file, You can\n4:  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under\n5:  * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.\n6:  *\n7:  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS\n8:  * graphic logo is a trademark of OpenMRS Inc.\n9:  */\n10: package org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs2_2;\n11: \n12: import org.openmrs.Diagnosis;\n13: import org.openmrs.Encounter;\n14: import org.openmrs.Order;\n15: import org.openmrs.module.webservices.rest.web.RestConstants;\n16: import org.openmrs.module.webservices.rest.web.annotation.PropertyGetter;\n17: import org.openmrs.module.webservices.rest.web.annotation.Resource;\n18: import org.openmrs.module.webservices.rest.web.representation.DefaultRepresentation;\n19: import org.openmrs.module.webservices.rest.web.representation.FullRepresentation;\n20: import org.openmrs.module.webservices.rest.web.representation.Representation;\n21: import org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceDescription;\n22: import org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_9.EncounterResource1_9;\n23: \n24: import java.util.LinkedHashSet;\n25: import java.util.Set;\n26: import java.util.stream.Collectors;\n27: \n28: /**\n29:  * {@link Resource} for {@link EncounterResource2_2}, supporting standard CRUD operations\n30:  */\n31: @Resource(name = RestConstants.VERSION_1 + \"/encounter\", supportedClass = Encounter.class, supportedOpenmrsVersions = {\n32:         \"2.2.* - 9.*\" })\n33: public class EncounterResource2_2 extends EncounterResource1_9 {\n34: \t\n35: \t@Override\n36: \tpublic DelegatingResourceDescription getRepresentationDescription(Representation rep) {\n37: \t\tDelegatingResourceDescription description = null;\n38: \t\tif (rep instanceof DefaultRepresentation || rep instanceof FullRepresentation) {\n39: \t\t\tdescription = super.getRepresentationDescription(rep);\n40: \t\t\tdescription.addProperty(\"diagnoses\");\n41: \t\t}\n42: \t\treturn description;\n43: \t}\n44: \t\n45: \t/**\n46: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#getCreatableProperties()\n47: \t */\n48: \t@Override\n49: \tpublic DelegatingResourceDescription getCreatableProperties() {\n50: \t\tDelegatingResourceDescription description = super.getCreatableProperties();\n51: \t\tdescription.addProperty(\"diagnoses\");\n52: \t\treturn description;\n53: \t}\n54: \t\n55: \t/**\n56: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#getCreatableProperties()\n57: \t */\n58: \t@Override\n59: \tpublic DelegatingResourceDescription getUpdatableProperties() {\n60: \t\tDelegatingResourceDescription description = super.getUpdatableProperties();\n61: \t\tdescription.addProperty(\"diagnoses\");\n62: \t\treturn description;\n63: \t}\n64: \n65:     @PropertyGetter(\"diagnoses\")\n66:     public static Set<Diagnosis> getDiagnoses(Encounter instance) {\n67:         return instance.getDiagnoses().stream().filter(diagnosis -> !diagnosis.getVoided()).collect(Collectors.toCollection(LinkedHashSet::new));\n68:     }\n69: \n70: \n71:     /**\n72: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#getResourceVersion()\n73: \t */\n74: \t@Override\n75: \tpublic String getResourceVersion() {\n76: \t\treturn RestConstants2_2.RESOURCE_VERSION;\n77: \t}\n78: }\n79: \n\n(End of file - 79 lines total)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2.java","name":"EncounterResource2_2.java","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8.java","name":"EncounterTypeResource1_8.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9.java","name":"EncounterRoleResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java","name":"OrderController1_10Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java","name":"EncounterController1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9Test.java","name":"EncounterProviderResource1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/EncounterTypeController1_8Test.java","name":"EncounterTypeController1_8Test.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-17998d8b-0a59-4596-8bf0-6e0edc7961dc","output":{"output":"Found 11 matches in 9 files\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java:\n  190: \t\treturn Context.getEncounterService().saveEncounter(enc);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java:\n  84: \t\tContext.getEncounterService().saveEncounter(delegate);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8.java:\n  71: \t\treturn Context.getEncounterService().saveEncounterType(encounterType);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9.java:\n  69: \t\treturn Context.getEncounterService().saveEncounterRole(encounterRole);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java:\n  174: \t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());\n  186: \t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java:\n  355: \t\tes.saveEncounter(encounter);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java:\n  532: \t\tContext.getEncounterService().saveEncounter(enc);\n  553: \t\tContext.getEncounterService().saveEncounter(enc);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9Test.java:\n  123: \t\tencounterService.saveEncounterRole(newRole);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/EncounterTypeController1_8Test.java:\n  141: \t\tservice.saveEncounterType(encounterType);","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8.java","name":"EncounterTypeResource1_8.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9.java","name":"EncounterRoleResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java","name":"OrderController1_10Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java","name":"EncounterController1_9Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9Test.java","name":"EncounterProviderResource1_9Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/EncounterTypeController1_8Test.java","name":"EncounterTypeController1_8Test.java","revision":"HEAD"}]}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Now"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" let me look at the core implementation further"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" (the rest of saveEncounter)"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" and check the resource interfaces/subclasses to"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" understand what class the REST layer instantiates. Also"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" check `BaseDelegatingResource`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" for callers of `save()` and"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" any other encounter resources.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-ea6876c8-3cf6-4036-8243-6dc764cfa3be","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-ea6876c8-3cf6-4036-8243-6dc764cfa3be","inputTextDelta":"{\"path\": \"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java\", \"repo\": \"github.com/openmrs/openmrs-core\", \"offset\": 159, \"limit\": 70}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-ea6876c8-3cf6-4036-8243-6dc764cfa3be","toolName":"read_file","input":{"path":"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java","repo":"github.com/openmrs/openmrs-core","ref":"HEAD","offset":159,"limit":70}}
+
+data: {"type":"tool-input-start","toolCallId":"call-001209e3-4588-47f8-946a-bd238b022b64","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-001209e3-4588-47f8-946a-bd238b022b64","inputTextDelta":"{\"include\": \"*.java\", \"path\": \"omod/src/main/java/org/openmrs/module/webservices/rest/web/resource\", \"pattern\": \"encounter\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-001209e3-4588-47f8-946a-bd238b022b64","toolName":"grep","input":{"pattern":"encounter","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/resource","include":"*.java","repo":"github.com/openmrs/openmrs-module-webservices.rest"}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"tool-output-available","toolCallId":"call-001209e3-4588-47f8-946a-bd238b022b64","output":{"output":"No files found"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java","name":"EncounterServiceImpl.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-ea6876c8-3cf6-4036-8243-6dc764cfa3be","output":{"output":"<repo>github.com/openmrs/openmrs-core</repo>\n<path>api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java</path>\n<url>undefined</url>\n<content>\n159: \t\t\t\t// encounter, fix it\n160: \t\t\t\tif (!obs.getPerson().getPersonId().equals(p.getPatientId())) {\n161: \t\t\t\t\tobs.setPerson(p);\n162: \t\t\t\t}\n163: \t\t\t}\n164: \t\t}\n165: \t\t// same goes for Orders\n166: \t\tfor (Order o : encounter.getOrders()) {\n167: \t\t\tif (!p.equals(o.getPatient())) {\n168: \t\t\t\to.setPatient(p);\n169: \t\t\t}\n170: \t\t}\n171: \n172: \t\t// do the actual saving to the database\n173: \t\tdao.saveEncounter(encounter);\n174: \n175: \t\t// save the new orderGroups\n176: \t\tfor (OrderGroup orderGroup : encounter.getOrderGroups()) {\n177: \t\t\tContext.getOrderService().saveOrderGroup(orderGroup);\n178: \t\t}\n179: \t\t//save the new orders which do not have order groups\n180: \t\tfor (Order o : encounter.getOrdersWithoutOrderGroups()) {\n181: \t\t\tif (o.getOrderId() == null) {\n182: \t\t\t\tContext.getOrderService().saveOrder(o, null);\n183: \t\t\t} else {\n184: \t\t\t\t// Since orders are only saved via the OrderService if they are new,\n185: \t\t\t\t// we need to explicitly re-validate any existing orders\n186: \t\t\t\tValidateUtil.validate(o);\n187: \t\t\t}\n188: \t\t}\n189: \n190: \t\t// save the Obs\n191: \t\tString changeMessage = Context.getMessageSourceService().getMessage(\"Obs.void.reason.default\");\n192: \t\tObsService os = Context.getObsService();\n193: \t\tList<Obs> obsToRemove = new ArrayList<>();\n194: \t\tList<Obs> obsToAdd = new ArrayList<>();\n195: \t\tfor (Obs o : encounter.getObsAtTopLevel(true)) {\n196: \t\t\tif (o.getId() == null) {\n197: \t\t\t\tos.saveObs(o, null);\n198: \t\t\t} else {\n199: \t\t\t\tObs newObs = os.saveObs(o, changeMessage);\n200: \t\t\t\t//The logic in saveObs evicts the old obs instance, so we need to update the collection\n201: \t\t\t\t//with the newly loaded and voided instance, apparently reloading the encounter\n202: \t\t\t\t//didn't do the tick\n203: \t\t\t\tobsToRemove.add(o);\n204: \t\t\t\tobsToAdd.add(os.getObs(o.getId()));\n205: \t\t\t\tobsToAdd.add(newObs);\n206: \t\t\t}\n207: \t\t}\n208: \n209: \t\tremoveGivenObsAndTheirGroupMembersFromEncounter(obsToRemove, encounter);\n210: \t\taddGivenObsAndTheirGroupMembersToEncounter(obsToAdd, encounter);\n211: \n212: \t\t// save the conditions\n213: \t\tencounter.getConditions().forEach(Context.getConditionService()::saveCondition);\n214: \n215: \t\t// save the allergies\n216: \t\tencounter.getAllergies().forEach(Context.getPatientService()::saveAllergy);\n217: \n218: \t\t// save the diagnoses\n219: \t\tencounter.getDiagnoses().stream().forEach(diagnosis -> {\n220: \t\t\tdiagnosis.setPatient(p);\n221: \t\t\tdiagnosis.setEncounter(encounter);\n222: \t\t});\n223: \t\tencounter.getDiagnoses().forEach(Context.getDiagnosisService()::save);\n224: \n225: \t\treturn encounter;\n226: \t}\n227: \n228: \t/**\n\n(Showing lines 159-228 of 1032. Use offset=229 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java","name":"EncounterServiceImpl.java","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Let"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" me find where `save()` on a deleg"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ating resource is invoked (the CRUD controller path),"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" to show how REST requests reach it,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" and confirm the REST resource that handles encounters"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" is registered for the request path.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-35723669-8377-42c1-bf30-0a49ebc05053","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-35723669-8377-42c1-bf30-0a49ebc05053","inputTextDelta":"{\"pattern\": \"\\\\.save\\\\(delegate\\\\)|\\\\.save\\\\(newDelegate|getResource\\\\(\\\\)\\\\.save|resource\\\\.save\\\\(\", \"include\": \"*.java\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-35723669-8377-42c1-bf30-0a49ebc05053","toolName":"grep","input":{"pattern":"\\.save\\(delegate\\)|\\.save\\(newDelegate|getResource\\(\\)\\.save|resource\\.save\\(","include":"*.java","repo":"github.com/openmrs/openmrs-module-webservices.rest"}}
+
+data: {"type":"tool-input-start","toolCallId":"call-86b4c924-feae-43f0-845d-4b45b2893d48","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-86b4c924-feae-43f0-845d-4b45b2893d48","inputTextDelta":"{\"pattern\": \"setDiagnoses|addDiagnosis|getDiagnoses\\\\(\\\\)\\\\.add|new Diagnosis\", \"include\": \"*.java\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-86b4c924-feae-43f0-845d-4b45b2893d48","toolName":"grep","input":{"pattern":"setDiagnoses|addDiagnosis|getDiagnoses\\(\\)\\.add|new Diagnosis","include":"*.java","repo":"github.com/openmrs/openmrs-module-webservices.rest"}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/DiagnosisResource2_2.java","name":"DiagnosisResource2_2.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_5/DiagnosisResource2_5Test.java","name":"DiagnosisResource2_5Test.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-86b4c924-feae-43f0-845d-4b45b2893d48","output":{"output":"Found 4 matches in 2 files\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/DiagnosisResource2_2.java:\n  80: \t\treturn new Diagnosis();\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_5/DiagnosisResource2_5Test.java:\n  75:         Diagnosis diagnosis = new Diagnosis();\n  83:         Diagnosis diagnosis = new Diagnosis();\n  92:         Diagnosis diagnosis = new Diagnosis();","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/DiagnosisResource2_2.java","name":"DiagnosisResource2_2.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_5/DiagnosisResource2_5Test.java","name":"DiagnosisResource2_5Test.java","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/BaseDelegatingSubclassHandler.java","name":"BaseDelegatingSubclassHandler.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-35723669-8377-42c1-bf30-0a49ebc05053","output":{"output":"Found 1 match in 1 file\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/BaseDelegatingSubclassHandler.java:\n  91: \t\treturn (Subclass) getResource().save(delegate);","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/BaseDelegatingSubclassHandler.java","name":"BaseDelegatingSubclassHandler.java","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Let"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" me confirm how the CRUD controller invokes `save"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` (the request-level entry point) and check"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the DiagnosisResource for the encounter relationship, since `Enc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ounterResource2_2` exposes `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"diagnoses`.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-ff4c4c6e-8a07-4d69-971a-6f38d60f8cf4","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-ff4c4c6e-8a07-4d69-971a-6f38d60f8cf4","inputTextDelta":"{\"pattern\": \"save\\\\(\", \"include\": \"*.java\", \"path\": \"omod-common/src/main/java/org/openmrs/module/webservices/rest/web\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-ff4c4c6e-8a07-4d69-971a-6f38d60f8cf4","toolName":"grep","input":{"pattern":"save\\(","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web","include":"*.java","repo":"github.com/openmrs/openmrs-module-webservices.rest"}}
+
+data: {"type":"tool-input-start","toolCallId":"call-c6dadd31-0286-4b44-967e-38fe805f88e0","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-c6dadd31-0286-4b44-967e-38fe805f88e0","inputTextDelta":"{\"path\": \"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/DiagnosisResource2_2.java\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\", \"offset\": 60, \"limit\": 80}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-c6dadd31-0286-4b44-967e-38fe805f88e0","toolName":"read_file","input":{"path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/DiagnosisResource2_2.java","repo":"github.com/openmrs/openmrs-module-webservices.rest","ref":"HEAD","offset":60,"limit":80}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingResourceHandler.java","name":"DelegatingResourceHandler.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/BaseDelegatingSubclassHandler.java","name":"BaseDelegatingSubclassHandler.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/BaseDelegatingReadableResource.java","name":"BaseDelegatingReadableResource.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingSubResource.java","name":"DelegatingSubResource.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingCrudResource.java","name":"DelegatingCrudResource.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/MetadataDelegatingCrudResource.java","name":"MetadataDelegatingCrudResource.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-ff4c4c6e-8a07-4d69-971a-6f38d60f8cf4","output":{"output":"Found 11 matches in 6 files\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingResourceHandler.java:\n  57: \tT save(T delegate);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/BaseDelegatingSubclassHandler.java:\n  90: \tpublic Subclass save(Subclass delegate) {\n  86: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceHandler#save(java.lang.Object)\n  91: \t\treturn (Subclass) getResource().save(delegate);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/BaseDelegatingReadableResource.java:\n  49: \tpublic T save(T delegate) {\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingSubResource.java:\n  96: \t\tdelegate = save(delegate);\n  137: \t\tdelegate = save(delegate);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingCrudResource.java:\n  77: \t\tdelegate = save(delegate);\n  139: \t\tdelegate = save(delegate);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/MetadataDelegatingCrudResource.java:\n  137: \t\tsave(delegate);\n  153: \t\t\tdelegate = save(delegate);","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingResourceHandler.java","name":"DelegatingResourceHandler.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/BaseDelegatingSubclassHandler.java","name":"BaseDelegatingSubclassHandler.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/BaseDelegatingReadableResource.java","name":"BaseDelegatingReadableResource.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingSubResource.java","name":"DelegatingSubResource.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingCrudResource.java","name":"DelegatingCrudResource.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/MetadataDelegatingCrudResource.java","name":"MetadataDelegatingCrudResource.java","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/DiagnosisResource2_2.java","name":"DiagnosisResource2_2.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-c6dadd31-0286-4b44-967e-38fe805f88e0","output":{"output":"<repo>github.com/openmrs/openmrs-module-webservices.rest</repo>\n<path>omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/DiagnosisResource2_2.java</path>\n<url>undefined</url>\n<content>\n60: \t */\n61: \t@Override\n62: \tpublic Diagnosis getByUniqueId(String diagnosisUuid) {\n63: \t\treturn Context.getDiagnosisService().getDiagnosisByUuid(diagnosisUuid);\n64: \t}\n65: \t\n66: \t/**\n67: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#delete(Object,\n68: \t *      String, RequestContext)\n69: \t */\n70: \t@Override\n71: \tprotected void delete(Diagnosis diagnosis, String reason, RequestContext requestContext) throws ResponseException {\n72: \t\tContext.getDiagnosisService().voidDiagnosis(diagnosis, reason);\n73: \t}\n74: \t\n75: \t/**\n76: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#newDelegate()\n77: \t */\n78: \t@Override\n79: \tpublic Diagnosis newDelegate() {\n80: \t\treturn new Diagnosis();\n81: \t}\n82: \t\n83: \t/**\n84: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#save(Object)\n85: \t */\n86: \t@Override\n87: \tpublic Diagnosis save(Diagnosis diagnosis) {\n88: \t\treturn Context.getDiagnosisService().save(diagnosis);\n89: \t}\n90: \t\n91: \t/**\n92: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#purge(Object,\n93: \t *      RequestContext)\n94: \t */\n95: \t@Override\n96: \tpublic void purge(Diagnosis diagnosis, RequestContext requestContext) throws ResponseException {\n97: \t\tContext.getDiagnosisService().purgeDiagnosis(diagnosis);\n98: \t}\n99: \t\n100: \t/**\n101: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#getRepresentationDescription(Representation)\n102: \t */\n103: \t@Override\n104: \tpublic DelegatingResourceDescription getRepresentationDescription(Representation representation) {\n105: \t\tif (representation instanceof DefaultRepresentation) {\n106: \t\t\tDelegatingResourceDescription description = new DelegatingResourceDescription();\n107: \t\t\tdescription.addProperty(\"uuid\");\n108: \t\t\tdescription.addProperty(\"diagnosis\", Representation.REF);\n109: \t\t\tdescription.addProperty(\"condition\", Representation.REF);\n110: \t\t\tdescription.addProperty(\"encounter\", Representation.REF);\n111: \t\t\tdescription.addProperty(\"certainty\");\n112: \t\t\tdescription.addProperty(\"rank\");\n113: \t\t\tdescription.addProperty(\"voided\");\n114: \t\t\tdescription.addProperty(\"display\");\n115: \t\t\tdescription.addProperty(\"patient\", Representation.REF);\n116: \t\t\tdescription.addLink(\"full\", \".?v=\" + RestConstants.REPRESENTATION_FULL);\n117: \t\t\tdescription.addSelfLink();\n118: \t\t\treturn description;\n119: \t\t} else if (representation instanceof FullRepresentation) {\n120: \t\t\tDelegatingResourceDescription description = new DelegatingResourceDescription();\n121: \t\t\tdescription.addProperty(\"uuid\");\n122: \t\t\tdescription.addProperty(\"diagnosis\");\n123: \t\t\tdescription.addProperty(\"patient\", Representation.REF);\n124: \t\t\tdescription.addProperty(\"condition\");\n125: \t\t\tdescription.addProperty(\"encounter\");\n126: \t\t\tdescription.addProperty(\"certainty\");\n127: \t\t\tdescription.addProperty(\"rank\");\n128: \t\t\tdescription.addProperty(\"voided\");\n129: \t\t\tdescription.addProperty(\"auditInfo\");\n130: \t\t\tdescription.addProperty(\"display\");\n131: \t\t\tdescription.addSelfLink();\n132: \t\t\treturn description;\n133: \t\t}\n134: \t\treturn null;\n135: \t}\n136: \t\n137: \t/**\n138: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceHandler#getGETModel(Representation)\n139: \t */\n\n(Showing lines 60-139 of 252. Use offset=140 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/DiagnosisResource2_2.java","name":"DiagnosisResource2_2.java","revision":"HEAD"}]}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" have the full picture of the direct call chain"}
+
+data: {"type":"text-delta","id":"txt-0","delta":". Let me verify the `Deleg"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"atingCrudResource.save` hooks (create/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"update entry) and the `EncounterResource1"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"_8` `getUpdatableProperties"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"`/other save-related methods, plus"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" check visit resources that might route through encounters"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-bd497fe7-741f-4f94-a074-224c0afd5f9d","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-bd497fe7-741f-4f94-a074-224c0afd5f9d","inputTextDelta":"{\"path\": \"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingCrudResource.java\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\", \"ref\": \"HEAD\", \"offset\": 60, \"limit\": 90}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-bd497fe7-741f-4f94-a074-224c0afd5f9d","toolName":"read_file","input":{"path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingCrudResource.java","repo":"github.com/openmrs/openmrs-module-webservices.rest","ref":"HEAD","offset":60,"limit":90}}
+
+data: {"type":"tool-input-start","toolCallId":"call-948e2b1f-c5d9-4988-b6c0-5db225da3884","toolName":"grep"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-948e2b1f-c5d9-4988-b6c0-5db225da3884","inputTextDelta":"{\"pattern\": \"getEncounterService\\\\(\\\\)\", \"include\": \"*.java\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\"}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-948e2b1f-c5d9-4988-b6c0-5db225da3884","toolName":"grep","input":{"pattern":"getEncounterService\\(\\)","include":"*.java","repo":"github.com/openmrs/openmrs-module-webservices.rest"}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingCrudResource.java","name":"DelegatingCrudResource.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-bd497fe7-741f-4f94-a074-224c0afd5f9d","output":{"output":"<repo>github.com/openmrs/openmrs-module-webservices.rest</repo>\n<path>omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingCrudResource.java</path>\n<url>undefined</url>\n<content>\n60: \t\n61: \t/**\n62: \t * Default implementation that returns REF, DEFAULT, and FULL\n63: \t * \n64: \t * @see org.openmrs.module.webservices.rest.web.resource.api.Retrievable#getAvailableRepresentations()\n65: \t */\n66: \t@Override\n67: \tpublic List<Representation> getAvailableRepresentations() {\n68: \t\treturn Arrays.asList(Representation.DEFAULT, Representation.FULL, Representation.REF);\n69: \t}\n70: \t\n71: \t/**\n72: \t * @see org.openmrs.module.webservices.rest.web.resource.api.Creatable#create(org.springframework.web.context.request.WebRequest)\n73: \t */\n74: \t@Override\n75: \tpublic Object create(SimpleObject propertiesToCreate, RequestContext context) throws ResponseException {\n76: \t\tT delegate = convert(propertiesToCreate);\n77: \t\tdelegate = save(delegate);\n78: \t\tSimpleObject ret = (SimpleObject) ConversionUtil.convertToRepresentation(delegate, context.getRepresentation());\n79: \t\t\n80: \t\t// add the 'type' discriminator if we support subclasses\n81: \t\tif (hasTypesDefined()) {\n82: \t\t\tret.add(RestConstants.PROPERTY_FOR_TYPE, getTypeName(delegate));\n83: \t\t}\n84: \t\t\n85: \t\treturn ret;\n86: \t}\n87: \t\n88: \tpublic T convert(SimpleObject propertiesToCreate) {\n89: \t\tDelegatingResourceHandler<? extends T> handler;\n90: \t\tif (hasTypesDefined()) {\n91: \t\t\tString type = (String) propertiesToCreate.remove(RestConstants.PROPERTY_FOR_TYPE);\n92: \t\t\tif (type == null)\n93: \t\t\t\tthrow new IllegalArgumentException(\n94: \t\t\t\t        \"When creating a resource that supports subclasses, you must indicate the particular subclass with a \"\n95: \t\t\t\t                + RestConstants.PROPERTY_FOR_TYPE + \" property\");\n96: \t\t\thandler = getResourceHandler(type);\n97: \t\t} else {\n98: \t\t\thandler = this;\n99: \t\t}\n100: \n101: \t\tT delegate = handler.newDelegate(propertiesToCreate);\n102: \t\tDelegatingResourceDescription description = buildCreatableProperties(delegate, handler, propertiesToCreate);\n103: \t\tsetConvertedProperties(delegate, propertiesToCreate, description, true);\n104: \t\treturn delegate;\n105: \t}\n106: \t\n107: \t/**\n108: \t * @see org.openmrs.module.webservices.rest.web.resource.api.Updatable#update(java.lang.String,\n109: \t *      org.openmrs.module.webservices.rest.SimpleObject)\n110: \t */\n111: \t@Override\n112: \tpublic Object update(String uuid, SimpleObject propertiesToUpdate, RequestContext context) throws ResponseException {\n113: \t\tT delegate = getByUniqueId(uuid);\n114: \t\tif (delegate == null)\n115: \t\t\tthrow new ObjectNotFoundException();\n116: \t\t\n117: \t\tif (hasTypesDefined() && propertiesToUpdate.containsKey(RestConstants.PROPERTY_FOR_TYPE)) {\n118: \t\t\t// if they specify a type discriminator it must match the expected one--type can't be modified\n119: \t\t\tString type = (String) propertiesToUpdate.remove(RestConstants.PROPERTY_FOR_TYPE);\n120: \t\t\tif (!delegate.getClass().equals(getActualSubclass(type))) {\n121: \t\t\t\tString nameToShow = getTypeName(delegate);\n122: \t\t\t\tif (nameToShow == null)\n123: \t\t\t\t\tnameToShow = delegate.getClass().getName();\n124: \t\t\t\tthrow new IllegalArgumentException(\"You passed \" + RestConstants.PROPERTY_FOR_TYPE + \"=\" + type\n125: \t\t\t\t        + \" but this instance is a \" + nameToShow);\n126: \t\t\t}\n127: \t\t}\n128: \t\t\n129: \t\tDelegatingResourceHandler<? extends T> handler = getResourceHandler(delegate);\n130: \t\t\n131: \t\tDelegatingResourceDescription description = handler.getUpdatableProperties();\n132: \t\tif (isRetirable()) {\n133: \t\t\tdescription.addProperty(\"retired\");\n134: \t\t} else if (isVoidable()) {\n135: \t\t\tdescription.addProperty(\"voided\");\n136: \t\t}\n137: \t\t\n138: \t\tsetConvertedProperties(delegate, propertiesToUpdate, description, false);\n139: \t\tdelegate = save(delegate);\n140: \t\t\n141: \t\tSimpleObject ret = (SimpleObject) ConversionUtil.convertToRepresentation(delegate, context.getRepresentation());\n142: \t\t\n143: \t\t// add the 'type' discriminator if we support subclasses\n144: \t\tif (hasTypesDefined()) {\n145: \t\t\tret.add(RestConstants.PROPERTY_FOR_TYPE, getTypeName(delegate));\n146: \t\t}\n147: \t\t\n148: \t\treturn ret;\n149: \t}\n\n(Showing lines 60-149 of 316. Use offset=150 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingCrudResource.java","name":"DelegatingCrudResource.java","revision":"HEAD"}]}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs2_0/EncounterSearchHandler2_0.java","name":"EncounterSearchHandler2_0.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8.java","name":"EncounterTypeResource1_8.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9.java","name":"EncounterRoleResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11.java","name":"EncounterRoleResource1_11.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_8/ConceptReferenceRangeResource2_8.java","name":"ConceptReferenceRangeResource2_8.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/VisitConfigurationController2_0.java","name":"VisitConfigurationController2_0.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/VisitController1_9Test.java","name":"VisitController1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_5/DiagnosisResource2_5Test.java","name":"DiagnosisResource2_5Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2Test.java","name":"EncounterResource2_2Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java","name":"OrderController1_10Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java","name":"EncounterController1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/DiagnosisController2_2Test.java","name":"DiagnosisController2_2Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/EncounterController2_0Test.java","name":"EncounterController2_0Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8Test.java","name":"EncounterTypeResource1_8Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9Test.java","name":"EncounterRoleResource1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/EncounterController2_2Test.java","name":"EncounterController2_2Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11Test.java","name":"EncounterRoleResource1_11Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/EncounterTypeController1_8Test.java","name":"EncounterTypeController1_8Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterRoleController1_9Test.java","name":"EncounterRoleController1_9Test.java","revision":"HEAD"}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_11/EncounterRoleController1_11Test.java","name":"EncounterRoleController1_11Test.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-948e2b1f-c5d9-4988-b6c0-5db225da3884","output":{"output":"Found 54 matches in 23 files\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java:\n  190: \t\treturn Context.getEncounterService().saveEncounter(enc);\n  198: \t\treturn Context.getEncounterService().getEncounterByUuid(uuid);\n  211: \t\tContext.getEncounterService().voidEncounter(enc, reason);\n  221: \t\t\tenc = Context.getEncounterService().unvoidEncounter(enc);\n  236: \t\tContext.getEncounterService().purgeEncounter(enc);\n  296: \t\t\tList<Encounter> encs = Context.getEncounterService().getEncountersByPatient(patient);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java:\n  84: \t\tContext.getEncounterService().saveEncounter(delegate);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs2_0/EncounterSearchHandler2_0.java:\n  92: \t\t\tList<Encounter> encounters = Context.getEncounterService().getEncounters(encounterSearchCriteria);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8.java:\n  71: \t\treturn Context.getEncounterService().saveEncounterType(encounterType);\n  82: \t\tEncounterType encounterType = Context.getEncounterService().getEncounterTypeByUuid(uuid);\n  85: \t\t\tencounterType = Context.getEncounterService().getEncounterType(uuid);\n  98: \t\tContext.getEncounterService().purgeEncounterType(encounterType);\n  106: \t\treturn new NeedsPaging<EncounterType>(Context.getEncounterService().getAllEncounterTypes(context.getIncludeAll()),\n  115: \t\treturn new NeedsPaging<EncounterType>(Context.getEncounterService().findEncounterTypes(context.getParameter(\"q\")),\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9.java:\n  69: \t\treturn Context.getEncounterService().saveEncounterRole(encounterRole);\n  80: \t\treturn Context.getEncounterService().getEncounterRoleByUuid(uuid);\n  93: \t\tContext.getEncounterService().purgeEncounterRole(encounterRole);\n  101: \t\treturn new NeedsPaging<EncounterRole>(Context.getEncounterService().getAllEncounterRoles(context.getIncludeAll()),\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11.java:\n  32: \t\treturn new NeedsPaging<EncounterRole>(Context.getEncounterService().getEncounterRolesByName(\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java:\n  174: \t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());\n  186: \t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_8/ConceptReferenceRangeResource2_8.java:\n  62: \t\t\tencounter = Context.getEncounterService().getEncounterByUuid(encounterUuid);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/VisitConfigurationController2_0.java:\n  76: \t\tEncounterService encounterService = Context.getEncounterService();\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/VisitController1_9Test.java:\n  262:         Encounter encounter = Context.getEncounterService().getEncounterByUuid(voidedEncounterId);\n  263:         encounter = Context.getEncounterService().voidEncounter(encounter, \"test visit\");\n  276:         visit.getEncounters().add(Context.getEncounterService().getEncounterByUuid(encounterId));\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_5/DiagnosisResource2_5Test.java:\n  39:         this.encounterService = Context.getEncounterService();\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2Test.java:\n  35: \t\treturn Context.getEncounterService().getEncounterByUuid(getUuidProperty());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java:\n  321: \t\tdcOrder.add(\"encounter\", Context.getEncounterService().getEncounter(6).getUuid());\n  349: \t\tEncounterService es = Context.getEncounterService();\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java:\n  86: \t\tMap<Integer, List<Encounter>> allPatientEncounters = Context.getEncounterService().getAllEncounters(null);\n  185: \t\tEncounter newEncounter = Context.getEncounterService().getEncounterByUuid(newEncounterUuid);\n  343: \t\tEncounter newEncounter = Context.getEncounterService().getEncounterByUuid(\n  354: \t\tEncounterService es = Context.getEncounterService();\n  431: \t\tEncounter encounter = Context.getEncounterService().getEncounterByUuid(RestTestConstants1_9.SECOND_ENCOUNTER_UUID);\n  470: \t\tEncounterService es = Context.getEncounterService();\n  510: \t\tEncounterService es = Context.getEncounterService();\n  530: \t\tEncounter enc = Context.getEncounterService().getEncounterByUuid(RestTestConstants1_9.ENCOUNTER_UUID);\n  531: \t\tContext.getEncounterService().voidEncounter(enc, \"some reason\");\n  532: \t\tContext.getEncounterService().saveEncounter(enc);\n  535: \t\tList<Encounter> encs = Context.getEncounterService().getEncountersByPatient(patient);\n  551: \t\tEncounter enc = Context.getEncounterService().getEncounterByUuid(RestTestConstants1_9.ENCOUNTER_UUID);\n  552: \t\tContext.getEncounterService().voidEncounter(enc, \"bcbcb\");\n  553: \t\tContext.getEncounterService().saveEncounter(enc);\n  556: \t\tList<Encounter> encs = Context.getEncounterService().getEncountersByPatient(patient);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/DiagnosisController2_2Test.java:\n  59: \t\tthis.encounter = Context.getEncounterService().getEncounter(3); // from standard test dataset\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/EncounterController2_0Test.java:\n  107: \t\tMap<Integer, List<Encounter>> allPatientEncounters = Context.getEncounterService().getAllEncounters(null);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8Test.java:\n  21: \t\treturn Context.getEncounterService().getEncounterTypeByUuid(getUuidProperty());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9Test.java:\n  24: \t\treturn Context.getEncounterService().getEncounterRoleByUuid(getUuidProperty());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/EncounterController2_2Test.java:\n  48:         Map<Integer, List<Encounter>> allPatientEncounters = Context.getEncounterService().getAllEncounters(null);\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11Test.java:\n  21: \t\treturn Context.getEncounterService().getEncounterRoleByUuid(getUuidProperty());\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/EncounterTypeController1_8Test.java:\n  57: \t\tthis.service = Context.getEncounterService();\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterRoleController1_9Test.java:\n  54: \t\tthis.service = Context.getEncounterService();\n\n[github.com/openmrs/openmrs-module-webservices.rest] omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_11/EncounterRoleController1_11Test.java:\n  51: \t\tEncounterRole encounterRole = Context.getEncounterService().getEncounterRoleByName(ROLE_NAME);","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","name":"EncounterResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/search/openmrs2_0/EncounterSearchHandler2_0.java","name":"EncounterSearchHandler2_0.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8.java","name":"EncounterTypeResource1_8.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9.java","name":"EncounterRoleResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11.java","name":"EncounterRoleResource1_11.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_8/ConceptReferenceRangeResource2_8.java","name":"ConceptReferenceRangeResource2_8.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/VisitConfigurationController2_0.java","name":"VisitConfigurationController2_0.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/VisitController1_9Test.java","name":"VisitController1_9Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_5/DiagnosisResource2_5Test.java","name":"DiagnosisResource2_5Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2Test.java","name":"EncounterResource2_2Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java","name":"OrderController1_10Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java","name":"EncounterController1_9Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/DiagnosisController2_2Test.java","name":"DiagnosisController2_2Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_0/EncounterController2_0Test.java","name":"EncounterController2_0Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8Test.java","name":"EncounterTypeResource1_8Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterRoleResource1_9Test.java","name":"EncounterRoleResource1_9Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs2_2/EncounterController2_2Test.java","name":"EncounterController2_2Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_11/EncounterRoleResource1_11Test.java","name":"EncounterRoleResource1_11Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_8/EncounterTypeController1_8Test.java","name":"EncounterTypeController1_8Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterRoleController1_9Test.java","name":"EncounterRoleController1_9Test.java","revision":"HEAD"},{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_11/EncounterRoleController1_11Test.java","name":"EncounterRoleController1_11Test.java","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" have enough to answer. Let me quickly verify the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `EncounterResource1_8`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" save path used by `EncounterResource1_9"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` (which overrides `save`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" without calling super) and confirm the Enc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ounterController routing, so the description of"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the request path is precise.\n\n"}
+
+data: {"type":"tool-input-start","toolCallId":"call-e6d46035-d442-41d3-b984-a11e15bc38f9","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-e6d46035-d442-41d3-b984-a11e15bc38f9","inputTextDelta":"{\"path\": \"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\", \"ref\": \"HEAD\", \"offset\": 230, \"limit\": 75}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-e6d46035-d442-41d3-b984-a11e15bc38f9","toolName":"read_file","input":{"path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","repo":"github.com/openmrs/openmrs-module-webservices.rest","ref":"HEAD","offset":230,"limit":75}}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-e6d46035-d442-41d3-b984-a11e15bc38f9","output":{"output":"<repo>github.com/openmrs/openmrs-module-webservices.rest</repo>\n<path>omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java</path>\n<url>undefined</url>\n<content>\n230: \t@Override\n231: \tpublic void purge(Encounter enc, RequestContext context) throws ResponseException {\n232: \t\tif (enc == null) {\n233: \t\t\t// DELETE is idempotent, so we return success here\n234: \t\t\treturn;\n235: \t\t}\n236: \t\tContext.getEncounterService().purgeEncounter(enc);\n237: \t}\n238: \t\n239: \t/**\n240: \t * @param encounter\n241: \t * @return encounter type and date\n242: \t */\n243: \t@PropertyGetter(\"display\")\n244: \tpublic String getDisplayString(Encounter encounter) {\n245: \t\tString ret = encounter.getEncounterType() == null ? \"?\" : encounter.getEncounterType().getName();\n246: \t\tret += \" \";\n247: \t\tret += encounter.getEncounterDatetime() == null ? \"?\" : Context.getDateFormat().format(\n248: \t\t    encounter.getEncounterDatetime());\n249: \t\treturn ret;\n250: \t}\n251: \t\n252: \t/**\n253: \t * @param instance\n254: \t * @return all non-voided top-level obs from the given encounter\n255: \t */\n256: \t@PropertyGetter(\"obs\")\n257: \tpublic static Object getObsAtTopLevel(Encounter instance) {\n258: \t\treturn instance.getObsAtTopLevel(false);\n259: \t}\n260: \t\n261: \t@PropertySetter(\"obs\")\n262: \tpublic static void setObs(Encounter instance, Set<Obs> obs) {\n263: \t\tinstance.getAllObs(true).clear();\n264: \t\tfor (Obs o : obs)\n265: \t\t\tinstance.addObs(o);\n266: \t}\n267: \n268:     @PropertyGetter(\"orders\")\n269:     public static Set<Order> getOrders(Encounter instance) {\n270:         return instance.getOrders().stream().filter(order -> !order.getVoided()).collect(Collectors.toCollection(LinkedHashSet::new));\n271:     }\n272: \n273: \t\n274: \t@PropertySetter(\"orders\")\n275: \tpublic static void setOrders(Encounter instance, Set<Order> orders) {\n276: \t\tfor (Order o : orders)\n277: \t\t\tinstance.addOrder(o);\n278: \t}\n279: \t\n280: \t/**\n281: \t * Gets encounters for the given patient (paged according to context if necessary) only if a\n282: \t * patient parameter exists in the request set on the {@link RequestContext} otherwise searches\n283: \t * for encounters that match the specified query\n284: \t * \n285: \t * @param context\n286: \t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#doSearch(RequestContext)\n287: \t */\n288: \t@Override\n289: \tprotected PageableResult doSearch(RequestContext context) {\n290: \t\tString patientUuid = context.getRequest().getParameter(\"patient\");\n291: \t\tif (patientUuid != null) {\n292: \t\t\tPatient patient = ((PatientResource1_8) Context.getService(RestService.class).getResourceBySupportedClass(\n293: \t\t\t    Patient.class)).getByUniqueId(patientUuid);\n294: \t\t\tif (patient == null)\n295: \t\t\t\treturn new EmptySearchResult();\n296: \t\t\tList<Encounter> encs = Context.getEncounterService().getEncountersByPatient(patient);\n297: \t\t\treturn new NeedsPaging<Encounter>(encs, context);\n298: \t\t}\n299: \t\t\n300: \t\treturn new ServiceSearcher<Encounter>(EncounterService.class, \"getEncounters\", \"getCountOfEncounters\").search(\n301: \t\t    context.getParameter(\"q\"), context);\n302: \t}\n303: \t\n304: }\n\n(Showing lines 230-304 of 305. Use offset=305 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","name":"EncounterResource1_8.java","revision":"HEAD"}]}}
+
+data: {"type":"tool-input-start","toolCallId":"call-e7ae7fdb-602c-48c6-aa40-01f1259889ef","toolName":"read_file"}
+
+data: {"type":"tool-input-delta","toolCallId":"call-e7ae7fdb-602c-48c6-aa40-01f1259889ef","inputTextDelta":"{\"path\": \"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java\", \"repo\": \"github.com/openmrs/openmrs-module-webservices.rest\", \"ref\": \"HEAD\", \"offset\": 28, \"limit\": 60}"}
+
+data: {"type":"tool-input-available","toolCallId":"call-e7ae7fdb-602c-48c6-aa40-01f1259889ef","toolName":"read_file","input":{"path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","repo":"github.com/openmrs/openmrs-module-webservices.rest","ref":"HEAD","offset":28,"limit":60}}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"data-source","data":{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"}}
+
+data: {"type":"tool-output-available","toolCallId":"call-e7ae7fdb-602c-48c6-aa40-01f1259889ef","output":{"output":"<repo>github.com/openmrs/openmrs-module-webservices.rest</repo>\n<path>omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java</path>\n<url>undefined</url>\n<content>\n28: import org.openmrs.module.webservices.rest.web.representation.DefaultRepresentation;\n29: import org.openmrs.module.webservices.rest.web.representation.FullRepresentation;\n30: import org.openmrs.module.webservices.rest.web.representation.Representation;\n31: import org.openmrs.module.webservices.rest.web.resource.api.PageableResult;\n32: import org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceDescription;\n33: import org.openmrs.module.webservices.rest.web.resource.impl.DelegatingSubResource;\n34: import org.openmrs.module.webservices.rest.web.resource.impl.NeedsPaging;\n35: import org.openmrs.module.webservices.rest.web.response.ResourceDoesNotSupportOperationException;\n36: import org.openmrs.module.webservices.rest.web.response.ResponseException;\n37: \n38: import java.util.ArrayList;\n39: import java.util.Date;\n40: import java.util.Iterator;\n41: import java.util.List;\n42: \n43: /**\n44:  * {@link org.openmrs.module.webservices.rest.web.annotation.Resource} for EncounterProvider,\n45:  * supporting standard CRUD operations\n46:  */\n47: @SubResource(path = \"encounterprovider\", parent = EncounterResource1_9.class, supportedClass = EncounterProvider.class, supportedOpenmrsVersions = {\n48:         \"1.9.* - 9.*\" })\n49: public class EncounterProviderResource1_9 extends DelegatingSubResource<EncounterProvider, Encounter, EncounterResource1_9> {\n50: \t\n51: \t@Override\n52: \tpublic DelegatingResourceDescription getRepresentationDescription(Representation rep) {\n53: \t\tif (rep instanceof DefaultRepresentation) {\n54: \t\t\tDelegatingResourceDescription description = new DelegatingResourceDescription();\n55: \t\t\tdescription.addProperty(\"uuid\");\n56: \t\t\tdescription.addProperty(\"provider\", Representation.REF);\n57: \t\t\tdescription.addProperty(\"encounterRole\", Representation.REF);\n58: \t\t\tdescription.addProperty(\"voided\");\n59: \t\t\tdescription.addLink(\"full\", \".?v=\" + RestConstants.REPRESENTATION_FULL);\n60: \t\t\treturn description;\n61: \t\t}\n62: \t\tif (rep instanceof FullRepresentation) {\n63: \t\t\tDelegatingResourceDescription description = new DelegatingResourceDescription();\n64: \t\t\tdescription.addProperty(\"uuid\");\n65: \t\t\tdescription.addProperty(\"provider\", Representation.DEFAULT);\n66: \t\t\tdescription.addProperty(\"encounterRole\", Representation.DEFAULT);\n67: \t\t\tdescription.addProperty(\"voided\");\n68: \t\t\tdescription.addProperty(\"auditInfo\");\n69: \t\t\tdescription.addSelfLink();\n70: \t\t\treturn description;\n71: \t\t}\n72: \t\treturn null;\n73: \t}\n74: \t\n75: \t@Override\n76: \tpublic DelegatingResourceDescription getCreatableProperties() {\n77: \t\tDelegatingResourceDescription description = new DelegatingResourceDescription();\n78: \t\tdescription.addProperty(\"provider\");\n79: \t\tdescription.addProperty(\"encounter\");\n80: \t\tdescription.addProperty(\"encounterRole\");\n81: \t\treturn description;\n82: \t}\n83: \t\n84: \t@Override\n85: \tpublic DelegatingResourceDescription getUpdatableProperties() {\n86: \t\tDelegatingResourceDescription description = new DelegatingResourceDescription();\n87: \t\tdescription.addProperty(\"encounterRole\");\n\n(Showing lines 28-87 of 237. Use offset=88 to continue.)\n</content>","sources":[{"type":"file","repo":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","name":"EncounterProviderResource1_9.java","revision":"HEAD"}]}}
+
+data: {"type":"finish-step"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"txt-0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" now have everything: the core method, its three production"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" call sites, the subclass chain, and the request"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" entry points.\n\n<!--answer-->\nIn `openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-core`, `EncounterService.saveEncounter`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" is the one method that writes an encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" (a clinical visit record: patient, date"}
+
+data: {"type":"text-delta","id":"txt-0","delta":", type, obs, orders, diagnoses"}
+
+data: {"type":"text-delta","id":"txt-0","delta":", providers) to the database @file"}
+
+data: {"type":"text-delta","id":"txt-0","delta":":{github.com/openmrs/openmrs-core"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::api/src/main/java/org/openmrs/api"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/EncounterService.java:87-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"87}. Its real implementation is in `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"EncounterServiceImpl.saveEncounter` @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-core::api/src/main/java"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/org/openmrs/api/impl"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/EncounterServiceImpl.java:101-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"226}: it checks edit rights, assigns a"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" visit to new encounters, copies the encounter's"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" date/location/patient onto its obs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" and orders, delegates the actual write to `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"dao.saveEncounter` @file:{"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"github.com/openmrs/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-core::api/src/main/java/org"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs/api/impl/Enc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ounterServiceImpl.java:173-173},"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" then cascades to order groups, orders"}
+
+data: {"type":"text-delta","id":"txt-0","delta":", obs, conditions, allergies and diagnoses.\n\n"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"If that behaviour changed, the affected code in `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"openmrs-module-webservices.rest`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" (the module that exposes OpenMRS core"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" data over a REST API) is the three production call"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" sites below. Nothing else in the module"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" calls it directly.\n\n## Confirmed affected"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" locations\n\n**1. `Encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Resource1_8.save` — the `/enc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ounter` create and update endpoint**\nThe"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" v1_8 encounter resource calls it"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" directly @file:{github.com/openmrs/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs-module-webservices.rest::"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"omod/src/main/java/org/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs/module/webservices/rest"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/web/v1_0/resource/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs1_8/Encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Resource1_8.java:189-191}. This"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `save` is invoked by the generic"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" CRUD machinery, `DelegatingCrud"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Resource.create` for `POST /encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` @file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-module-webservices.rest"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::omod-common/src/main/java/org/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs/module/webservices/rest"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/web/resource/impl/Deleg"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"atingCrudResource.java:75-86"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"} and `DelegatingCrud"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Resource.update` for `POST /encounter/{"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"uuid}` @file:{github.com/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/openmrs-module-we"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"bservices.rest::omod-common/src"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/main/java/org/openmrs/mod"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ule/webservices/rest/web/res"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ource/impl/DelegatingCr"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"udResource.java:112-149}. Any change"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" to date/location propagation, obs handling, order"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" saving or diagnosis saving in the core method changes"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" what this endpoint persists. Note the resource"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" deliberately wires up obs and orders via property"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" setters before saving, so it depends on the core"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" method's cascades @file:{github"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".com/openmrs/openmrs-mod"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ule-webservices.rest::omod/src"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/main/java/org/openmrs/mod"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ule/webservices/rest/web/v1_"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"0/resource/openmrs1_8/Enc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ounterResource1_8.java:256"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-278}.\n\n**2. `Encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Resource1_9.save` — overrides the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" above for OpenMRS 1.9–2"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".1**\nThis subclass re-implements `"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"save`, so its version calls the service"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" and ignores the parent's return value @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-module-webservices.rest"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::omod/src/main/java/org/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/module/webservices/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rest/web/v1_0/resource"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs1_9/Enc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ounterResource1_9.java:77"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-86}. It first force-sets the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" parent encounter on each `EncounterProvider`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" (a \"hack\" noted in the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" comment) because without it providers were stored"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" without an `encounter_id` @file:{"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"github.com/openmrs/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-module-webservices.rest::omod"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/src/main/java/org/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/module/webservices/rest/web"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/v1_0/resource/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs1_9/EncounterResource"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"1_9.java:78-84"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"}. This is a behaviour-sensitive dependency: a"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" core change to how encounters and their providers are linked"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" on save could break this workaround.\n\n"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"**3. `EncounterResource2"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"_2` inherits both**\nIt"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" extends `EncounterResource1_9"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` @file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-module-webservices.rest"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::omod/src/main/java/org/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/module/webservices/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rest/web/v1_0/resource"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs2_2/Enc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ounterResource2_2.java:31"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-33}, so it uses call site 2 unchanged"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" and only adds the `diagnoses` property."}
+
+data: {"type":"text-delta","id":"txt-0","delta":" Since the core method also saves diagnoses @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-core::api/src/main/java"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/org/openmrs/api/impl"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/EncounterServiceImpl.java:218-223}, this"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" class is doubly affected: both its own added"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" property work and the core diagnosis cascade matter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".\n\n**4. `EncounterProviderResource1"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"_9` — the nested `/encounter/{"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"uuid}/encounterprovider` endpoint**\nThis"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" is a sub-resource of `Encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Resource1_9` @file:{"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"github.com/openmrs/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-module-webservices.rest::omod"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/src/main/java/org/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/module/webservices/rest/web"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/v1_0/resource/openmrs1_"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"9/EncounterProviderResource1_"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"9.java:47-49} and"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" calls the service in two places:\n\n|"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" Method | Purpose | Calls `saveEncounter`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" at |\n|---|---|---|\n| `delete"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"` | void an encounter provider, then"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" re-save the parent encounter | @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-module-webservices.rest"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::omod/src/main/java/org/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/module/webservices/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rest/web/v1_0/resource/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs1_9/EncounterProvider"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Resource1_9.java:174-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"174} |\n| `save` |"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" add a provider to the encounter, then"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" re-save it | @file:{"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"github.com/openmrs/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-module-webservices.rest::omod"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/src/main/java/org/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/module/webservices/rest/web"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/v1_0/resource/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs1_9/EncounterProvider"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Resource1_9.java:186-"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"186} |\n\nBoth paths save the *"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"whole encounter*, not just the provider,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" so they inherit every cascade in the core"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" method — including obs re-validation for existing obs — for"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" a request that the client thinks only touches providers"}
+
+data: {"type":"text-delta","id":"txt-0","delta":". The `save` path also relies on the"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" encounter's provider collection being correctly persisted,"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" then re-scans it to return the persisted"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `EncounterProvider` @file:{github"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".com/openmrs/openmrs-module"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-webservices.rest::omod/src/main/java"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/org/openmrs/module/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"webservices/rest/web/v1_"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"0/resource/openmrs1_"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"9/EncounterProviderResource1_"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"9.java:188-199}.\n\n## Lik"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ely but indirect\n\n`EncounterResource"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"1_8.purge` voids"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/purges rather than saving, so"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" it is not a caller @file:{github.com"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs/openmrs-module"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-webservices.rest::omod/src/main"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/java/org/openmrs/module"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/webservices/rest/web/v1"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"_0/resource/openmrs1"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"_8/EncounterResource1_"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"8.java:230-237}. `EncounterResource"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"1_8.delete` / `undelete` use"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" `voidEncounter` / `un"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"voidEncounter` @file:{github.com"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs/openmrs-module"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-webservices.rest::omod/src/main"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/java/org/openmrs/module"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/webservices/rest/web/v1"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"_0/resource/openmrs1"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"_8/EncounterResource1_"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"8.java:205-224}, and"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" the search path uses read-only methods @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-module-webservices.rest"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::omod/src/main/java/org/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/module/webservices/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rest/web/v1_0/resource"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs1_8/Enc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ounterResource1_8.java:288"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-302}. `DiagnosisResource2"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"_2.save` goes through `Diagn"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"osisService.save`, not `Encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Service` @file:{github.com/openmrs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs-module-webservices"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".rest::omod/src/main/java/org"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs/module/webservices"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/rest/web/v1_0/res"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ource/openmrs2_2/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"DiagnosisResource2_2.java:"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"86-89}, so it is only indirectly"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" affected if diagnoses submitted inside an encounter payload"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" change behaviour. I did not find any other"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" production caller; `EncounterService`"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" is also used in this module for encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" types, roles and searches, which do"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" not touch `saveEncounter` @"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"file:{github.com/openmrs/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs-module-webservices.rest"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"::omod/src/main/java/org/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs/module/webservices/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rest/web/v1_0/resource"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/openmrs1_8/Enc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ounterTypeResource1_8.java:"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"71-71}.\n\n## Tests that would exercise the changed"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" behaviour\n\nProduction callers above are joined"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" by test callers: `OrderController1"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"_10Test` @file:{github"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".com/openmrs/openmrs-mod"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ule-webservices.rest::omod/src/test/java/"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"org/openmrs/module/webs"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ervices/rest/web/v1_0"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/controller/openmrs1_10"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/OrderController1_10Test.java"}
+
+data: {"type":"text-delta","id":"txt-0","delta":":349-355} and `Encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Controller1_9Test` @file"}
+
+data: {"type":"text-delta","id":"txt-0","delta":":{github.com/openmrs/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs-module-webservices.rest::"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"omod/src/test/java/org/openm"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"rs/module/webservices/rest"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"/web/v1_0/controller/open"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"mrs1_9/Encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Controller1_9Test.java:530"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"-553}. These would fail loudly if the save"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" semantics changed, which is useful as a can"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ary.\n\n## Flow\n\n```mermaid"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"\n---\ntitle: Encounter save path from"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" REST to core\n---\nflowchart TD\n "}
+
+data: {"type":"text-delta","id":"txt-0","delta":" post[\"POST or update on /encounter\"]"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" --> crud[\"DelegatingCrud"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"Resource create or update\"]\n  crud --> r"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"18[\"EncounterResource1_8"}
+
+data: {"type":"text-delta","id":"txt-0","delta":".save\"]\n  crud --> r19"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"[\"EncounterResource1_9.save"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" inherits to 2_2\"]\n  sub"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"[\"/encounter/uuid/encounter"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"provider\"] --> prov[\"EncounterProviderResource"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"1_9 save or delete\"]\n "}
+
+data: {"type":"text-delta","id":"txt-0","delta":" r18 --> svc[\"EncounterService.saveEnc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ounter\"]\n  r19 --> svc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"\n  prov --> svc\n "}
+
+data: {"type":"text-delta","id":"txt-0","delta":" svc --> dao[\"dao.saveEncounter\"]\n"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"  svc --> cascades[\"order"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" groups orders obs conditions allergies diagnoses\"]\n```\n\n## What I"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" could not check\n\nThe reference search was run"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" against the default branch of both repositories and `Enc"}
+
+data: {"type":"text-delta","id":"txt-0","delta":"ounterService.saveEncounter` is called"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" through the static `Context.getEncounterService()` lookup"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" rather than injected references, so a caller could"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" in principle resolve the service at runtime in"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" a way static search misses. The other selected"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" O3 front-end and core-module repositories are"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" outside this question's scope and were not searched; if"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" they consume the `/encounter` endpoint"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" they would be affected only through the REST"}
+
+data: {"type":"text-delta","id":"txt-0","delta":" contract, not through this method directly."}
+
+data: {"type":"text-end","id":"txt-0"}
+
+data: {"type":"finish-step"}
+
+data: {"type":"data-evidence","data":{"id":1,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/EncounterService.java","revision":"HEAD","startLine":84,"code":["\t */","\t@PreAuthorize(\"hasPermission(#encounter, '\" + PrivilegeConstants.ADD_ENCOUNTERS + \"') or hasPermission(#encounter, '\"","\t        + PrivilegeConstants.EDIT_ENCOUNTERS + \"')\")","\tpublic Encounter saveEncounter(Encounter encounter) throws APIException;","","\t/**","\t * Get encounter by internal identifier"],"highlightedLines":[87]}}
+
+data: {"type":"data-evidence","data":{"id":2,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java","revision":"HEAD","startLine":98,"code":["\t * @see org.openmrs.api.EncounterService#saveEncounter(org.openmrs.Encounter)","\t */","\t@Override","\tpublic Encounter saveEncounter(Encounter encounter) throws APIException {","","\t\t// if authenticated user is not supposed to edit encounter of certain type","\t\tfailIfDeniedToEdit(encounter);","","\t\t//If new encounter, try to assign a visit using the registered visit assignment handler.","\t\tcreateVisitForNewEncounter(encounter);","","\t\t// check permissions","\t\tboolean isNewEncounter = requirePrivilege(encounter);","","\t\t// This must be done after setting dateCreated etc on the obs because","\t\t// of the way the ORM tools flush things and check for nullity","\t\t// This also must be done before the save encounter so we can use the","\t\t// orig date","\t\t// after the save","\t\tPatient p = encounter.getPatient();","\t\tDate originalDate;","\t\tLocation originalLocation = null;","","\t\tif (!isNewEncounter) {","\t\t\t// fetch the datetime from the database prior to saving for this","\t\t\t// encounter","\t\t\t// to see if it has changed and change all obs after saving if so","\t\t\toriginalDate = dao.getSavedEncounterDatetime(encounter);","\t\t\tif (encounter.getLocation() != null) {","\t\t\t\toriginalLocation = dao.getSavedEncounterLocation(encounter);","\t\t\t}","\t\t\t// Our data model duplicates the patient column to allow for","\t\t\t// observations to","\t\t\t// not have to look up the parent Encounter to find the patient","\t\t\t// Therefore, encounter.patient must always equal","\t\t\t// encounter.observations[0-n].patient","","\t\t\t// If we are changing encounter.encounterDatetime, then we need to","\t\t\t// also apply that","\t\t\t// to Obs that inherited their obsDatetime from the encounter in the","\t\t\t// first place","","\t\t\tDate newDate = encounter.getEncounterDatetime();","\t\t\tLocation newLocation = encounter.getLocation();","\t\t\tfor (Obs obs : encounter.getAllFlattenedObs(true)) {","\t\t\t\t// if the date was changed","\t\t\t\tif (OpenmrsUtil.compare(originalDate, newDate) != 0","\t\t\t\t        && OpenmrsUtil.compare(obs.getObsDatetime(), originalDate) == 0) {","","\t\t\t\t\t// if the obs datetime is the same as the","\t\t\t\t\t// original encounter datetime, fix it","\t\t\t\t\tobs.setObsDatetime(newDate);","","\t\t\t\t}","","\t\t\t\tif (!OpenmrsUtil.nullSafeEquals(newLocation, originalLocation)","\t\t\t\t        && obs.getLocation().equals(originalLocation)) {","\t\t\t\t\tobs.setLocation(newLocation);","\t\t\t\t}",""],"highlightedLines":[101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157]}}
+
+data: {"type":"data-evidence","data":{"id":3,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java","revision":"HEAD","startLine":170,"code":["\t\t}","","\t\t// do the actual saving to the database","\t\tdao.saveEncounter(encounter);","","\t\t// save the new orderGroups","\t\tfor (OrderGroup orderGroup : encounter.getOrderGroups()) {"],"highlightedLines":[173]}}
+
+data: {"type":"data-evidence","data":{"id":4,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","revision":"HEAD","startLine":186,"code":["\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#save(Encounter)","\t */","\t@Override","\tpublic Encounter save(Encounter enc) {","\t\treturn Context.getEncounterService().saveEncounter(enc);","\t}","\t","\t/**","\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#getByUniqueId(String)"],"highlightedLines":[189,190,191]}}
+
+data: {"type":"data-evidence","data":{"id":5,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingCrudResource.java","revision":"HEAD","startLine":72,"code":["\t * @see org.openmrs.module.webservices.rest.web.resource.api.Creatable#create(org.springframework.web.context.request.WebRequest)","\t */","\t@Override","\tpublic Object create(SimpleObject propertiesToCreate, RequestContext context) throws ResponseException {","\t\tT delegate = convert(propertiesToCreate);","\t\tdelegate = save(delegate);","\t\tSimpleObject ret = (SimpleObject) ConversionUtil.convertToRepresentation(delegate, context.getRepresentation());","\t\t","\t\t// add the 'type' discriminator if we support subclasses","\t\tif (hasTypesDefined()) {","\t\t\tret.add(RestConstants.PROPERTY_FOR_TYPE, getTypeName(delegate));","\t\t}","\t\t","\t\treturn ret;","\t}","\t","\tpublic T convert(SimpleObject propertiesToCreate) {","\t\tDelegatingResourceHandler<? extends T> handler;"],"highlightedLines":[75,76,77,78,79,80,81,82,83,84,85,86]}}
+
+data: {"type":"data-evidence","data":{"id":6,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod-common/src/main/java/org/openmrs/module/webservices/rest/web/resource/impl/DelegatingCrudResource.java","revision":"HEAD","startLine":109,"code":["\t *      org.openmrs.module.webservices.rest.SimpleObject)","\t */","\t@Override","\tpublic Object update(String uuid, SimpleObject propertiesToUpdate, RequestContext context) throws ResponseException {","\t\tT delegate = getByUniqueId(uuid);","\t\tif (delegate == null)","\t\t\tthrow new ObjectNotFoundException();","\t\t","\t\tif (hasTypesDefined() && propertiesToUpdate.containsKey(RestConstants.PROPERTY_FOR_TYPE)) {","\t\t\t// if they specify a type discriminator it must match the expected one--type can't be modified","\t\t\tString type = (String) propertiesToUpdate.remove(RestConstants.PROPERTY_FOR_TYPE);","\t\t\tif (!delegate.getClass().equals(getActualSubclass(type))) {","\t\t\t\tString nameToShow = getTypeName(delegate);","\t\t\t\tif (nameToShow == null)","\t\t\t\t\tnameToShow = delegate.getClass().getName();","\t\t\t\tthrow new IllegalArgumentException(\"You passed \" + RestConstants.PROPERTY_FOR_TYPE + \"=\" + type","\t\t\t\t        + \" but this instance is a \" + nameToShow);","\t\t\t}","\t\t}","\t\t","\t\tDelegatingResourceHandler<? extends T> handler = getResourceHandler(delegate);","\t\t","\t\tDelegatingResourceDescription description = handler.getUpdatableProperties();","\t\tif (isRetirable()) {","\t\t\tdescription.addProperty(\"retired\");","\t\t} else if (isVoidable()) {","\t\t\tdescription.addProperty(\"voided\");","\t\t}","\t\t","\t\tsetConvertedProperties(delegate, propertiesToUpdate, description, false);","\t\tdelegate = save(delegate);","\t\t","\t\tSimpleObject ret = (SimpleObject) ConversionUtil.convertToRepresentation(delegate, context.getRepresentation());","\t\t","\t\t// add the 'type' discriminator if we support subclasses","\t\tif (hasTypesDefined()) {","\t\t\tret.add(RestConstants.PROPERTY_FOR_TYPE, getTypeName(delegate));","\t\t}","\t\t","\t\treturn ret;","\t}","\t","\t/**","\t * @see org.openmrs.module.webservices.rest.web.resource.api.Deletable#delete(java.lang.String)"],"highlightedLines":[112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149]}}
+
+data: {"type":"data-evidence","data":{"id":7,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","revision":"HEAD","startLine":253,"code":["\t * @param instance","\t * @return all non-voided top-level obs from the given encounter","\t */","\t@PropertyGetter(\"obs\")","\tpublic static Object getObsAtTopLevel(Encounter instance) {","\t\treturn instance.getObsAtTopLevel(false);","\t}","\t","\t@PropertySetter(\"obs\")","\tpublic static void setObs(Encounter instance, Set<Obs> obs) {","\t\tinstance.getAllObs(true).clear();","\t\tfor (Obs o : obs)","\t\t\tinstance.addObs(o);","\t}","","    @PropertyGetter(\"orders\")","    public static Set<Order> getOrders(Encounter instance) {","        return instance.getOrders().stream().filter(order -> !order.getVoided()).collect(Collectors.toCollection(LinkedHashSet::new));","    }","","\t","\t@PropertySetter(\"orders\")","\tpublic static void setOrders(Encounter instance, Set<Order> orders) {","\t\tfor (Order o : orders)","\t\t\tinstance.addOrder(o);","\t}","\t","\t/**","\t * Gets encounters for the given patient (paged according to context if necessary) only if a"],"highlightedLines":[256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,278]}}
+
+data: {"type":"data-evidence","data":{"id":8,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","revision":"HEAD","startLine":74,"code":["\t\treturn description;","\t}","\t","\t@Override","\tpublic Encounter save(Encounter delegate) {","\t\t//This is a hack to save encounterProviders correctly. Without this they are created without encounter_id in","\t\t//the database.","\t\tfor (EncounterProvider ep : delegate.getEncounterProviders()) {","\t\t\tep.setEncounter(delegate);","\t\t}","\t\tContext.getEncounterService().saveEncounter(delegate);","\t\treturn delegate;","\t}","\t","\t@PropertyGetter(\"encounterProviders\")","\tpublic static Set<EncounterProvider> getActiveEncounterProviders(Encounter instance) {"],"highlightedLines":[77,78,79,80,81,82,83,84,85,86]}}
+
+data: {"type":"data-evidence","data":{"id":9,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterResource1_9.java","revision":"HEAD","startLine":75,"code":["\t}","\t","\t@Override","\tpublic Encounter save(Encounter delegate) {","\t\t//This is a hack to save encounterProviders correctly. Without this they are created without encounter_id in","\t\t//the database.","\t\tfor (EncounterProvider ep : delegate.getEncounterProviders()) {","\t\t\tep.setEncounter(delegate);","\t\t}","\t\tContext.getEncounterService().saveEncounter(delegate);","\t\treturn delegate;","\t}","\t"],"highlightedLines":[78,79,80,81,82,83,84]}}
+
+data: {"type":"data-evidence","data":{"id":10,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/EncounterResource2_2.java","revision":"HEAD","startLine":28,"code":["/**"," * {@link Resource} for {@link EncounterResource2_2}, supporting standard CRUD operations"," */","@Resource(name = RestConstants.VERSION_1 + \"/encounter\", supportedClass = Encounter.class, supportedOpenmrsVersions = {","        \"2.2.* - 9.*\" })","public class EncounterResource2_2 extends EncounterResource1_9 {","\t","\t@Override","\tpublic DelegatingResourceDescription getRepresentationDescription(Representation rep) {"],"highlightedLines":[31,32,33]}}
+
+data: {"type":"data-evidence","data":{"id":11,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-core","path":"api/src/main/java/org/openmrs/api/impl/EncounterServiceImpl.java","revision":"HEAD","startLine":215,"code":["\t\t// save the allergies","\t\tencounter.getAllergies().forEach(Context.getPatientService()::saveAllergy);","","\t\t// save the diagnoses","\t\tencounter.getDiagnoses().stream().forEach(diagnosis -> {","\t\t\tdiagnosis.setPatient(p);","\t\t\tdiagnosis.setEncounter(encounter);","\t\t});","\t\tencounter.getDiagnoses().forEach(Context.getDiagnosisService()::save);","","\t\treturn encounter;","\t}"],"highlightedLines":[218,219,220,221,222,223]}}
+
+data: {"type":"data-evidence","data":{"id":12,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","revision":"HEAD","startLine":44,"code":[" * {@link org.openmrs.module.webservices.rest.web.annotation.Resource} for EncounterProvider,"," * supporting standard CRUD operations"," */","@SubResource(path = \"encounterprovider\", parent = EncounterResource1_9.class, supportedClass = EncounterProvider.class, supportedOpenmrsVersions = {","        \"1.9.* - 9.*\" })","public class EncounterProviderResource1_9 extends DelegatingSubResource<EncounterProvider, Encounter, EncounterResource1_9> {","\t","\t@Override","\tpublic DelegatingResourceDescription getRepresentationDescription(Representation rep) {"],"highlightedLines":[47,48,49]}}
+
+data: {"type":"data-evidence","data":{"id":13,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","revision":"HEAD","startLine":171,"code":["\t\t\t}","\t\t}","\t\t","\t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());","\t}","\t","\t@Override"],"highlightedLines":[174]}}
+
+data: {"type":"data-evidence","data":{"id":14,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","revision":"HEAD","startLine":183,"code":["\tpublic EncounterProvider save(EncounterProvider delegate) {","\t\t","\t\tdelegate.getEncounter().addProvider(delegate.getEncounterRole(), delegate.getProvider());","\t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());","\t\t","\t\t// bit of a hack, but since addProvider does not return the provider added, we need to fetch it","\t\t// so that the returned delegate has the proper persisted uuid"],"highlightedLines":[186]}}
+
+data: {"type":"data-evidence","data":{"id":15,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_9/EncounterProviderResource1_9.java","revision":"HEAD","startLine":185,"code":["\t\tdelegate.getEncounter().addProvider(delegate.getEncounterRole(), delegate.getProvider());","\t\tContext.getEncounterService().saveEncounter(delegate.getEncounter());","\t\t","\t\t// bit of a hack, but since addProvider does not return the provider added, we need to fetch it","\t\t// so that the returned delegate has the proper persisted uuid","\t\t// see: https://issues.openmrs.org/browse/RESTWS-638","\t\tfor (EncounterProvider encounterProvider : delegate.getEncounter().getEncounterProviders()) {","\t\t\tif (encounterProvider.getEncounterRole().equals(delegate.getEncounterRole())","\t\t\t        && encounterProvider.getProvider().equals(delegate.getProvider()) && !encounterProvider.isVoided()) {","\t\t\t\treturn encounterProvider;","\t\t\t}","\t\t}","\t\t","\t\t// should never get here, hopefully!","\t\tthrow new APIException(\"Encounter Provider not properly saved\");","\t}","\t","\t@Override"],"highlightedLines":[188,189,190,191,192,193,194,195,196,197,198,199]}}
+
+data: {"type":"data-evidence","data":{"id":16,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","revision":"HEAD","startLine":227,"code":["\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#purge(Encounter,","\t *      RequestContext)","\t */","\t@Override","\tpublic void purge(Encounter enc, RequestContext context) throws ResponseException {","\t\tif (enc == null) {","\t\t\t// DELETE is idempotent, so we return success here","\t\t\treturn;","\t\t}","\t\tContext.getEncounterService().purgeEncounter(enc);","\t}","\t","\t/**","\t * @param encounter"],"highlightedLines":[230,231,232,233,234,235,236,237]}}
+
+data: {"type":"data-evidence","data":{"id":17,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","revision":"HEAD","startLine":202,"code":["\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#delete(Encounter,","\t *      String, RequestContext)","\t */","\t@Override","\tpublic void delete(Encounter enc, String reason, RequestContext context) throws ResponseException {","\t\tif (enc.isVoided()) {","\t\t\t// DELETE is idempotent, so we return success here","\t\t\treturn;","\t\t}","\t\tContext.getEncounterService().voidEncounter(enc, reason);","\t}","\t","\t/**","\t * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#undelete(Object,","\t *      RequestContext)","\t */","\t@Override","\tprotected Encounter undelete(Encounter enc, RequestContext context) throws ResponseException {","\t\tif (enc.isVoided()) {","\t\t\tenc = Context.getEncounterService().unvoidEncounter(enc);","\t\t}","\t\treturn enc;","\t}","\t","\t/**","\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#purge(Encounter,"],"highlightedLines":[205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224]}}
+
+data: {"type":"data-evidence","data":{"id":18,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterResource1_8.java","revision":"HEAD","startLine":285,"code":["\t * @param context","\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#doSearch(RequestContext)","\t */","\t@Override","\tprotected PageableResult doSearch(RequestContext context) {","\t\tString patientUuid = context.getRequest().getParameter(\"patient\");","\t\tif (patientUuid != null) {","\t\t\tPatient patient = ((PatientResource1_8) Context.getService(RestService.class).getResourceBySupportedClass(","\t\t\t    Patient.class)).getByUniqueId(patientUuid);","\t\t\tif (patient == null)","\t\t\t\treturn new EmptySearchResult();","\t\t\tList<Encounter> encs = Context.getEncounterService().getEncountersByPatient(patient);","\t\t\treturn new NeedsPaging<Encounter>(encs, context);","\t\t}","\t\t","\t\treturn new ServiceSearcher<Encounter>(EncounterService.class, \"getEncounters\", \"getCountOfEncounters\").search(","\t\t    context.getParameter(\"q\"), context);","\t}","\t","}"],"highlightedLines":[288,289,290,291,292,293,294,295,296,297,298,299,300,301,302]}}
+
+data: {"type":"data-evidence","data":{"id":19,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs2_2/DiagnosisResource2_2.java","revision":"HEAD","startLine":83,"code":["\t/**","\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#save(Object)","\t */","\t@Override","\tpublic Diagnosis save(Diagnosis diagnosis) {","\t\treturn Context.getDiagnosisService().save(diagnosis);","\t}","\t","\t/**","\t * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#purge(Object,"],"highlightedLines":[86,87,88,89]}}
+
+data: {"type":"data-evidence","data":{"id":20,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/main/java/org/openmrs/module/webservices/rest/web/v1_0/resource/openmrs1_8/EncounterTypeResource1_8.java","revision":"HEAD","startLine":68,"code":["\t */","\t@Override","\tpublic EncounterType save(EncounterType encounterType) {","\t\treturn Context.getEncounterService().saveEncounterType(encounterType);","\t}","\t","\t/**"],"highlightedLines":[71]}}
+
+data: {"type":"data-evidence","data":{"id":21,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_10/OrderController1_10Test.java","revision":"HEAD","startLine":346,"code":["\t\tList<Order> originalActiveOrders = orderService.getActiveOrders(patient, null, null, null);","\t\tassertTrue(originalActiveOrders.contains(orderToRevise));","\t\t","\t\tEncounterService es = Context.getEncounterService();","\t\tDate date = new Date();","\t\tEncounter encounter = new Encounter();","\t\tencounter.setEncounterType(es.getEncounterType(1));","\t\tencounter.setPatient(patient);","\t\tencounter.setEncounterDatetime(date);","\t\tes.saveEncounter(encounter);","\t\t","\t\tSimpleObject revisedOrder = new SimpleObject();","\t\trevisedOrder.add(\"type\", \"testorder\");"],"highlightedLines":[349,350,351,352,353,354,355]}}
+
+data: {"type":"data-evidence","data":{"id":22,"productId":"openmrs","generation":"g-b59a21","repository":"github.com/openmrs/openmrs-module-webservices.rest","path":"omod/src/test/java/org/openmrs/module/webservices/rest/web/v1_0/controller/openmrs1_9/EncounterController1_9Test.java","revision":"HEAD","startLine":527,"code":["\t        throws Exception {","\t\tPatient patient = Context.getPatientService().getPatientByUuid(RestTestConstants1_9.PATIENT_WITH_ENCOUNTER_UUID);","\t\t","\t\tEncounter enc = Context.getEncounterService().getEncounterByUuid(RestTestConstants1_9.ENCOUNTER_UUID);","\t\tContext.getEncounterService().voidEncounter(enc, \"some reason\");","\t\tContext.getEncounterService().saveEncounter(enc);","\t\t","\t\t//list of non voided encounters","\t\tList<Encounter> encs = Context.getEncounterService().getEncountersByPatient(patient);","\t\tAssertions.assertEquals(2, encs.size());","\t\t","\t\tMockHttpServletRequest req = request(RequestMethod.GET, getURI());","\t\treq.addParameter(\"patient\", RestTestConstants1_9.PATIENT_WITH_ENCOUNTER_UUID);","\t\treq.addParameter(\"includeAll\", \"true\");","\t\t","\t\tSimpleObject result = deserialize(handle(req));","\t\tList<Object> encounters = result.get(\"results\");","\t\tAssertions.assertEquals(2, encounters.size());","\t}","\t","\t@Test","\tpublic void shouldFetchOnlyNonVoidedPatientEncountersIfIncludeAllParamIsSetToFalse() throws Exception {","\t\tPatient patient = Context.getPatientService().getPatientByUuid(RestTestConstants1_9.PATIENT_WITH_ENCOUNTER_UUID);","\t\t","\t\tEncounter enc = Context.getEncounterService().getEncounterByUuid(RestTestConstants1_9.ENCOUNTER_UUID);","\t\tContext.getEncounterService().voidEncounter(enc, \"bcbcb\");","\t\tContext.getEncounterService().saveEncounter(enc);","\t\t","\t\t//list of non voided encounters","\t\tList<Encounter> encs = Context.getEncounterService().getEncountersByPatient(patient);"],"highlightedLines":[530,531,532,533,534,535,536,537,538,539,540,541,542,543,544,545,546,547,548,549,550,551,552,553]}}
+
+data: {"type":"data-answer","data":{"kind":"grounded","generation":"g-b59a21","paragraphs":[{"text":"In `openmrs-core`, `EncounterService.saveEncounter` is the one method that writes an encounter (a clinical visit record: patient, date, type, obs, orders, diagnoses, providers) to the database [1]. Its real implementation is in `EncounterServiceImpl.saveEncounter` [2]: it checks edit rights, assigns a visit to new encounters, copies the encounter's date/location/patient onto its obs and orders, delegates the actual write to `dao.saveEncounter` [3], then cascades to order groups, orders, obs, conditions, allergies and diagnoses.","citations":[1,2,3]},{"text":"If that behaviour changed, the affected code in `openmrs-module-webservices.rest` (the module that exposes OpenMRS core data over a REST API) is the three production call sites below. Nothing else in the module calls it directly.","citations":[]},{"text":"## Confirmed affected locations","citations":[]},{"text":"**1. `EncounterResource1_8.save` — the `/encounter` create and update endpoint**\nThe v1_8 encounter resource calls it directly [4]. This `save` is invoked by the generic CRUD machinery, `DelegatingCrudResource.create` for `POST /encounter` [5] and `DelegatingCrudResource.update` for `POST /encounter/{uuid}` [6]. Any change to date/location propagation, obs handling, order saving or diagnosis saving in the core method changes what this endpoint persists. Note the resource deliberately wires up obs and orders via property setters before saving, so it depends on the core method's cascades [7].","citations":[4,5,6,7]},{"text":"**2. `EncounterResource1_9.save` — overrides the above for OpenMRS 1.9–2.1**\nThis subclass re-implements `save`, so its version calls the service and ignores the parent's return value [8]. It first force-sets the parent encounter on each `EncounterProvider` (a \"hack\" noted in the comment) because without it providers were stored without an `encounter_id` [9]. This is a behaviour-sensitive dependency: a core change to how encounters and their providers are linked on save could break this workaround.","citations":[8,9]},{"text":"**3. `EncounterResource2_2` inherits both**\nIt extends `EncounterResource1_9` [10], so it uses call site 2 unchanged and only adds the `diagnoses` property. Since the core method also saves diagnoses [11], this class is doubly affected: both its own added property work and the core diagnosis cascade matter.","citations":[10,11]},{"text":"**4. `EncounterProviderResource1_9` — the nested `/encounter/{uuid}/encounterprovider` endpoint**\nThis is a sub-resource of `EncounterResource1_9` [12] and calls the service in two places:","citations":[12]},{"text":"| Method | Purpose | Calls `saveEncounter` at |\n|---|---|---|\n| `delete` | void an encounter provider, then re-save the parent encounter | [13] |\n| `save` | add a provider to the encounter, then re-save it | [14] |","citations":[13,14]},{"text":"Both paths save the *whole encounter*, not just the provider, so they inherit every cascade in the core method — including obs re-validation for existing obs — for a request that the client thinks only touches providers. The `save` path also relies on the encounter's provider collection being correctly persisted, then re-scans it to return the persisted `EncounterProvider` [15].","citations":[15]},{"text":"## Likely but indirect","citations":[]},{"text":"`EncounterResource1_8.purge` voids/purges rather than saving, so it is not a caller [16]. `EncounterResource1_8.delete` / `undelete` use `voidEncounter` / `unvoidEncounter` [17], and the search path uses read-only methods [18]. `DiagnosisResource2_2.save` goes through `DiagnosisService.save`, not `EncounterService` [19], so it is only indirectly affected if diagnoses submitted inside an encounter payload change behaviour. I did not find any other production caller; `EncounterService` is also used in this module for encounter types, roles and searches, which do not touch `saveEncounter` [20].","citations":[16,17,18,19,20]},{"text":"## Tests that would exercise the changed behaviour","citations":[]},{"text":"Production callers above are joined by test callers: `OrderController1_10Test` [21] and `EncounterController1_9Test` [22]. These would fail loudly if the save semantics changed, which is useful as a canary.","citations":[21,22]},{"text":"## Flow","citations":[]},{"text":"```mermaid\n---\ntitle: Encounter save path from REST to core\n---\nflowchart TD\n  post[\"POST or update on /encounter\"] --> crud[\"DelegatingCrudResource create or update\"]\n  crud --> r18[\"EncounterResource1_8.save\"]\n  crud --> r19[\"EncounterResource1_9.save inherits to 2_2\"]\n  sub[\"/encounter/uuid/encounterprovider\"] --> prov[\"EncounterProviderResource1_9 save or delete\"]\n  r18 --> svc[\"EncounterService.saveEncounter\"]\n  r19 --> svc\n  prov --> svc\n  svc --> dao[\"dao.saveEncounter\"]\n  svc --> cascades[\"order groups orders obs conditions allergies diagnoses\"]\n```","citations":[]},{"text":"## What I could not check","citations":[]},{"text":"The reference search was run against the default branch of both repositories and `EncounterService.saveEncounter` is called through the static `Context.getEncounterService()` lookup rather than injected references, so a caller could in principle resolve the service at runtime in a way static search misses. The other selected O3 front-end and core-module repositories are outside this question's scope and were not searched; if they consume the `/encounter` endpoint they would be affected only through the REST contract, not through this method directly.","citations":[]}],"gaps":[],"partialReasons":[],"abstention":null,"suggestions":[]}}
+
+data: {"type":"message-metadata","messageMetadata":{"totalTokens":288474,"totalInputTokens":283492,"totalOutputTokens":4982,"totalResponseTimeMs":67480,"modelName":"deepseek-ai/DeepSeek-V4.1-Flash","steps":[{"in":14949,"cached":14848,"out":155,"toolBytes":[{"tool":"find_symbol_references","bytes":1319},{"tool":"find_symbol_definitions","bytes":747}]},{"in":15796,"cached":14976,"out":353,"toolBytes":[{"tool":"read_file","bytes":3497},{"tool":"read_file","bytes":4969},{"tool":"read_file","bytes":5811}]},{"in":21063,"cached":15744,"out":154,"toolBytes":[{"tool":"read_file","bytes":4366}]},{"in":22702,"cached":20992,"out":230,"toolBytes":[{"tool":"grep","bytes":498},{"tool":"grep","bytes":9650}]},{"in":26214,"cached":22656,"out":263,"toolBytes":[{"tool":"read_file","bytes":3742},{"tool":"grep","bytes":2272}]},{"in":28477,"cached":26240,"out":275,"toolBytes":[{"tool":"grep","bytes":14},{"tool":"read_file","bytes":2775}]},{"in":29846,"cached":28416,"out":241,"toolBytes":[{"tool":"grep","bytes":551},{"tool":"grep","bytes":249}]},{"in":27213,"cached":22912,"out":287,"toolBytes":[{"tool":"grep","bytes":1519},{"tool":"read_file","bytes":3579}]},{"in":28591,"cached":24448,"out":287,"toolBytes":[{"tool":"read_file","bytes":4213},{"tool":"grep","bytes":8650}]},{"in":33129,"cached":28544,"out":352,"toolBytes":[{"tool":"read_file","bytes":3198},{"tool":"read_file","bytes":3320}]},{"in":35512,"cached":26112,"out":2385,"toolBytes":[]}],"totalCachedInputTokens":245888}}
+
+data: {"type":"finish"}
+
+data: [DONE]
+
