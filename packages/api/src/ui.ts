@@ -1,5 +1,5 @@
 // UI-shaped Product routes (/ui/products...) on the admin listener. The registry routes (/products...) keep the operator shape.
-import { Controller, Get, Inject, Param, Patch, Post, Req } from "@nestjs/common";
+import { Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Req } from "@nestjs/common";
 import type { IncomingMessage } from "node:http";
 import { editRequestSchema, setupRequestSchema, syncRequestSchema, type EditRequest, type Product, type Repository, type SetupRequest, type Status } from "@falkon/contracts";
 import { RepoKind, type PrismaClient, type ScanStatus } from "@falkon/db";
@@ -10,8 +10,8 @@ import { body, error } from "./request";
 import { isProductName } from "./product";
 import { deriveKnowledge, deriveStatus, memberNames, toUiProduct, withPlaceholders, type ConnectionFacts, type RepoFacts } from "./uiProduct";
 
-type Db = Pick<PrismaClient, "product" | "repo" | "connection" | "knowledgeScan" | "$transaction">;
-type Tx = Pick<PrismaClient, "product" | "repo" | "connection">;
+type Db = Pick<PrismaClient, "product" | "repo" | "connection" | "chat" | "knowledgeScan" | "$transaction">;
+type Tx = Pick<PrismaClient, "product" | "repo" | "connection" | "chat">;
 
 const notFound = () => error(404, "NOT_FOUND", "Product not found.");
 const readOnly = () => error(409, "READ_ONLY", "Product comes from config and is read-only through this API.");
@@ -170,6 +170,22 @@ export class UiProductService {
     return this.get(slug);
   }
 
+  /**
+   * Removes an api Product and its chats (no foreign key ties them), then narrows the connection's repos to what the
+   * remaining Products need; the backend sync unlinks the rest and removeOrphans deletes their clones and rows.
+   */
+  async remove(slug: string) {
+    const row = await this.find(slug);
+    if (row.source !== "api") throw readOnly();
+    await this.db.$transaction(async (tx) => {
+      const { count } = await tx.product.deleteMany({ where: { slug, source: "api" } });
+      if (count === 0) throw notFound();
+      await tx.chat.deleteMany({ where: { productId: slug } });
+      if (row.connectionId !== null) await this.writeUnion(tx, row.connectionId, slug, []);
+    });
+    this.announceRequest();
+  }
+
   /** A row the worker claims was written (`request`), and the status changed (`changed`); best effort, the row is the record. */
   private announceRequest() {
     this.signals.request();
@@ -213,6 +229,12 @@ export class UiProductsController {
   @Patch(":slug")
   async edit(@Param("slug") slug: string, @Req() req: IncomingMessage) {
     return this.products.edit(slug, await body(req, editBody));
+  }
+
+  @Delete(":slug")
+  @HttpCode(204)
+  remove(@Param("slug") slug: string) {
+    return this.products.remove(slug);
   }
 
   @Get(":slug/status")
