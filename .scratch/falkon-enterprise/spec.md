@@ -1129,6 +1129,8 @@ Cycle 24 checks: (1) tone: both answers open with the answer (q09 names the PR a
 
 Spend: this run $0.28; all paid runs of cycles 23 and 24 combined about $1.10 of the $1.20 cap (original $0.95 plus $0.25).
 
+Diagram fix (2026-11-07, human go-ahead; commits `ad2123c`, `48ffea1`, `2fb4a7e`): the prompt now states `schema_version` per diagram type, carries a one-line sequence example and the sequence limits (labels up to 14 characters, no self-calls). A diagram-only live question (the six-repository stack) showed the weak model still breaks both limits, so `buildDiagrams` repairs a failed sequence block once (truncates long labels, drops self-messages, re-spaces) and re-renders; the real model output from that run now renders offline (17.9 KB). Spend: about $0.06 (two runs, 155k and 104k input), so about $1.16 of the $1.20 cap in all. The repaired diagram was not re-checked in the browser (hover behaviour untested).
+
 ## Cycle 24: chat answer style and reading experience (human, 2026-11-06; built directly in the main session, ahead of cycle 22)
 
 Human request (2026-11-06): answers should read like a senior engineer explaining to a teammate, sized to the question, with real code excerpts, JSON and config examples where they help, syntax highlighted; the chat should use the width it has (like ChatGPT); archify diagrams must sit on the answer's own canvas, be readable, keep their animation, and keep simplified interaction. Human decisions at the start: inline diagrams with simplified interaction and the animation kept; highlight.js (new dependency, approved); short excerpts plus `@file` references; build now, before cycle 22.
