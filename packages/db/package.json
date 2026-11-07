@@ -7,7 +7,7 @@
   "types": "src/index.ts",
   "scripts": {
     "generate": "prisma generate",
-    "push": "prisma db push --skip-generate",
+    "push": "prisma db execute --schema prisma/schema.prisma --file prisma/pre-push.sql && prisma db push --skip-generate",
     "typecheck": "tsc -p ."
   },
   "dependencies": {

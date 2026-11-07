@@ -1,9 +1,9 @@
-import { test, mock } from "node:test";
+import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { Config } from "@falkon/shared";
+import { parseConfig } from "@falkon/shared";
 import { isProductSlug, resolveContext, type ResolvableRepo } from "./productResolve";
 import { fakeProductTable } from "./productTable.fake";
-import { syncProducts } from "./sync";
+import { noticeIgnoredContexts, resolveProducts } from "./sync";
 
 const repos: ResolvableRepo[] = [
   { id: 1, name: "github.com/acme/app", metadata: { codeHostMetadata: { github: { topics: ["Web"] } } } },
@@ -13,7 +13,6 @@ const repos: ResolvableRepo[] = [
 const connections: Record<string, number[]> = { acme: [1, 2], other: [3] };
 const reposOf = (names: string[]) => names.flatMap((n) => connections[n] ?? []);
 const resolve = (d: Parameters<typeof resolveContext>[0]) => resolveContext(d, repos, reposOf);
-const cfg = (contexts: Config["contexts"]) => ({ contexts }) as unknown as Config;
 
 test("resolution: include globs, connections and topics, then excludes, deduplicated", () => {
   assert.deepEqual(resolve({ include: ["github.com/acme/*"] }), ["github.com/acme/app", "github.com/acme/lib"]);
@@ -30,68 +29,44 @@ test("slugs: ^[a-z0-9][a-z0-9-]{0,62}$", () => {
   for (const bad of ["", "-a", "A", "a_b", "a.b", "a/b", "a b", "a\n", "a".repeat(64), "..", "é", "__proto__"]) assert.ok(!isProductSlug(bad), JSON.stringify(bad));
 });
 
-test("config import upserts source=config Products, deletes dropped ones and is idempotent", async () => {
-  const table = fakeProductTable();
-  await syncProducts(cfg({ core: { include: ["github.com/acme/*"], description: "Core" }, tools: { includeConnections: ["other"] } }), resolve, table);
-  const first = await table.findMany();
-  assert.deepEqual(first.map((p) => [p.slug, p.source, p.name, p.description, p.repoNames, p.definition]), [
-    ["core", "config", "core", "Core", ["github.com/acme/app", "github.com/acme/lib"], { include: ["github.com/acme/*"] }],
-    ["tools", "config", "tools", null, ["github.com/other/tool"], { includeConnections: ["other"] }],
+test("every Product is re-resolved from its own definition on each sync, connections included", async () => {
+  const table = fakeProductTable([
+    { slug: "mine", name: "Mine", definition: { include: ["github.com/acme/*"] }, repoNames: ["github.com/acme/app"] },
+    // its repositories come from a connection defined in config.json: still resolved
+    { slug: "tools", name: "Tools", definition: { includeConnections: ["other"] }, repoNames: [] },
   ]);
-  await syncProducts(cfg({ core: { include: ["github.com/acme/*"], description: "Core" }, tools: { includeConnections: ["other"] } }), resolve, table);
-  const again = await table.findMany();
-  assert.deepEqual(again.map((p) => [p.id, p.slug, p.repoNames]), first.map((p) => [p.id, p.slug, p.repoNames]), "ids and membership stable");
-  await syncProducts(cfg({ core: { include: ["github.com/acme/app"] } }), resolve, table);
-  assert.deepEqual((await table.findMany()).map((p) => [p.slug, p.repoNames, p.description]), [["core", ["github.com/acme/app"], null]]);
+  await resolveProducts(resolve, table);
+  assert.deepEqual((await table.findMany()).map((p) => [p.slug, p.name, p.repoNames]), [
+    ["mine", "Mine", ["github.com/acme/app", "github.com/acme/lib"]],
+    ["tools", "Tools", ["github.com/other/tool"]],
+  ]);
 });
 
-test("config import never touches source=api Products; a colliding context is skipped and api wins", async () => {
-  const log = mock.method(console, "log", () => {});
-  try {
-    const table = fakeProductTable([{ slug: "core", source: "api", name: "API core", definition: { include: ["github.com/other/*"] }, repoNames: ["github.com/other/tool"] }]);
-    await syncProducts(cfg({ core: { include: ["github.com/acme/*"] } }), resolve, table);
-    const [row] = await table.findMany();
-    assert.deepEqual([row!.slug, row!.source, row!.name, row!.repoNames], ["core", "api", "API core", ["github.com/other/tool"]]);
-    assert.ok(log.mock.calls.some((c) => /context "core" skipped, an api Product has that slug/.test(String(c.arguments[0]))));
-    await syncProducts(cfg({}), resolve, table);
-    assert.equal((await table.findMany()).length, 1, "removing every context deletes config Products only");
-  } finally { log.mock.restore(); }
-});
-
-test("api Products are re-resolved from their own definition on each sync", async () => {
-  const table = fakeProductTable([{ slug: "mine", source: "api", name: "Mine", definition: { include: ["github.com/acme/*"] }, repoNames: ["github.com/acme/app"] }]);
-  await syncProducts(cfg({}), resolve, table);
-  const [row] = await table.findMany();
-  assert.deepEqual([row!.source, row!.name, row!.repoNames], ["api", "Mine", ["github.com/acme/app", "github.com/acme/lib"]]);
-});
-
-test("a re-resolve loses to a concurrent admin write: the row changed since it was read is skipped, then picked up next round", async () => {
-  const table = fakeProductTable([{ slug: "mine", source: "api", name: "Mine", definition: { include: ["github.com/acme/app"] }, repoNames: [] }]);
+test("a re-resolve loses to a concurrent UI write: the row changed since it was read is skipped, then picked up next round", async () => {
+  const table = fakeProductTable([{ slug: "mine", name: "Mine", definition: { include: ["github.com/acme/app"] }, repoNames: [] }]);
   const racing = Object.create(table, {
     findMany: {
       value: async (args: unknown) => {
         const read = await table.findMany(args as never);
-        // the admin PUT lands between the sync's read and its write
-        await table.updateMany({ where: { slug: "mine", source: "api" }, data: { definition: { include: ["github.com/other/*"] }, repoNames: ["github.com/other/tool"] } });
+        // the UI PATCH lands between the sync's read and its write
+        await table.updateMany({ where: { slug: "mine" }, data: { definition: { include: ["github.com/other/*"] }, repoNames: ["github.com/other/tool"] } });
         return read;
       },
     },
   });
-  await syncProducts(cfg({}), resolve, racing);
-  assert.deepEqual(table.rows[0]!.repoNames, ["github.com/other/tool"], "the admin write survives");
-  await syncProducts(cfg({}), resolve, table);
+  await resolveProducts(resolve, racing);
+  assert.deepEqual(table.rows[0]!.repoNames, ["github.com/other/tool"], "the UI write survives");
+  await resolveProducts(resolve, table);
   assert.deepEqual(table.rows[0]!.repoNames, ["github.com/other/tool"], "next round resolves the new definition");
 });
 
-test("contexts whose name is not a valid slug are skipped with a log line", async () => {
-  const log = mock.method(console, "log", () => {});
-  try {
-    const table = fakeProductTable();
-    // JSON.parse keeps "__proto__" as an own key, as a config file would.
-    await syncProducts(cfg(JSON.parse('{"My Context":{"include":["**"]},"__proto__":{"include":["**"]},"ok":{"include":["**"]}}')), resolve, table);
-    assert.deepEqual((await table.findMany()).map((p) => p.slug), ["ok"]);
-    assert.ok(log.mock.calls.some((c) => /context "My Context" skipped, not a valid Product slug/.test(String(c.arguments[0]))));
-  } finally { log.mock.restore(); }
+test("a config file that still has `contexts` logs one line at load; one without logs nothing", () => {
+  const lines: string[] = [];
+  noticeIgnoredContexts(parseConfig(JSON.stringify({ contexts: { core: { include: ["**"] } } })), (l) => lines.push(l));
+  assert.deepEqual(lines, ["config: `contexts` is ignored; Products are now created in /setup"]);
+  noticeIgnoredContexts(parseConfig("{}"), (l) => lines.push(l));
+  noticeIgnoredContexts(parseConfig(JSON.stringify({ contexts: {} })), (l) => lines.push(l));
+  assert.equal(lines.length, 1);
 });
 
 // ---- tags in the clones (S77): real temporary repositories, no network ----------------

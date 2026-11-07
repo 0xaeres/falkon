@@ -8,8 +8,3 @@ setRepoResolver(async (name) => {
   return r ? repoPath(r).path : undefined;
 });
 
-/** Search contexts as synced from config `contexts`: name -> repo names. */
-export async function loadContexts(): Promise<Record<string, string[]>> {
-  const rows = await prisma.searchContext.findMany({ select: { name: true, repoNames: true } });
-  return Object.fromEntries(rows.map((c) => [c.name, c.repoNames]));
-}

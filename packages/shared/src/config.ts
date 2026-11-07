@@ -55,16 +55,6 @@ export interface GenericGitHostConnectionConfig extends ConnectionBase {
 
 export type ConnectionConfig = GithubConnectionConfig | GenericGitHostConnectionConfig;
 
-export interface SearchContextConfig {
-  include?: string[];
-  includeConnections?: string[];
-  exclude?: string[];
-  excludeConnections?: string[];
-  includeTopics?: string[];
-  excludeTopics?: string[];
-  description?: string;
-}
-
 export interface Settings {
   maxFileSize: number;
   maxTrigramCount: number;
@@ -135,7 +125,8 @@ export type KnowledgeBaseConfig = z.infer<typeof knowledgeBaseSchema>;
 
 export interface Config {
   settings: Settings;
-  contexts: Record<string, SearchContextConfig>;
+  /** The file still has a non-empty `contexts` block, which is ignored: Products come only from /setup. */
+  contextsIgnored: boolean;
   connections: Record<string, ConnectionConfig>;
   environmentOverrides: Record<string, EnvironmentOverride>;
   /** Language models for Ask; entries are validated by the schema and typed by the consumer. */
@@ -187,7 +178,8 @@ export function parseConfig(text: string, source = "config"): Config {
   const unsupported = unsupportedEntry(raw);
   if (unsupported) throw invalid(unsupported);
   // `$schema` is an editor hint. `knowledgeBase` is in the schema for editors; Zod below validates it (and names an unknown key).
-  const { $schema: _hint, knowledgeBase: _kb, ...rest } = raw;
+  // `contexts` no longer define Products; an older file naming them still loads, whatever their shape.
+  const { $schema: _hint, knowledgeBase: _kb, contexts, ...rest } = raw;
   // Two settings were removed (the worker no longer polls for them); an older file naming them still loads.
   if (isObject(rest.settings)) {
     const { resyncConnectionPollingIntervalMs: _a, reindexRepoPollingIntervalMs: _b, ...kept } = rest.settings;
@@ -197,7 +189,7 @@ export function parseConfig(text: string, source = "config"): Config {
   if (!validate(rest)) throw invalid(errorsText(validate.errors!));
   return {
     settings: { ...DEFAULT_SETTINGS, ...((raw.settings as Partial<Settings>) ?? {}) },
-    contexts: (raw.contexts as Config["contexts"]) ?? {},
+    contextsIgnored: isObject(contexts) && Object.keys(contexts).length > 0,
     connections: (raw.connections as Config["connections"]) ?? {},
     environmentOverrides: (raw.environmentOverrides as Config["environmentOverrides"]) ?? {},
     models: raw.models as unknown[] | undefined,

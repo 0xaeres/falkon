@@ -82,7 +82,7 @@ test("create a connection, list its repositories, create a Product: status is bu
   assert.deepEqual(reposOf(cid), ["acme/app", "acme/lib"]);
   assert.ok(connectionRow(cid).syncRequestedAt instanceof Date);
   const row = engine.product.rows.find((p) => p.slug === "alpha")!;
-  assert.deepEqual([row.source, row.definition, row.repoNames, (row as J).connectionId], ["api", { include: [APP, LIB] }, [], connectionRow(cid).id]);
+  assert.deepEqual([row.definition, row.repoNames, (row as J).connectionId], [{ include: [APP, LIB] }, [], connectionRow(cid).id]);
 
   const status = (await call("GET", "/ui/products/alpha/status")).json;
   assert.deepEqual([status.scenario, status.build, status.generation, status.sentence, status.progress, status.sync], ["building", "building", null, "Indexing 0 of 2 repositories.", 0, "current"]);
@@ -144,22 +144,22 @@ test("edit changes the connection's repos union; editing one Product never remov
   assert.deepEqual(reposOf(cid), ["acme/app", "other/tool"], "a rejected edit changes nothing");
 });
 
-test("config Products are listed and read, but PATCH is 409; a slug conflict is 409", async () => {
+test("a Product with no connection is listed and read (host from its first repo), but PATCH is 409; a slug conflict is 409", async () => {
   engine.addRepo("ghe.example.com/team/svc", { status: "INDEXED", headCommit: "abc1234def", lastIndexedAt: new Date(), pushedAt: null });
-  await engine.product.create({ data: { slug: "core", name: "core", source: "config", definition: { include: ["ghe.example.com/team/*"] }, repoNames: ["ghe.example.com/team/svc"] } });
+  await engine.product.create({ data: { slug: "core", name: "core", definition: { include: ["ghe.example.com/team/svc"] }, repoNames: ["ghe.example.com/team/svc"] } });
   const core = (await call("GET", "/ui/products/core")).json;
   assert.deepEqual([core.provider, core.host, core.connectionId, core.scenario, core.repositories.map((r: J) => r.id)], ["github-enterprise", "ghe.example.com", undefined, "current", ["ghe.example.com/team/svc"]]);
   const patch = await call("PATCH", "/ui/products/core", { name: "core", repositories: pick(APP) });
-  assert.deepEqual([patch.status, patch.json.errorCode], [409, "READ_ONLY"]);
+  assert.deepEqual([patch.status, patch.json.errorCode], [409, "NO_CONNECTION"]);
   assert.equal(engine.product.rows.find((p) => p.slug === "core")!.name, "core");
   const dup = await call("POST", "/ui/products", setup(cid, "core", [APP]));
   assert.deepEqual([dup.status, dup.json.errorCode], [409, "ALREADY_EXISTS"]);
   assert.ok((await call("GET", "/ui/products")).json.some((p: J) => p.id === "core"));
 });
 
-test("a config Product over generic-git repos (bare host, not a url) lists without error", async () => {
+test("a Product with no connection over generic-git repos (bare host, not a url) lists without error", async () => {
   engine.addRepo("fixtures.test/atlas", { status: "INDEXED", headCommit: "abc1234def", lastIndexedAt: new Date(), external_codeHostUrl: "fixtures.test", external_codeHostType: "genericGitHost" });
-  await engine.product.create({ data: { slug: "gitonly", name: "gitonly", source: "config", definition: { include: ["fixtures.test/*"] }, repoNames: ["fixtures.test/atlas"] } });
+  await engine.product.create({ data: { slug: "gitonly", name: "gitonly", definition: { include: ["fixtures.test/atlas"] }, repoNames: ["fixtures.test/atlas"] } });
   const r = await call("GET", "/ui/products/gitonly");
   assert.deepEqual([r.status, r.json.host, r.json.provider], [200, "fixtures.test", "git"]);
   assert.equal((await call("GET", "/ui/products")).status, 200);
@@ -239,7 +239,7 @@ test("status carries knowledge: off, no-model, then scan states from the latest 
     scan(tool.id, "BUDGET_EXHAUSTED", 6);
     assert.equal((await knowledgeOf()).state, "budget-exhausted", "knowledge-kind repos are not members");
 
-    // a config-source Product gets it too: indexed at a head never scanned is pending, scanned at head is ready
+    // a Product with no connection gets it too: indexed at a head never scanned is pending, scanned at head is ready
     assert.equal((await knowledgeOf("gitonly")).state, "pending");
     engine.repos.find((r) => r.name === "fixtures.test/atlas")!.kbScannedCommit = "abc1234def";
     assert.equal((await knowledgeOf("gitonly")).state, "ready", "no scan row but scanned at head");
@@ -347,18 +347,14 @@ test("DELETE /ui/products/:slug removes an api Product and its chats and narrows
   assert.ok(connectionRow(c2), "connection kept");
 });
 
-test("DELETE /ui/products/:slug: a Product with no connection skips the connection step; a config Product is 409; unknown or malformed is 404", async () => {
-  await engine.product.create({ data: { slug: "loose", name: "loose", source: "api", connectionId: null, definition: { include: [] }, repoNames: [] } });
+test("DELETE /ui/products/:slug: a Product with no connection skips the connection step; unknown or malformed is 404", async () => {
+  await engine.product.create({ data: { slug: "loose", name: "loose", connectionId: null, definition: { include: [] }, repoNames: [] } });
   engine.chats.push({ id: "loose-1", productId: "loose", messages: [], createdBy: "ui", visibility: "PRIVATE", name: null, createdAt: new Date(), updatedAt: new Date() });
   const before = structuredClone(engine.connections.map((c) => [c.config, c.syncRequestedAt]));
   assert.equal((await call("DELETE", "/ui/products/loose")).status, 204);
   assert.equal(engine.chats.some((c) => c.productId === "loose"), false);
   assert.deepEqual(engine.connections.map((c) => [c.config, c.syncRequestedAt]), before);
 
-  engine.chats.push({ id: "core-1", productId: "core", messages: [], createdBy: "ui", visibility: "PRIVATE", name: null, createdAt: new Date(), updatedAt: new Date() });
-  const refused = await call("DELETE", "/ui/products/core");
-  assert.deepEqual([refused.status, refused.json.errorCode], [409, "READ_ONLY"]);
-  assert.ok(engine.product.rows.some((p) => p.slug === "core") && engine.chats.some((c) => c.productId === "core"), "nothing deleted");
   assert.equal((await call("DELETE", "/ui/products/nope")).status, 404);
   assert.equal((await call("DELETE", "/ui/products/Bad_Slug")).status, 404);
   assert.equal((await call("DELETE", "/ui/products/del1", undefined, false)).status, 401);

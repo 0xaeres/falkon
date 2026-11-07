@@ -11,12 +11,10 @@ test("remaining flag values and invalid modifiers", () => {
   for (const query of ["archived:maybe", "visibility:hidden"]) assert.throws(() => parseQuery(query), QuerySyntaxError);
 });
 
-test("knowledge repository expansion and trimmed context membership", () => {
+test("knowledge repository expansion", () => {
   assert.deepEqual(parseQuery("repo:atlas", { expandRepoRegexp: () => ["atlas::knowledge"] }), { or: { children: [{ repo: { regexp: "atlas" } }, { repo_set: { set: { "atlas::knowledge": true } } }] } });
   assert.deepEqual(parseQuery("repo:atlas", { expandRepoRegexp: () => [] }), { repo: { regexp: "atlas" } });
   assert.deepEqual(parseQuery("reposet:atlas,worker", { expandRepoSet: (names) => [...names, "atlas::knowledge"] }), { repo_set: { set: { atlas: true, worker: true, "atlas::knowledge": true } } });
-  assert.deepEqual(parseQuery("context:web", { contexts: { web: [" atlas ", "worker"] } }), { repo_set: { set: { atlas: true, worker: true } } });
-  assert.deepEqual(parseQuery("context:empty", { contexts: { empty: [] } }), { repo_set: { set: {} } });
 });
 
 test("tokenizer boundary branches and regex grouping quirks remain frozen", () => {

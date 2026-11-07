@@ -143,28 +143,13 @@ model Repo {
   @@unique([external_id, external_codeHostUrl])
 }
 
-/// config.json `contexts`, resolved to repo names at sync time.
-model SearchContext {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  repoNames   String[]
-  updatedAt   DateTime @updatedAt
-}
-
-enum ProductSource {
-  config // imported from config.json `contexts` by the backend sync; read-only through the admin API
-  api // created through the admin API; config import never touches it
-}
-
-/// A Product: a named repository set served at /mcp/<slug>. `definition` has the shape of a config context
-/// (include/exclude globs, connections, topics); `repoNames` is its resolution against Repo rows.
+/// A Product: a named repository set served at /mcp/<slug>, created only through /setup (the /ui routes). `definition`
+/// holds include/exclude globs, connections and topics; `repoNames` is its resolution against Repo rows.
 model Product {
   id          Int           @id @default(autoincrement())
   slug        String        @unique // ^[a-z0-9][a-z0-9-]{0,62}$, immutable
   name        String
   description String?
-  source      ProductSource
   definition  Json
   repoNames   String[]
   connectionId Int? // the api Connection a UI-created Product draws its repositories from

@@ -7,7 +7,8 @@ import { DEFAULT_SETTINGS, env, gitDirOf, loadConfig, openCredential, parseTicke
 import type { RepoMetadata } from "./connectors";
 import { credentialsFor } from "./credentials";
 import { cloneOrFetch, localDefaultBranch, repoStats, sortedRefs, upsertGitConfig } from "./git";
-import { claimIndexRequests, claimSyncRequests, deleteKnowledge, removeOrphans, syncConnection, syncConnectionRows, syncSearchContexts } from "./sync";
+import { loadContextResolver } from "./productResolve";
+import { claimIndexRequests, claimSyncRequests, deleteKnowledge, noticeIgnoredContexts, removeOrphans, resolveProducts, syncConnection, syncConnectionRows } from "./sync";
 import { indexRepo, removeShards, writeZoektGitConfig } from "./zoekt";
 import { kbModelReady, kbSelected, runKnowledgeScan } from "./kb/scan";
 import { importDiscussions, snapshotSource } from "./discussions";
@@ -27,6 +28,7 @@ let settings = DEFAULT_SETTINGS;
 
 async function reloadConfig() {
   cfg = await loadConfig(env.configPath);
+  noticeIgnoredContexts(cfg);
   settings = cfg.settings;
   Object.assign(process.env, await resolveEnvironmentOverrides(cfg));
   // BullMQ applies a new concurrency to the running worker.
@@ -65,12 +67,12 @@ connWorker.on("failed", (job, err) => console.error(`connection ${job?.data.name
 connWorker.on("completed", () => afterConnectionJob());
 connWorker.on("failed", () => afterConnectionJob());
 
-/** Once a round of connection syncs drains: drop orphaned repos and recompute contexts. */
+/** Once a round of connection syncs drains: drop orphaned repos and re-resolve every Product. */
 async function afterConnectionJob() {
   if (--pendingConnections > 0 || !cfg) return;
   try {
     await removeOrphans();
-    await syncSearchContexts(cfg);
+    await resolveProducts(await loadContextResolver(prisma));
   } catch (e) {
     console.error("post-sync cleanup failed:", e);
   }

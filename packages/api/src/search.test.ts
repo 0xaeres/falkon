@@ -4,7 +4,7 @@ import fs from "node:fs";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
 import { searchResponseSchema } from "@falkon/contracts";
-import { QuerySyntaxError, scopeFor, search, SearchContextNotFoundError, setZoektTransport, type WSearchRequest, type WSearchResponse } from "@falkon/shared";
+import { QuerySyntaxError, scopeFor, search, setZoektTransport, type WSearchRequest, type WSearchResponse } from "@falkon/shared";
 import { normalize } from "../../../tests/golden/normalize";
 import { createAdminApp } from "./admin";
 import { SearchService } from "./search";
@@ -13,11 +13,8 @@ const TOKEN = "t".repeat(40);
 const ONE = "h/a/one";
 const TWO = "h/b/two";
 const products: Record<string, string[]> = { alpha: [ONE], beta: [TWO], both: [ONE, TWO] };
-// Contexts as synced from config: `fixtures` spans both Products' repositories.
-const contexts = [{ name: "fixtures", repoNames: [ONE, TWO] }];
 const db = {
   product: { findUnique: async ({ where }: { where: { slug: string } }) => (products[where.slug] ? { repoNames: products[where.slug] } : null) },
-  searchContext: { findMany: async () => contexts },
 };
 
 const loc = (line: number, column: number) => ({ byte_offset: 0, line_number: line, column });
@@ -74,18 +71,22 @@ test("a Product's search never shows another Product's repository, with counts t
   assert.equal(JSON.stringify(requests[0]!.query).includes("two"), false);
 });
 
-test("repo: and context: naming another Product's repository return nothing from it", async () => {
+test("repo: naming another Product's repository returns nothing from it", async () => {
   assert.equal(repos((await get("alpha", { q: "repo:two needle" })).json).includes(TWO), false);
-  assert.deepEqual(repos((await get("alpha", { q: "context:fixtures needle" })).json), [ONE]);
-  assert.deepEqual(repos((await get("beta", { q: "context:fixtures needle" })).json), [TWO]);
 });
 
-test("errors: empty query, bad syntax, unknown context, unknown Product, bad params, zoekt failure", async () => {
+test("context: is a plain term now (no search contexts): searched as text, still within the Product", async () => {
+  const r = await get("alpha", { q: "context:fixtures needle" });
+  assert.equal(r.status, 200);
+  assert.deepEqual(repos(r.json), [ONE]);
+  assert.match(JSON.stringify(requests[0]!.query), /"pattern":"context:fixtures"/);
+});
+
+test("errors: empty query, bad syntax, unknown Product, bad params, zoekt failure", async () => {
   assert.equal((await get("alpha", { q: "  " })).status, 400);
   const syntax = await get("alpha", { q: "file:" });
   assert.equal(syntax.status, 400);
   assert.ok(syntax.json.message);
-  assert.equal((await get("alpha", { q: "context:nope x" })).status, 404);
   assert.equal((await get("ghost", { q: "x" })).status, 404);
   assert.equal((await get("Bad_Slug", { q: "x" })).status, 404);
   assert.equal((await get("alpha", { q: "x", regex: "maybe" })).status, 400);
@@ -124,20 +125,17 @@ test("isolation holds for negated repo:, regex, rev:-only and sym:-only queries"
 
 test("the golden search set: same request plus one AND-ed scope node, same results, exact errors", async () => {
   const queries = JSON.parse(fs.readFileSync(new URL("../../../tests/golden/queries.json", import.meta.url), "utf8")) as { id: string; query: string; regex?: boolean; case?: boolean; limit?: number; repos?: string[] }[];
-  const ctx = Object.fromEntries(contexts.map((c) => [c.name, c.repoNames]));
   const scope = { repo: { regexp: scopeFor([ONE, TWO]).repoFilter } };
   let ok = 0;
   for (const q of queries) {
     const text = q.repos?.length ? `(${q.query}) reposet:${q.repos.join(",")}` : q.query;
     requests = [];
-    const direct = await (async () => search(text, { regex: q.regex, caseSensitive: q.case, matches: q.limit ?? 500, contexts: ctx }))().catch((e) => e);
+    const direct = await (async () => search(text, { regex: q.regex, caseSensitive: q.case, matches: q.limit ?? 500 }))().catch((e) => e);
     const directRequests = requests;
     requests = [];
     const routed = await get("both", { q: text, regex: q.regex ? "1" : "0", case: q.case ? "1" : "0", limit: String(q.limit ?? 500) });
     if (direct instanceof QuerySyntaxError) {
       assert.deepEqual([routed.status, routed.json.errorCode, requests.length], [400, "FAILED_TO_PARSE_QUERY", 0], q.id);
-    } else if (direct instanceof SearchContextNotFoundError) {
-      assert.deepEqual([routed.status, routed.json.errorCode, requests.length], [404, "SEARCH_CONTEXT_NOT_FOUND", 0], q.id);
     } else {
       assert.ok(!(direct instanceof Error), q.id);
       ok++;
@@ -150,25 +148,6 @@ test("the golden search set: same request plus one AND-ed scope node, same resul
     }
   }
   assert.ok(queries.length >= 40 && ok >= 40, `${ok} of ${queries.length} golden queries compared`);
-});
-
-test("search contexts are cached for 30 s, reloaded after, and a failed reload keeps the last value", async () => {
-  let loads = 0;
-  let broken = false;
-  let clock = 0;
-  const counting = { ...db, searchContext: { findMany: async () => (loads++, broken ? Promise.reject(new Error("db down")) : contexts) } };
-  const service = new SearchService(counting as never, () => clock);
-  const run = () => service.search("both", { q: "context:fixtures needle", limit: 500 });
-  await run();
-  await run();
-  assert.equal(loads, 1);
-  clock = 30_001;
-  await run();
-  assert.equal(loads, 2);
-  broken = true;
-  clock = 60_002;
-  assert.equal((await run()).files.length, 2); // `fixtures` still known
-  assert.equal(loads, 3);
 });
 
 test("the route's body parses as the UI search contract", async () => {

@@ -32,7 +32,7 @@ before(async () => {
   engine.addRepo(TWO, indexed);
   engine.addRepo(DOCS, { kind: "KNOWLEDGE" });
   for (const [slug, repos] of [["alpha", [ONE, DOCS, GHOST]], ["beta", [TWO]], ["both", [ONE, TWO]]] as [string, string[]][]) {
-    await engine.product.create({ data: { slug, name: slug, source: "api", definition: { include: repos }, repoNames: repos } });
+    await engine.product.create({ data: { slug, name: slug, definition: { include: repos }, repoNames: repos } });
   }
   const ui = new UiProductService(engine.db, new ConnectionService(engine.db as never), () => clock, async () => ({ enabled, repos: "all" }) as never);
   admin = await createAdminApp(TOKEN, {}, undefined, ui, undefined, undefined, new KnowledgeService(engine.db, ui, signals));

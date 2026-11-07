@@ -332,8 +332,8 @@ export async function* streamIR(query: Q, opts: SearchOptions = {}, scope: Q[] =
 /** Search syntax string in, results out. Throws QuerySyntaxError on bad syntax. */
 export function search(
   q: string,
-  opts: SearchOptions & { regex?: boolean; caseSensitive?: boolean; scope?: Q[]; contexts?: Record<string, string[]> } = {},
+  opts: SearchOptions & { regex?: boolean; caseSensitive?: boolean; scope?: Q[] } = {},
 ): Promise<SearchResponse> {
-  const ir = parseQuery(q, { regex: opts.regex, caseSensitive: opts.caseSensitive, contexts: opts.contexts });
+  const ir = parseQuery(q, { regex: opts.regex, caseSensitive: opts.caseSensitive });
   return searchIR(ir, opts, opts.scope);
 }

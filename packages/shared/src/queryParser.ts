@@ -19,8 +19,6 @@ import linguistLanguages from "./linguistLanguages.json" with { type: "json" };
 export interface ParseOptions {
   regex?: boolean;
   caseSensitive?: boolean;
-  /** Search contexts by name (config `contexts`). An unknown name throws SearchContextNotFoundError. */
-  contexts?: Record<string, string[]>;
   /** Extra repo names a `repo:` regex also selects (knowledge repos whose owner matches it). */
   expandRepoRegexp?: (regexp: string) => string[];
   /** Expands a `reposet:` list (adds the knowledge repos of the named repos). */
@@ -28,7 +26,6 @@ export interface ParseOptions {
 }
 
 export class QuerySyntaxError extends Error {}
-export class SearchContextNotFoundError extends Error {}
 
 const strict = parser.configure({ strict: true });
 const strictRegex = parser.configure({ strict: true, dialect: "regex" });
@@ -88,11 +85,9 @@ export function parseQuery(src: string, options: ParseOptions = {}): Q {
         return flagValue("archived", value, { yes: null, no: "FLAG_NO_ARCHIVED", only: "FLAG_ONLY_ARCHIVED" });
       case T.ForkExpr:
         return flagValue("fork", value, { yes: null, no: "FLAG_NO_FORKS", only: "FLAG_ONLY_FORKS" });
-      case T.ContextExpr: {
-        const repos = options.contexts?.[value];
-        if (!repos) throw new SearchContextNotFoundError(`Search context "${value}" not found`);
-        return repoSet(repos.map((r) => r.trim()));
-      }
+      case T.ContextExpr:
+        // search contexts are gone (Products come only from /setup): the text is a plain term, as for any unknown `name:value`
+        return content(text);
       case T.RepoSetExpr: {
         const names = value.split(",").map((r) => r.trim());
         return repoSet(options.expandRepoSet?.(names) ?? names);

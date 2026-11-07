@@ -7,7 +7,7 @@ test("the example config parses: Falkon format, comments, clone-only knowledgeBa
   const c = parseConfig(fs.readFileSync(new URL("../../../config.example.json", import.meta.url), "utf8"));
   assert.deepEqual(Object.keys(c.connections), ["github", "hello", "local"]);
   assert.equal(c.knowledgeBase.enabled, true);
-  assert.equal(c.contexts.octocat?.include?.[0], "github.com/octocat/*");
+  assert.equal(c.contextsIgnored, true);
 });
 
 test("knowledge base is on by default and can be switched off", () => {
@@ -104,6 +104,16 @@ test("discussion settings and the connection flag validate", () => {
   assert.equal((c.connections.g as { discussions?: boolean }).discussions, true);
   assert.throws(() => parseConfig(JSON.stringify({ connections: { g: { type: "github", discussions: "yes" } } })), /invalid/);
   assert.throws(() => parseConfig(JSON.stringify({ settings: { discussionBackfillMonths: 0 } })), /invalid/);
+});
+
+test("a config still naming `contexts` loads and ignores it: Products come only from /setup", () => {
+  const fixture = parseConfig(fs.readFileSync(new URL("../../../tests/fixtures/config.json", import.meta.url), "utf8"));
+  assert.equal("contexts" in fixture, false);
+  assert.equal(fixture.contextsIgnored, true);
+  // any shape loads, since nothing reads it
+  assert.equal(parseConfig(JSON.stringify({ contexts: { "Not A Slug!": 5 } })).contextsIgnored, true);
+  assert.equal(parseConfig(JSON.stringify({ contexts: {} })).contextsIgnored, false);
+  assert.equal(parseConfig("{}").contextsIgnored, false);
 });
 
 test("a config still naming the removed polling settings loads and ignores them", () => {

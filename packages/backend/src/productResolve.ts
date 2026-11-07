@@ -1,18 +1,24 @@
-// Context resolution shared by the backend sync (SearchContext and Product rows) and the api's admin writes.
+// Product membership resolution shared by the backend sync (re-resolving every Product) and the api's /ui writes.
 // Kept free of the sync path's other imports so the api bundle only pulls micromatch and the Prisma types.
 import micromatch from "micromatch";
 import { RepoKind, type PrismaClient } from "@falkon/db";
-import type { SearchContextConfig } from "@falkon/shared";
 
-/** A Product's definition: a config context without its description. */
-export type ProductDefinition = Omit<SearchContextConfig, "description">;
+/** A Product's definition (`Product.definition`): include globs, connections and topics, then excludes. */
+export interface ProductDefinition {
+  include?: string[];
+  includeConnections?: string[];
+  exclude?: string[];
+  excludeConnections?: string[];
+  includeTopics?: string[];
+  excludeTopics?: string[];
+}
 export interface ResolvableRepo {
   id: number;
   name: string;
   metadata: unknown;
 }
 
-/** Product slugs, checked at every entry point (path, admin API, config import). */
+/** Product slugs, checked at every entry point (path, UI routes). */
 export const isProductSlug = (name: string) => /^[a-z0-9][a-z0-9-]{0,62}$/.test(name);
 
 const topicsOf = (m: unknown) => {

@@ -1,4 +1,4 @@
-// UI-shaped Product routes (/ui/products...) on the admin listener. The registry routes (/products...) keep the operator shape.
+// UI-shaped Product routes (/ui/products...) on the admin listener: the only way Products are created, edited and deleted.
 import { Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Req } from "@nestjs/common";
 import type { IncomingMessage } from "node:http";
 import { editRequestSchema, setupRequestSchema, syncRequestSchema, type EditRequest, type Product, type Repository, type SetupRequest, type Status } from "@falkon/contracts";
@@ -14,7 +14,6 @@ type Db = Pick<PrismaClient, "product" | "repo" | "connection" | "chat" | "knowl
 type Tx = Pick<PrismaClient, "product" | "repo" | "connection" | "chat">;
 
 const notFound = () => error(404, "NOT_FOUND", "Product not found.");
-const readOnly = () => error(409, "READ_ONLY", "Product comes from config and is read-only through this API.");
 const noConnection = () => error(409, "NO_CONNECTION", "Product has no connection to edit its repositories through.");
 const badRepository = () => error(400, "INVALID_REPOSITORY", "A selected repository is not available on this connection.");
 const isUniqueViolation = (e: unknown) => (e as { code?: string } | null)?.code === "P2002";
@@ -60,7 +59,7 @@ export class UiProductService {
   }
 
   /** Loads everything the mappers need for `rows` in a fixed number of queries. */
-  private async load(rows: { slug: string; name: string; source: "config" | "api"; definition: unknown; repoNames: string[]; connectionId: number | null; createdAt: Date; updatedAt: Date }[]) {
+  private async load(rows: { slug: string; name: string; definition: unknown; repoNames: string[]; connectionId: number | null; createdAt: Date; updatedAt: Date }[]) {
     const names = [...new Set(rows.flatMap(memberNames))];
     const repos = await this.db.repo.findMany({ where: { name: { in: names }, kind: RepoKind.CODE } });
     const conns = await this.db.connection.findMany({ where: { id: { in: rows.flatMap((r) => (r.connectionId === null ? [] : [r.connectionId])) } }, include: withCredential });
@@ -79,9 +78,9 @@ export class UiProductService {
     return rows.map((row) => {
       const mine = repos.filter((r) => memberNames(row).includes(r.name)).map((r) => ({ ...r, scan: latest.get(r.id) ?? null }));
       const c = row.connectionId === null ? undefined : byConn.get(row.connectionId);
-      // ponytail: a sync already running when the Product was edited can finish after the edit and briefly mark a new member Skipped until the queued sync ends; a syncStartedAt column would close that window. Config Products have no connection, so they never infer Skipped.
+      // ponytail: a sync already running when the Product was edited can finish after the edit and briefly mark a new member Skipped until the queued sync ends; a syncStartedAt column would close that window. A Product with no connection never infers Skipped.
       const facts = withPlaceholders(memberNames(row), mine, row.createdAt, !!c?.syncedAt && c.syncedAt > row.updatedAt && !c.syncError && !c.syncRequestedAt); // a sync that finished after the last edit, with none pending
-      // A config Product has no connectionId: its host is the code host of its first repo.
+      // A Product with no connection (made before /setup was the only way): its host is the code host of its first repo.
       const connection: ConnectionFacts | null = c
         ? { credentialId: c.credential?.id ?? null, host: c.credential?.host ?? (c.config as { url?: string }).url?.replace(/^https?:\/\//, "") ?? "github.com", syncError: c.syncError, syncRequestedAt: c.syncRequestedAt }
         : mine[0]
@@ -143,7 +142,7 @@ export class UiProductService {
     try {
       await this.db.$transaction(async (tx) => {
         const repoNames = (await loadContextResolver(tx))({ include: names });
-        await tx.product.create({ data: { slug: input.id, name: input.name, source: "api", definition: { include: names }, repoNames, connectionId } });
+        await tx.product.create({ data: { slug: input.id, name: input.name, definition: { include: names }, repoNames, connectionId } });
         await this.writeUnion(tx, connectionId, input.id, names);
       });
     } catch (e) {
@@ -156,14 +155,13 @@ export class UiProductService {
 
   async edit(slug: string, input: EditRequest) {
     const row = await this.find(slug);
-    if (row.source !== "api") throw readOnly();
     const conn = row.connectionId === null ? null : await this.db.connection.findUnique({ where: { id: row.connectionId }, include: withCredential });
     if (!conn?.credential) throw noConnection();
     const { repos } = await this.connections.listing(conn.credential.id);
     const names = this.pick(input.repositories, repos);
     await this.db.$transaction(async (tx) => {
       const repoNames = (await loadContextResolver(tx))({ include: names });
-      await tx.product.updateMany({ where: { slug, source: "api" }, data: { name: input.name, definition: { include: names }, repoNames } });
+      await tx.product.updateMany({ where: { slug }, data: { name: input.name, definition: { include: names }, repoNames } });
       await this.writeUnion(tx, conn.id, slug, names);
     });
     this.announceRequest();
@@ -171,14 +169,13 @@ export class UiProductService {
   }
 
   /**
-   * Removes an api Product and its chats (no foreign key ties them), then narrows the connection's repos to what the
+   * Removes a Product and its chats (no foreign key ties them), then narrows the connection's repos to what the
    * remaining Products need; the backend sync unlinks the rest and removeOrphans deletes their clones and rows.
    */
   async remove(slug: string) {
     const row = await this.find(slug);
-    if (row.source !== "api") throw readOnly();
     await this.db.$transaction(async (tx) => {
-      const { count } = await tx.product.deleteMany({ where: { slug, source: "api" } });
+      const { count } = await tx.product.deleteMany({ where: { slug } });
       if (count === 0) throw notFound();
       await tx.chat.deleteMany({ where: { productId: slug } });
       if (row.connectionId !== null) await this.writeUnion(tx, row.connectionId, slug, []);

@@ -77,11 +77,9 @@ test("each supported connection kind and revision settings survive loading", () 
     github: { type: "github", repos: ["acme/app"], exclude: { forks: true, archived: true } },
     local: { type: "git", url: "file:///fixtures/repos/atlas", revisions },
   };
-  const contexts = { selected: { include: ["fixtures.test/*"], exclude: ["fixtures.test/archive"], includeConnections: ["local"], excludeConnections: ["github"], includeTopics: ["core"], excludeTopics: ["old"], description: "Fixture context" } };
   const models = [{ provider: "openai", model: "fixture" }];
-  const parsed = parseConfig(JSON.stringify({ connections, contexts, models }));
+  const parsed = parseConfig(JSON.stringify({ connections, models }));
   assert.deepEqual(parsed.connections, connections);
-  assert.deepEqual(parsed.contexts, contexts);
   assert.deepEqual(parsed.models, models);
   for (const connection of [{ type: "gerrit", url: "https://review.example.test" }, { type: "gitlab", all: true }, { type: "git", url: "file:///fixtures", unexpected: true }, { type: "git", url: "file:///fixtures", enforcePermissions: true }, { type: "github", enforcePermissionsForPublicRepos: true }]) assert.throws(() => parseConfig(JSON.stringify({ connections: { invalid: connection } })), /invalid/);
 });

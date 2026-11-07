@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseQuery, QuerySyntaxError, SearchContextNotFoundError } from "./queryParser";
+import { parseQuery, QuerySyntaxError } from "./queryParser";
 
 const sub = (pattern: string, cs = false) => ({ substring: { pattern, file_name: false, content: true, case_sensitive: cs } });
 const re = (regexp: string, o: { file_name?: boolean; cs?: boolean } = {}) => ({
@@ -101,11 +101,13 @@ test("syntax errors", () => {
   assert.throws(() => parseQuery("fork:maybe"), QuerySyntaxError);
   assert.throws(() => parseQuery("   "), QuerySyntaxError);
   assert.throws(() => parseQuery("(a \\))"), QuerySyntaxError);
-  assert.throws(() => parseQuery("context:x"), SearchContextNotFoundError);
 });
 
-test("context: expands to a repo set", () => {
-  assert.deepEqual(parseQuery("context:web", { contexts: { web: ["a", "b"] } }), { repo_set: { set: { a: true, b: true } } });
+test("context: is no longer an operator: like any unknown `name:value` it is a plain content term", () => {
+  assert.deepEqual(parseQuery("foo:x"), sub("foo:x"));
+  assert.deepEqual(parseQuery("context:x"), sub("context:x"));
+  assert.deepEqual(parseQuery("context:x needle"), { and: { children: [sub("context:x"), sub("needle")] } });
+  assert.deepEqual(parseQuery("context:X", { caseSensitive: true }), sub("context:X", true));
 });
 
 test("empty group matches nothing", () => {

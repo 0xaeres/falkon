@@ -10,7 +10,7 @@ test("product names must match ^[a-z0-9][a-z0-9-]{0,62}$", () => {
 });
 
 test("reads are fresh: find returns what the table holds now", async () => {
-  const product = fakeProductTable([{ slug: "core", source: "api", name: "core", definition: {}, repoNames: ["a"] }]);
+  const product = fakeProductTable([{ slug: "core", name: "core", definition: {}, repoNames: ["a"] }]);
   const registry = new PrismaProductRegistry({ product } as unknown as Pick<PrismaClient, "product">);
   assert.deepEqual((await registry.find("core"))?.repoNames, ["a"]);
   product.rows[0]!.repoNames = ["a", "b"];

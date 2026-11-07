@@ -25,7 +25,7 @@ export interface ConnectionFacts {
   /** The id the UI knows the connection by (its Credential id). */
   credentialId: string | null;
   host: string;
-  /** A config Product over plain git remotes (no GitHub connection). */
+  /** A Product with no connection over plain git remotes. */
   genericGit?: boolean;
   syncError: string | null;
   syncRequestedAt: Date | null;
@@ -33,15 +33,13 @@ export interface ConnectionFacts {
 export interface ProductFacts {
   slug: string;
   name: string;
-  source: "config" | "api";
   definition: unknown;
   repoNames: string[];
   createdAt: Date;
 }
 
-/** The names a Product shows: an api Product's exact `include` (visible before the first sync), else its resolved repoNames. */
-export const memberNames = (p: Pick<ProductFacts, "source" | "definition" | "repoNames">) =>
-  p.source === "api" ? ((p.definition as { include?: string[] } | null)?.include ?? []) : p.repoNames;
+/** The names a Product shows: its exact `include` (visible before the first sync). */
+export const memberNames = (p: Pick<ProductFacts, "definition">) => (p.definition as { include?: string[] } | null)?.include ?? [];
 
 /** One RepoFacts per member name; a name with no Repo row yet is PENDING, or SKIPPED when its connection has already synced cleanly (the connector skipped it: not found, no access). */
 export function withPlaceholders(names: string[], rows: RepoFacts[], createdAt: Date, synced = false): RepoFacts[] {

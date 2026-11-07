@@ -73,15 +73,15 @@ test("withPlaceholders fills a name that has no Repo row yet as PENDING", () => 
 test("toUiProduct maps rows to the contract Product", () => {
   const repos = [repo("a", { metadata: { codeHostMetadata: { github: { language: "Go" } } }, indexRequestedAt: at(2) }), pending("new")];
   const c = conn({ syncRequestedAt: at(1) });
-  const p = toUiProduct({ slug: "pay", name: "Payments platform", source: "api", definition: {}, repoNames: [], createdAt: at(90) }, repos, c, status(repos, c));
+  const p = toUiProduct({ slug: "pay", name: "Payments platform", definition: {}, repoNames: [], createdAt: at(90) }, repos, c, status(repos, c));
   assert.deepEqual(productSchema.parse(p), p);
   assert.deepEqual([p.id, p.initials, p.provider, p.host, p.scenario, p.queuedAt, p.connectionId, p.activeGeneration], ["pay", "PP", "github", "github.com", "updating", at(1).getTime(), "c".repeat(22), status(repos, c).generation]);
   assert.deepEqual(p.repositories[0], { id: "github.com/acme/a", name: "a", organization: "acme", language: "Go", revision: "a123456", updated: at(30).toISOString(), branches: ["main"], branch: "main", state: "indexed" });
   assert.deepEqual(p.repositories[1], { id: "github.com/acme/new", name: "new", organization: "acme", language: "", revision: "", updated: at(30).toISOString(), branches: ["main"], branch: "main", state: "pending" });
 });
 
-test("toUiProduct: GitHub Enterprise by host; a config Product with no connection is github with an empty host", () => {
-  const row = { slug: "core", name: "core", source: "config" as const, definition: {}, repoNames: [], createdAt: at(1) };
+test("toUiProduct: GitHub Enterprise by host; a Product with no connection and no repos is github with an empty host", () => {
+  const row = { slug: "core", name: "core", definition: {}, repoNames: [], createdAt: at(1) };
   const ghe = toUiProduct(row, [], conn({ host: "ghe.example.com" }), status([]));
   assert.deepEqual([ghe.provider, ghe.host], ["github-enterprise", "ghe.example.com"]);
   const none = toUiProduct(row, [], null, status([], null));
@@ -160,7 +160,7 @@ test("none skipped: unchanged, no skipped gap", () => {
 
 test("toUiProduct gives each repository a state; a skipped one has state skipped and no reason when none is recorded", () => {
   const repos = [repo("a"), pending("b"), repo("c", { status: "SYNCING" }), repo("d", { status: "FAILED" }), skipped("e")];
-  const p = toUiProduct({ slug: "pay", name: "Pay", source: "api", definition: {}, repoNames: [], createdAt: at(90) }, repos, conn(), status(repos));
+  const p = toUiProduct({ slug: "pay", name: "Pay", definition: {}, repoNames: [], createdAt: at(90) }, repos, conn(), status(repos));
   assert.deepEqual(productSchema.parse(p).repositories.map((r) => r.state), ["indexed", "pending", "indexing", "failed", "skipped"]);
   assert.ok(!("reason" in p.repositories[4]!));
 });

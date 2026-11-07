@@ -1,8 +1,8 @@
 import fs from "node:fs";
-import { prisma, ConnectionSource, Prisma, ProductSource, RepoKind, type ConnectionType, type PrismaClient } from "@falkon/db";
+import { prisma, ConnectionSource, Prisma, RepoKind, type ConnectionType, type PrismaClient } from "@falkon/db";
 import { KB_SUFFIX, ownerOfKnowledgeRepo, repoGitDir, repoPath, type Config, type ConnectionConfig } from "@falkon/shared";
 import { compileConnection, dedupeRecords, type RepoRecord } from "./connectors";
-import { isProductSlug, loadContextResolver, type ProductDefinition } from "./productResolve";
+import type { ProductDefinition } from "./productResolve";
 import { removeShards } from "./zoekt";
 
 const connectionType = (c: ConnectionConfig): ConnectionType => c.type;
@@ -143,53 +143,20 @@ export async function removeOrphans() {
   }
 }
 
-/** Resolves config `contexts` to repo names (include globs / connections / topics, then excludes); imports them as Products too. */
-export async function syncSearchContexts(cfg: Config) {
-  const resolve = await loadContextResolver(prisma);
-  for (const [name, ctx] of Object.entries(cfg.contexts)) {
-    const repoNames = resolve(ctx);
-    await prisma.searchContext.upsert({
-      where: { name },
-      create: { name, description: ctx.description, repoNames },
-      update: { description: ctx.description ?? null, repoNames },
-    });
-  }
-  await prisma.searchContext.deleteMany({ where: { name: { notIn: Object.keys(cfg.contexts) } } });
-  await syncProducts(cfg, resolve);
+/** Config `contexts` no longer create Products (they come only from /setup): a file that still has them gets one line per load. */
+export function noticeIgnoredContexts(cfg: Config, log: (line: string) => void = console.log) {
+  if (cfg.contextsIgnored) log("config: `contexts` is ignored; Products are now created in /setup");
 }
 
-type ProductTable = Pick<PrismaClient["product"], "findMany" | "create" | "updateMany" | "deleteMany">;
-const isUniqueViolation = (e: unknown) => (e as { code?: string } | null)?.code === "P2002";
+type ProductTable = Pick<PrismaClient["product"], "findMany" | "updateMany">;
 
 /**
- * Config `contexts` become `source=config` Products; config Products no longer in config are deleted; `source=api`
- * Products are never written by the import except to re-resolve their own definition. A context whose name is not a
- * valid slug, or whose slug an api Product holds (api wins), is skipped with a log line. Every write is conditioned on
- * `source`, so a concurrent admin create cannot be turned into a config row.
+ * Re-resolves every Product's `repoNames` from its own definition (repositories and connections change under it). A write
+ * is conditioned on `updatedAt`, so a row a UI write changed since it was read is left for the next round.
  */
-export async function syncProducts(cfg: Config, resolve: (d: ProductDefinition) => string[], products: ProductTable = prisma.product) {
-  const imported: string[] = [];
-  for (const [slug, { description, ...definition }] of Object.entries(cfg.contexts)) {
-    if (!isProductSlug(slug)) {
-      console.log(`product import: context "${slug}" skipped, not a valid Product slug (^[a-z0-9][a-z0-9-]{0,62}$)`);
-      continue;
-    }
-    const data = { name: slug, description: description ?? null, definition: definition as Prisma.InputJsonValue, repoNames: resolve(definition) };
-    const { count } = await products.updateMany({ where: { slug, source: ProductSource.config }, data });
-    if (count === 0) {
-      try {
-        await products.create({ data: { slug, source: ProductSource.config, ...data } });
-      } catch (e) {
-        if (!isUniqueViolation(e)) throw e;
-        console.log(`product import: context "${slug}" skipped, an api Product has that slug`);
-        continue;
-      }
-    }
-    imported.push(slug);
-  }
-  await products.deleteMany({ where: { source: ProductSource.config, slug: { notIn: imported } } });
-  for (const p of await products.findMany({ where: { source: ProductSource.api } })) {
+export async function resolveProducts(resolve: (d: ProductDefinition) => string[], products: ProductTable = prisma.product) {
+  for (const p of await products.findMany()) {
     const repoNames = resolve(p.definition as ProductDefinition);
-    if (JSON.stringify(repoNames) !== JSON.stringify(p.repoNames)) await products.updateMany({ where: { id: p.id, source: ProductSource.api, updatedAt: p.updatedAt }, data: { repoNames } });
+    if (JSON.stringify(repoNames) !== JSON.stringify(p.repoNames)) await products.updateMany({ where: { id: p.id, updatedAt: p.updatedAt }, data: { repoNames } });
   }
 }

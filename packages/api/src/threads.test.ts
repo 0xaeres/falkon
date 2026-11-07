@@ -63,7 +63,7 @@ before(async () => {
   engine.addRepo(IN, indexed);
   engine.addRepo(OUT, indexed);
   engine.addRepo(COLD);
-  for (const [slug, repo] of [["alpha", IN], ["beta", OUT], ["cold", COLD]] as const) await engine.product.create({ data: { slug, name: slug, source: "api", definition: { include: [repo] }, repoNames: [repo] } });
+  for (const [slug, repo] of [["alpha", IN], ["beta", OUT], ["cold", COLD]] as const) await engine.product.create({ data: { slug, name: slug, definition: { include: [repo] }, repoNames: [repo] } });
   const connections = new ConnectionService(engine.db as never);
   ui = new UiProductService(engine.db, connections);
   admin = await createAdminApp(TOKEN, {}, connections, ui, new ThreadService(engine.db, ui));
@@ -118,7 +118,7 @@ test("create, list and get threads: Product-scoped, UI chats, newest first", asy
 
 test("list rule: UI, anonymous and PUBLIC chats are listed; another key's PRIVATE chat is not, but its link (GET by id) opens", async () => {
   const mk = (id: string, createdBy: string, visibility: "PRIVATE" | "PUBLIC") => engine.db.chat.create({ data: { id, createdBy, visibility, productId: "gamma", name: id } });
-  await engine.product.create({ data: { slug: "gamma", name: "gamma", source: "api", definition: { include: [IN] }, repoNames: [IN] } });
+  await engine.product.create({ data: { slug: "gamma", name: "gamma", definition: { include: [IN] }, repoNames: [IN] } });
   await mk("k-private", "key:x", "PRIVATE");
   await mk("k-public", "key:x", "PUBLIC");
   await mk("anon", "anonymous", "PUBLIC");
@@ -131,7 +131,7 @@ test("list rule: UI, anonymous and PUBLIC chats are listed; another key's PRIVAT
 
 test("the thread list is bounded to the newest LIST_CAP", async () => {
   const { LIST_CAP } = await import("./threads");
-  await engine.product.create({ data: { slug: "delta", name: "delta", source: "api", definition: { include: [IN] }, repoNames: [IN] } });
+  await engine.product.create({ data: { slug: "delta", name: "delta", definition: { include: [IN] }, repoNames: [IN] } });
   for (let i = 0; i < LIST_CAP + 5; i++) await engine.db.chat.create({ data: { id: `d${i}`, createdBy: "ui", productId: "delta" } });
   assert.equal(((await call("GET", "/ui/products/delta/threads")).json as J[]).length, LIST_CAP);
 });

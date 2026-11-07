@@ -46,7 +46,7 @@ test("search translates options and streaming preserves flush order and transpor
     async *stream(req) { requests.push(req); yield { files: [file] }; yield { files: [], stats: { files_skipped: 1 } }; throw new Error("stream unavailable"); },
   });
   try {
-    await search("context:web Needle", { regex: true, caseSensitive: true, contexts: { web: ["r"] }, matches: 2, scope: [{ repo: { regexp: "r" } }] });
+    await search("reposet:r Needle", { regex: true, caseSensitive: true, matches: 2, scope: [{ repo: { regexp: "r" } }] });
     assert.deepEqual(requests[0], buildRequest({ and: { children: [{ repo_set: { set: { r: true } } }, { regexp: { regexp: "Needle", case_sensitive: true, file_name: false, content: true } }] } }, { matches: 2 }, [{ repo: { regexp: "r" } }]));
     const chunks: SearchResponse[] = [];
     await assert.rejects(async () => { for await (const chunk of streamIR({ const: true })) chunks.push(chunk); }, /stream unavailable/);
