@@ -1088,6 +1088,18 @@ Order: S98, then S99 and S100 (S100 after S99 for the shared `agent.ts`, or para
 - Checks at the tip: typecheck pass; api 306 pass 0 fail (14 skipped); shared 306 pass 0 fail; contracts 25 pass; originality unit tests 7 pass; originality scan not run (needs `ORIGINALITY_REF_DIR`; `agent.ts` added to its file list). No dependency, no snapshot change.
 - Open for the human: run the originality scan; rule on the MCP `grep` effect; chat-only tool text shortening; go-ahead for S102 (cap $0.95).
 
+### Cycle 23 pilot (S102, 2026-11-07, human go-ahead; stack rebuilt from tip `7b29839`, six repositories, knowledge base off)
+
+Three human-style questions, one run each (`live-chat/runs-c23/`, runner `run-c23.js`): q09 history, q02 flow, q03 locate. Cost: 793k input and 15k output tokens, about $0.25 at the conservative rate (cap was $0.95).
+
+| Question | Steps | Input tokens | Step 1 input | Cached reported |
+|---|---|---|---|---|
+| q09 history (all 20 tools) | 9 | 266,275 | 14,391 | 217,088 (82%) |
+| q02 flow (core ten) | 14 | 276,870 | 6,304 | 198,528 (72%) |
+| q03 locate (core ten) | 13 | 249,895 | 6,294 | 191,232 (76%) |
+
+Findings: (1) the gating works as measured (step 1 is 6.3k tokens for code questions, 14.4k for the history question); (2) total input per question is 250k to 277k, only about 12% under the 300k S92 average, so decision rule (a) (at least 30% lower) is **missed**; the S92 average covers 7 to 15 steps and different questions, so this is not a same-question comparison, and the old behaviour on these three questions would have cost roughly 7.3k tokens more per step (about 95k to 100k) for q02 and q03, but that is an estimate; (3) what remains is `read_file` results piling up (two or three reads of up to 5.7 KB per step, never stubbed) over 9 to 14 steps, and the step count itself; (4) the provider (DeepInfra, DeepSeek-V4.1-Flash) reports cached input tokens, 72% to 82% of input here, so billed cost is likely well below the conservative rate (no billing readout; not counted on); (5) all three answers are grounded with no gaps, 11 to 37 evidence parts, and q09 used `get_pull_request`, `get_diff` and `list_commits`; line-level citation correctness was not scored (no gold for these questions). Rule (c) (no run ends on a tool call at the step cap) holds. Next levers, not built: stub or shorten old `read_file` results (risk: line numbers to cite), a lower `read_file` byte cap (5 KB), fewer steps by a prompt that asks for batched reads.
+
 ## Next
 
 Phase 1 (cycle 19 plan above): shipped git history tools beyond `list_commits`, `get_diff` and `list_branches`, measured against this floor, after the live sync lands (the human put the live sync first at the start of cycle 15 planning).

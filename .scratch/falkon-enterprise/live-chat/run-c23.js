@@ -1,0 +1,21 @@
+const fs = require('node:fs');
+const base = 'http://127.0.0.1:3602';
+const h = fs.readFileSync(__dirname + '/admin.header', 'utf8').trim().split(': ');
+const H = { [h[0]]: h[1], 'content-type': 'application/json' };
+const qs = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+const q = qs.find((x) => x.id === process.argv[3]);
+const out = __dirname + '/out'; fs.mkdirSync(out, { recursive: true });
+(async () => {
+  const t0 = Date.now();
+  const th = await (await fetch(`${base}/ui/products/openmrs/threads`, { method: 'POST', headers: H })).json();
+  const id = th.id ?? th.thread?.id;
+  const res = await fetch(`${base}/ui/products/openmrs/threads/${id}/messages`, { method: 'POST', headers: H, body: JSON.stringify({ text: q.text }) });
+  const raw = await res.text();
+  fs.writeFileSync(`${out}/${q.id}.sse`, raw);
+  const stored = await (await fetch(`${base}/ui/products/openmrs/threads/${id}`, { headers: H })).json();
+  fs.writeFileSync(`${out}/${q.id}.thread.json`, JSON.stringify(stored, null, 2));
+  const line = raw.split('\n').find((l) => l.includes('"message-metadata"'));
+  const m = line ? JSON.parse(line.replace(/^data: /, '')).messageMetadata : {};
+  console.log(q.id, 'status', res.status, 'sec', ((Date.now() - t0) / 1000).toFixed(1), 'in', m.totalInputTokens, 'out', m.totalOutputTokens, 'cached', m.totalCachedInputTokens, 'steps', (m.steps || []).length);
+  console.log((m.steps || []).map((s, i) => `s${i + 1} in=${s.in} out=${s.out} tools=${s.toolBytes.map((t) => t.tool + ':' + t.bytes).join(',')}`).join('\n'));
+})();

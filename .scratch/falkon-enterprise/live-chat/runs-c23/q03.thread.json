@@ -1,0 +1,1500 @@
+{
+  "id": "712e589f-d5b2-4df2-9e8f-95d722332c21",
+  "productId": "openmrs",
+  "title": "Bill Line Item Pricing Logic",
+  "updatedAt": 1794012172074,
+  "answers": [
+    {
+      "id": "yoEPjV00nSpkLtO2",
+      "productId": "openmrs",
+      "question": "Where in the code are bill line items priced from a stock item or billable service, and how does that pricing get applied?",
+      "generation": "g-ab363e",
+      "kind": "grounded",
+      "paragraphs": [
+        {
+          "text": "Pricing of bill line items happens in two places depending on where the bill comes from: at the POS (point-of-sale) form in the frontend, where a cashier's chosen price is copied into the line item; and in the backend billing strategies, where a price is resolved automatically for a stock item or a billable service.",
+          "citations": []
+        },
+        {
+          "text": "## What the pieces are",
+          "citations": []
+        },
+        {
+          "text": "A bill line item is a `BillLineItem` [1]. It can point at a **stock item** (a physical commodity from the stock management module) or at a **billable service** (a service, e.g. a lab test, tied to a concept), and it carries a `price` plus a `priceName`:",
+          "citations": [
+            1
+          ]
+        },
+        {
+          "text": "- `item` — the `StockItem` [2]\n- `billableService` — the `BillableService` [3]\n- `price` and `priceName` — the amount and its label [4]\n- `getTotal()` multiplies the unit price by quantity [5], and the bill total sums each line's total [6]",
+          "citations": [
+            2,
+            3,
+            4,
+            5,
+            6
+          ]
+        },
+        {
+          "text": "The list of prices itself is the `CashierItemPrice` entity [7] — a named price with a `paymentMode`, attached to either a `StockItem` or a `BillableService`. A `BillableService` exposes its prices as `servicePrices` [8].",
+          "citations": [
+            7,
+            8
+          ]
+        },
+        {
+          "text": "## Path 1: pricing at the POS form",
+          "citations": []
+        },
+        {
+          "text": "The frontend loads billable services together with their prices — the query asks for `servicePrices:(uuid,name,price,paymentMode)` [9].",
+          "citations": [
+            9
+          ]
+        },
+        {
+          "text": "When the cashier picks an item, `selectBillableItem` reads that item's available payment methods (`servicePrices`) [10]\\) and builds a line item:",
+          "citations": [
+            10
+          ]
+        },
+        {
+          "text": "- If there is exactly **one** price, it is taken automatically as the default [11].\n- The line item is created with `price: defaultPrice`, `billableService: item.uuid` and status `PENDING` [12].\n- If there are several prices, the cashier must choose one via `updatePaymentMethod`, which sets `price`, `priceName` and `priceUuid` from the chosen `ServicePrice` [13]. `validateSelectedItems` blocks submission until a payment method is chosen for any item with more than one price [14].",
+          "citations": [
+            11,
+            12,
+            13,
+            14
+          ]
+        },
+        {
+          "text": "On submit, `postBillItems` maps the selected items to `LineItem` payloads carrying `price`, `quantity`, `billableService` and status `PENDING` [15], then POSTs to the bill endpoint [16]. In edit mode it also re-sends each existing line item with its stored `price`, `priceName` and `priceUuid` [17]. The `LineItem` type shows `price`, `priceName` and `priceUuid` as the fields that carry pricing [18].",
+          "citations": [
+            15,
+            16,
+            17,
+            18
+          ]
+        },
+        {
+          "text": "On the server, the REST layer writes those values onto the entity: `setPriceValue` converts the incoming number to a `BigDecimal` [19], `setPriceName` stores the label [20], and `setItemPrice` (the `priceUuid` property) is meant to attach the chosen `CashierItemPrice` [21]. Note that this `setItemPrice` is effectively a stub right now: `itemPrice` is assigned `null` and never looked up, so the UUID sent by the UI is not resolved to a real price record [22]; the getter likewise ignores the stored price and returns an empty string [23]. In practice the amount the cashier picked travels in the `price` field itself.",
+          "citations": [
+            19,
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        {
+          "text": "## Path 2: automatic pricing from an order",
+          "citations": []
+        },
+        {
+          "text": "When a clinician places an order, a **billing strategy** per order type builds the bill automatically. The shared pipeline resolves cashier and cash point, creates the `Bill`, attaches the line item and saves [24]. The common line-item fields are set by `createLineItem`, which assigns the `price`, quantity, status and order [25].",
+          "citations": [
+            24,
+            25
+          ]
+        },
+        {
+          "text": "**Drug order → stock item.** `DrugOrderBillingStrategy` handles `DrugOrder`s [26]. It looks up the `StockItem` for the ordered drug via `stockManagementService.getStockItemByDrug(drugId)` [27], then calls `resolvePrice(stockItem)` and sets the stock item on the line item [28]. `resolvePrice` asks `itemPriceService.getItemPrice(stockItem)` and, if any `CashierItemPrice` exists, uses the first one's price; otherwise it falls back to the stock item's `purchasePrice`, and finally to zero [29].",
+          "citations": [
+            26,
+            27,
+            28,
+            29
+          ]
+        },
+        {
+          "text": "**Test order → billable service.** `TestOrderBillingStrategy` handles `TestOrder`s [30]. It finds the enabled `BillableService` whose concept matches the test order's concept [31], then calls `resolvePrice(billableService)` and attaches the service [32]. Its `resolvePrice` uses `itemPriceService.getServicePrice(billableService)` and takes the first price, defaulting to zero if none exists [33]. Quantity is fixed at 1, since a test is treated as a single service [34].",
+          "citations": [
+            30,
+            31,
+            32,
+            33,
+            34
+          ]
+        },
+        {
+          "text": "## Where the price records are looked up",
+          "citations": []
+        },
+        {
+          "text": "Both `resolvePrice` methods go through `ItemPriceService`:",
+          "citations": []
+        },
+        {
+          "text": "- `getItemPrice(StockItem)` queries `CashierItemPrice` by `item` and orders by id descending, so the newest price wins [35].\n- `getServicePrice(BillableService)` queries by `billableService`, also newest first [36].",
+          "citations": [
+            35,
+            36
+          ]
+        },
+        {
+          "text": "## The flow at a glance",
+          "citations": []
+        },
+        {
+          "text": "```mermaid\nflowchart TD\n    order[\"Order placed\"] --> pick{\"Order type\"}\n    pick -->|DrugOrder| drug[\"Find StockItem by drug\"]\n    pick -->|TestOrder| svc[\"Find enabled BillableService by concept\"]\n    drug --> ip[\"getItemPrice newest CashierItemPrice\"]\n    ip --> fallback[\"Fallback to StockItem purchasePrice\"]\n    svc --> sp[\"getServicePrice newest CashierItemPrice\"]\n    fallback --> item[\"createLineItem price\"]\n    sp --> item\n    item --> bill[\"Bill.addLineItem and save\"]\n    pos[\"POS form picks item\"] --> formPrice[\"price from servicePrices\"]\n    formPrice --> post[\"POST bill line item price\"]\n```",
+          "citations": []
+        },
+        {
+          "text": "## Summary",
+          "citations": []
+        },
+        {
+          "text": "The single stored value is `BillLineItem.price` [37], multiplied by quantity in `getTotal()` [5]. `priceName` records which named price was used. The source of that price is either the cashier's choice on the POS form (frontend) or, for orders, the newest matching `CashierItemPrice` for the stock item or billable service, with a fallback to the stock item's purchase price for drugs and to zero for services.",
+          "citations": [
+            37,
+            5
+          ]
+        },
+        {
+          "text": "What I could not verify: I did not read the full `BillLineItemResource` (only lines 100-169) or the cash-point/bill discount code paths, and I did not trace how `CashierItemPrice` records are created in the admin UI — only how they are read. The `setItemPrice` handler [21] looks like unfinished code, so the `priceUuid` sent by the frontend may not persist as a link to a `CashierItemPrice`; the numeric `price` is what actually takes effect.",
+          "citations": [
+            21
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/BillLineItem.java",
+          "revision": "HEAD",
+          "startLine": 24,
+          "code": [
+            " */",
+            "@Setter",
+            "@Getter",
+            "public class BillLineItem extends BaseChangeableOpenmrsData {",
+            "\t",
+            "\tprivate static final long serialVersionUID = 0L;",
+            "\t",
+            "\t@Setter(AccessLevel.NONE)",
+            "\tprivate Integer billLineItemId;",
+            "\t",
+            "\tprivate Bill bill;",
+            "\t",
+            "\tprivate StockItem item;",
+            "\t",
+            "\tprivate BillableService billableService;",
+            "\t",
+            "\tprivate BigDecimal price;",
+            "\t",
+            "\tprivate String priceName;",
+            "\t",
+            "\tprivate CashierItemPrice itemPrice;",
+            "\t",
+            "\tprivate Integer quantity;",
+            "\t",
+            "\tprivate Integer lineItemOrder;",
+            "\t",
+            "\tprivate BillLineItemStatus status;",
+            "\t",
+            "\tprivate Order order;",
+            "\t",
+            "\t@Override",
+            "\tpublic Integer getId() {"
+          ],
+          "highlightedLines": [
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/BillLineItem.java",
+          "revision": "HEAD",
+          "startLine": 33,
+          "code": [
+            "\t",
+            "\tprivate Bill bill;",
+            "\t",
+            "\tprivate StockItem item;",
+            "\t",
+            "\tprivate BillableService billableService;",
+            "\t"
+          ],
+          "highlightedLines": [
+            36
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/BillLineItem.java",
+          "revision": "HEAD",
+          "startLine": 35,
+          "code": [
+            "\t",
+            "\tprivate StockItem item;",
+            "\t",
+            "\tprivate BillableService billableService;",
+            "\t",
+            "\tprivate BigDecimal price;",
+            "\t"
+          ],
+          "highlightedLines": [
+            38
+          ]
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/BillLineItem.java",
+          "revision": "HEAD",
+          "startLine": 37,
+          "code": [
+            "\t",
+            "\tprivate BillableService billableService;",
+            "\t",
+            "\tprivate BigDecimal price;",
+            "\t",
+            "\tprivate String priceName;",
+            "\t",
+            "\tprivate CashierItemPrice itemPrice;",
+            "\t"
+          ],
+          "highlightedLines": [
+            40,
+            41,
+            42
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/BillLineItem.java",
+          "revision": "HEAD",
+          "startLine": 66,
+          "code": [
+            "\t *",
+            "\t * @return double the total price for the line item",
+            "\t */",
+            "\tpublic BigDecimal getTotal() {",
+            "\t\treturn price.multiply(BigDecimal.valueOf(quantity));",
+            "\t}",
+            "\t",
+            "}"
+          ],
+          "highlightedLines": [
+            69,
+            70,
+            71
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Bill.java",
+          "revision": "HEAD",
+          "startLine": 135,
+          "code": [
+            "\t\treturn total;",
+            "\t}",
+            "\t",
+            "\tpublic BigDecimal getTotal() {",
+            "\t\tBigDecimal total = BigDecimal.ZERO;",
+            "\t\t",
+            "\t\tList<BillLineItem> lineItems = getLineItems();",
+            "\t\tif (lineItems != null) {",
+            "\t\t\tfor (BillLineItem line : lineItems) {",
+            "\t\t\t\tif (line != null && !line.getVoided()) {",
+            "\t\t\t\t\ttotal = total.add(line.getTotal());",
+            "\t\t\t\t}",
+            "\t\t\t}",
+            "\t\t}",
+            "\t\t",
+            "\t\treturn total;",
+            "\t}",
+            "\t",
+            "\tpublic BigDecimal getTotalPayments() {",
+            "\t\tBigDecimal total = BigDecimal.ZERO;"
+          ],
+          "highlightedLines": [
+            138,
+            139,
+            140,
+            141,
+            142,
+            143,
+            144,
+            145,
+            146,
+            147,
+            148,
+            149,
+            150,
+            151
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/CashierItemPrice.java",
+          "revision": "HEAD",
+          "startLine": 14,
+          "code": [
+            "import org.openmrs.BaseChangeableOpenmrsMetadata;",
+            "import org.openmrs.module.stockmanagement.api.model.StockItem;",
+            "",
+            "public class CashierItemPrice extends BaseChangeableOpenmrsMetadata {",
+            "\t",
+            "\tprivate static final long serialVersionUID = 0L;",
+            "\t",
+            "\tprivate Integer itemPriceId;",
+            "\t",
+            "\tprivate String name;",
+            "\t",
+            "\tprivate BigDecimal price;",
+            "\t",
+            "\tprivate PaymentMode paymentMode;",
+            "\t",
+            "\tprivate StockItem item;",
+            "\t",
+            "\tprivate BillableService billableService;",
+            "\t",
+            "\tpublic CashierItemPrice() {",
+            "\t\t"
+          ],
+          "highlightedLines": [
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/BillableService.java",
+          "revision": "HEAD",
+          "startLine": 36,
+          "code": [
+            "\t",
+            "\tprivate Concept serviceCategory;",
+            "\t",
+            "\tprivate List<CashierItemPrice> servicePrices;",
+            "\t",
+            "\tprivate BillableServiceStatus serviceStatus = BillableServiceStatus.ENABLED;",
+            "\t"
+          ],
+          "highlightedLines": [
+            39
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/billing-form/billing-form.resource.ts",
+          "revision": "HEAD",
+          "startLine": 35,
+          "code": [
+            "  return { lastVisitInfo, isLoading, error };",
+            "};",
+            "",
+            "export const useBillableItems = () => {",
+            "  const url = `${apiBasePath}billableService?v=custom:(uuid,name,shortName,serviceStatus,serviceType:(display),servicePrices:(uuid,name,price,paymentMode))`;",
+            "  const { data, isLoading, error } = useSWR<{ data: { results: Array<OpenmrsResource> } }>(url, openmrsFetch);",
+            "  return {",
+            "    lineItems: data?.data?.results ?? [],",
+            "    isLoading,",
+            "    error,",
+            "  };",
+            "};",
+            "",
+            "export const useCashPoint = () => {",
+            "  const url = `${apiBasePath}cashPoint`;"
+          ],
+          "highlightedLines": [
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/billing-form/billing-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 105,
+          "code": [
+            "      return;",
+            "    }",
+            "",
+            "    const availablePaymentMethods = item.servicePrices || [];",
+            "    let defaultPrice = 0;",
+            "    let selectedPaymentMethod = null;",
+            "",
+            "    if (availablePaymentMethods.length === 1) {",
+            "      const price = availablePaymentMethods[0].price;",
+            "      defaultPrice = typeof price === 'number' ? price : parseFloat(price);",
+            "      selectedPaymentMethod = availablePaymentMethods[0];",
+            "    }",
+            "",
+            "    const mappedItem: ExtendedLineItem = {",
+            "      uuid: item.uuid,"
+          ],
+          "highlightedLines": [
+            108,
+            109,
+            110,
+            111,
+            112,
+            113,
+            114,
+            115,
+            116
+          ]
+        },
+        {
+          "id": 11,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/billing-form/billing-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 109,
+          "code": [
+            "    let defaultPrice = 0;",
+            "    let selectedPaymentMethod = null;",
+            "",
+            "    if (availablePaymentMethods.length === 1) {",
+            "      const price = availablePaymentMethods[0].price;",
+            "      defaultPrice = typeof price === 'number' ? price : parseFloat(price);",
+            "      selectedPaymentMethod = availablePaymentMethods[0];",
+            "    }",
+            "",
+            "    const mappedItem: ExtendedLineItem = {",
+            "      uuid: item.uuid,"
+          ],
+          "highlightedLines": [
+            112,
+            113,
+            114,
+            115,
+            116
+          ]
+        },
+        {
+          "id": 12,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/billing-form/billing-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 115,
+          "code": [
+            "      selectedPaymentMethod = availablePaymentMethods[0];",
+            "    }",
+            "",
+            "    const mappedItem: ExtendedLineItem = {",
+            "      uuid: item.uuid,",
+            "      display: item.name,",
+            "      quantity: 1,",
+            "      price: defaultPrice,",
+            "      billableService: item.uuid,",
+            "      status: BillLineItemStatus.PENDING,",
+            "      lineItemOrder: 0,",
+            "      selectedPaymentMethod: selectedPaymentMethod,",
+            "      availablePaymentMethods: availablePaymentMethods,",
+            "    };",
+            "",
+            "    setSelectedItems([...selectedItems, mappedItem]);",
+            "  };",
+            "",
+            "  const updateQuantity = (uuid: string, quantity: number) => {"
+          ],
+          "highlightedLines": [
+            118,
+            119,
+            120,
+            121,
+            122,
+            123,
+            124,
+            125,
+            126,
+            127,
+            128,
+            129,
+            130
+          ]
+        },
+        {
+          "id": 13,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/billing-form/billing-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 140,
+          "code": [
+            "    setSelectedItems(updatedItems);",
+            "  };",
+            "",
+            "  const updatePaymentMethod = (itemUuid: string, paymentMethod: ServicePrice) => {",
+            "    const updatedItems = [...selectedItems].map((item) =>",
+            "      item.uuid === itemUuid",
+            "        ? {",
+            "            ...item,",
+            "            selectedPaymentMethod: paymentMethod,",
+            "            price: typeof paymentMethod.price === 'number' ? paymentMethod.price : parseFloat(paymentMethod.price),",
+            "            priceName: paymentMethod.name,",
+            "            priceUuid: paymentMethod.uuid,",
+            "          }",
+            "        : item,",
+            "    );",
+            "    setSelectedItems(updatedItems);",
+            "  };",
+            "",
+            "  const validateSelectedItems = (): boolean => {",
+            "    if (selectedItems.length === 0) {"
+          ],
+          "highlightedLines": [
+            143,
+            144,
+            145,
+            146,
+            147,
+            148,
+            149,
+            150,
+            151,
+            152,
+            153,
+            154,
+            155,
+            156
+          ]
+        },
+        {
+          "id": 14,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/billing-form/billing-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 155,
+          "code": [
+            "    setSelectedItems(updatedItems);",
+            "  };",
+            "",
+            "  const validateSelectedItems = (): boolean => {",
+            "    if (selectedItems.length === 0) {",
+            "      return false;",
+            "    }",
+            "    for (const item of selectedItems) {",
+            "      if (item.availablePaymentMethods && item.availablePaymentMethods.length > 1 && !item.selectedPaymentMethod) {",
+            "        showSnackbar({",
+            "          title: t('validationError', 'Validation error'),",
+            "          subtitle: t('paymentMethodRequired', 'Payment method is required for all items'),",
+            "          kind: 'error',",
+            "        });",
+            "        return false;",
+            "      }",
+            "      if (!item.quantity || item.quantity < 1) {",
+            "        return false;",
+            "      }",
+            "    }",
+            "    return true;",
+            "  };",
+            "",
+            "  const postBillItems = async () => {",
+            "    if (isSubmitting || selectedItems.length === 0) {"
+          ],
+          "highlightedLines": [
+            158,
+            159,
+            160,
+            161,
+            162,
+            163,
+            164,
+            165,
+            166,
+            167,
+            168,
+            169,
+            170,
+            171,
+            172,
+            173,
+            174,
+            175,
+            176
+          ]
+        },
+        {
+          "id": 15,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/billing-form/billing-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 188,
+          "code": [
+            "",
+            "    setIsSubmitting(true);",
+            "",
+            "    const newLineItems: Array<LineItem> = selectedItems.map((item) => ({",
+            "      quantity: item.quantity,",
+            "      price: item.price,",
+            "      lineItemOrder: 0,",
+            "      status: BillLineItemStatus.PENDING,",
+            "      billableService: item.uuid,",
+            "    }));",
+            "",
+            "    try {",
+            "      if (isEditMode) {"
+          ],
+          "highlightedLines": [
+            191,
+            192,
+            193,
+            194,
+            195,
+            196,
+            197
+          ]
+        },
+        {
+          "id": 16,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/billing-form/billing-form.resource.ts",
+          "revision": "HEAD",
+          "startLine": 52,
+          "code": [
+            "  return { isLoading, error, cashPoints: data?.data?.results ?? [] };",
+            "};",
+            "",
+            "export const createPatientBill = (payload) => {",
+            "  const postUrl = `${apiBasePath}bill`;",
+            "  return openmrsFetch(postUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });",
+            "};",
+            "",
+            "export const usePaymentMethods = () => {",
+            "  const url = `${apiBasePath}paymentMode`;"
+          ],
+          "highlightedLines": [
+            55,
+            56,
+            57,
+            58
+          ]
+        },
+        {
+          "id": 17,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/billing-form/billing-form.workspace.tsx",
+          "revision": "HEAD",
+          "startLine": 207,
+          "code": [
+            "              }),",
+            "            );",
+            "          }",
+            "          return {",
+            "            uuid: item.uuid,",
+            "            quantity: item.quantity,",
+            "            price: item.price,",
+            "            lineItemOrder: item.lineItemOrder,",
+            "            status: item.status,",
+            "            billableService: serviceUuid,",
+            "            priceName: item.priceName,",
+            "            priceUuid: item.priceUuid,",
+            "          };",
+            "        });",
+            "",
+            "        const payload = {"
+          ],
+          "highlightedLines": [
+            210,
+            211,
+            212,
+            213,
+            214,
+            215,
+            216,
+            217,
+            218,
+            219
+          ]
+        },
+        {
+          "id": 18,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/types/index.ts",
+          "revision": "HEAD",
+          "startLine": 82,
+          "code": [
+            "  links: ProviderLink[];",
+            "}",
+            "",
+            "export interface LineItem {",
+            "  uuid?: string;",
+            "  item?: string;",
+            "  status: BillLineItemStatus;",
+            "  billableService?: string;",
+            "  quantity: number;",
+            "  price: number;",
+            "  priceName?: string;",
+            "  priceUuid?: string;",
+            "  lineItemOrder?: number;",
+            "  resourceVersion?: string;",
+            "  display?: string;",
+            "  voided?: boolean;",
+            "  voidReason?: string | null;",
+            "}",
+            "",
+            "interface PatientLink {",
+            "  rel: string;"
+          ],
+          "highlightedLines": [
+            85,
+            86,
+            87,
+            88,
+            89,
+            90,
+            91,
+            92,
+            93,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99
+          ]
+        },
+        {
+          "id": 19,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillLineItemResource.java",
+          "revision": "HEAD",
+          "startLine": 97,
+          "code": [
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(value = \"price\")",
+            "\tpublic void setPriceValue(BillLineItem instance, Object price) {",
+            "\t\tif (price instanceof Double || price instanceof Integer) {",
+            "\t\t\tdouble priceValue = ((Number) price).doubleValue();",
+            "\t\t\tinstance.setPrice(BigDecimal.valueOf(priceValue));",
+            "\t\t} else {",
+            "\t\t\tthrow new IllegalArgumentException(\"Unsupported price type: \" + price.getClass().getName());",
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(value = \"priceName\")",
+            "\tpublic void setPriceName(BillLineItem instance, String name) {"
+          ],
+          "highlightedLines": [
+            100,
+            101,
+            102,
+            103,
+            104,
+            105,
+            106,
+            107,
+            108
+          ]
+        },
+        {
+          "id": 20,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillLineItemResource.java",
+          "revision": "HEAD",
+          "startLine": 107,
+          "code": [
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(value = \"priceName\")",
+            "\tpublic void setPriceName(BillLineItem instance, String name) {",
+            "\t\tinstance.setPriceName(name);",
+            "\t}",
+            "\t",
+            "\t@PropertyGetter(value = \"priceName\")",
+            "\tpublic String getPriceName(BillLineItem instance) {"
+          ],
+          "highlightedLines": [
+            110,
+            111,
+            112,
+            113
+          ]
+        },
+        {
+          "id": 21,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillLineItemResource.java",
+          "revision": "HEAD",
+          "startLine": 118,
+          "code": [
+            "\t\treturn StringUtils.isNotBlank(itemName) ? itemName : \"\";",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(value = \"priceUuid\")",
+            "\tpublic void setItemPrice(BillLineItem instance, String uuid) {",
+            "\t\tStockManagementService itemDataService = Context.getService(StockManagementService.class);",
+            "\t\tCashierItemPrice itemPrice = null;",
+            "\t\tif (itemPrice != null) {",
+            "\t\t\tinstance.setItemPrice(itemPrice);",
+            "\t\t\tinstance.setPriceName(\"\");",
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@PropertyGetter(value = \"priceUuid\")",
+            "\tpublic String getItemPriceUuid(BillLineItem instance) {"
+          ],
+          "highlightedLines": [
+            121,
+            122,
+            123,
+            124,
+            125,
+            126,
+            127,
+            128,
+            129
+          ]
+        },
+        {
+          "id": 22,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillLineItemResource.java",
+          "revision": "HEAD",
+          "startLine": 121,
+          "code": [
+            "\t@PropertySetter(value = \"priceUuid\")",
+            "\tpublic void setItemPrice(BillLineItem instance, String uuid) {",
+            "\t\tStockManagementService itemDataService = Context.getService(StockManagementService.class);",
+            "\t\tCashierItemPrice itemPrice = null;",
+            "\t\tif (itemPrice != null) {",
+            "\t\t\tinstance.setItemPrice(itemPrice);",
+            "\t\t\tinstance.setPriceName(\"\");",
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@PropertyGetter(value = \"priceUuid\")"
+          ],
+          "highlightedLines": [
+            124,
+            125,
+            126,
+            127,
+            128
+          ]
+        },
+        {
+          "id": 23,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillLineItemResource.java",
+          "revision": "HEAD",
+          "startLine": 128,
+          "code": [
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@PropertyGetter(value = \"priceUuid\")",
+            "\tpublic String getItemPriceUuid(BillLineItem instance) {",
+            "\t\ttry {",
+            "\t\t\tCashierItemPrice itemPrice = instance.getItemPrice();",
+            "\t\t\treturn \"\";",
+            "\t\t}",
+            "\t\tcatch (Exception e) {",
+            "\t\t\tlog.warn(\"Price probably was deleted\", e);",
+            "\t\t\treturn \"\";",
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic BillLineItem getByUniqueId(String uuid) {"
+          ],
+          "highlightedLines": [
+            131,
+            132,
+            133,
+            134,
+            135,
+            136,
+            137,
+            138,
+            139,
+            140,
+            141
+          ]
+        },
+        {
+          "id": 24,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/billing/impl/AbstractDefaultOrderBillingStrategy.java",
+          "revision": "HEAD",
+          "startLine": 138,
+          "code": [
+            "\t\treturn createBill(order.getPatient(), lineItemOpt.get(), order);",
+            "\t}",
+            "\t",
+            "\tprotected BillingResult createBill(Patient patient, BillLineItem lineItem, Order order) {",
+            "\t\tProvider cashier = resolveCashier(order);",
+            "\t\tif (cashier == null) {",
+            "\t\t\tlog.error(\"Cannot resolve cashier for order: {}\", order.getUuid());",
+            "\t\t\treturn BillingResult.skipped(\"Cannot resolve cashier\");",
+            "\t\t}",
+            "\t\t",
+            "\t\tCashPoint cashPoint = resolveCashPoint();",
+            "\t\tif (cashPoint == null) {",
+            "\t\t\tlog.error(\"Cannot resolve cash point for order: {}\", order.getUuid());",
+            "\t\t\treturn BillingResult.skipped(\"Cannot resolve cash point\");",
+            "\t\t}",
+            "\t\t",
+            "\t\tBill bill = new Bill();",
+            "\t\tbill.setPatient(patient);",
+            "\t\tbill.setStatus(BillStatus.PENDING);",
+            "\t\tbill.setCashier(cashier);",
+            "\t\tbill.setCashPoint(cashPoint);",
+            "\t\tif (order.getEncounter() != null) {",
+            "\t\t\tbill.setVisit(order.getEncounter().getVisit());",
+            "\t\t}",
+            "\t\tbill.addLineItem(lineItem);",
+            "\t\t",
+            "\t\tBill savedBill = billService.saveBill(bill);",
+            "\t\treturn BillingResult.created(savedBill);",
+            "\t}",
+            "\t",
+            "\t// resolveCashier() and resolveCashPoint() are inherited from the interface",
+            "\t// and must be implemented by concrete strategy classes."
+          ],
+          "highlightedLines": [
+            141,
+            142,
+            143,
+            144,
+            145,
+            146,
+            147,
+            148,
+            149,
+            150,
+            151,
+            152,
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160,
+            161,
+            162,
+            163,
+            164,
+            165,
+            166
+          ]
+        },
+        {
+          "id": 25,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/billing/impl/AbstractDefaultOrderBillingStrategy.java",
+          "revision": "HEAD",
+          "startLine": 172,
+          "code": [
+            "\t * Create a bill line item with the common fields populated. Subclasses should set the type-specific",
+            "\t * fields (item or billable service) on the returned line item.",
+            "\t */",
+            "\tprotected BillLineItem createLineItem(BigDecimal price, int quantity, BillLineItemStatus paymentStatus, Order order) {",
+            "\t\tBillLineItem lineItem = new BillLineItem();",
+            "\t\tlineItem.setPrice(price);",
+            "\t\tlineItem.setQuantity(quantity);",
+            "\t\tlineItem.setStatus(paymentStatus);",
+            "\t\tlineItem.setLineItemOrder(0);",
+            "\t\tlineItem.setOrder(order);",
+            "\t\treturn lineItem;",
+            "\t}",
+            "\t",
+            "\tprotected boolean checkIfOrderIsExempted(Order order, ExemptionType exemptionType) {",
+            "\t\tif (order == null || order.getConcept() == null) {"
+          ],
+          "highlightedLines": [
+            175,
+            176,
+            177,
+            178,
+            179,
+            180,
+            181,
+            182,
+            183
+          ]
+        },
+        {
+          "id": 26,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/billing/impl/DrugOrderBillingStrategy.java",
+          "revision": "HEAD",
+          "startLine": 41,
+          "code": [
+            "\t",
+            "\tprivate ItemPriceService itemPriceService;",
+            "\t",
+            "\t@Override",
+            "\tprotected boolean supportsOrder(Order order) {",
+            "\t\treturn order instanceof DrugOrder;",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tprotected Optional<BillLineItem> createBillLineItem(Order order) {"
+          ],
+          "highlightedLines": [
+            44,
+            45,
+            46,
+            47
+          ]
+        },
+        {
+          "id": 27,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/billing/impl/DrugOrderBillingStrategy.java",
+          "revision": "HEAD",
+          "startLine": 55,
+          "code": [
+            "\t\t\treturn Optional.empty();",
+            "\t\t}",
+            "\t\t",
+            "\t\tInteger drugId = drugOrder.getDrug().getDrugId();",
+            "\t\tList<StockItem> stockItems = stockManagementService.getStockItemByDrug(drugId);",
+            "\t\t",
+            "\t\tif (stockItems.isEmpty()) {",
+            "\t\t\tlog.debug(\"No stock item found for drug ID: {}\", drugId);",
+            "\t\t\treturn Optional.empty();",
+            "\t\t}",
+            "\t\t",
+            "\t\tint quantity = (int) (drugOrder.getQuantity() != null ? drugOrder.getQuantity() : 0.0);",
+            "\t\tboolean isExempted = checkIfOrderIsExempted(order, ExemptionType.COMMODITY);"
+          ],
+          "highlightedLines": [
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64
+          ]
+        },
+        {
+          "id": 28,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/billing/impl/DrugOrderBillingStrategy.java",
+          "revision": "HEAD",
+          "startLine": 67,
+          "code": [
+            "\t\tboolean isExempted = checkIfOrderIsExempted(order, ExemptionType.COMMODITY);",
+            "\t\tBillLineItemStatus lineItemStatus = isExempted ? BillLineItemStatus.EXEMPTED : BillLineItemStatus.PENDING;",
+            "\t\t",
+            "\t\tStockItem stockItem = stockItems.get(0);",
+            "\t\tBillLineItem lineItem = createLineItem(resolvePrice(stockItem), quantity, lineItemStatus, order);",
+            "\t\tlineItem.setItem(stockItem);",
+            "\t\treturn Optional.of(lineItem);",
+            "\t}",
+            "\t",
+            "\tprivate BigDecimal resolvePrice(StockItem stockItem) {"
+          ],
+          "highlightedLines": [
+            70,
+            71,
+            72,
+            73
+          ]
+        },
+        {
+          "id": 29,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/billing/impl/DrugOrderBillingStrategy.java",
+          "revision": "HEAD",
+          "startLine": 73,
+          "code": [
+            "\t\treturn Optional.of(lineItem);",
+            "\t}",
+            "\t",
+            "\tprivate BigDecimal resolvePrice(StockItem stockItem) {",
+            "\t\tList<CashierItemPrice> itemPrices = itemPriceService.getItemPrice(stockItem);",
+            "\t\tif (!itemPrices.isEmpty()) {",
+            "\t\t\treturn itemPrices.get(0).getPrice();",
+            "\t\t} else if (stockItem.getPurchasePrice() != null) {",
+            "\t\t\treturn stockItem.getPurchasePrice();",
+            "\t\t}",
+            "\t\treturn BigDecimal.ZERO;",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic Provider resolveCashier(Order order) {"
+          ],
+          "highlightedLines": [
+            76,
+            77,
+            78,
+            79,
+            80,
+            81,
+            82,
+            83,
+            84
+          ]
+        },
+        {
+          "id": 30,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/billing/impl/TestOrderBillingStrategy.java",
+          "revision": "HEAD",
+          "startLine": 43,
+          "code": [
+            "\t",
+            "\tprivate ItemPriceService itemPriceService;",
+            "\t",
+            "\t@Override",
+            "\tprotected boolean supportsOrder(Order order) {",
+            "\t\treturn order instanceof TestOrder;",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tprotected Optional<BillLineItem> createBillLineItem(Order order) {"
+          ],
+          "highlightedLines": [
+            46,
+            47,
+            48,
+            49
+          ]
+        },
+        {
+          "id": 31,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/billing/impl/TestOrderBillingStrategy.java",
+          "revision": "HEAD",
+          "startLine": 57,
+          "code": [
+            "\t\t\treturn Optional.empty();",
+            "\t\t}",
+            "\t\t",
+            "\t\tBillableServiceSearch searchTemplate = new BillableServiceSearch();",
+            "\t\tsearchTemplate.setConceptUuid(testOrder.getConcept().getUuid());",
+            "\t\tsearchTemplate.setServiceStatus(BillableServiceStatus.ENABLED);",
+            "\t\t",
+            "\t\tList<BillableService> searchResult = billableServiceService.getBillableServices(searchTemplate, null);",
+            "\t\tif (searchResult.isEmpty()) {",
+            "\t\t\tlog.debug(\"No billable service found for concept: {}\", testOrder.getConcept().getUuid());",
+            "\t\t\treturn Optional.empty();",
+            "\t\t}",
+            "\t\t",
+            "\t\tBillableService billableService = searchResult.get(0);",
+            "\t\tBillLineItemStatus lineItemStatus = checkIfOrderIsExempted(order, ExemptionType.SERVICE)"
+          ],
+          "highlightedLines": [
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67,
+            68
+          ]
+        },
+        {
+          "id": 32,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/billing/impl/TestOrderBillingStrategy.java",
+          "revision": "HEAD",
+          "startLine": 67,
+          "code": [
+            "\t\t\treturn Optional.empty();",
+            "\t\t}",
+            "\t\t",
+            "\t\tBillableService billableService = searchResult.get(0);",
+            "\t\tBillLineItemStatus lineItemStatus = checkIfOrderIsExempted(order, ExemptionType.SERVICE)",
+            "\t\t        ? BillLineItemStatus.EXEMPTED",
+            "\t\t        : BillLineItemStatus.PENDING;",
+            "\t\t",
+            "\t\tBillLineItem lineItem = createLineItem(resolvePrice(billableService), 1, lineItemStatus, order);",
+            "\t\tlineItem.setBillableService(billableService);",
+            "\t\treturn Optional.of(lineItem);",
+            "\t}",
+            "\t",
+            "\tprivate BigDecimal resolvePrice(BillableService billableService) {"
+          ],
+          "highlightedLines": [
+            70,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            77
+          ]
+        },
+        {
+          "id": 33,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/billing/impl/TestOrderBillingStrategy.java",
+          "revision": "HEAD",
+          "startLine": 77,
+          "code": [
+            "\t\treturn Optional.of(lineItem);",
+            "\t}",
+            "\t",
+            "\tprivate BigDecimal resolvePrice(BillableService billableService) {",
+            "\t\tList<CashierItemPrice> itemPrices = itemPriceService.getServicePrice(billableService);",
+            "\t\tif (!itemPrices.isEmpty()) {",
+            "\t\t\treturn itemPrices.get(0).getPrice();",
+            "\t\t}",
+            "\t\treturn BigDecimal.ZERO;",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic Provider resolveCashier(Order order) {"
+          ],
+          "highlightedLines": [
+            80,
+            81,
+            82,
+            83,
+            84,
+            85,
+            86
+          ]
+        },
+        {
+          "id": 34,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/billing/impl/TestOrderBillingStrategy.java",
+          "revision": "HEAD",
+          "startLine": 72,
+          "code": [
+            "\t\t        ? BillLineItemStatus.EXEMPTED",
+            "\t\t        : BillLineItemStatus.PENDING;",
+            "\t\t",
+            "\t\tBillLineItem lineItem = createLineItem(resolvePrice(billableService), 1, lineItemStatus, order);",
+            "\t\tlineItem.setBillableService(billableService);",
+            "\t\treturn Optional.of(lineItem);",
+            "\t}"
+          ],
+          "highlightedLines": [
+            75
+          ]
+        },
+        {
+          "id": 35,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/impl/ItemPriceServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 63,
+          "code": [
+            "\t\treturn null;",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic List<CashierItemPrice> getItemPrice(StockItem stockItem) {",
+            "\t\t// Criteria criteria = getRepository().createCriteria(getEntityClass());",
+            "\t\tCriteria criteria = getRepository().createCriteria(CashierItemPrice.class);",
+            "\t\t",
+            "\t\tcriteria.add(Restrictions.eq(\"item\", stockItem));",
+            "\t\tcriteria.addOrder(Order.desc(\"id\"));",
+            "\t\t",
+            "\t\t// List<ItemPrice> results = getRepository().select(getEntityClass(), criteria);",
+            "\t\t// return(results);",
+            "\t\treturn criteria.list();",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic List<CashierItemPrice> getServicePrice(BillableService billableService) {"
+          ],
+          "highlightedLines": [
+            66,
+            67,
+            68,
+            69,
+            70,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            77
+          ]
+        },
+        {
+          "id": 36,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/impl/ItemPriceServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 76,
+          "code": [
+            "\t\treturn criteria.list();",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic List<CashierItemPrice> getServicePrice(BillableService billableService) {",
+            "\t\tCriteria criteria = getRepository().createCriteria(CashierItemPrice.class);",
+            "\t\t",
+            "\t\tcriteria.add(Restrictions.eq(\"billableService\", billableService));",
+            "\t\tcriteria.addOrder(Order.desc(\"id\"));",
+            "\t\treturn criteria.list();",
+            "\t}",
+            "}"
+          ],
+          "highlightedLines": [
+            79,
+            80,
+            81,
+            82,
+            83,
+            84,
+            85,
+            86
+          ]
+        },
+        {
+          "id": 37,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/BillLineItem.java",
+          "revision": "HEAD",
+          "startLine": 37,
+          "code": [
+            "\t",
+            "\tprivate BillableService billableService;",
+            "\t",
+            "\tprivate BigDecimal price;",
+            "\t",
+            "\tprivate String priceName;",
+            "\t"
+          ],
+          "highlightedLines": [
+            40
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}

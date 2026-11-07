@@ -1,0 +1,1577 @@
+{
+  "id": "ad08cc10-3d5a-41d9-ba69-77a7616ad413",
+  "productId": "openmrs",
+  "title": "Payment Recording Flow",
+  "updatedAt": 1794012114375,
+  "answers": [
+    {
+      "id": "6VVmq0wjf5YbBiFa",
+      "productId": "openmrs",
+      "question": "When a cashier records a payment for a patient bill in the billing app, what happens from the button click in the UI down to the database write? Walk me through it.",
+      "generation": "g-ab363e",
+      "kind": "grounded",
+      "paragraphs": [
+        {
+          "text": "When a cashier clicks **Process Payment**, the billing app sends one JSON POST to the OpenMRS backend at `/ws/rest/v1/billing/bill/{billUuid}/payment`. The backend REST sub-resource builds a `Payment` object, attaches it to the parent `Bill`, updates the bill's status (PAID or POSTED), and saves the whole `Bill` through Hibernate, which writes the new row into the `cashier_bill_payment` table. Two repositories are involved: the frontend `openmrs-esm-billing-app` (microfrontend) and the backend `openmrs-module-billing` (Java/Spring module).",
+          "citations": []
+        },
+        {
+          "text": "Here is the path end to end.",
+          "citations": []
+        },
+        {
+          "text": "```mermaid\n---\ntitle: Payment from button click to database\n---\nflowchart TD\n  click[\"Process Payment button\"] --> handler[\"handleProcessPayment builds payload\"]\n  handler --> submit[\"processBillPayment POST\"]\n  submit --> rest[\"PaymentResource save\"]\n  rest --> svc[\"BillServiceImpl saveBill\"]\n  svc --> dao[\"HibernateBillDAO saveOrUpdate\"]\n  dao --> db[\"cashier_bill_payment table\"]\n  rest --> status[\"Bill.addPayment then synchronizeBillStatus\"]\n  status --> db\n```",
+          "citations": []
+        },
+        {
+          "text": "## 1. The button in the UI",
+          "citations": []
+        },
+        {
+          "text": "The payment panel is `Payments` [1]. It renders a **Process Payment** button only when the bill is not PENDING (a PENDING bill must be finalized first) [2]. The button stays disabled until a payment method is chosen and the amount is valid [3].",
+          "citations": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "text": "Form validation is defined with a Zod schema: the method must be non-empty, the amount must be positive, and it must not exceed the amount still due (`netAmount - tenderedAmount`) [4]. The form is wired through `react-hook-form`'s `useForm` and `useWatch` [5].",
+          "citations": [
+            4,
+            5
+          ]
+        },
+        {
+          "text": "## 2. The click handler and the request",
+          "citations": []
+        },
+        {
+          "text": "Clicking the button runs `handleProcessPayment`, which reads the watched form values and calls `processBillPayment` [6]. The payload carries the selected method as `instanceType`, the cashier-entered `amountTendered`, and the bill's `totalAmount` as `amount`:",
+          "citations": [
+            6
+          ]
+        },
+        {
+          "text": "- `instanceType` is the payment mode (for example Cash, Mobile Money) — it names the payment type attached to this payment.\n- `amountTendered` is what the cashier actually took from the patient.\n- `amount` is the bill's total.",
+          "citations": []
+        },
+        {
+          "text": "`processBillPayment` turns that into a POST to `${apiBasePath}bill/${billUuid}/payment` with `Content-Type: application/json` [7]. On success the UI shows a \"Payment processed successfully\" snackbar, resets the form, refreshes the bill via `mutate()`, and revalidates the cached patient payment status [8]. On failure it shows an error snackbar with the returned message [9].",
+          "citations": [
+            7,
+            8,
+            9
+          ]
+        },
+        {
+          "text": "There is also a side effect when the patient has a current visit: `updateBillVisitAttribute` posts to the visit's `pending payment` attribute to set it to `false` [10].",
+          "citations": [
+            10
+          ]
+        },
+        {
+          "text": "## 3. The REST endpoint",
+          "citations": []
+        },
+        {
+          "text": "The URL `/bill/{uuid}/payment` is served by `PaymentResource`, declared as a sub-resource of `BillResource` with path `payment` [11]. The parent resource, `BillResource`, is registered under the `/billing` namespace [12].",
+          "citations": [
+            11,
+            12
+          ]
+        },
+        {
+          "text": "The framework deserializes the JSON body into a new `Payment` (`newDelegate` creates an empty one [13]), then applies the `@PropertySetter` methods:",
+          "citations": [
+            13
+          ]
+        },
+        {
+          "text": "- `instanceType` is resolved from its UUID to a `PaymentMode` via `PaymentModeService`, throwing `ObjectNotFoundException` if missing [14].\n- `cashier` is resolved to a `Provider` by UUID [15].\n- `amount` and `amountTendered` are converted to `BigDecimal` [16].",
+          "citations": [
+            14,
+            15,
+            16
+          ]
+        },
+        {
+          "text": "`getCreatableProperties` confirms exactly which fields the client may set: `instanceType`, `attributes`, `amount`, `amountTendered`, `cashier` [17].",
+          "citations": [
+            17
+          ]
+        },
+        {
+          "text": "## 4. Save: attach the payment, sync the status",
+          "citations": []
+        },
+        {
+          "text": "The `save` method is the heart of it [18]. It:",
+          "citations": [
+            18
+          ]
+        },
+        {
+          "text": "1. If no cashier was supplied, falls back to the currently authenticated provider via `ProviderUtil.getCurrentProvider`, and throws if the logged-in user is not a provider [19].\n2. Gets the parent `Bill` already linked to the payment and calls `bill.addPayment(delegate)` [20].\n3. Calls `service.saveBill(bill)` — note it saves the **bill**, not the payment directly [21].",
+          "citations": [
+            19,
+            20,
+            21
+          ]
+        },
+        {
+          "text": "`Bill.addPayment` adds the payment to the bill's collection, sets the back-reference, and calls `synchronizeBillStatus()` [22].",
+          "citations": [
+            22
+          ]
+        },
+        {
+          "text": "`synchronizeBillStatus` is where the bill's state is decided [23]:",
+          "citations": [
+            23
+          ]
+        },
+        {
+          "text": "- It bails out if the bill is in a refund state (REFUND_REQUESTED, REFUNDED, PARTIALLY_REFUNDED) [24].\n- If there are payments and their total is non-zero, it compares the sum of tendered payments against the bill's amount after approved discounts [25].\n- If fully settled, the bill flips to `PAID` and all non-voided, non-refunded line items are marked `PAID` [26].\n- If not fully settled, the bill stays `POSTED` (partially paid) [27].\n- A guard `hasDiscountDrift()` keeps the bill `POSTED` for manual review if approved discounts exceed the total [28].",
+          "citations": [
+            24,
+            25,
+            26,
+            27,
+            28
+          ]
+        },
+        {
+          "text": "The totals use `getTotal()` (sum of non-voided line items) [29] and `getTotalPayments()` (sum of non-voided tendered amounts) [30].",
+          "citations": [
+            29,
+            30
+          ]
+        },
+        {
+          "text": "## 5. Service and DAO: the actual DB write",
+          "citations": []
+        },
+        {
+          "text": "`BillServiceImpl` is an `@Transactional` service [31]. Its `saveBill` simply delegates to the DAO inside a write transaction [32].",
+          "citations": [
+            31,
+            32
+          ]
+        },
+        {
+          "text": "`HibernateBillDAO.saveBill` calls `sessionFactory.getCurrentSession().saveOrUpdate(bill)` [33]. Because the `Bill` already exists, Hibernate updates the bill row and cascades the new `Payment` as an insert. The mapping in `Bill.hbm.xml` puts `Payment` in table `cashier_bill_payment` [34], its attributes in `cashier_bill_payment_attribute` [35], and payment modes in `cashier_payment_mode` [36].",
+          "citations": [
+            33,
+            34,
+            35,
+            36
+          ]
+        },
+        {
+          "text": "## What I could not verify",
+          "citations": []
+        },
+        {
+          "text": "- I did not read the wrapper class `PaymentResource`'s exact HTTP route annotation resolution beyond the `@SubResource` declaration, nor the OpenMRS webservices framework internals that call `save`.\n- I did not confirm the exact `apiBasePath` constant value in the frontend (`constants.ts`), so the literal prefix of the REST URL is inferred from the endpoint naming.\n- The `Payment` model's own Hibernate/Hibernate mapping is inside the shared `Bill.hbm.xml`; I cited the class-level mapping but did not read every column of the `cashier_bill_payment` block.\n</answer>",
+          "citations": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/invoice/payments/payments.component.tsx",
+          "revision": "HEAD",
+          "startLine": 27,
+          "code": [
+            "  payment: Payment;",
+            "};",
+            "",
+            "const Payments: React.FC<PaymentProps> = ({ bill, mutate, onFinalizeBill }) => {",
+            "  const { t } = useTranslation();",
+            "  const { mutate: swrMutate } = useSWRConfig();",
+            "  const paymentSchema = z.object({"
+          ],
+          "highlightedLines": [
+            30
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/invoice/payments/payments.component.tsx",
+          "revision": "HEAD",
+          "startLine": 170,
+          "code": [
+            "            <Button onClick={handleNavigateToBillingDashboard} kind=\"secondary\">",
+            "              {t('discard', 'Discard')}",
+            "            </Button>",
+            "            {!isPending && (",
+            "              <Button",
+            "                onClick={handleProcessPayment}",
+            "                disabled={!formValues?.method || formValues.amount == null || !methods.formState.isValid}>",
+            "                {t('processPayment', 'Process Payment')}",
+            "              </Button>",
+            "            )}",
+            "          </div>",
+            "        </div>",
+            "      </div>"
+          ],
+          "highlightedLines": [
+            173,
+            174,
+            175,
+            176,
+            177,
+            178,
+            179
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/invoice/payments/payments.component.tsx",
+          "revision": "HEAD",
+          "startLine": 173,
+          "code": [
+            "            {!isPending && (",
+            "              <Button",
+            "                onClick={handleProcessPayment}",
+            "                disabled={!formValues?.method || formValues.amount == null || !methods.formState.isValid}>",
+            "                {t('processPayment', 'Process Payment')}",
+            "              </Button>",
+            "            )}"
+          ],
+          "highlightedLines": [
+            176
+          ]
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/invoice/payments/payments.component.tsx",
+          "revision": "HEAD",
+          "startLine": 30,
+          "code": [
+            "const Payments: React.FC<PaymentProps> = ({ bill, mutate, onFinalizeBill }) => {",
+            "  const { t } = useTranslation();",
+            "  const { mutate: swrMutate } = useSWRConfig();",
+            "  const paymentSchema = z.object({",
+            "    method: z.string().refine((value) => !!value, 'Payment method is required'),",
+            "    amount: z",
+            "      .number({",
+            "        required_error: t('amountRequired', 'Amount is required'),",
+            "        invalid_type_error: t('amountRequired', 'Amount is required'),",
+            "      })",
+            "      .positive({ message: t('amountMustBePositive', 'Amount must be greater than 0') })",
+            "      .max((bill?.netAmount ?? 0) - (bill?.tenderedAmount ?? 0), {",
+            "        message: t('paymentAmountCannotExceedAmountDue', 'Payment amount cannot exceed amount due'),",
+            "      }),",
+            "    referenceCode: z.union([z.number(), z.string()]).optional(),",
+            "  });",
+            "",
+            "  const paymentFormSchema = z.object({ payment: paymentSchema });",
+            "  const { currentVisit } = useVisit(bill?.patientUuid);"
+          ],
+          "highlightedLines": [
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/invoice/payments/payments.component.tsx",
+          "revision": "HEAD",
+          "startLine": 51,
+          "code": [
+            "    payment: { method: '', amount: undefined, referenceCode: '' },",
+            "  };",
+            "",
+            "  const methods = useForm<PaymentFormValue>({",
+            "    mode: 'all',",
+            "    defaultValues: defaultPaymentValues,",
+            "    resolver: zodResolver(paymentFormSchema),",
+            "  });",
+            "",
+            "  const formValues = useWatch({",
+            "    name: 'payment',",
+            "    control: methods.control,",
+            "    defaultValue: defaultPaymentValues.payment,",
+            "  });",
+            "",
+            "  const handleNavigateToBillingDashboard = () =>",
+            "    navigate({"
+          ],
+          "highlightedLines": [
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/invoice/payments/payments.component.tsx",
+          "revision": "HEAD",
+          "startLine": 79,
+          "code": [
+            "  const amountDue = (bill.netAmount ?? 0) - (bill.tenderedAmount ?? 0);",
+            "  const isPending = bill.status === BillStatus.PENDING;",
+            "",
+            "  const handleProcessPayment = async () => {",
+            "    if (!formValues?.method || formValues.amount == null) {",
+            "      return;",
+            "    }",
+            "",
+            "    try {",
+            "      await processBillPayment(",
+            "        {",
+            "          instanceType: formValues.method,",
+            "          amountTendered: Number(formValues.amount),",
+            "          amount: bill.totalAmount ?? 0,",
+            "        },",
+            "        bill.uuid,",
+            "      );",
+            "      showSnackbar({",
+            "        title: t('billPayment', 'Bill payment'),",
+            "        subtitle: t('paymentProcessedSuccessfully', 'Payment processed successfully'),"
+          ],
+          "highlightedLines": [
+            82,
+            83,
+            84,
+            85,
+            86,
+            87,
+            88,
+            89,
+            90,
+            91,
+            92,
+            93,
+            94,
+            95
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/billing.resource.ts",
+          "revision": "HEAD",
+          "startLine": 177,
+          "code": [
+            "  return { bill, error, isLoading, isValidating, mutate };",
+            "}",
+            "",
+            "export const processBillPayment = (payload: PaymentRequestPayload, billUuid: string) => {",
+            "  const url = `${apiBasePath}bill/${billUuid}/payment`;",
+            "",
+            "  return openmrsFetch(url, {",
+            "    method: 'POST',",
+            "    body: payload,",
+            "    headers: {",
+            "      'Content-Type': 'application/json',",
+            "    },",
+            "  });",
+            "};",
+            "",
+            "export function useDefaultFacility(): { data: SessionLocation | null } {",
+            "  const { sessionLocation } = useSession();"
+          ],
+          "highlightedLines": [
+            180,
+            181,
+            182,
+            183,
+            184,
+            185,
+            186,
+            187,
+            188,
+            189,
+            190
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/invoice/payments/payments.component.tsx",
+          "revision": "HEAD",
+          "startLine": 93,
+          "code": [
+            "        },",
+            "        bill.uuid,",
+            "      );",
+            "      showSnackbar({",
+            "        title: t('billPayment', 'Bill payment'),",
+            "        subtitle: t('paymentProcessedSuccessfully', 'Payment processed successfully'),",
+            "        kind: 'success',",
+            "      });",
+            "      if (currentVisit) {",
+            "        updateBillVisitAttribute(currentVisit);",
+            "      }",
+            "      methods.reset(defaultPaymentValues);",
+            "      mutate();",
+            "      swrMutate(patientPaymentStatusCacheKey(bill.patientUuid));",
+            "    } catch (error) {",
+            "      showSnackbar({",
+            "        title: t('errorProcessingPayment', 'Error processing payment'),"
+          ],
+          "highlightedLines": [
+            96,
+            97,
+            98,
+            99,
+            100,
+            101,
+            102,
+            103,
+            104,
+            105,
+            106
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/invoice/payments/payments.component.tsx",
+          "revision": "HEAD",
+          "startLine": 104,
+          "code": [
+            "      methods.reset(defaultPaymentValues);",
+            "      mutate();",
+            "      swrMutate(patientPaymentStatusCacheKey(bill.patientUuid));",
+            "    } catch (error) {",
+            "      showSnackbar({",
+            "        title: t('errorProcessingPayment', 'Error processing payment'),",
+            "        kind: 'error',",
+            "        subtitle: error?.message,",
+            "      });",
+            "    }",
+            "  };",
+            "",
+            "  return ("
+          ],
+          "highlightedLines": [
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            113
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/invoice/payments/payment.resource.ts",
+          "revision": "HEAD",
+          "startLine": 29,
+          "code": [
+            "  };",
+            "};",
+            "",
+            "export const updateBillVisitAttribute = async (visit: Visit) => {",
+            "  const { uuid, attributes } = visit;",
+            "  const pendingPaymentAtrributeUuid = attributes?.find(",
+            "    (attribute) => attribute.attributeType.uuid === '919b51c9-8e2e-468f-8354-181bf3e55786',",
+            "  )?.uuid;",
+            "  return openmrsFetch(`${restBaseUrl}/visit/${uuid}/attribute/${pendingPaymentAtrributeUuid}`, {",
+            "    body: { value: false },",
+            "    headers: {",
+            "      'Content-Type': 'application/json',",
+            "    },",
+            "    method: 'POST',",
+            "  });",
+            "};"
+          ],
+          "highlightedLines": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44
+          ]
+        },
+        {
+          "id": 11,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 42,
+          "code": [
+            "/**",
+            " * REST resource representing a {@link Payment}.",
+            " */",
+            "@SubResource(parent = BillResource.class, path = \"payment\", supportedClass = Payment.class, supportedOpenmrsVersions = {",
+            "        \"2.0 - 2.*\" })",
+            "public class PaymentResource extends DelegatingSubResource<Payment, Bill, BillResource> {",
+            "\t",
+            "\t@Override",
+            "\tpublic DelegatingResourceDescription getRepresentationDescription(Representation rep) {"
+          ],
+          "highlightedLines": [
+            45,
+            46,
+            47
+          ]
+        },
+        {
+          "id": 12,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillResource.java",
+          "revision": "HEAD",
+          "startLine": 66,
+          "code": [
+            " * REST resource representing a {@link Bill}.",
+            " */",
+            "@Slf4j",
+            "@Resource(name = RestConstants.VERSION_1 + CashierResourceController.BILLING_NAMESPACE",
+            "        + \"/bill\", supportedClass = Bill.class, supportedOpenmrsVersions = { \"2.0 - 2.*\" })",
+            "public class BillResource extends DataDelegatingCrudResource<Bill> {",
+            "\t",
+            "\t@Override",
+            "\tpublic DelegatingResourceDescription getRepresentationDescription(Representation rep) {"
+          ],
+          "highlightedLines": [
+            69,
+            70,
+            71
+          ]
+        },
+        {
+          "id": 13,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 216,
+          "code": [
+            "\t\tinstance.setBill(parent);",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic Payment newDelegate() {",
+            "\t\treturn new Payment();",
+            "\t}",
+            "\t",
+            "\tprivate Bill findBill(BillService service, String billUUID) {",
+            "\t\tBill bill = service.getBillByUuid(billUUID);"
+          ],
+          "highlightedLines": [
+            219,
+            220,
+            221,
+            222
+          ]
+        },
+        {
+          "id": 14,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 89,
+          "code": [
+            "\t}",
+            "\t",
+            "\t// Work around TypeVariable issue on base generic property (BaseCustomizableInstanceData.getInstanceType)",
+            "\t@PropertySetter(\"instanceType\")",
+            "\tpublic void setPaymentMode(Payment instance, String uuid) {",
+            "\t\tPaymentModeService service = Context.getService(PaymentModeService.class);",
+            "\t\t",
+            "\t\tPaymentMode mode = service.getPaymentModeByUuid(uuid);",
+            "\t\tif (mode == null) {",
+            "\t\t\tthrow new ObjectNotFoundException();",
+            "\t\t}",
+            "\t\t",
+            "\t\tinstance.setInstanceType(mode);",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(\"attributes\")",
+            "\tpublic void setPaymentAttributes(Payment instance, Set<PaymentAttribute> attributes) {"
+          ],
+          "highlightedLines": [
+            92,
+            93,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99,
+            100,
+            101,
+            102
+          ]
+        },
+        {
+          "id": 15,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 76,
+          "code": [
+            "\t\treturn description;",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(\"cashier\")",
+            "\tpublic void setCashier(Payment instance, String uuid) {",
+            "\t\tif (StringUtils.isBlank(uuid)) {",
+            "\t\t\tthrow new APIException(\"Cashier UUID must not be null or blank.\");",
+            "\t\t}",
+            "\t\tProvider provider = Context.getProviderService().getProviderByUuid(uuid);",
+            "\t\tif (provider == null) {",
+            "\t\t\tthrow new ObjectNotFoundException();",
+            "\t\t}",
+            "\t\tinstance.setCashier(provider);",
+            "\t}",
+            "\t",
+            "\t// Work around TypeVariable issue on base generic property (BaseCustomizableInstanceData.getInstanceType)",
+            "\t@PropertySetter(\"instanceType\")"
+          ],
+          "highlightedLines": [
+            79,
+            80,
+            81,
+            82,
+            83,
+            84,
+            85,
+            86,
+            87,
+            88,
+            89
+          ]
+        },
+        {
+          "id": 16,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 113,
+          "code": [
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(\"amount\")",
+            "\tpublic void setPaymentAmount(Payment instance, Object price) {",
+            "\t\t// TODO Conversion logic",
+            "\t\tdouble amount;",
+            "\t\tif (price instanceof Integer) {",
+            "\t\t\tint rawAmount = (Integer) price;",
+            "\t\t\tamount = Double.valueOf(rawAmount);",
+            "\t\t\tinstance.setAmount(BigDecimal.valueOf(amount));",
+            "\t\t} else {",
+            "\t\t\tinstance.setAmount(BigDecimal.valueOf((Double) price));",
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(\"amountTendered\")",
+            "\tpublic void setPaymentAmountTendered(Payment instance, Object price) {",
+            "\t\t// TODO Conversion logic",
+            "\t\tdouble amount;",
+            "\t\tif (price instanceof Integer) {",
+            "\t\t\tint rawAmount = (Integer) price;",
+            "\t\t\tamount = Double.valueOf(rawAmount);",
+            "\t\t\tinstance.setAmountTendered(BigDecimal.valueOf(amount));",
+            "\t\t} else {",
+            "\t\t\tinstance.setAmountTendered(BigDecimal.valueOf((Double) price));",
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@PropertyGetter(\"dateCreated\")",
+            "\tpublic Long getPaymentDate(Payment instance) {"
+          ],
+          "highlightedLines": [
+            116,
+            117,
+            118,
+            119,
+            120,
+            121,
+            122,
+            123,
+            124,
+            125,
+            126,
+            127,
+            128,
+            129,
+            130,
+            131,
+            132,
+            133,
+            134,
+            135,
+            136,
+            137,
+            138,
+            139,
+            140
+          ]
+        },
+        {
+          "id": 17,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 64,
+          "code": [
+            "\t\treturn null;",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic DelegatingResourceDescription getCreatableProperties() {",
+            "\t\tDelegatingResourceDescription description = new DelegatingResourceDescription();",
+            "\t\tdescription.addProperty(\"instanceType\");",
+            "\t\tdescription.addProperty(\"attributes\");",
+            "\t\tdescription.addProperty(\"amount\");",
+            "\t\tdescription.addProperty(\"amountTendered\");",
+            "\t\tdescription.addProperty(\"cashier\");",
+            "\t\t",
+            "\t\treturn description;",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(\"cashier\")",
+            "\tpublic void setCashier(Payment instance, String uuid) {"
+          ],
+          "highlightedLines": [
+            67,
+            68,
+            69,
+            70,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            77
+          ]
+        },
+        {
+          "id": 18,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 144,
+          "code": [
+            "\t\treturn instance.getDateCreated().getTime();",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic Payment save(Payment delegate) {",
+            "\t\tif (delegate.getCashier() == null) {",
+            "\t\t\tProvider cashier = ProviderUtil.getCurrentProvider();",
+            "\t\t\tif (cashier == null) {",
+            "\t\t\t\tthrow new APIException(",
+            "\t\t\t\t        \"The authenticated user is not associated with a Provider and cannot process payments.\");",
+            "\t\t\t}",
+            "\t\t\tdelegate.setCashier(cashier);",
+            "\t\t}",
+            "\t\t",
+            "\t\tBillService service = Context.getService(BillService.class);",
+            "\t\tBill bill = delegate.getBill();",
+            "\t\tbill.addPayment(delegate);",
+            "\t\tservice.saveBill(bill);",
+            "\t\t",
+            "\t\treturn delegate;",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tprotected void delete(Payment delegate, String reason, RequestContext context) {"
+          ],
+          "highlightedLines": [
+            147,
+            148,
+            149,
+            150,
+            151,
+            152,
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160,
+            161,
+            162,
+            163,
+            164
+          ]
+        },
+        {
+          "id": 19,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 146,
+          "code": [
+            "\t",
+            "\t@Override",
+            "\tpublic Payment save(Payment delegate) {",
+            "\t\tif (delegate.getCashier() == null) {",
+            "\t\t\tProvider cashier = ProviderUtil.getCurrentProvider();",
+            "\t\t\tif (cashier == null) {",
+            "\t\t\t\tthrow new APIException(",
+            "\t\t\t\t        \"The authenticated user is not associated with a Provider and cannot process payments.\");",
+            "\t\t\t}",
+            "\t\t\tdelegate.setCashier(cashier);",
+            "\t\t}",
+            "\t\t",
+            "\t\tBillService service = Context.getService(BillService.class);",
+            "\t\tBill bill = delegate.getBill();"
+          ],
+          "highlightedLines": [
+            149,
+            150,
+            151,
+            152,
+            153,
+            154,
+            155,
+            156
+          ]
+        },
+        {
+          "id": 20,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 155,
+          "code": [
+            "\t\t\tdelegate.setCashier(cashier);",
+            "\t\t}",
+            "\t\t",
+            "\t\tBillService service = Context.getService(BillService.class);",
+            "\t\tBill bill = delegate.getBill();",
+            "\t\tbill.addPayment(delegate);",
+            "\t\tservice.saveBill(bill);",
+            "\t\t",
+            "\t\treturn delegate;"
+          ],
+          "highlightedLines": [
+            158,
+            159,
+            160
+          ]
+        },
+        {
+          "id": 21,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 158,
+          "code": [
+            "\t\tBillService service = Context.getService(BillService.class);",
+            "\t\tBill bill = delegate.getBill();",
+            "\t\tbill.addPayment(delegate);",
+            "\t\tservice.saveBill(bill);",
+            "\t\t",
+            "\t\treturn delegate;",
+            "\t}"
+          ],
+          "highlightedLines": [
+            161
+          ]
+        },
+        {
+          "id": 22,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Bill.java",
+          "revision": "HEAD",
+          "startLine": 236,
+          "code": [
+            "\t\tdiscount.setBill(this);",
+            "\t}",
+            "\t",
+            "\tpublic void addPayment(Payment payment) {",
+            "\t\tif (payment == null) {",
+            "\t\t\tthrow new NullPointerException(\"The payment to add must be defined.\");",
+            "\t\t}",
+            "\t\t",
+            "\t\tif (this.payments == null) {",
+            "\t\t\tthis.payments = new HashSet<>();",
+            "\t\t}",
+            "\t\t",
+            "\t\tthis.payments.add(payment);",
+            "\t\tpayment.setBill(this);",
+            "\t\t",
+            "\t\tthis.synchronizeBillStatus();",
+            "\t}",
+            "\t",
+            "\tpublic void synchronizeBillStatus() {",
+            "\t\tBillStatus current = getStatus();"
+          ],
+          "highlightedLines": [
+            239,
+            240,
+            241,
+            242,
+            243,
+            244,
+            245,
+            246,
+            247,
+            248,
+            249,
+            250,
+            251,
+            252
+          ]
+        },
+        {
+          "id": 23,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Bill.java",
+          "revision": "HEAD",
+          "startLine": 251,
+          "code": [
+            "\t\tthis.synchronizeBillStatus();",
+            "\t}",
+            "\t",
+            "\tpublic void synchronizeBillStatus() {",
+            "\t\tBillStatus current = getStatus();",
+            "\t\tif (current == BillStatus.REFUND_REQUESTED || current == BillStatus.REFUNDED",
+            "\t\t        || current == BillStatus.PARTIALLY_REFUNDED) {",
+            "\t\t\treturn;",
+            "\t\t}",
+            "\t\tif (this.getPayments() != null && !this.getPayments().isEmpty()",
+            "\t\t        && getTotalPayments().compareTo(BigDecimal.ZERO) > 0) {",
+            "\t\t\t// Approved discount exceeds the current bill total — likely a line item was voided",
+            "\t\t\t// after approval. Stay POSTED so a human can void/reapply rather than letting any",
+            "\t\t\t// non-zero payment silently flip the bill to PAID.",
+            "\t\t\tif (hasDiscountDrift()) {",
+            "\t\t\t\tlog.warn(\"Bill {} has discount drift (total={}, effectiveTotal={}); staying POSTED for manual review\",",
+            "\t\t\t\t    getUuid(), getTotal(), effectiveTotal());",
+            "\t\t\t\tthis.setStatus(BillStatus.POSTED);",
+            "\t\t\t\treturn;",
+            "\t\t\t}",
+            "\t\t\tboolean billFullySettled = getTotalPayments().compareTo(getAmountAfterDiscount()) >= 0;",
+            "\t\t\tif (billFullySettled) {",
+            "\t\t\t\tthis.setStatus(BillStatus.PAID);",
+            "\t\t\t\t// Update all non-voided and non-refunded status bill line items to PAID status",
+            "\t\t\t\tif (this.lineItems != null) {",
+            "\t\t\t\t\tfor (BillLineItem lineItem : this.lineItems) {",
+            "\t\t\t\t\t\tif (lineItem != null && !lineItem.getVoided() && !isRefundStatus(lineItem.getStatus())) {",
+            "\t\t\t\t\t\t\tlineItem.setStatus(BillLineItemStatus.PAID);",
+            "\t\t\t\t\t\t}",
+            "\t\t\t\t\t}",
+            "\t\t\t\t}",
+            "\t\t\t} else {",
+            "\t\t\t\tthis.setStatus(BillStatus.POSTED);",
+            "\t\t\t}",
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\tpublic void removePayment(Payment payment) {",
+            "\t\tif (payment != null && this.payments != null) {"
+          ],
+          "highlightedLines": [
+            254,
+            255,
+            256,
+            257,
+            258,
+            259,
+            260,
+            261,
+            262,
+            263,
+            264,
+            265,
+            266,
+            267,
+            268,
+            269,
+            270,
+            271,
+            272,
+            273,
+            274,
+            275,
+            276,
+            277,
+            278,
+            279,
+            280,
+            281,
+            282,
+            283,
+            284,
+            285,
+            286
+          ]
+        },
+        {
+          "id": 24,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Bill.java",
+          "revision": "HEAD",
+          "startLine": 252,
+          "code": [
+            "\t}",
+            "\t",
+            "\tpublic void synchronizeBillStatus() {",
+            "\t\tBillStatus current = getStatus();",
+            "\t\tif (current == BillStatus.REFUND_REQUESTED || current == BillStatus.REFUNDED",
+            "\t\t        || current == BillStatus.PARTIALLY_REFUNDED) {",
+            "\t\t\treturn;",
+            "\t\t}",
+            "\t\tif (this.getPayments() != null && !this.getPayments().isEmpty()",
+            "\t\t        && getTotalPayments().compareTo(BigDecimal.ZERO) > 0) {",
+            "\t\t\t// Approved discount exceeds the current bill total — likely a line item was voided"
+          ],
+          "highlightedLines": [
+            255,
+            256,
+            257,
+            258,
+            259
+          ]
+        },
+        {
+          "id": 25,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Bill.java",
+          "revision": "HEAD",
+          "startLine": 257,
+          "code": [
+            "\t\t        || current == BillStatus.PARTIALLY_REFUNDED) {",
+            "\t\t\treturn;",
+            "\t\t}",
+            "\t\tif (this.getPayments() != null && !this.getPayments().isEmpty()",
+            "\t\t        && getTotalPayments().compareTo(BigDecimal.ZERO) > 0) {",
+            "\t\t\t// Approved discount exceeds the current bill total — likely a line item was voided",
+            "\t\t\t// after approval. Stay POSTED so a human can void/reapply rather than letting any",
+            "\t\t\t// non-zero payment silently flip the bill to PAID."
+          ],
+          "highlightedLines": [
+            260,
+            261
+          ]
+        },
+        {
+          "id": 26,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Bill.java",
+          "revision": "HEAD",
+          "startLine": 268,
+          "code": [
+            "\t\t\t\tthis.setStatus(BillStatus.POSTED);",
+            "\t\t\t\treturn;",
+            "\t\t\t}",
+            "\t\t\tboolean billFullySettled = getTotalPayments().compareTo(getAmountAfterDiscount()) >= 0;",
+            "\t\t\tif (billFullySettled) {",
+            "\t\t\t\tthis.setStatus(BillStatus.PAID);",
+            "\t\t\t\t// Update all non-voided and non-refunded status bill line items to PAID status",
+            "\t\t\t\tif (this.lineItems != null) {",
+            "\t\t\t\t\tfor (BillLineItem lineItem : this.lineItems) {",
+            "\t\t\t\t\t\tif (lineItem != null && !lineItem.getVoided() && !isRefundStatus(lineItem.getStatus())) {",
+            "\t\t\t\t\t\t\tlineItem.setStatus(BillLineItemStatus.PAID);",
+            "\t\t\t\t\t\t}",
+            "\t\t\t\t\t}",
+            "\t\t\t\t}",
+            "\t\t\t} else {",
+            "\t\t\t\tthis.setStatus(BillStatus.POSTED);",
+            "\t\t\t}"
+          ],
+          "highlightedLines": [
+            271,
+            272,
+            273,
+            274,
+            275,
+            276,
+            277,
+            278,
+            279,
+            280,
+            281
+          ]
+        },
+        {
+          "id": 27,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Bill.java",
+          "revision": "HEAD",
+          "startLine": 279,
+          "code": [
+            "\t\t\t\t\t\t}",
+            "\t\t\t\t\t}",
+            "\t\t\t\t}",
+            "\t\t\t} else {",
+            "\t\t\t\tthis.setStatus(BillStatus.POSTED);",
+            "\t\t\t}",
+            "\t\t}",
+            "\t}",
+            "\t"
+          ],
+          "highlightedLines": [
+            282,
+            283,
+            284
+          ]
+        },
+        {
+          "id": 28,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Bill.java",
+          "revision": "HEAD",
+          "startLine": 262,
+          "code": [
+            "\t\t\t// Approved discount exceeds the current bill total — likely a line item was voided",
+            "\t\t\t// after approval. Stay POSTED so a human can void/reapply rather than letting any",
+            "\t\t\t// non-zero payment silently flip the bill to PAID.",
+            "\t\t\tif (hasDiscountDrift()) {",
+            "\t\t\t\tlog.warn(\"Bill {} has discount drift (total={}, effectiveTotal={}); staying POSTED for manual review\",",
+            "\t\t\t\t    getUuid(), getTotal(), effectiveTotal());",
+            "\t\t\t\tthis.setStatus(BillStatus.POSTED);",
+            "\t\t\t\treturn;",
+            "\t\t\t}",
+            "\t\t\tboolean billFullySettled = getTotalPayments().compareTo(getAmountAfterDiscount()) >= 0;",
+            "\t\t\tif (billFullySettled) {",
+            "\t\t\t\tthis.setStatus(BillStatus.PAID);"
+          ],
+          "highlightedLines": [
+            265,
+            266,
+            267,
+            268,
+            269,
+            270
+          ]
+        },
+        {
+          "id": 29,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Bill.java",
+          "revision": "HEAD",
+          "startLine": 135,
+          "code": [
+            "\t\treturn total;",
+            "\t}",
+            "\t",
+            "\tpublic BigDecimal getTotal() {",
+            "\t\tBigDecimal total = BigDecimal.ZERO;",
+            "\t\t",
+            "\t\tList<BillLineItem> lineItems = getLineItems();",
+            "\t\tif (lineItems != null) {",
+            "\t\t\tfor (BillLineItem line : lineItems) {",
+            "\t\t\t\tif (line != null && !line.getVoided()) {",
+            "\t\t\t\t\ttotal = total.add(line.getTotal());",
+            "\t\t\t\t}",
+            "\t\t\t}",
+            "\t\t}",
+            "\t\t",
+            "\t\treturn total;",
+            "\t}",
+            "\t",
+            "\tpublic BigDecimal getTotalPayments() {",
+            "\t\tBigDecimal total = BigDecimal.ZERO;"
+          ],
+          "highlightedLines": [
+            138,
+            139,
+            140,
+            141,
+            142,
+            143,
+            144,
+            145,
+            146,
+            147,
+            148,
+            149,
+            150,
+            151
+          ]
+        },
+        {
+          "id": 30,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Bill.java",
+          "revision": "HEAD",
+          "startLine": 150,
+          "code": [
+            "\t\treturn total;",
+            "\t}",
+            "\t",
+            "\tpublic BigDecimal getTotalPayments() {",
+            "\t\tBigDecimal total = BigDecimal.ZERO;",
+            "\t\t",
+            "\t\tSet<Payment> payments = getPayments();",
+            "\t\tif (payments != null) {",
+            "\t\t\tfor (Payment payment : payments) {",
+            "\t\t\t\tif (payment != null && !payment.getVoided()) {",
+            "\t\t\t\t\ttotal = total.add(payment.getAmountTendered());",
+            "\t\t\t\t}",
+            "\t\t\t}",
+            "\t\t}",
+            "\t\t",
+            "\t\treturn total;",
+            "\t}",
+            "\t",
+            "\t@Override",
+            "\tpublic Integer getId() {"
+          ],
+          "highlightedLines": [
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160,
+            161,
+            162,
+            163,
+            164,
+            165,
+            166
+          ]
+        },
+        {
+          "id": 31,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/impl/BillServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 35,
+          "code": [
+            " * @see BillService",
+            " * @see BillDAO",
+            " */",
+            "@Transactional",
+            "public class BillServiceImpl extends BaseOpenmrsService implements BillService {",
+            "\t",
+            "\t@Setter(onMethod_ = { @Autowired })",
+            "\tprivate BillDAO billDAO;"
+          ],
+          "highlightedLines": [
+            38,
+            39
+          ]
+        },
+        {
+          "id": 32,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/impl/BillServiceImpl.java",
+          "revision": "HEAD",
+          "startLine": 68,
+          "code": [
+            "\t/**",
+            "\t * {@inheritDoc}",
+            "\t */",
+            "\t@Override",
+            "\t@Transactional",
+            "\tpublic Bill saveBill(Bill bill) {",
+            "\t\tif (bill == null) {",
+            "\t\t\tthrow new NullPointerException(\"The bill must be defined.\");",
+            "\t\t}",
+            "\t\treturn billDAO.saveBill(bill);",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * {@inheritDoc}"
+          ],
+          "highlightedLines": [
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            77,
+            78
+          ]
+        },
+        {
+          "id": 33,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/db/hibernate/HibernateBillDAO.java",
+          "revision": "HEAD",
+          "startLine": 137,
+          "code": [
+            "\t/**",
+            "\t * {@inheritDoc}",
+            "\t */",
+            "\t@Override",
+            "\tpublic Bill saveBill(@Nonnull Bill bill) {",
+            "\t\tsessionFactory.getCurrentSession().saveOrUpdate(bill);",
+            "\t\treturn bill;",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * {@inheritDoc}"
+          ],
+          "highlightedLines": [
+            140,
+            141,
+            142,
+            143,
+            144
+          ]
+        },
+        {
+          "id": 34,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/resources/Bill.hbm.xml",
+          "revision": "HEAD",
+          "startLine": 205,
+          "code": [
+            "\t\t<property name=\"uuid\" type=\"java.lang.String\" column=\"uuid\" length=\"38\" unique=\"true\"/>",
+            "\t</class>",
+            "",
+            "\t<class name=\"org.openmrs.module.billing.api.model.Payment\" table=\"cashier_bill_payment\">",
+            "\t\t<cache usage=\"read-write\"/>",
+            "",
+            "\t\t<id name=\"id\" type=\"int\" column=\"bill_payment_id\">",
+            "\t\t\t<generator class=\"native\">",
+            "\t\t\t\t<param name=\"sequence\">cashier_bill_payment_bill_payment_id_seq</param>",
+            "\t\t\t</generator>",
+            "\t\t</id>",
+            "\t\t<discriminator column=\"bill_payment_id\" insert=\"false\"/>",
+            "",
+            "\t\t<many-to-one name=\"bill\" class=\"org.openmrs.module.billing.api.model.Bill\" column=\"bill_id\" not-null=\"true\"/>",
+            "\t\t<many-to-one name=\"instanceType\" class=\"org.openmrs.module.billing.api.model.PaymentMode\"",
+            "\t\t             column=\"payment_mode_id\" not-null=\"true\"/>",
+            "",
+            "\t\t<property name=\"amount\" type=\"java.math.BigDecimal\" column=\"amount\" not-null=\"true\"/>",
+            "\t\t<property name=\"amountTendered\" type=\"java.math.BigDecimal\" column=\"amount_tendered\" not-null=\"true\"/>",
+            "\t\t<many-to-one name=\"cashier\" class=\"org.openmrs.Provider\" column=\"provider_id\" not-null=\"false\"/>",
+            "",
+            "\t\t<set name=\"attributes\" lazy=\"false\" inverse=\"true\" cascade=\"all-delete-orphan\">",
+            "\t\t\t<key column=\"bill_payment_id\"/>",
+            "\t\t\t<one-to-many class=\"org.openmrs.module.billing.api.model.PaymentAttribute\"/>",
+            "\t\t</set>",
+            ""
+          ],
+          "highlightedLines": [
+            208,
+            209,
+            210,
+            211,
+            212,
+            213,
+            214,
+            215,
+            216,
+            217,
+            218,
+            219,
+            220,
+            221,
+            222,
+            223,
+            224,
+            225,
+            226,
+            227
+          ]
+        },
+        {
+          "id": 35,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/resources/Bill.hbm.xml",
+          "revision": "HEAD",
+          "startLine": 240,
+          "code": [
+            "\t\t<property name=\"uuid\" type=\"java.lang.String\" column=\"uuid\" length=\"38\" unique=\"true\"/>",
+            "\t</class>",
+            "",
+            "\t<class name=\"org.openmrs.module.billing.api.model.PaymentAttribute\" table=\"cashier_bill_payment_attribute\">",
+            "\t\t<cache usage=\"read-write\"/>",
+            "",
+            "\t\t<id name=\"id\" type=\"int\" column=\"bill_payment_attribute_id\">",
+            "\t\t\t<generator class=\"native\">",
+            "\t\t\t\t<param name=\"sequence\">cashier_bill_payment_attribute_bill_payment_attribute_id_seq</param>",
+            "\t\t\t</generator>",
+            "\t\t</id>",
+            "\t\t<discriminator column=\"bill_payment_attribute_id\" insert=\"false\"/>",
+            "",
+            "\t\t<many-to-one name=\"owner\" class=\"org.openmrs.module.billing.api.model.Payment\" column=\"bill_payment_id\"",
+            "\t\t             not-null=\"true\"/>",
+            "\t\t<many-to-one name=\"attributeType\" class=\"org.openmrs.module.billing.api.model.PaymentModeAttributeType\"",
+            "\t\t             column=\"payment_mode_attribute_type_id\" not-null=\"true\"/>",
+            "\t\t<property name=\"value\" type=\"text\" access=\"field\" column=\"value_reference\" length=\"65535\"/>",
+            "",
+            "\t\t<property name=\"uuid\" type=\"java.lang.String\" column=\"uuid\" length=\"38\" unique=\"true\"/>"
+          ],
+          "highlightedLines": [
+            243,
+            244,
+            245,
+            246,
+            247,
+            248,
+            249,
+            250,
+            251,
+            252,
+            253,
+            254,
+            255,
+            256
+          ]
+        },
+        {
+          "id": 36,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/resources/Bill.hbm.xml",
+          "revision": "HEAD",
+          "startLine": 259,
+          "code": [
+            "\t\t<property name=\"uuid\" type=\"java.lang.String\" column=\"uuid\" length=\"38\" unique=\"true\"/>",
+            "\t</class>",
+            "",
+            "\t<class name=\"org.openmrs.module.billing.api.model.PaymentMode\" table=\"cashier_payment_mode\">",
+            "\t\t<cache usage=\"read-write\"/>",
+            "",
+            "\t\t<id name=\"id\" type=\"int\" column=\"payment_mode_id\">",
+            "\t\t\t<generator class=\"native\">",
+            "\t\t\t\t<param name=\"sequence\">cashier_payment_mode_payment_mode_id_seq</param>",
+            "\t\t\t</generator>",
+            "\t\t</id>",
+            "\t\t<discriminator column=\"payment_mode_id\" insert=\"false\"/>",
+            "",
+            "\t\t<property name=\"name\" type=\"java.lang.String\" column=\"name\" not-null=\"true\" length=\"255\"/>",
+            "\t\t<property name=\"description\" type=\"java.lang.String\" column=\"description\" length=\"1024\"/>",
+            "\t\t<property name=\"sortOrder\" type=\"int\" column=\"sort_order\"/>",
+            "",
+            "\t\t<list name=\"attributeTypes\" lazy=\"false\" inverse=\"true\" cascade=\"all-delete-orphan\">",
+            "\t\t\t<key column=\"payment_mode_id\"/>",
+            "\t\t\t<list-index column=\"attribute_order\"/>",
+            "\t\t\t<one-to-many class=\"org.openmrs.module.billing.api.model.PaymentModeAttributeType\"/>",
+            "\t\t</list>"
+          ],
+          "highlightedLines": [
+            262,
+            263,
+            264,
+            265,
+            266,
+            267,
+            268,
+            269,
+            270,
+            271,
+            272,
+            273,
+            274,
+            275,
+            276,
+            277
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}
