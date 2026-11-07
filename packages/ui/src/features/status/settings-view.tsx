@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useSWRConfig, type ScopedMutator } from "swr";
 import { Pencil } from "lucide-react";
 import type { KnowledgeActionRequest } from "@falkon/contracts";
 import { useWorkspace } from "@/components/layout/workspace-shell";
@@ -13,6 +15,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -23,7 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Notice, Page, PageHeader } from "@/components/ui/primitives";
-import { api } from "@/lib/api/client";
+import { api, keys } from "@/lib/api/client";
 import { knowledgeLine } from "@/lib/knowledge";
 
 const ACTIONS = [
@@ -41,6 +53,143 @@ export function press(
   return action === "delete" && armed !== repo
     ? { armed: repo, send: false }
     : { armed: "", send: true };
+}
+
+/** Deletes the Product, drops its cached reads, and leaves for /setup. Returns the error text, or "" on success. */
+export async function removeProduct(
+  id: string,
+  mutate: ScopedMutator,
+  push: (path: string) => void,
+) {
+  try {
+    await api.deleteProduct(id);
+  } catch (error) {
+    return error instanceof Error
+      ? error.message
+      : "The request could not be sent. Try again.";
+  }
+  // Leave first: a refetch of the now-404 Product must not flash an error on this page.
+  push("/setup");
+  await mutate(
+    (key) =>
+      key === keys.products ||
+      (typeof key === "string" &&
+        (key === keys.product(id) || key.startsWith(`${keys.product(id)}/`))),
+    undefined,
+    { revalidate: false },
+  );
+  return "";
+}
+
+/** The dialog body: the red button enables only on the exact slug (GitHub pattern). */
+export function DeleteForm({
+  slug,
+  typed,
+  busy,
+  error,
+  onType,
+  onConfirm,
+}: {
+  slug: string;
+  typed: string;
+  busy: boolean;
+  error: string;
+  onType: (value: string) => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <>
+      <label className="grid gap-2 text-sm">
+        <span>
+          Type <code className="font-mono">{slug}</code> to confirm.
+        </span>
+        <Input
+          value={typed}
+          onChange={(event) => onType(event.target.value)}
+          autoComplete="off"
+          spellCheck={false}
+        />
+      </label>
+      {error && <Notice tone="err">{error}</Notice>}
+      <DialogFooter>
+        <Button
+          variant="destructive"
+          disabled={typed !== slug || busy}
+          onClick={onConfirm}
+        >
+          Delete Product
+        </Button>
+      </DialogFooter>
+    </>
+  );
+}
+
+function DangerZone({ id, editable }: { id: string; editable: boolean }) {
+  const { mutate } = useSWRConfig();
+  const router = useRouter();
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function confirm() {
+    setBusy(true);
+    setError("");
+    const message = await removeProduct(id, mutate, router.push);
+    // Success navigates away: stay busy so a second click cannot send a second DELETE.
+    if (message) {
+      setError(message);
+      setBusy(false);
+    }
+  }
+  return (
+    <Card className="col-span-12 border-destructive/50">
+      <CardHeader>
+        <CardTitle>
+          <h2 className="text-destructive">Danger zone</h2>
+        </CardTitle>
+        <CardDescription>
+          {editable
+            ? "Deleting a Product removes its chats and any repositories no other Product needs. This cannot be undone."
+            : "This Product has no connection, so it can't be deleted here. Edit config.json for a config Product, or use DELETE /products/:slug on the admin API."}
+        </CardDescription>
+        {editable && (
+          <CardAction>
+            <Dialog
+              onOpenChange={() => {
+                setTyped("");
+                setError("");
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive"
+                >
+                  Delete Product
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete {id}?</DialogTitle>
+                  <DialogDescription>
+                    This removes the Product and its chats for good.
+                  </DialogDescription>
+                </DialogHeader>
+                <DeleteForm
+                  slug={id}
+                  typed={typed}
+                  busy={busy}
+                  error={error}
+                  onType={setTyped}
+                  onConfirm={() => void confirm()}
+                />
+              </DialogContent>
+            </Dialog>
+          </CardAction>
+        )}
+      </CardHeader>
+    </Card>
+  );
 }
 
 export function SettingsView() {
@@ -190,6 +339,7 @@ export function SettingsView() {
           )}
         </Card>
       )}
+      <DangerZone id={product.id} editable={!!product.connectionId} />
     </Page>
   );
 }
