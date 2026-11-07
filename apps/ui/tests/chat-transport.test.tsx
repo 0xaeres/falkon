@@ -25,7 +25,7 @@ const answer = {
   abstention: null,
   suggestions: [],
 };
-// What the engine writes for one turn (see packages/api/src/threads.test.ts).
+// What the engine writes for one turn (see apps/api/src/threads.test.ts).
 const stream =
   [
     { type: "start", messageId: "m1" },

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Records raw GitHub REST and GraphQL responses as fixtures for the GitHub discussion source (S51, D120).
 # Read-only, public repositories only. Uses the operator's own `gh` login; never reads, prints or stores a token.
-# Usage: scripts/record-github-fixtures.sh [output-dir]   (default: packages/backend/src/fixtures/github)
+# Usage: scripts/record-github-fixtures.sh [output-dir]   (default: apps/backend/src/fixtures/github)
 set -euo pipefail
 
-OUT="${1:-packages/backend/src/fixtures/github}"
+OUT="${1:-apps/backend/src/fixtures/github}"
 DATE="$(date -u +%F)"
 SINCE="2017-01-01T00:00:00Z"
 DS="openmrs/openmrs-module-dataentrystatistics"   # squash and merge-commit pull requests, one rebase-merged pull request

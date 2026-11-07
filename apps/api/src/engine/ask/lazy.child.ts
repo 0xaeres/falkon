@@ -13,7 +13,7 @@ const seen = new Set<string>();
 registerHooks({
   resolve(specifier, context, nextResolve) {
     seen.add(specifier);
-    return nextResolve(specifier === "@falkon/shared" ? new URL("../../../../shared/src/index.ts", import.meta.url).href : specifier, context);
+    return nextResolve(specifier === "@falkon/shared" ? new URL("../../../../../packages/shared/src/index.ts", import.meta.url).href : specifier, context);
   },
 });
 const loadedAi = () => [...seen].filter((s) => s === "ai" || s.startsWith("ai/") || s.startsWith("@ai-sdk/"));

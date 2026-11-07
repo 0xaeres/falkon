@@ -18,7 +18,7 @@ import { registerHooks } from "node:module";
 // Pin the workspace package to this tree, as the contract test does.
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
-    return nextResolve(specifier === "@falkon/shared" ? new URL("../../../../shared/src/index.ts", import.meta.url).href : specifier, context);
+    return nextResolve(specifier === "@falkon/shared" ? new URL("../../../../../packages/shared/src/index.ts", import.meta.url).href : specifier, context);
   },
 });
 let createMcpServer: typeof import("../mcp").createMcpServer;
@@ -30,7 +30,7 @@ before(async () => {
   ({ createMcpServer } = await import("../mcp"));
   ({ toolDeps } = await import("../tools"));
   ({ scopeFor } = await import("@falkon/shared"));
-  const { fakeProvenanceStore } = await import("../../../../shared/src/provenance.fake");
+  const { fakeProvenanceStore } = await import("../../../../../packages/shared/src/provenance.fake");
   const rows = [row(REPO, 1), row(OTHER, 2)];
   mock.method(toolDeps, "getRepo", async (name: string) => rows.find((r) => r.name === name));
   mock.method(toolDeps, "listRepos", async () => rows);

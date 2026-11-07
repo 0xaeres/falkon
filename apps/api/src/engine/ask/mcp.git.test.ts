@@ -17,7 +17,7 @@ import { registerHooks } from "node:module";
 // Pin the workspace package to this tree, as the contract test does.
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
-    return nextResolve(specifier === "@falkon/shared" ? new URL("../../../../shared/src/index.ts", import.meta.url).href : specifier, context);
+    return nextResolve(specifier === "@falkon/shared" ? new URL("../../../../../packages/shared/src/index.ts", import.meta.url).href : specifier, context);
   },
 });
 let createMcpServer: typeof import("../mcp").createMcpServer;

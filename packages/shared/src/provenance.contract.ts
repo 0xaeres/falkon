@@ -1,5 +1,5 @@
 // Behaviour every ProvenanceStore adapter must show, P12 included (ADR 0001 section 7). Run against the in-memory fake in
-// provenance.test.ts and against Postgres in packages/api/src/provenanceIsolation.test.ts.
+// provenance.test.ts and against Postgres in apps/api/src/provenanceIsolation.test.ts.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { Discussion, Link, ProvenanceStore, SyncState } from "./provenance";

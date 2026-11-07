@@ -4,5 +4,5 @@ node_modules
 data
 *.tsbuildinfo
 /config.json
-packages/api/dist
-packages/ui/.data/
+apps/api/dist
+apps/ui/.data/

@@ -68,7 +68,7 @@ test("auth apiKey: the key is an env reference or prompt, never a literal token"
 test("the tool list is the shared tools plus research_codebase", () => {
   const text = JSON.parse(
     readFileSync(
-      new URL("../../shared/src/toolText.json", import.meta.url),
+      new URL("../../../packages/shared/src/toolText.json", import.meta.url),
       "utf8",
     ),
   ) as Record<string, unknown>;

@@ -264,7 +264,7 @@ test("P11: a membership change rejects the open session (no widening through an 
 
 test("P12: history tools exist unless the flag is off, and the Product's repository set bounds every read", async () => {
   const { toolDeps } = await import("./engine/tools");
-  const { fakeProvenanceStore } = await import("../../shared/src/provenance.fake");
+  const { fakeProvenanceStore } = await import("../../../packages/shared/src/provenance.fake");
   const store = fakeProvenanceStore({ [IN]: 1, [OUT]: 2 });
   const ok = { cursorUpdatedAt: null, lastRunAt: null, lastSuccessAt: new Date("2025-02-01T00:00:00Z"), headCommit: null, status: "ok" as const, error: null, importedCount: 1, skippedCount: 0, access: "ok" as const, waitUntil: null, reconciledAt: null };
   const d = (title: string) => ({ kind: "PR" as const, number: 7, title, body: SECRET_TEXT, state: "merged" as const, authorLogin: "dev", createdAt: new Date("2025-01-01"), updatedAt: new Date("2025-01-02"), mergedAt: null, closedAt: null, mergeCommitSha: null, headRef: null, baseRef: null, url: null, labels: [], truncated: [], comments: [], files: [] });
@@ -330,7 +330,7 @@ test("P12: history tools exist unless the flag is off, and the Product's reposit
 
 test("P12 default: with both history flags unset the Product lists all ten history tools, and an out-of-set repository reads like a missing one", async () => {
   const { toolDeps } = await import("./engine/tools");
-  const { fakeProvenanceStore } = await import("../../shared/src/provenance.fake");
+  const { fakeProvenanceStore } = await import("../../../packages/shared/src/provenance.fake");
   const before = toolDeps.history, flags = [process.env.MCP_HISTORY_TOOLS, process.env.MCP_GIT_TOOLS];
   toolDeps.history = fakeProvenanceStore({ [IN]: 1, [OUT]: 2 });
   try {

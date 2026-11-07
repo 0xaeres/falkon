@@ -20,7 +20,7 @@ import {
 
 // The engine rule lives in a module with heavy imports, so read its regex out of the source.
 const engineSource = readFileSync(
-  new URL("../../backend/src/productResolve.ts", import.meta.url),
+  new URL("../../../apps/backend/src/productResolve.ts", import.meta.url),
   "utf8",
 );
 const engineRule = engineSource.match(/isProductSlug = .*?(\/\^.*?\$\/)\.test/)?.[1];

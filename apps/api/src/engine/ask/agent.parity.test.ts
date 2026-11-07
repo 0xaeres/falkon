@@ -14,7 +14,7 @@ fs.writeFileSync(process.env.CONFIG_PATH, "{}");
 for (const key of ["LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY"]) delete process.env[key];
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
-    return nextResolve(specifier === "@falkon/shared" ? new URL("../../../../shared/src/index.ts", import.meta.url).href : specifier, context);
+    return nextResolve(specifier === "@falkon/shared" ? new URL("../../../../../packages/shared/src/index.ts", import.meta.url).href : specifier, context);
   },
 });
 let createMcpServer: typeof import("../mcp").createMcpServer;
@@ -28,7 +28,7 @@ before(async () => {
   ({ toolDeps } = await import("../tools"));
   ({ scopeFor } = await import("@falkon/shared"));
   agent = await import("./agent");
-  const { fakeProvenanceStore } = await import("../../../../shared/src/provenance.fake");
+  const { fakeProvenanceStore } = await import("../../../../../packages/shared/src/provenance.fake");
   const rows = [row(REPO, 1), row(OTHER, 2)];
   mock.method(toolDeps, "getRepo", async (name: string) => rows.find((r) => r.name === name));
   mock.method(toolDeps, "listRepos", async () => rows);

@@ -19,7 +19,7 @@ for (const key of ["LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY"]) delete process.e
 import { registerHooks } from "node:module";
 // Worktree node_modules can be symlinked to another checkout. Pin the workspace
 // package to this tree so this contract checks the source in this worktree.
-const localShared = new URL("../../../../shared/src/index.ts", import.meta.url).href;
+const localShared = new URL("../../../../../packages/shared/src/index.ts", import.meta.url).href;
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
     return nextResolve(specifier === "@falkon/shared" ? localShared : specifier, context);

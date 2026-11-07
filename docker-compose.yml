@@ -47,7 +47,7 @@ services:
   api:
     <<: *app
     # The esbuild bundle under plain node: tsx would add ~90 MB of loader and esbuild service.
-    command: node packages/api/dist/main.js
+    command: node apps/api/dist/main.js
     env_file: [.env]
     environment:
       DATABASE_URL: postgresql://falkon:falkon@postgres:5432/falkon
@@ -78,7 +78,7 @@ services:
   # the browser. Published on host loopback only.
   ui:
     <<: *app
-    command: node packages/ui/.next/standalone/packages/ui/server.js
+    command: node apps/ui/.next/standalone/apps/ui/server.js
     environment:
       PORT: 3000
       HOSTNAME: 0.0.0.0

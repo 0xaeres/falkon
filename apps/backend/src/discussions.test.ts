@@ -8,8 +8,8 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { NoAccess, RateLimited, type Discussion, type DiscussionSource, type ProvenanceStore } from "@falkon/shared";
-import { pr } from "../../shared/src/provenance.contract";
-import { fakeProvenanceStore } from "../../shared/src/provenance.fake";
+import { pr } from "../../../packages/shared/src/provenance.contract";
+import { fakeProvenanceStore } from "../../../packages/shared/src/provenance.fake";
 import { MAX_TEXT, importDiscussions, snapshotSource } from "./discussions";
 import { pgClose, pgSkip, pgTestStore } from "./provenancePg.testing";
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="packages/ui/public/brand/falkon-app-icon.svg" width="96" alt="Falkon logo">
+  <img src="apps/ui/public/brand/falkon-app-icon.svg" width="96" alt="Falkon logo">
 </p>
 
 <h1 align="center">Falkon</h1>
@@ -465,10 +465,10 @@ To report a vulnerability, do not open a public issue. See [CONTRIBUTING.md](CON
 | --- | --- |
 | `packages/db` | Prisma schema for repositories, connections, Products, chats and knowledge scans |
 | `packages/shared` | Config schema, query parser and IR, Zoekt gRPC client, git readers, access policy, tool registry and knowledge base pipeline |
-| `packages/backend` | Connection sync, clone and fetch, `zoekt-git-index`, reindex and resync jobs, knowledge base scans |
-| `packages/api` | NestJS engine API with `/mcp/<product>` and the admin API |
+| `apps/backend` | Connection sync, clone and fetch, `zoekt-git-index`, reindex and resync jobs, knowledge base scans |
+| `apps/api` | NestJS engine API with `/mcp/<product>` and the admin API |
 | `packages/contracts` | Zod schemas shared by the API and the UI |
-| `packages/ui` | Falkon UI (Next.js) |
+| `apps/ui` | Falkon UI (Next.js) |
 | `docker/` | Image build, including Zoekt |
 | `scripts/` | Admin token helper, config converter, smoke test |
 | `tests/` | Contract, golden and originality checks (the eval harness is in the separate falkon-eval repository) |

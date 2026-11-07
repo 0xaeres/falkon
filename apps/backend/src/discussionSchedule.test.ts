@@ -5,7 +5,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import assert from "node:assert/strict";
 import { NoAccess, RateLimited, type DiscussionSource, type GithubConnectionConfig, type SyncState } from "@falkon/shared";
-import { fakeProvenanceStore } from "../../shared/src/provenance.fake";
+import { fakeProvenanceStore } from "../../../packages/shared/src/provenance.fake";
 import type { ImportTarget } from "./discussions";
 import { discussionConnection, planDiscussionSync, runDiscussionJob, type PlanRepo } from "./discussionSchedule";
 

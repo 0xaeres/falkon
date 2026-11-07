@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { NoAccess, RateLimited, type Discussion } from "@falkon/shared";
-import { fakeProvenanceStore } from "../../shared/src/provenance.fake";
+import { fakeProvenanceStore } from "../../../packages/shared/src/provenance.fake";
 import { importDiscussions, mapSnapshotPull } from "./discussions";
 import { githubSource, githubTransport, type GithubTransport } from "./githubDiscussions";
 import { FRAGMENT, firstPages, shapePull } from "./githubQuery";

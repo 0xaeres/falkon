@@ -55,7 +55,7 @@ const compose = { services: {
   redis: { image: 'redis:7-alpine', healthcheck: { test: ['CMD', 'redis-cli', 'ping'], interval: '3s', retries: 30 } },
   backend: { ...app, build: { context: root, dockerfile }, command: ['sh', '-c', 'pnpm --filter @falkon/db push && pnpm --filter @falkon/backend start'], depends_on: { postgres: { condition: 'service_healthy' }, redis: { condition: 'service_healthy' } } },
   zoekt: { ...app, command: ['zoekt-webserver', '-index', '/data/index', '-rpc', '-listen', ':6070'], depends_on: ['backend'] },
-  api: { ...app, environment: { ...env, API_HOST: '0.0.0.0', API_ADMIN_HOST: '0.0.0.0', AUTH_MODE: 'none', ADMIN_TOKEN: process.env.ADMIN_TOKEN }, command: ['node', 'packages/api/dist/main.js'], ports: [`127.0.0.1:${apiPort}:3001`, `127.0.0.1:${adminPort}:3002`], depends_on: ['backend', 'zoekt'] }
+  api: { ...app, environment: { ...env, API_HOST: '0.0.0.0', API_ADMIN_HOST: '0.0.0.0', AUTH_MODE: 'none', ADMIN_TOKEN: process.env.ADMIN_TOKEN }, command: ['node', 'apps/api/dist/main.js'], ports: [`127.0.0.1:${apiPort}:3001`, `127.0.0.1:${adminPort}:3002`], depends_on: ['backend', 'zoekt'] }
 }, volumes: { pgdata: {}, data: {} } };
 fs.writeFileSync(`${temp}/compose.json`, JSON.stringify(compose));
 JS

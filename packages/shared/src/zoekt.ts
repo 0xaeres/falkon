@@ -111,7 +111,7 @@ export interface ZoektTransport {
 function findProtoDir(): string {
   const candidates = [
     process.env.ZOEKT_PROTO_DIR,
-    path.resolve(process.cwd(), "../shared/proto"),
+    path.resolve(process.cwd(), "../../packages/shared/proto"),
     path.resolve(process.cwd(), "packages/shared/proto"),
     path.resolve(process.cwd(), "proto"),
   ].filter((p): p is string => !!p);

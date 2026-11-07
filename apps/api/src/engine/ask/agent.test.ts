@@ -12,7 +12,7 @@ process.env.MCP_GIT_TOOLS = "off";
 const tools = () => agentTools(scopeFor(["*"]), [], () => {});
 
 test("every Ask agent tool sends byte-identical Zod 3 schema JSON to the model", async () => {
-  const previous = JSON.parse(fs.readFileSync(new URL("../../../../shared/src/toolSchemas.v3.json", import.meta.url), "utf8")).ask;
+  const previous = JSON.parse(fs.readFileSync(new URL("../../../../../packages/shared/src/toolSchemas.v3.json", import.meta.url), "utf8")).ask;
   const model = new MockLanguageModelV3({
     doGenerate: async () => ({
       content: [{ type: "text", text: "done" }],

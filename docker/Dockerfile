@@ -21,6 +21,6 @@ RUN pnpm install --frozen-lockfile=false \
  && pnpm --filter @falkon/db generate \
  && pnpm --filter @falkon/api build \
  && pnpm --filter @falkon/ui build \
- && cp -r packages/ui/.next/static packages/ui/.next/standalone/packages/ui/.next/static \
- && cp -r packages/ui/public packages/ui/.next/standalone/packages/ui/public
+ && cp -r apps/ui/.next/static apps/ui/.next/standalone/apps/ui/.next/static \
+ && cp -r apps/ui/public apps/ui/.next/standalone/apps/ui/public
 ENV NODE_ENV=production DATA_DIR=/data CTAGS_COMMAND=ctags

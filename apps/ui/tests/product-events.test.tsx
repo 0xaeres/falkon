@@ -131,7 +131,7 @@ test("the Reconnecting notice is a status message, and the events key is the pro
   assert.equal(keys.events("a b"), "/api/products/a%20b/events");
 });
 
-test("no polling remains in packages/ui/src: no refreshInterval, and the one setInterval is the local minute timer", () => {
+test("no polling remains in apps/ui/src: no refreshInterval, and the one setInterval is the local minute timer", () => {
   const files: string[] = [];
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {

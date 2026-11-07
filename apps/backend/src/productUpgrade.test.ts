@@ -6,7 +6,7 @@ import fs from "node:fs";
 import { PrismaClient } from "@falkon/db";
 import { pgSkip, pgUrl } from "./provenancePg.testing";
 
-const dbDir = new URL("../../db/", import.meta.url);
+const dbDir = new URL("../../../packages/db/", import.meta.url);
 const upgradeSql = fs.readFileSync(new URL("prisma/pre-push.sql", dbDir), "utf8");
 
 test("the db push script runs the upgrade first and never accepts data loss", () => {

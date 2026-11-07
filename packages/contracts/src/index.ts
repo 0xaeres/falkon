@@ -3,7 +3,7 @@ import { z } from "zod";
 export const productIdSchema = z
   .string()
   .min(1)
-  .regex(/^[a-z0-9][a-z0-9-]{0,62}$/); // engine slug rule: isProductSlug in packages/backend/src/productResolve.ts
+  .regex(/^[a-z0-9][a-z0-9-]{0,62}$/); // engine slug rule: isProductSlug in apps/backend/src/productResolve.ts
 export const providerSchema = z.enum(["github", "github-enterprise"]);
 // A Product whose repositories are plain git remotes reports "git"; connections are never "git".
 export const productProviderSchema = z.enum(["github", "github-enterprise", "git"]);
