@@ -181,11 +181,11 @@ test("create validation: unknown connection, repo outside the listing, duplicate
   assert.equal((await call("GET", "/ui/products", undefined, false)).status, 401);
 });
 
-test("route enumeration: the admin listener has exactly the S20a routes, the six /ui/products routes, the event stream and the seven thread routes", () => {
+test("route enumeration: the admin listener has exactly the S20a routes, the seven /ui/products routes, the event stream and the seven thread routes", () => {
   const router = (admin.getHttpAdapter().getInstance() as { router: { stack: { route?: { path: string; methods: Record<string, boolean> } }[] } }).router;
   const routes = router.stack.flatMap((l) => (l.route ? Object.keys(l.route.methods).map((m) => `${m.toUpperCase()} ${l.route!.path}`) : [])).sort();
   assert.deepEqual(routes, [
-    "DELETE /connections/:id", "DELETE /products/:slug", "DELETE /ui/products/:slug/threads/:id",
+    "DELETE /connections/:id", "DELETE /products/:slug", "DELETE /ui/products/:slug", "DELETE /ui/products/:slug/threads/:id",
     "GET /connections", "GET /connections/:id/repositories", "GET /products", "GET /products/:slug",
     "GET /ui/products", "GET /ui/products/:slug", "GET /ui/products/:slug/events", "GET /ui/products/:slug/status",
     "GET /ui/products/:slug/threads", "GET /ui/products/:slug/threads/:id", "GET /ui/products/:slug/threads/:id/stream",
@@ -197,7 +197,7 @@ test("route enumeration: the admin listener has exactly the S20a routes, the six
 });
 
 test("other /ui paths and methods stay 404", async () => {
-  for (const [method, p] of [["PUT", "/ui/products/alpha"], ["DELETE", "/ui/products/alpha"], ["GET", "/ui"], ["GET", "/ui/products/alpha/sync"], ["POST", "/ui/products/alpha"], ["GET", "/ui/products/alpha/status/x"], ["PATCH", "/ui/products"], ["PATCH", "/products/alpha"], ["PUT", "/ui/products/alpha/threads"], ["GET", "/ui/products/alpha/threads/x/messages"], ["POST", "/ui/products/alpha/threads/x"], ["PATCH", "/ui/products/alpha/threads/x"], ["GET", "/ui/products/alpha/threads/x/messages/y"], ["POST", "/ui/products/alpha/query"]] as const)
+  for (const [method, p] of [["PUT", "/ui/products/alpha"], ["DELETE", "/ui/products/alpha/status"], ["GET", "/ui"], ["GET", "/ui/products/alpha/sync"], ["POST", "/ui/products/alpha"], ["GET", "/ui/products/alpha/status/x"], ["PATCH", "/ui/products"], ["PATCH", "/products/alpha"], ["PUT", "/ui/products/alpha/threads"], ["GET", "/ui/products/alpha/threads/x/messages"], ["POST", "/ui/products/alpha/threads/x"], ["PATCH", "/ui/products/alpha/threads/x"], ["GET", "/ui/products/alpha/threads/x/messages/y"], ["POST", "/ui/products/alpha/query"]] as const)
     assert.equal((await call(method, p, method === "GET" ? undefined : {})).status, 404, `${method} ${p}`);
 });
 
@@ -325,4 +325,46 @@ test("writes publish: request for what the worker claims, changed for what a sta
 test("with no signal transport wired, writes still succeed (the default signals reach nobody)", async () => {
   const svc = new UiProductService(engine.db, new ConnectionService(engine.db as never, host), () => 0);
   await assert.doesNotReject(svc.sync("sig"));
+});
+
+test("DELETE /ui/products/:slug removes an api Product and its chats and narrows the connection's repos to the remaining Products' union", async () => {
+  const c2 = (await call("POST", "/connections", { provider: "github", method: "token", host: "https://github.com", token: "ghp_del" })).json.id;
+  await call("POST", "/ui/products", setup(c2, "del1", [APP, LIB]));
+  await call("POST", "/ui/products", setup(c2, "del2", [LIB]));
+  const chat = (productId: string) => engine.chats.push({ id: `${productId}-${engine.chats.length}`, productId, messages: [], createdBy: "ui", visibility: "PRIVATE", name: null, createdAt: new Date(), updatedAt: new Date() });
+  chat("del1"); chat("del1"); chat("del2");
+  assert.deepEqual(reposOf(c2), ["acme/app", "acme/lib"]);
+  connectionRow(c2).syncRequestedAt = null;
+  const [changed, request] = [sent.changed, sent.request];
+
+  assert.equal((await call("DELETE", "/ui/products/del1")).status, 204);
+  assert.equal(engine.product.rows.some((p) => p.slug === "del1"), false);
+  assert.deepEqual(engine.chats.map((c) => c.productId).filter((id) => id.startsWith("del")), ["del2"], "only the deleted Product's chats go");
+  assert.deepEqual(reposOf(c2), ["acme/lib"], "lib is shared with del2 and stays; app is dropped");
+  assert.ok(connectionRow(c2).syncRequestedAt instanceof Date);
+  assert.deepEqual([sent.changed - changed, sent.request - request], [1, 1]);
+  assert.equal((await call("GET", "/ui/products/del1")).status, 404);
+  assert.equal((await call("POST", "/ui/products/del1/threads")).status, 404, "a deleted slug cannot get a new chat row");
+  assert.equal((await call("DELETE", "/ui/products/del1")).status, 404, "repeat delete");
+
+  assert.equal((await call("DELETE", "/ui/products/del2")).status, 204);
+  assert.deepEqual(reposOf(c2), [], "the last Product leaves an empty list; the connection stays");
+  assert.ok(connectionRow(c2), "connection kept");
+});
+
+test("DELETE /ui/products/:slug: a Product with no connection skips the connection step; a config Product is 409; unknown or malformed is 404", async () => {
+  await engine.product.create({ data: { slug: "loose", name: "loose", source: "api", connectionId: null, definition: { include: [] }, repoNames: [] } });
+  engine.chats.push({ id: "loose-1", productId: "loose", messages: [], createdBy: "ui", visibility: "PRIVATE", name: null, createdAt: new Date(), updatedAt: new Date() });
+  const before = structuredClone(engine.connections.map((c) => [c.config, c.syncRequestedAt]));
+  assert.equal((await call("DELETE", "/ui/products/loose")).status, 204);
+  assert.equal(engine.chats.some((c) => c.productId === "loose"), false);
+  assert.deepEqual(engine.connections.map((c) => [c.config, c.syncRequestedAt]), before);
+
+  engine.chats.push({ id: "core-1", productId: "core", messages: [], createdBy: "ui", visibility: "PRIVATE", name: null, createdAt: new Date(), updatedAt: new Date() });
+  const refused = await call("DELETE", "/ui/products/core");
+  assert.deepEqual([refused.status, refused.json.errorCode], [409, "READ_ONLY"]);
+  assert.ok(engine.product.rows.some((p) => p.slug === "core") && engine.chats.some((c) => c.productId === "core"), "nothing deleted");
+  assert.equal((await call("DELETE", "/ui/products/nope")).status, 404);
+  assert.equal((await call("DELETE", "/ui/products/Bad_Slug")).status, 404);
+  assert.equal((await call("DELETE", "/ui/products/del1", undefined, false)).status, 401);
 });
