@@ -96,6 +96,10 @@ Done when: for each kept optimization the primary metric it targets improves at 
 
 Every slice has a scope, runnable verify commands and an observable done condition. Blocked-by edges: S1 none; S2 on S1; S3 on S2; S4 and S5 on S3; S6 on S5; S7 on S4, S5, S6. No cycle. S4 and S5 touch disjoint files (Dockerfile versus `apps/ui/src`). Together the slices cover the goal (separate eval, standard layout, UI structure, Docker size, measured performance) and add nothing outside it.
 
+## Build notes
+
+- 2026-11-07: the Codex probe failed (model not supported on this ChatGPT account), so every slice runs as `agent: claude` and the Sonnet `loop-reviewer` reviews. `main` moved from `aca2f39` to `2b90349` before the cycle branch was cut (the earlier delete-flows and product-setup-only cycles had merged); the cycle branch starts from `2b90349`. The three empty delete-flows worktrees were already gone.
+
 ## Gate 1
 
 Approved by the human on 2026-11-07 (all seven slices, limits and budget as written).
