@@ -95,7 +95,7 @@ export const api = {
     request(keys.products, productSchema, "POST", input),
   edit: (id: string, input: EditRequest) =>
     request(keys.product(id), productSchema, "PATCH", input),
-  /** Removes an api Product and its chats; the engine refuses a config Product. */
+  /** Removes a Product and its chats. */
   deleteProduct: async (id: string) =>
     void (await check(
       await fetch(keys.product(id), {

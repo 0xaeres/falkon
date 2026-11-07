@@ -52,16 +52,13 @@ const form = (typed: string, error = "", busy = false) =>
 const deleteButton = (html: string) =>
   html.match(/<button[^>]*>Delete Product<\/button>/)![0];
 
-test("danger zone: an api Product shows the Delete Product button; a Product without a connection shows a note instead", () => {
-  const api = render(product);
-  assert.match(api, /Danger zone/);
-  assert.match(api, />Delete Product<\/button>/);
-  const config = render({ ...product, connectionId: undefined });
-  assert.match(config, /Danger zone/);
-  assert.match(config, /has no connection/);
-  assert.match(config, /config\.json/);
-  assert.match(config, /DELETE \/products\/:slug/);
-  assert.doesNotMatch(config, />Delete Product<\/button>/);
+test("danger zone: every Product shows the Delete Product button, with or without a connection", () => {
+  for (const p of [product, { ...product, connectionId: undefined }]) {
+    const html = render(p);
+    assert.match(html, /Danger zone/);
+    assert.match(html, />Delete Product<\/button>/);
+    assert.doesNotMatch(html, /config\.json/);
+  }
 });
 
 test("delete form: the button stays disabled until the exact slug is typed", () => {
@@ -71,10 +68,7 @@ test("delete form: the button stays disabled until the exact slug is typed", () 
 });
 
 test("delete form: an error is shown and a busy request disables the button", () => {
-  assert.match(
-    form("alpha", "Product comes from config."),
-    /Product comes from config\./,
-  );
+  assert.match(form("alpha", "Product not found."), /Product not found\./);
   assert.match(deleteButton(form("alpha", "", true)), / disabled=""/);
 });
 
@@ -122,8 +116,8 @@ test("removeProduct: failure returns the error and neither clears nor navigates"
   const realFetch = globalThis.fetch;
   globalThis.fetch = (async () =>
     Response.json(
-      { error: "Product comes from config and is read-only through this API." },
-      { status: 409 },
+      { error: "Product not found." },
+      { status: 404 },
     )) as typeof fetch;
   let touched = false;
   try {
@@ -132,7 +126,7 @@ test("removeProduct: failure returns the error and neither clears nor navigates"
       (async () => void (touched = true)) as never,
       () => void (touched = true),
     );
-    assert.match(error, /read-only/);
+    assert.match(error, /not found/);
   } finally {
     globalThis.fetch = realFetch;
   }

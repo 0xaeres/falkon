@@ -527,16 +527,12 @@ test("product DELETE forwards to /ui/products/:slug and passes the 204 through",
     ["DELETE", "/ui/products/alpha", "Bearer admin-token-for-test"],
   );
   reply = {
-    status: 409,
-    body: {
-      statusCode: 409,
-      errorCode: "READ_ONLY",
-      message: "Product comes from config and is read-only through this API.",
-    },
+    status: 404,
+    body: { statusCode: 404, message: "Product not found." },
   };
   const refused = await product.DELETE(
     new Request("http://localhost/api/x", { method: "DELETE" }),
     ctx("alpha"),
   );
-  assert.equal(refused.status, 409);
+  assert.equal(refused.status, 404);
 });

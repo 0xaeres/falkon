@@ -119,7 +119,7 @@ function Wizard({ edit }: { edit?: Product }) {
   );
   const [step, setStep] = useState(edit ? 2 : 0);
   const [provider, setProvider] = useState<Provider>(
-    (edit?.provider === "git" ? undefined : edit?.provider) ?? "github", // config Products over plain git are never edited here
+    (edit?.provider === "git" ? undefined : edit?.provider) ?? "github", // a Product over a plain git connection is never edited here
   );
   const [host, setHost] = useState(
     edit ? `https://${edit.host}` : "https://github.com",

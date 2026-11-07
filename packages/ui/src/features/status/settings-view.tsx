@@ -124,7 +124,7 @@ export function DeleteForm({
   );
 }
 
-function DangerZone({ id, editable }: { id: string; editable: boolean }) {
+function DangerZone({ id }: { id: string }) {
   const { mutate } = useSWRConfig();
   const router = useRouter();
   const [typed, setTyped] = useState("");
@@ -147,46 +147,39 @@ function DangerZone({ id, editable }: { id: string; editable: boolean }) {
           <h2 className="text-destructive">Danger zone</h2>
         </CardTitle>
         <CardDescription>
-          {editable
-            ? "Deleting a Product removes its chats and any repositories no other Product needs. This cannot be undone."
-            : "This Product has no connection, so it can't be deleted here. Edit config.json for a config Product, or use DELETE /products/:slug on the admin API."}
+          Deleting a Product removes its chats and any repositories no other
+          Product needs. This cannot be undone.
         </CardDescription>
-        {editable && (
-          <CardAction>
-            <Dialog
-              onOpenChange={() => {
-                setTyped("");
-                setError("");
-              }}
-            >
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive"
-                >
-                  Delete Product
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Delete {id}?</DialogTitle>
-                  <DialogDescription>
-                    This removes the Product and its chats for good.
-                  </DialogDescription>
-                </DialogHeader>
-                <DeleteForm
-                  slug={id}
-                  typed={typed}
-                  busy={busy}
-                  error={error}
-                  onType={setTyped}
-                  onConfirm={() => void confirm()}
-                />
-              </DialogContent>
-            </Dialog>
-          </CardAction>
-        )}
+        <CardAction>
+          <Dialog
+            onOpenChange={() => {
+              setTyped("");
+              setError("");
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-destructive">
+                Delete Product
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete {id}?</DialogTitle>
+                <DialogDescription>
+                  This removes the Product and its chats for good.
+                </DialogDescription>
+              </DialogHeader>
+              <DeleteForm
+                slug={id}
+                typed={typed}
+                busy={busy}
+                error={error}
+                onType={setTyped}
+                onConfirm={() => void confirm()}
+              />
+            </DialogContent>
+          </Dialog>
+        </CardAction>
       </CardHeader>
     </Card>
   );
@@ -339,7 +332,7 @@ export function SettingsView() {
           )}
         </Card>
       )}
-      <DangerZone id={product.id} editable={!!product.connectionId} />
+      <DangerZone id={product.id} />
     </Page>
   );
 }

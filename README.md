@@ -267,9 +267,7 @@ Local development needs these in addition:
    cp config.example.json config.json
    ```
 
-2. Put a code-host token in `.env`, for example `GITHUB_TOKEN=...`.
-
-3. Edit `config.json` to list your repositories. A minimal file looks like this.
+2. Optional: edit `config.json` to sync repositories from a code host without the UI. A minimal file looks like this.
 
    ```jsonc
    {
@@ -279,16 +277,13 @@ Local development needs these in addition:
          "token": { "env": "GITHUB_TOKEN" },   // reads the token from .env
          "repos": ["octocat/Hello-World"]
        }
-     },
-     "contexts": {
-       "octocat": { "include": ["github.com/octocat/*"], "description": "Octocat repos" }
      }
    }
    ```
 
-   Each `contexts` entry becomes a Product, and its name becomes the Product slug. This file creates a Product called `octocat`, served at `http://127.0.0.1:3001/mcp/octocat`.
+   Products are not defined in this file. You create them in the UI. A `contexts` block left over in an older file is ignored, and the backend logs one line saying so.
 
-4. Start the stack.
+3. Start the stack.
 
    ```bash
    docker compose up --build
@@ -302,14 +297,14 @@ Then open:
 | http://127.0.0.1:3001/mcp/`<product>` | MCP endpoint for one Product |
 | http://127.0.0.1:3002 | Admin API. Needs the admin token |
 
-Open the Falkon UI and wait for your repositories to reach `INDEXED`. Then [connect an MCP client](#connecting-an-mcp-client).
-
 The first `api` start creates an admin token. Show it, or reset it, from the repository root:
 
 ```bash
 scripts/admin-token.sh show
 scripts/admin-token.sh reset
 ```
+
+4. Open http://127.0.0.1:3100/setup to create a Product. Enter a code-host token, pick repositories and name the Product. The Product's Connect page shows its MCP URL. Search works once its repositories reach `INDEXED`. Then [connect an MCP client](#connecting-an-mcp-client).
 
 ## Local development
 
@@ -353,7 +348,6 @@ When `AUTH_MODE=apiKey`, add `"headers": { "Authorization": "Bearer <key>" }`. T
 | --- | --- |
 | `connections` | Code hosts to sync. Types are `github` (cloud or Enterprise) and `git` (an http(s) remote, or a `file://` glob of local repositories indexed in place) |
 | `settings` | Index limits, reindex and resync intervals, concurrency and timeouts, and the pull request sync settings below |
-| `contexts` | Products. Each name is a Product slug and an MCP path |
 | `environmentOverrides` | Environment values resolved at load time |
 | `models` | Language models for Ask, of type `openai-compatible`, `openai` or `anthropic` |
 | `knowledgeBase` | Knowledge base switches, budget and repositories to document |
@@ -457,7 +451,7 @@ Enable it with `knowledgeBase.enabled` (on by default) and set the `LLM_*` varia
 
 ## Security
 
-- **Localhost by default.** The engine binds `127.0.0.1` unless you change `API_HOST` or `API_ADMIN_HOST`. With `AUTH_MODE=none`, any process that can reach the port can read every configured Product. Use `AUTH_MODE=apiKey` before you expose either listener.
+- **Localhost by default.** The engine binds `127.0.0.1` unless you change `API_HOST` or `API_ADMIN_HOST`. With `AUTH_MODE=none`, any process that can reach the port can read every Product. Use `AUTH_MODE=apiKey` before you expose either listener.
 - **Admin API.** Every request needs the admin bearer token. The token never appears in logs, responses or the query string.
 - **Zoekt has no authentication.** Its port stays inside the compose network. Never publish it.
 - **Stored tokens are encrypted.** Code-host tokens use AES-256-GCM in Postgres. If you lose the master key, stored tokens become unreadable and you must enter them again. Key rotation is not implemented.
@@ -493,7 +487,6 @@ The old Next.js web app (port 3000) is removed; the Falkon UI on `127.0.0.1:3100
 - The code graph (relate, trace and potential impact over compiler-resolved edges) and the deterministic overview map are not built.
 - Two turns on the same Ask thread at once overwrite each other. The last write wins.
 - Connectors cover GitHub and generic git only. GitLab, Gitea, Bitbucket and Azure DevOps are not implemented.
-- Search contexts are not supported.
 - Automated browser tests do not cover Mermaid rendering, streaming or the failed-first-send flow.
 
 ## Documentation

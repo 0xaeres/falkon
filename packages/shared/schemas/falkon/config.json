@@ -131,7 +131,7 @@
     },
     "contexts": {
       "type": "object",
-      "description": "Named repo sets, selected in a query with `context:<name>`.",
+      "description": "Deprecated and ignored: Products are created in /setup, not in config. Accepted so older files still validate.",
       "patternProperties": {
         "^[a-zA-Z0-9_-]+$": {
           "type": "object",

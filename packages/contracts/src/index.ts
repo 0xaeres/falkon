@@ -5,7 +5,7 @@ export const productIdSchema = z
   .min(1)
   .regex(/^[a-z0-9][a-z0-9-]{0,62}$/); // engine slug rule: isProductSlug in packages/backend/src/productResolve.ts
 export const providerSchema = z.enum(["github", "github-enterprise"]);
-// A Product may also come from config over plain git remotes; connections are never "git".
+// A Product whose repositories are plain git remotes reports "git"; connections are never "git".
 export const productProviderSchema = z.enum(["github", "github-enterprise", "git"]);
 export const scenarioSchema = z.enum([
   "partly-behind",
@@ -39,7 +39,7 @@ export const productSchema = z.object({
   activeGeneration: z.string().nullable(),
   scenario: scenarioSchema,
   queuedAt: z.number().nullable(),
-  // The connection (Credential id) an engine Product draws from; absent for config Products and the mock.
+  // The connection (Credential id) an engine Product draws from; absent when the Product has no connection, and in the mock.
   connectionId: z.string().optional(),
 });
 export const gapSchema = z.object({

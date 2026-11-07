@@ -7,7 +7,7 @@ test("the example config parses: Falkon format, comments, clone-only knowledgeBa
   const c = parseConfig(fs.readFileSync(new URL("../../../config.example.json", import.meta.url), "utf8"));
   assert.deepEqual(Object.keys(c.connections), ["github", "hello", "local"]);
   assert.equal(c.knowledgeBase.enabled, true);
-  assert.equal(c.contextsIgnored, true);
+  assert.equal(c.contextsIgnored, false);
 });
 
 test("knowledge base is on by default and can be switched off", () => {

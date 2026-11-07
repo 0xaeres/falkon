@@ -1,6 +1,6 @@
 {
   "$schema": "./packages/shared/schemas/falkon/config.json",
-  // Falkon config: connections, settings, contexts, knowledgeBase. Comments allowed.
+  // Falkon config: connections, settings, knowledgeBase. Comments allowed.
   "settings": {
     "reindexIntervalMs": 3600000,
     "resyncConnectionIntervalMs": 86400000
@@ -15,9 +15,6 @@
     },
     "hello": { "type": "git", "url": "https://github.com/octocat/Hello-World.git" },
     "local": { "type": "git", "url": "file:///absolute/path/to/repos/*" }
-  },
-  "contexts": {
-    "octocat": { "include": ["github.com/octocat/*"], "description": "Octocat repos" }
   },
   // Generated architecture docs (on by default; needs LLM_* env vars, skipped without them).
   "knowledgeBase": {
