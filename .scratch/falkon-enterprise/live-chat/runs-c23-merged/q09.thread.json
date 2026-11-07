@@ -1,0 +1,454 @@
+{
+  "id": "20c28187-ac6c-4459-b1a8-186c74e5bc2e",
+  "productId": "openmrs",
+  "title": "Billing Module Payment Change",
+  "updatedAt": 1794016030756,
+  "answers": [
+    {
+      "id": "oVkAkwBwvXokap9I",
+      "productId": "openmrs",
+      "question": "What was the most recent significant change to the billing module's bill payment handling, and why was it made?",
+      "generation": "g-ab363e",
+      "kind": "grounded",
+      "paragraphs": [
+        {
+          "text": "The most recent significant change to bill payment handling in `openmrs-module-billing` is PR **#155, \"Payments should be associated with a cashier\"** (commit `b52412a0a7925469183c2590937d6720228f9ec6`, 2026-04-01). It added a mandatory `cashier` (an OpenMRS `Provider`) to every new payment, so each payment row now records who took the money. It was made to fix the gap that a payment previously had no notion of who processed it — and notably it is the *second* attempt: the first, PR #109 / O3-5197 (\"Each payment should have an associated Cashier\", commit `edd63790481fe565d8dbeb767a1ac8f29a1fb636`), was reverted in PR #147 (commit `7dfc3af97f42e94050d309742e38b580d3d8870e`) and then re-landed in #155.",
+          "citations": []
+        },
+        {
+          "text": "**What changed**",
+          "citations": []
+        },
+        {
+          "text": "1. **Model** — `Payment` gained a `cashier` field of type `org.openmrs.Provider` [1], alongside the existing `amount` and `amountTendered`.\n2. **Persistence** — a `provider_id` column was added to the payment table with an FK to `provider` [2].\n3. **Server-side defaulting** — when a bill is saved through REST, any new payment with no cashier inherits the authenticated user's provider record. `setBillPayments` does this once per save and throws a `RestClientException` if the logged-in user has no provider [3], delegating to `getCurrentCashier` / `assignCurrentCashier` [4].\n4. **Client override** — a client may still send an explicit cashier, accepted as a provider UUID by the `@PropertySetter(\"cashier\")` in `PaymentResource` [5], and it is exposed in the default/full representation [6].\n5. **Validation** — `BillValidator.validateNewPaymentsHaveCashier` rejects the save with `billing.error.paymentCashierRequired` if a new, non-voided payment still has no cashier [7]. The check is deliberately narrowed (see the comment at [8]) to payments where `getId() == null` and `voided == false`, so **legacy payments written before the column existed stay valid**.",
+          "citations": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ]
+        },
+        {
+          "text": "**Why the ordering inside the validator matters**",
+          "citations": []
+        },
+        {
+          "text": "`validateNewPaymentsHaveCashier` is called before `validateLineItemsNotModified` [9]. That order is the whole point of the trap the PR had to fix: the line-item check runs a DB query, which makes Hibernate auto-flush the transient payments, assign them IDs, and thereby defeat the `payment.getId() == null` test — so the cashier requirement would silently stop firing. If you reorder those two lines, the validation regresses.",
+          "citations": [
+            9
+          ]
+        },
+        {
+          "text": "```mermaid\n---\ntitle: \"Bill payment: cashier assignment\"\n---\nsequenceDiagram\n    participant UI as Billing UI\n    participant BR as BillResource\n    participant BV as BillValidator\n    participant DB as Database\n    UI->>BR: POST /billing/bill with payments\n    BR->>BR: setBillPayments, default cashier from current provider\n    BR->>BV: saveBill triggers validation\n    BV->>BV: validateNewPaymentsHaveCashier first\n    BV->>BV: then validateLineItemsNotModified, may auto-flush\n    BV-->>BR: reject if new payment has no cashier\n    BR->>DB: persist bill and payments with provider_id\n```",
+          "citations": []
+        },
+        {
+          "text": "On the client side, `openmrs-esm-billing-app` already expects this shape: `Payment` carries a `cashier: Provider` [10], and the payload type sends the cashier UUID as a string [11], so callers can either supply it or let the backend fill it in from the session. The same frontend also has a configured default cashier provider UUID [12].",
+          "citations": [
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "text": "One caveat on sourcing: pull requests for `openmrs-module-billing` were never ingested into my index, so I could not read the PR bodies or review comments for #109, #147 or #155 — the \"why\" above comes from the commit messages and bodies, the reverted/re-landed commit pairs, and the code itself, not from the ticket text. The O3-5197 key appears only in commit `edd6379`'s subject; I did not read the ticket.\n</answer>",
+          "citations": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": 1,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/api/model/Payment.java",
+          "revision": "HEAD",
+          "startLine": 45,
+          "code": [
+            "\tprivate BigDecimal amountTendered;",
+            "\t",
+            "\t@Getter",
+            "\t@Setter",
+            "\tprivate Provider cashier;",
+            "\t",
+            "\tpublic Integer getId() {",
+            "\t\treturn paymentId;"
+          ],
+          "highlightedLines": [
+            48,
+            49
+          ]
+        },
+        {
+          "id": 2,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/resources/liquibase.xml",
+          "revision": "HEAD",
+          "startLine": 364,
+          "code": [
+            "\t\t</createIndex>",
+            "",
+            "\t\t<createIndex indexName=\"cashier_timesheet_provider_clock_in\" tableName=\"cashier_timesheet\" >",
+            "\t\t\t<column name=\"provider_id\" />",
+            "\t\t\t<column name=\"clock_in\" />",
+            "\t\t</createIndex>",
+            "\t\t<createIndex indexName=\"cashier_bill_receipt_number_idx\" tableName=\"cashier_bill\" unique=\"true\">"
+          ],
+          "highlightedLines": [
+            367
+          ]
+        },
+        {
+          "id": 3,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillResource.java",
+          "revision": "HEAD",
+          "startLine": 144,
+          "code": [
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(\"payments\")",
+            "\tpublic void setBillPayments(Bill instance, Set<Payment> payments) {",
+            "\t\tif (instance.getPayments() == null) {",
+            "\t\t\tinstance.setPayments(new HashSet<Payment>(payments.size()));",
+            "\t\t}",
+            "\t\tBaseRestDataResource.syncCollection(instance.getPayments(), payments);",
+            "\t\tProvider cashier = null;",
+            "\t\tfor (Payment payment : instance.getPayments()) {",
+            "\t\t\tif (payment.getId() == null && payment.getCashier() == null) {",
+            "\t\t\t\tif (cashier == null) {",
+            "\t\t\t\t\tcashier = getCurrentCashier();",
+            "\t\t\t\t\tif (cashier == null) {",
+            "\t\t\t\t\t\tthrow new RestClientException(",
+            "\t\t\t\t\t\t        \"The current user (\" + Context.getAuthenticatedUser().getUsername() + \") is not a provider\");",
+            "\t\t\t\t\t}",
+            "\t\t\t\t}",
+            "\t\t\t\tpayment.setCashier(cashier);",
+            "\t\t\t}",
+            "\t\t\tinstance.addPayment(payment);",
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(\"billAdjusted\")",
+            "\tpublic void setBillAdjusted(Bill instance, Bill billAdjusted) {"
+          ],
+          "highlightedLines": [
+            147,
+            148,
+            149,
+            150,
+            151,
+            152,
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160,
+            161,
+            162,
+            163,
+            164,
+            165,
+            166,
+            167
+          ]
+        },
+        {
+          "id": 4,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/BillResource.java",
+          "revision": "HEAD",
+          "startLine": 255,
+          "code": [
+            "\t\treturn new Bill();",
+            "\t}",
+            "\t",
+            "\tprivate Provider getCurrentCashier() {",
+            "\t\treturn ProviderUtil.getCurrentProvider();",
+            "\t}",
+            "\t",
+            "\tprivate void assignCurrentCashier(Bill bill) {",
+            "\t\tProvider cashier = getCurrentCashier();",
+            "\t\tif (cashier == null) {",
+            "\t\t\tthrow new RestClientException(",
+            "\t\t\t        \"The current user (\" + Context.getAuthenticatedUser().getUsername() + \") is not a provider\");",
+            "\t\t}",
+            "\t\t",
+            "\t\tbill.setCashier(cashier);",
+            "\t}",
+            "\t",
+            "\tprivate void assignActiveVisit(Bill bill) {",
+            "\t\tList<Visit> activeVisits = Context.getVisitService().getActiveVisitsByPatient(bill.getPatient());"
+          ],
+          "highlightedLines": [
+            258,
+            259,
+            260,
+            261,
+            262,
+            263,
+            264,
+            265,
+            266,
+            267,
+            268,
+            269,
+            270
+          ]
+        },
+        {
+          "id": 5,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 76,
+          "code": [
+            "\t\treturn description;",
+            "\t}",
+            "\t",
+            "\t@PropertySetter(\"cashier\")",
+            "\tpublic void setCashier(Payment instance, String uuid) {",
+            "\t\tif (StringUtils.isBlank(uuid)) {",
+            "\t\t\tthrow new APIException(\"Cashier UUID must not be null or blank.\");",
+            "\t\t}",
+            "\t\tProvider provider = Context.getProviderService().getProviderByUuid(uuid);",
+            "\t\tif (provider == null) {",
+            "\t\t\tthrow new ObjectNotFoundException();",
+            "\t\t}",
+            "\t\tinstance.setCashier(provider);",
+            "\t}",
+            "\t",
+            "\t// Work around TypeVariable issue on base generic property (BaseCustomizableInstanceData.getInstanceType)",
+            "\t@PropertySetter(\"instanceType\")"
+          ],
+          "highlightedLines": [
+            79,
+            80,
+            81,
+            82,
+            83,
+            84,
+            85,
+            86,
+            87,
+            88,
+            89
+          ]
+        },
+        {
+          "id": 6,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "omod/src/main/java/org/openmrs/module/billing/web/rest/resource/PaymentResource.java",
+          "revision": "HEAD",
+          "startLine": 49,
+          "code": [
+            "\t@Override",
+            "\tpublic DelegatingResourceDescription getRepresentationDescription(Representation rep) {",
+            "\t\tDelegatingResourceDescription description = new DelegatingResourceDescription();",
+            "\t\tif (rep instanceof DefaultRepresentation || rep instanceof FullRepresentation) {",
+            "\t\t\tdescription.addProperty(\"uuid\");",
+            "\t\t\tdescription.addProperty(\"instanceType\", Representation.REF);",
+            "\t\t\tdescription.addProperty(\"attributes\");",
+            "\t\t\tdescription.addProperty(\"amount\");",
+            "\t\t\tdescription.addProperty(\"amountTendered\");",
+            "\t\t\tdescription.addProperty(\"cashier\", Representation.REF);",
+            "\t\t\tdescription.addProperty(\"dateCreated\");",
+            "\t\t\tdescription.addProperty(\"voided\");",
+            "\t\t\treturn description;"
+          ],
+          "highlightedLines": [
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58
+          ]
+        },
+        {
+          "id": 7,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/validator/BillValidator.java",
+          "revision": "HEAD",
+          "startLine": 100,
+          "code": [
+            "\t * Validates that any new (unsaved) non-voided payment has a cashier. Existing persisted payments",
+            "\t * (id != null) are exempt to allow legacy data.",
+            "\t */",
+            "\tprivate void validateNewPaymentsHaveCashier(Bill bill, Errors errors) {",
+            "\t\tif (bill.getPayments() == null) {",
+            "\t\t\treturn;",
+            "\t\t}",
+            "\t\tfor (Payment payment : bill.getPayments()) {",
+            "\t\t\tif (payment != null && !payment.getVoided() && payment.getId() == null && payment.getCashier() == null) {",
+            "\t\t\t\terrors.reject(\"billing.error.paymentCashierRequired\");",
+            "\t\t\t\treturn;",
+            "\t\t\t}",
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\tprivate void validateVisitExistsAndBelongsToPatient(Bill bill, Errors errors) {",
+            "\t\tif (bill.getVisit() == null) {"
+          ],
+          "highlightedLines": [
+            103,
+            104,
+            105,
+            106,
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            113
+          ]
+        },
+        {
+          "id": 8,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/validator/BillValidator.java",
+          "revision": "HEAD",
+          "startLine": 96,
+          "code": [
+            "\t\t}",
+            "\t}",
+            "\t",
+            "\t/**",
+            "\t * Validates that any new (unsaved) non-voided payment has a cashier. Existing persisted payments",
+            "\t * (id != null) are exempt to allow legacy data.",
+            "\t */",
+            "\tprivate void validateNewPaymentsHaveCashier(Bill bill, Errors errors) {",
+            "\t\tif (bill.getPayments() == null) {",
+            "\t\t\treturn;"
+          ],
+          "highlightedLines": [
+            99,
+            100,
+            101,
+            102
+          ]
+        },
+        {
+          "id": 9,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-module-billing",
+          "path": "api/src/main/java/org/openmrs/module/billing/validator/BillValidator.java",
+          "revision": "HEAD",
+          "startLine": 47,
+          "code": [
+            "\t\t\t\terrors.rejectValue(\"voided\", \"error.null\");",
+            "\t\t\t}",
+            "\t\t\t",
+            "\t\t\tvalidateNewPaymentsHaveCashier(bill, errors);",
+            "\t\t\tvalidateLineItemsNotModified(bill, errors);",
+            "\t\t\tvalidateVisitExistsAndBelongsToPatient(bill, errors);",
+            "\t\t}",
+            "\t}"
+          ],
+          "highlightedLines": [
+            50,
+            51
+          ]
+        },
+        {
+          "id": 10,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/types/index.ts",
+          "revision": "HEAD",
+          "startLine": 33,
+          "code": [
+            "  cashPointUuid: string;",
+            "  cashPointName: string;",
+            "  cashPointLocation: string;",
+            "  cashier: Provider;",
+            "  receiptNumber: string;",
+            "  status: BillStatus;",
+            "  identifier: string;"
+          ],
+          "highlightedLines": [
+            36
+          ]
+        },
+        {
+          "id": 11,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/types/index.ts",
+          "revision": "HEAD",
+          "startLine": 250,
+          "code": [
+            "",
+            "export type CreateBillPayload = {",
+            "  cashPoint: string;",
+            "  cashier: string;",
+            "  lineItems: Array<LineItem>;",
+            "  payments: Array<PaymentPayload>;",
+            "  patient: string;",
+            "  status: string;",
+            "  visit?: string;"
+          ],
+          "highlightedLines": [
+            253,
+            254,
+            255
+          ]
+        },
+        {
+          "id": 12,
+          "productId": "openmrs",
+          "generation": "g-ab363e",
+          "repository": "github.com/openmrs/openmrs-esm-billing-app",
+          "path": "src/config-schema.ts",
+          "revision": "HEAD",
+          "startLine": 70,
+          "code": [
+            "    _default: {",
+            "      // Default Cash Point UUID - The cashier station/location where bills are processed",
+            "      cashPoint: '54065383-b4d4-42d2-af4d-d250a1fd2590',",
+            "      // Default Cashier Provider UUID - The provider/user UUID that identifies the cashier processing the bill",
+            "      cashier: 'f9badd80-ab76-11e2-9e96-0800200c9a66',",
+            "      // Default Price UUID - The service price UUID used when creating bills (currently unused in code)",
+            "      priceUuid: '7b9171ac-d3c1-49b4-beff-c9902aee5245',",
+            "    },"
+          ],
+          "highlightedLines": [
+            73,
+            74
+          ]
+        }
+      ],
+      "gaps": [],
+      "partialReasons": [],
+      "abstention": null,
+      "suggestions": []
+    }
+  ]
+}

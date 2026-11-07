@@ -1114,6 +1114,21 @@ Same five eval questions as the stored cycle 21 run, scored with the same strict
 
 Result: recall equal on all five (mean 0.660 both); no regression, no gain, n = 5, one run each, so a small change would not show. The sixth question (trace-23) was not run: the spend guard stopped the run at $0.32. Input averaged about 200k per question on these five (cycle 21 per-question tokens were not stored, only the 300k average over 22). Spend on this check: $0.57 (a first run with a corpus missing the four gold repositories, $0.25, was invalid and discarded: the 42-repository corpus is the 38 repositories in `.local/eval/o3` plus `esm-core`, `esm-patient-chart` and `webservices.rest` from `.local/eval/xrepo` and the git checkout `.local/eval/openmrs-core`); with the pilot ($0.25) the cycle's paid total is about $0.82 of the $0.95 cap. The docs questions stay at 0.50 as before: that is a retrieval gap predating this cycle, not caused by it.
 
+### Cycle 23 live run on the merged tip (cycles 23 and 24 together; 2026-11-07, human raised the cap by $0.25; tip `e1057cc`, six repositories, UI container added to the compose file)
+
+Two questions (q09 history, q02 flow; the third, q03, was not run: the spend guard stopped at $0.28). Stored answers: `live-chat/runs-c23-merged/`.
+
+| Question | Steps | Input tokens | Cached reported | Words | Evidence parts |
+|---|---|---|---|---|---|
+| q09 history | 14 (was 9) | 467,497 | 392,704 | 526 | 12 |
+| q02 flow | 18 (was 14) | 418,240 | 343,296 | 794 | 29 |
+
+Tokens: input per question rose to 418k and 467k, against 266k and 277k for the same questions at tip `7b29839`. Per-step input is the same size (about 6.6k at step 1 for the flow question, 14.7k for the history one); the difference is the number of steps (14 and 18 against 9 and 14), so it is either run-to-run variance (one run each) or the cycle 24 style prompt making the model read more before it answers. One run each cannot tell the two apart. The gating, caps and stubs still act as measured; the step count dominates the cost and it is not controlled by this cycle.
+
+Cycle 24 checks: (1) tone: both answers open with the answer (q09 names the PR and what it did in the first sentence; q02 opens with a two-sentence summary of the path), then numbered sections with cited references, ending with a short "worth knowing" paragraph; sized 526 and 794 words, roughly proportional to the question. (2) code: every fence names a language (`mermaid`, `archify`, `json`); code blocks are highlighted (hljs classes in the page). (3) diagrams: **the q02 diagram did not render**: the model wrote an `archify` sequence diagram with `"schema_version":2`, but `renderArchify` requires 1 for sequence ("/schema_version must be equal to constant 1"), so no `data-diagram` part was stored and the UI shows the JSON source as code. The prompt's rule line says "2 (workflow) or 1 (others)", but its only example is a workflow with version 2, which primes the model to copy 2. q09 used a `mermaid` fence instead of archify (allowed by the prompt for state or timeline shapes). Fix suggested for cycle 24: add a sequence example with version 1 to `DIAGRAM_PROMPT`, or let `fitLayout` in `packages/shared/src/archify.ts` coerce the version for non-workflow types.
+
+Spend: this run $0.28; all paid runs of cycles 23 and 24 combined about $1.10 of the $1.20 cap (original $0.95 plus $0.25).
+
 ## Cycle 24: chat answer style and reading experience (human, 2026-11-06; built directly in the main session, ahead of cycle 22)
 
 Human request (2026-11-06): answers should read like a senior engineer explaining to a teammate, sized to the question, with real code excerpts, JSON and config examples where they help, syntax highlighted; the chat should use the width it has (like ChatGPT); archify diagrams must sit on the answer's own canvas, be readable, keep their animation, and keep simplified interaction. Human decisions at the start: inline diagrams with simplified interaction and the animation kept; highlight.js (new dependency, approved); short excerpts plus `@file` references; build now, before cycle 22.
