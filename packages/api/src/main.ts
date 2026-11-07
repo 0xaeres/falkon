@@ -19,7 +19,7 @@ adminToken(process.env);
 const policy = accessPolicyFromEnv(process.env);
 // Best effort: with Redis down the api still serves; ioredis reconnects by itself.
 const signals = redisSignals();
-const registry = new PrismaProductRegistry(prisma, signals);
+const registry = new PrismaProductRegistry(prisma);
 
 const host = process.env.API_HOST ?? "127.0.0.1";
 const port = Number(process.env.API_PORT ?? 3001);
@@ -32,4 +32,4 @@ const connections = new ConnectionService(prisma);
 const ui = new UiProductService(prisma, connections, Date.now, undefined, signals);
 productDeps.generation = async (slug) => (await ui.status(slug)).generation ?? "";
 const threads = new ThreadService(prisma, ui, signals);
-await startAdmin(registry, process.env, connections, ui, threads, new SearchService(prisma), new KnowledgeService(prisma, ui, signals), new ProductEvents(ui, threads, signals));
+await startAdmin(process.env, connections, ui, threads, new SearchService(prisma), new KnowledgeService(prisma, ui, signals), new ProductEvents(ui, threads, signals));

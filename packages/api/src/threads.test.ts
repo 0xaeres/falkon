@@ -12,7 +12,6 @@ import { messagesToAnswers } from "@falkon/contracts";
 import { createAdminApp } from "./admin";
 import { ConnectionService } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";
-import { PrismaProductRegistry } from "./product";
 import { LiveAnswers } from "./liveAnswers";
 import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
@@ -67,7 +66,7 @@ before(async () => {
   for (const [slug, repo] of [["alpha", IN], ["beta", OUT], ["cold", COLD]] as const) await engine.product.create({ data: { slug, name: slug, source: "api", definition: { include: [repo] }, repoNames: [repo] } });
   const connections = new ConnectionService(engine.db as never);
   ui = new UiProductService(engine.db, connections);
-  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never), TOKEN, {}, connections, ui, new ThreadService(engine.db, ui));
+  admin = await createAdminApp(TOKEN, {}, connections, ui, new ThreadService(engine.db, ui));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
 });

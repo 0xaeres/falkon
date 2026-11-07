@@ -10,7 +10,6 @@ import { createAdminApp } from "./admin";
 import { ConnectionService, type CodeHost } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";
 import { ProductEvents } from "./events";
-import { PrismaProductRegistry } from "./product";
 import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
 
@@ -41,7 +40,7 @@ before(async () => {
   const connections = new ConnectionService(engine.db as never, host);
   const ui = new UiProductService(engine.db, connections, () => clock, undefined, signals);
   const threads = new ThreadService(engine.db, ui, signals);
-  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never, signals), TOKEN, {}, connections, ui, threads, undefined, undefined, new ProductEvents(ui, threads, signals));
+  admin = await createAdminApp(TOKEN, {}, connections, ui, threads, undefined, undefined, new ProductEvents(ui, threads, signals));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
 });
@@ -185,14 +184,14 @@ test("route enumeration: the admin listener has exactly the S20a routes, the sev
   const router = (admin.getHttpAdapter().getInstance() as { router: { stack: { route?: { path: string; methods: Record<string, boolean> } }[] } }).router;
   const routes = router.stack.flatMap((l) => (l.route ? Object.keys(l.route.methods).map((m) => `${m.toUpperCase()} ${l.route!.path}`) : [])).sort();
   assert.deepEqual(routes, [
-    "DELETE /connections/:id", "DELETE /products/:slug", "DELETE /ui/products/:slug", "DELETE /ui/products/:slug/threads/:id",
-    "GET /connections", "GET /connections/:id/repositories", "GET /products", "GET /products/:slug",
+    "DELETE /connections/:id", "DELETE /ui/products/:slug", "DELETE /ui/products/:slug/threads/:id",
+    "GET /connections", "GET /connections/:id/repositories",
     "GET /ui/products", "GET /ui/products/:slug", "GET /ui/products/:slug/events", "GET /ui/products/:slug/status",
     "GET /ui/products/:slug/threads", "GET /ui/products/:slug/threads/:id", "GET /ui/products/:slug/threads/:id/stream",
     "PATCH /ui/products/:slug",
-    "POST /connections", "POST /products", "POST /ui/products", "POST /ui/products/:slug/sync",
+    "POST /connections", "POST /ui/products", "POST /ui/products/:slug/sync",
     "POST /ui/products/:slug/threads", "POST /ui/products/:slug/threads/:id/messages", "POST /ui/products/:slug/threads/:id/stop",
-    "PUT /connections/:id/token", "PUT /products/:slug",
+    "PUT /connections/:id/token",
   ].sort());
 });
 
@@ -316,10 +315,6 @@ test("writes publish: request for what the worker claims, changed for what a sta
   assert.deepEqual(await step(async () => (id = (await call("POST", "/ui/products/sig/threads")).json.id)), [1, 0], "thread created");
   assert.deepEqual(await step(() => call("DELETE", "/ui/products/sig/threads/nope")), [0, 0], "unknown thread");
   assert.deepEqual(await step(() => call("DELETE", `/ui/products/sig/threads/${id}`)), [1, 0], "thread deleted");
-  assert.deepEqual(await step(() => call("POST", "/products", { slug: "reg", name: "Reg", definition: { include: [APP] } })), [1, 0], "registry create");
-  assert.deepEqual(await step(() => call("PUT", "/products/reg", { name: "Reg 2", definition: { include: [APP] } })), [1, 0], "registry update");
-  assert.deepEqual(await step(() => call("DELETE", "/products/reg")), [1, 0], "registry delete");
-  assert.deepEqual(await step(() => call("DELETE", "/products/reg")), [0, 0], "registry delete of a missing Product");
 });
 
 test("with no signal transport wired, writes still succeed (the default signals reach nobody)", async () => {

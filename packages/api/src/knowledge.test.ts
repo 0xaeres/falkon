@@ -7,7 +7,6 @@ import { ConnectionService } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";
 import { memorySignals } from "@falkon/shared";
 import { KnowledgeService } from "./knowledge";
-import { PrismaProductRegistry } from "./product";
 import { UiProductService } from "./ui";
 
 process.env.LLM_BASE_URL = "http://llm.test";
@@ -36,7 +35,7 @@ before(async () => {
     await engine.product.create({ data: { slug, name: slug, source: "api", definition: { include: repos }, repoNames: repos } });
   }
   const ui = new UiProductService(engine.db, new ConnectionService(engine.db as never), () => clock, async () => ({ enabled, repos: "all" }) as never);
-  admin = await createAdminApp(new PrismaProductRegistry(engine.db as never), TOKEN, {}, undefined, ui, undefined, undefined, new KnowledgeService(engine.db, ui, signals));
+  admin = await createAdminApp(TOKEN, {}, undefined, ui, undefined, undefined, new KnowledgeService(engine.db, ui, signals));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
 });

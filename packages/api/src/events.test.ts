@@ -241,7 +241,7 @@ test("HTTP: GET /ui/products/:slug/events streams state with event-stream header
   const signals = memorySignals();
   const TOKEN = "t".repeat(40);
   const events = new ProductEvents(w.ui, w.threads, signals);
-  const app = await createAdminApp({} as never, TOKEN, {}, undefined, undefined, undefined, undefined, undefined, events);
+  const app = await createAdminApp(TOKEN, {}, undefined, undefined, undefined, undefined, undefined, events);
   await app.listen(0, "127.0.0.1");
   const base = `http://127.0.0.1:${(app.getHttpServer().address() as AddressInfo).port}`;
   const auth = { authorization: `Bearer ${TOKEN}` };

@@ -9,12 +9,13 @@ import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
 import { adminToken, createAdminApp, startAdmin } from "./admin";
 import { createApp } from "./app";
-import { fakeDb } from "./fakeDb";
-import { PrismaProductRegistry } from "./product";
+import type { ConnectionService } from "./connections";
+import type { ProductRegistry } from "./product";
 
 const TOKEN = "s3cr3t-".repeat(6);
-const { db } = fakeDb([{ slug: "core", source: "config", name: "core", description: null, definition: { include: ["github.com/acme/*"] }, repoNames: ["github.com/acme/app"] }]);
-const registry = new PrismaProductRegistry(db);
+const registry: Pick<ProductRegistry, "find"> = { find: async (slug) => (slug === "core" ? { id: 1, repoNames: ["github.com/acme/app"] } : undefined) };
+// A remaining admin route to authenticate against: GET /connections answers 200 [].
+const connections = { list: async () => [], create: async () => ({}) } as unknown as ConnectionService;
 let admin: INestApplication;
 let product: INestApplication;
 const port = (app: INestApplication) => (app.getHttpServer().address() as AddressInfo).port;
@@ -27,7 +28,7 @@ before(async () => {
   for (const [stream, real] of [[process.stdout, realOut], [process.stderr, realErr]] as const) {
     stream.write = ((chunk: unknown, ...rest: unknown[]) => { captured.push(String(chunk)); return (real as (...a: unknown[]) => boolean)(chunk, ...rest); }) as typeof stream.write;
   }
-  admin = await createAdminApp(registry, TOKEN, {});
+  admin = await createAdminApp(TOKEN, {}, connections);
   await admin.listen(0, "127.0.0.1");
   product = await createApp(registry, { post: async () => Response.json({ ok: true }), delete: async () => new Response(null, { status: 204 }) });
   await product.listen(0, "127.0.0.1");
@@ -71,7 +72,7 @@ const BAD: [string, string[]][] = [
 ];
 
 test("every bad credential gets the identical 401, on every route, method and unmatched path", async () => {
-  const routes: [string, string, string?][] = [["GET", "/products"], ["POST", "/products", "{}"], ["GET", "/products/core"], ["PUT", "/products/core", "{}"], ["DELETE", "/products/core"], ["GET", "/nope"], ["POST", "/mcp/core", "{}"]];
+  const routes: [string, string, string?][] = [["GET", "/connections"], ["POST", "/connections", "{}"], ["DELETE", "/connections/x"], ["PUT", "/connections/x/token", "{}"], ["GET", "/connections/x/repositories"], ["GET", "/products"], ["POST", "/products", "{}"], ["GET", "/products/core"], ["PUT", "/products/core", "{}"], ["DELETE", "/products/core"], ["GET", "/nope"], ["POST", "/mcp/core", "{}"]];
   let reference: string | undefined;
   for (const [name, auth] of BAD) {
     for (const [method, path, body] of routes) {
@@ -88,35 +89,32 @@ test("every bad credential gets the identical 401, on every route, method and un
 
 test("a token in the query, body, cookie or another header is not a credential", async () => {
   const t = encodeURIComponent(TOKEN);
-  for (const path of [`/products?token=${t}`, `/products?authorization=Bearer%20${t}`, `/products?access_token=${t}`]) assert.equal((await call("GET", path, [])).status, 401, path);
-  assert.equal((await call("POST", "/products", [], JSON.stringify({ token: TOKEN, authorization: `Bearer ${TOKEN}` }))).status, 401);
-  assert.equal((await raw("GET", "/products", ["cookie", `token=${TOKEN}; authorization=Bearer ${TOKEN}`, "x-admin-token", TOKEN, "x-authorization", `Bearer ${TOKEN}`])).status, 401);
+  for (const path of [`/connections?token=${t}`, `/connections?authorization=Bearer%20${t}`, `/connections?access_token=${t}`]) assert.equal((await call("GET", path, [])).status, 401, path);
+  assert.equal((await call("POST", "/connections", [], JSON.stringify({ token: TOKEN, authorization: `Bearer ${TOKEN}` }))).status, 401);
+  assert.equal((await raw("GET", "/connections", ["cookie", `token=${TOKEN}; authorization=Bearer ${TOKEN}`, "x-admin-token", TOKEN, "x-authorization", `Bearer ${TOKEN}`])).status, 401);
 });
 
 test("unauthenticated requests are refused before the body is read or validated", async () => {
   // A huge declared body, a bad content type and invalid JSON all give the same 401, never 413, 415 or 400.
   for (const headers of [["content-type", "application/json", "content-length", "99999999"], ["content-type", "text/plain"], ["content-type", "application/json"]]) {
-    const res = await raw("POST", "/products", headers, "{not json");
+    const res = await raw("POST", "/connections", headers, "{not json");
     assert.equal(res.status, 401, headers.join(" "));
   }
 });
 
-test("a rejected request does not reveal whether the product exists", async () => {
-  const known = await call("GET", "/products/core", []);
+test("a rejected request does not reveal whether a route or id exists", async () => {
+  const known = await call("GET", "/connections", []);
   const unknown = await call("GET", "/products/zzz", []);
   assert.deepEqual([known.status, known.body], [unknown.status, unknown.body]);
 });
 
-test("the correct token reaches each of the five routes", async () => {
+test("the correct token reaches a remaining admin route; unmatched and removed paths are 404", async () => {
   const auth = ["authorization", `Bearer ${TOKEN}`];
-  const body = JSON.stringify({ slug: "t1", name: "T", definition: { include: ["github.com/acme/app"] } });
-  assert.equal((await call("GET", "/products", auth)).status, 200);
-  assert.equal((await call("POST", "/products", auth, body)).status, 201);
-  assert.equal((await call("GET", "/products/t1", auth)).status, 200);
-  assert.equal((await call("PUT", "/products/t1", auth, JSON.stringify({ name: "T2", definition: {} }))).status, 200);
-  assert.equal((await call("DELETE", "/products/t1", auth)).status, 204);
+  assert.equal((await call("GET", "/connections", auth)).status, 200);
+  assert.equal((await call("POST", "/connections", auth, "{}")).status, 400, "reaches the controller (body validation), not the auth wall");
   assert.equal((await call("GET", "/nope", auth)).status, 404, "unmatched paths stay 404 once authenticated");
-  assert.equal((await raw("GET", "/products", ["Authorization", `Bearer ${TOKEN}`, "host", "attacker.example"])).status, 403, "the Host check still applies");
+  assert.equal((await call("GET", "/products", auth)).status, 404, "removed route");
+  assert.equal((await raw("GET", "/connections", ["Authorization", `Bearer ${TOKEN}`, "host", "attacker.example"])).status, 403, "the Host check still applies");
 });
 
 test("the product listener neither needs nor reads the token", async () => {
@@ -155,11 +153,11 @@ test("ADMIN_TOKEN overrides the file", () => {
 test("no ADMIN_TOKEN: the admin listener still serves, with the generated token (real socket)", async () => {
   const DATA_DIR = tmpData();
   const free = await freePort();
-  const app = await startAdmin(registry, { API_ADMIN_PORT: String(free), DATA_DIR });
+  const app = await startAdmin({ API_ADMIN_PORT: String(free), DATA_DIR }, connections);
   const file = fs.readFileSync(tokenFile(DATA_DIR), "utf8");
   try {
-    assert.equal((await fetch(`http://127.0.0.1:${free}/products`)).status, 401);
-    const ok = await fetch(`http://127.0.0.1:${free}/products`, { headers: { authorization: `Bearer ${file}` } });
+    assert.equal((await fetch(`http://127.0.0.1:${free}/connections`)).status, 401);
+    const ok = await fetch(`http://127.0.0.1:${free}/connections`, { headers: { authorization: `Bearer ${file}` } });
     assert.equal(ok.status, 200);
     assert.equal((await ok.text()).includes(file), false);
     assert.equal(captured.join("").includes(file), false, "the generated token is never logged");
@@ -169,9 +167,9 @@ test("no ADMIN_TOKEN: the admin listener still serves, with the generated token 
 test("rotating the file makes the new token work and the old one 401 on the next request, no restart", async () => {
   const DATA_DIR = tmpData();
   const free = await freePort();
-  const app = await startAdmin(registry, { API_ADMIN_PORT: String(free), DATA_DIR });
+  const app = await startAdmin({ API_ADMIN_PORT: String(free), DATA_DIR }, connections);
   const old = fs.readFileSync(tokenFile(DATA_DIR), "utf8");
-  const status = async (t: string) => (await fetch(`http://127.0.0.1:${free}/products`, { headers: { authorization: `Bearer ${t}` } })).status;
+  const status = async (t: string) => (await fetch(`http://127.0.0.1:${free}/connections`, { headers: { authorization: `Bearer ${t}` } })).status;
   try {
     assert.equal(await status(old), 200);
     const fresh = "f".repeat(64);
@@ -188,13 +186,13 @@ test("an empty, whitespace-only or truncated admin.token never authorizes, and s
     fs.mkdirSync(path.dirname(tokenFile(DATA_DIR)), { recursive: true });
     fs.writeFileSync(tokenFile(DATA_DIR), content);
     assert.throws(() => adminToken({ DATA_DIR }), (e: Error) => /at least 32/.test(e.message) && !e.message.includes("aaaa"));
-    await assert.rejects(startAdmin(registry, { DATA_DIR, API_ADMIN_PORT: "0" }), /at least 32/);
+    await assert.rejects(startAdmin({ DATA_DIR, API_ADMIN_PORT: "0" }, connections), /at least 32/);
     // A running listener whose file becomes unusable answers every request with the same 401.
     const good = tmpData();
     const getter = adminToken({ DATA_DIR: good });
-    const app = await createAdminApp(registry, getter, {});
+    const app = await createAdminApp(getter, {}, connections);
     await app.listen(0, "127.0.0.1");
-    const url = `http://127.0.0.1:${port(app)}/products`;
+    const url = `http://127.0.0.1:${port(app)}/connections`;
     try {
       fs.writeFileSync(tokenFile(good), content);
       for (const headers of [{} as Record<string, string>, { authorization: "Bearer " }, { authorization: "Bearer" }, { authorization: `Bearer ${content.trim()}` }]) assert.equal((await fetch(url, { headers })).status, 401, JSON.stringify([content, headers]));
@@ -206,10 +204,10 @@ test("an empty, whitespace-only or truncated admin.token never authorizes, and s
 
 test("a set ADMIN_TOKEN starts the listener and enforces it (real socket)", async () => {
   const free = await freePort();
-  const app = await startAdmin(registry, { API_ADMIN_PORT: String(free), ADMIN_TOKEN: TOKEN });
+  const app = await startAdmin({ API_ADMIN_PORT: String(free), ADMIN_TOKEN: TOKEN }, connections);
   try {
-    assert.equal((await fetch(`http://127.0.0.1:${free}/products`)).status, 401);
-    assert.equal((await fetch(`http://127.0.0.1:${free}/products`, { headers: { authorization: `Bearer ${TOKEN}` } })).status, 200);
+    assert.equal((await fetch(`http://127.0.0.1:${free}/connections`)).status, 401);
+    assert.equal((await fetch(`http://127.0.0.1:${free}/connections`, { headers: { authorization: `Bearer ${TOKEN}` } })).status, 200);
   } finally { await app?.close(); }
 });
 
@@ -218,14 +216,14 @@ test("a token shorter than 32 characters refuses to start, and the error does no
   assert.equal(short.length, 32);
   for (const bad of ["Zq9", "Zq9" + " ".repeat(5), "Zq9-" + "k".repeat(27), short.slice(1)]) {
     assert.throws(() => adminToken({ ADMIN_TOKEN: bad }), (e: Error) => !e.message.includes("Zq9") && /at least 32/.test(e.message));
-    await assert.rejects(startAdmin(registry, { ADMIN_TOKEN: bad, API_ADMIN_PORT: "0" }), /at least 32/);
+    await assert.rejects(startAdmin({ ADMIN_TOKEN: bad, API_ADMIN_PORT: "0" }, connections), /at least 32/);
   }
   assert.equal(adminToken({ ADMIN_TOKEN: short })(), short);
 });
 
 test("the token never appears in a response or in anything written to stdout or stderr", async () => {
-  await call("GET", "/products", ["authorization", `Bearer ${TOKEN}`]);
-  const bodies = [...(await Promise.all(BAD.map(([, a]) => call("GET", "/products", a)))).map((r) => JSON.stringify(r)), JSON.stringify(await call("GET", "/products", ["authorization", `Bearer ${TOKEN}`]))];
+  await call("GET", "/connections", ["authorization", `Bearer ${TOKEN}`]);
+  const bodies = [...(await Promise.all(BAD.map(([, a]) => call("GET", "/connections", a)))).map((r) => JSON.stringify(r)), JSON.stringify(await call("GET", "/connections", ["authorization", `Bearer ${TOKEN}`]))];
   for (const b of bodies) assert.equal(b.includes(TOKEN), false);
   assert.equal(captured.join("").includes(TOKEN), false);
 });

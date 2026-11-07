@@ -43,7 +43,7 @@ setZoektTransport({
 let admin: INestApplication;
 let base: string;
 before(async () => {
-  admin = await createAdminApp({} as never, TOKEN, {}, undefined, undefined, undefined, new SearchService(db as never));
+  admin = await createAdminApp(TOKEN, {}, undefined, undefined, undefined, new SearchService(db as never));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
 });

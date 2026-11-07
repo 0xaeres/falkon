@@ -1,15 +1,14 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
+import http from "node:http";
 import path from "node:path";
 import type { AddressInfo } from "node:net";
 import type { INestApplication } from "@nestjs/common";
 import type { PrismaClient } from "@falkon/db";
 import { openCredential } from "@falkon/shared";
-import { createAdminApp } from "./admin";
+import { createAdminApp, MAX_BODY_BYTES } from "./admin";
 import { CodeHostError, ConnectionService, githubCodeHost, type CodeHost } from "./connections";
-import { fakeDb } from "./fakeDb";
-import { PrismaProductRegistry } from "./product";
 
 process.env.FALKON_SECRET_KEY = Buffer.alloc(32, 3).toString("base64");
 const TOKEN = "t".repeat(40);
@@ -94,7 +93,7 @@ before(async () => {
   process.stdout.write = tapped(realOut);
   process.stderr.write = tapped(realErr);
   for (const k of ["log", "error", "warn"] as const) console[k] = (...a: unknown[]) => void consoleLines.push(a.map(String).join(" "));
-  admin = await createAdminApp(new PrismaProductRegistry(fakeDb().db), TOKEN, {}, new ConnectionService(db as never, stubHost));
+  admin = await createAdminApp(TOKEN, {}, new ConnectionService(db as never, stubHost));
   await admin.listen(0, "127.0.0.1");
   base = `http://127.0.0.1:${(admin.getHttpServer().address() as AddressInfo).port}`;
 });
@@ -226,6 +225,24 @@ test("delete removes the connection and its credential row; unknown and malforme
     assert.equal((await call(method, `/connections/zzzzzzzzzzzzzzzzzzzzzz${p}`, method === "PUT" ? { token: "x" } : undefined)).status, 404);
 });
 
+test("bodies: JSON only, 64 KiB cap, also while a chunked body streams", async () => {
+  const post = (body: string, headers: Record<string, string>) => fetch(`${base}/connections`, { method: "POST", headers: { authorization: `Bearer ${TOKEN}`, ...headers }, body });
+  const valid = JSON.stringify({ provider: "github", method: "token", host: "https://github.com", token: "t" });
+  assert.equal((await post(valid, { "content-type": "text/plain" })).status, 415);
+  assert.equal((await post("slug=x", { "content-type": "application/x-www-form-urlencoded" })).status, 415);
+  assert.equal((await post(valid, {})).status, 415);
+  assert.equal((await post("{not json", { "content-type": "application/json" })).status, 400);
+  assert.equal((await post("[]", { "content-type": "application/json" })).status, 400);
+  assert.equal((await post(JSON.stringify({ token: "x".repeat(MAX_BODY_BYTES) }), { "content-type": "application/json" })).status, 413);
+  const chunked = await new Promise<number>((resolve, reject) => {
+    const r = http.request(`${base}/connections`, { method: "POST", headers: { authorization: `Bearer ${TOKEN}`, "content-type": "application/json", "transfer-encoding": "chunked" } }, (res) => { res.resume(); resolve(res.statusCode!); });
+    r.on("error", reject);
+    for (let i = 0; i < 80; i++) r.write("x".repeat(1024));
+    r.end();
+  });
+  assert.equal(chunked, 413);
+});
+
 test("connection routes are behind the admin bearer", async () => {
   assert.equal((await call("GET", "/connections", undefined, false)).status, 401);
 });
@@ -236,10 +253,10 @@ test("route enumeration: the admin listener has exactly the allowlisted routes",
   const router = (admin.getHttpAdapter().getInstance() as { router: { stack: { route?: { path: string; methods: Record<string, boolean> } }[] } }).router;
   const routes = router.stack.flatMap((l) => (l.route ? Object.keys(l.route.methods).map((m) => `${m.toUpperCase()} ${l.route!.path}`) : [])).sort();
   assert.deepEqual(routes, [
-    "DELETE /connections/:id", "DELETE /products/:slug",
-    "GET /connections", "GET /connections/:id/repositories", "GET /products", "GET /products/:slug",
-    "POST /connections", "POST /products",
-    "PUT /connections/:id/token", "PUT /products/:slug",
+    "DELETE /connections/:id",
+    "GET /connections", "GET /connections/:id/repositories",
+    "POST /connections",
+    "PUT /connections/:id/token",
   ].sort());
 });
 
