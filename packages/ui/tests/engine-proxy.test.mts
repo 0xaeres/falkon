@@ -229,6 +229,25 @@ test("thread routes forward to /ui/products/:slug/threads in engine mode", async
   assert.equal((await threads.GET(get(), ctx("alpha"))).status, 503);
 });
 
+test("thread DELETE forwards force=true only when the query is exactly true", async () => {
+  process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
+  reply = { status: 204, body: null };
+  const before = seen.length;
+  for (const query of ["?force=true", "?force=1", "?force=false", "?force=true&force=false", ""])
+    await threadRoute.DELETE(new Request(`http://localhost/api/x${query}`), threadCtx("alpha", "t1"));
+  assert.deepEqual(
+    seen.slice(before).map((c) => c.url),
+    [
+      "/ui/products/alpha/threads/t1?force=true",
+      "/ui/products/alpha/threads/t1",
+      "/ui/products/alpha/threads/t1",
+      "/ui/products/alpha/threads/t1",
+      "/ui/products/alpha/threads/t1",
+    ],
+  );
+  delete process.env.ENGINE_URL;
+});
+
 test("resume and stop forward to the thread's stream and stop routes; a 204 (nothing running) passes through", async () => {
   process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
   reply = { status: 204, body: null };
