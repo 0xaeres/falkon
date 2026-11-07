@@ -34,12 +34,13 @@ test("renders heading, nested list, table and task list as GFM", () => {
   );
 });
 
-test("fenced code is a pre with language label, copy button and no highlighter markup", () => {
+test("fenced code is a pre with language label, copy button and highlight.js markup for a known language", () => {
   const html = render("```ts\nconst a = 1;\n```");
   assert.match(html, /<pre/);
   assert.match(html, /class="code-lang[^"]*">ts</);
   assert.match(html, /aria-label="Copy code"/);
-  assert.match(html, /const a = 1;/);
+  assert.match(html, /<span class="hljs-keyword">const<\/span> a = <span class="hljs-number">1<\/span>;/);
+  assert.match(render("```nolang\n<b>x</b>\n```"), /<code>&lt;b&gt;x&lt;\/b&gt;<\/code>/);
 });
 
 test("mermaid fence keeps source (view/copy) and is a plain code block until drawn", () => {
@@ -151,7 +152,7 @@ test("[1] inside code and mermaid stays literal, zero-width space removed", () =
   assert.doesNotMatch(html, /​/);
   assert.doesNotMatch(html, /<button class="citation">/);
   assert.match(html, /a\[1\]/);
-  assert.match(html, /x\[1\]/);
+  assert.match(html.replace(/<[^>]+>/g, ""), /x\[1\]/);
   assert.match(html, /A\[1\]--&gt;B/);
 });
 

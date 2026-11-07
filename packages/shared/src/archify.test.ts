@@ -33,3 +33,18 @@ test("invalid JSON, unknown type, schema errors and remote brands fall back", as
 test("oversize source is refused before parsing", async () => {
   assert.deepEqual(await renderArchify(" ".repeat(ARCHIFY_MAX_SOURCE + 1)), { ok: false, reason: "source too large" });
 });
+
+test("long workflow labels render (nodes are sized to their labels) and trace motion is on", async () => {
+  const long = { ...workflow, nodes: [{ ...workflow.nodes[0], label: "cashier_bill_payment" }, { ...workflow.nodes[1], label: "BillServiceImpl", sublabel: "save + validate" }] };
+  const r = await renderArchify(JSON.stringify(long));
+  assert.ok(r.ok, r.ok ? "" : r.reason);
+  assert.match(r.html, /data-animation="trace"/);
+  const sized = { ...long, nodes: long.nodes.map((n) => ({ ...n, width: 92 })) };
+  assert.equal((await renderArchify(JSON.stringify(sized))).ok, false);
+});
+
+test("sequence messages above y 160 are shifted down and long participant labels fit", async () => {
+  const seq = { schema_version: 1, diagram_type: "sequence", meta: { title: "Call" }, participants: [{ id: "a", type: "frontend", label: "Payment modal" }, { id: "b", type: "backend", label: "BillServiceImpl" }], messages: [{ from: "a", to: "b", y: 100, label: "call" }, { from: "b", to: "a", y: 170, label: "reply", variant: "return" }] };
+  const r = await renderArchify(JSON.stringify(seq));
+  assert.ok(r.ok, r.ok ? "" : r.reason);
+});

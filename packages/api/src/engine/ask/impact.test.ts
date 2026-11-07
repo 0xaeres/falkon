@@ -57,11 +57,11 @@ test("the UI Ask prompt for a non-impact question is unchanged apart from the re
   assert.equal(dynamicPrompt({ repos: [], files: [], query: impact, audience: agent }), `${RENDER_PROMPT}\n\n${REPLY_PROMPT}\n\n${AUDIENCE_PROMPT.agent}\n\n${IMPACT_PROMPT}`);
 });
 
-test("pins: bytes of the static and per-chat prompts (rewritten in cycle 9), the non-impact brief and the client instructions", () => {
+test("pins: bytes of the static and per-chat prompts (rewritten in cycle 9, snippet rule in cycle 23), the non-impact brief and the client instructions", () => {
   const brief = buildResearchBrief({ ...input, query: plain });
   assert.equal(sha(brief), "4ee97b238a01456ffd70b4e77d371c19ef11f980d5f8bb516d0e27897d252d22");
   assert.equal(sha(buildResearchBrief({ ...input, query: plain, repos: [], impactRecipe: true })), "8c3cd554a34b6efc5321426432d1fc2527b6f39fa72d08f9945bf7077e59b783");
-  assert.equal(sha(STATIC_PROMPT), "c2717d3f88cb26a74d8af8ad9a7284da2b8afe99d77fec6d1d7e3960f8cd193d");
+  assert.equal(sha(STATIC_PROMPT), "cb092e07e8aa81eaec216b2d63b587d74ccf639528ee19b8a722da025facdad5");
   assert.equal(sha(CLIENT_RESEARCH_INSTRUCTIONS), "9050bcb16e670ddb5ea4da4b5992f7fb462c63988c91aa858b9ee8b5272151d6");
   assert.equal(sha(withoutRender(dynamicPrompt({ repos: ["a/b"], files: [], audience: agent }))), "2e1557c3daac0bebb47928c9d2584576e11287c8dc199ca79fbd9904b4751060");
 });

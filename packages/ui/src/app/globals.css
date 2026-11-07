@@ -140,7 +140,6 @@
     overflow-wrap: anywhere;
   }
   .answer-prose .answer-para {
-    max-width: 68ch;
     margin-bottom: 0.875rem;
   }
   .answer-prose
@@ -163,6 +162,16 @@
     font-size: 0.9375rem;
     font-weight: 600;
     letter-spacing: -0.01em;
+  }
+  .answer-prose :where(h1, h2) {
+    font-size: 1.0625rem;
+    margin-top: 1.25rem !important;
+  }
+  .answer-prose :where(h3) {
+    margin-top: 1rem !important;
+  }
+  .answer-prose :where(p, li) {
+    max-width: 92ch;
   }
   .answer-prose :where(a) {
     color: var(--foreground);
@@ -214,6 +223,35 @@
   }
   .syntax-comment {
     color: var(--faint);
+  }
+  /* highlight.js tokens in answer code blocks, on the same palette as source excerpts. */
+  .hljs :is(.hljs-keyword, .hljs-selector-tag, .hljs-meta .hljs-keyword) {
+    color: #c4b5fd;
+  }
+  .hljs :is(.hljs-string, .hljs-regexp, .hljs-addition, .hljs-template-variable) {
+    color: #86efac;
+  }
+  .hljs :is(.hljs-comment, .hljs-quote) {
+    color: var(--faint);
+    font-style: italic;
+  }
+  .hljs :is(.hljs-number, .hljs-literal, .hljs-symbol, .hljs-bullet) {
+    color: #fdba74;
+  }
+  .hljs :is(.hljs-title, .hljs-title.function_, .hljs-section) {
+    color: #93c5fd;
+  }
+  .hljs :is(.hljs-type, .hljs-title.class_, .hljs-built_in, .hljs-selector-class) {
+    color: #67e8f9;
+  }
+  .hljs :is(.hljs-attr, .hljs-attribute, .hljs-property, .hljs-variable, .hljs-params) {
+    color: #e4e4e7;
+  }
+  .hljs :is(.hljs-name, .hljs-tag, .hljs-meta) {
+    color: #f9a8d4;
+  }
+  .hljs .hljs-deletion {
+    color: #fca5a5;
   }
   /* Diagrams: pill nodes with accent borders, pill edge labels, dashed groups with mono titles. Mermaid scopes its own rules to the svg id, so overrides that it also sets need the extra weight. */
   .diagram-canvas svg :is(.node rect, .node .basic.label-container) {

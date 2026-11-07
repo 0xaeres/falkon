@@ -24,12 +24,13 @@ test("human block only for human, agent block only for agent", () => {
   assert.ok(!human().includes('<answer_style audience="agent">'));
   assert.ok(agent().includes('<answer_style audience="agent">'));
   assert.ok(!agent().includes('<answer_style audience="human">'));
-  assert.match(human(), /short plain-language summary/);
-  assert.match(human(), /first time a domain or code term appears/);
-  assert.match(human(), /step by step/);
+  assert.match(human(), /senior engineer explains the code to a teammate/);
+  assert.match(human(), /first time a domain term or abbreviation appears/);
+  assert.match(human(), /Size the answer to the question/);
+  assert.match(human(), /Give every fence its language/);
   assert.match(agent(), /locations/);
   assert.match(agent(), /no tutorial/i);
-  assert.doesNotMatch(agent(), /plain-language|first time a domain/);
+  assert.doesNotMatch(agent(), /senior engineer|first time a domain|fence its language/);
 });
 
 test("each tool family is named only when its flag is on, in all four combinations", () => {
@@ -50,7 +51,7 @@ test("each tool family is named only when its flag is on, in all four combinatio
 });
 
 test("the human block follows the answer tag and leaves conversational messages alone", () => {
-  assert.ok(AUDIENCE_PROMPT.human.includes(`After the ${ANSWER_TAG} line, begin with a short plain-language summary`));
+  assert.ok(AUDIENCE_PROMPT.human.includes(`After the ${ANSWER_TAG} line, open with the answer itself`));
   assert.ok(AUDIENCE_PROMPT.human.includes("This does not apply to a conversational message (see the conversational replies section)."));
 });
 

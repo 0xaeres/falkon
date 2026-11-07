@@ -462,7 +462,7 @@ function ChatSession({
     </button>
   );
   const asked = (text: string) => (
-    <Message from="user" className="max-w-[min(560px,88%)]">
+    <Message from="user" className="max-w-[min(720px,80%)]">
       <MessageContent className="rounded-xl rounded-br-sm border bg-secondary px-4 py-2.5 leading-relaxed [overflow-wrap:anywhere]">
         {text}
       </MessageContent>
@@ -477,7 +477,7 @@ function ChatSession({
             aria-label="Conversation"
           >
             <Conversation className="min-h-0">
-              <ConversationContent className="mx-auto w-full max-w-[740px] gap-10 px-5 pt-8 pb-6 md:px-8">
+              <ConversationContent className="mx-auto w-full max-w-[1080px] gap-10 px-5 pt-8 pb-6 md:px-8">
                 {!status.generation ? (
                   <ConversationEmptyState className="mt-10 gap-4">
                     <Mark size={36} />
@@ -723,7 +723,7 @@ function ChatSession({
               </ConversationContent>
               <ConversationScrollButton aria-label="Scroll to latest" />
             </Conversation>
-            <div className="mx-auto w-full max-w-[740px] shrink-0 px-5 pt-2 pb-5 md:px-8">
+            <div className="mx-auto w-full max-w-[1080px] shrink-0 px-5 pt-2 pb-5 md:px-8">
               <PromptInput
                 onSubmit={() => void send()}
                 className={cn(
@@ -845,7 +845,7 @@ export function ChatSkeleton() {
       aria-label="Loading chat"
       className="flex min-h-0 flex-1 flex-col"
     >
-      <div className="mx-auto flex w-full max-w-[740px] flex-1 flex-col gap-6 px-5 pt-8 md:px-8">
+      <div className="mx-auto flex w-full max-w-[1080px] flex-1 flex-col gap-6 px-5 pt-8 md:px-8">
         <Skeleton className="h-10 w-64 self-end rounded-xl" />
         <div className="flex flex-col gap-2.5">
           <Skeleton className="h-5 w-40 rounded-full" />
@@ -855,7 +855,7 @@ export function ChatSkeleton() {
           <Skeleton className="h-3.5 w-[60%]" />
         </div>
       </div>
-      <div className="mx-auto w-full max-w-[740px] px-5 pb-5 md:px-8">
+      <div className="mx-auto w-full max-w-[1080px] px-5 pb-5 md:px-8">
         <Skeleton className="h-[104px] w-full rounded-xl" />
       </div>
     </div>
