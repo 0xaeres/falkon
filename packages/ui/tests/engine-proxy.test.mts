@@ -491,3 +491,33 @@ test("without ENGINE_ADMIN_TOKEN the bearer is read from the admin.token file pe
   delete process.env.ENGINE_ADMIN_TOKEN;
   delete process.env.DATA_DIR;
 });
+
+test("product DELETE forwards to /ui/products/:slug and passes the 204 through", async () => {
+  process.env.ENGINE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}`;
+  process.env.ENGINE_ADMIN_TOKEN = "admin-token-for-test";
+  reply = { status: 204, body: null };
+  const res = await product.DELETE(
+    new Request("http://localhost/api/x", { method: "DELETE" }),
+    ctx("alpha"),
+  );
+  assert.equal(res.status, 204);
+  assert.equal(await res.text(), "");
+  const call = seen.at(-1)!;
+  assert.deepEqual(
+    [call.method, call.url, call.authorization],
+    ["DELETE", "/ui/products/alpha", "Bearer admin-token-for-test"],
+  );
+  reply = {
+    status: 409,
+    body: {
+      statusCode: 409,
+      errorCode: "READ_ONLY",
+      message: "Product comes from config and is read-only through this API.",
+    },
+  };
+  const refused = await product.DELETE(
+    new Request("http://localhost/api/x", { method: "DELETE" }),
+    ctx("alpha"),
+  );
+  assert.equal(refused.status, 409);
+});

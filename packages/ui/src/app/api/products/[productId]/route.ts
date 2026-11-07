@@ -13,3 +13,7 @@ export async function PATCH(request: Request, context: ProductRoute) {
     editRequestSchema,
   );
 }
+export async function DELETE(_request: Request, context: ProductRoute) {
+  const { productId } = await context.params;
+  return proxy(`/ui/products/${encodeURIComponent(productId)}`, "DELETE");
+}
