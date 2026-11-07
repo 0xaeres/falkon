@@ -56,3 +56,10 @@ test("the prompt states the sequence layout limits the renderer enforces", () =>
   assert.match(DIAGRAM_PROMPT, /at most 14 characters/);
   assert.match(DIAGRAM_PROMPT, /must differ/);
 });
+
+test("a sequence diagram with long participant labels and self-messages is repaired and renders", async () => {
+  const seq = { schema_version: 1, diagram_type: "sequence", meta: { title: "t" }, participants: [{ id: "a", type: "frontend", label: "A very long participant label" }, { id: "b", type: "backend", label: "Another long participant name" }, { id: "c", type: "database", label: "Third long participant name" }], messages: [{ from: "a", to: "a", y: 160, label: "self" }, { from: "a", to: "b", y: 230, label: "call" }, { from: "b", to: "c", y: 300, label: "write" }, { from: "c", to: "c", y: 370, label: "self" }, { from: "c", to: "a", y: 440, label: "back", variant: "return" }] };
+  const [part] = await buildDiagrams(block(JSON.stringify(seq)));
+  assert.equal(diagramPartSchema.parse(part!.data).type, "sequence");
+  assert.doesNotMatch(part!.data.source, /self/);
+});
