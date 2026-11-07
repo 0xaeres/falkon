@@ -63,8 +63,17 @@ pass "$step"
 step=cold-start
 compose up -d --build >/dev/null
 pass "$step"
+step=seed
+# Products come only from /setup, so the fixtures Product is written straight to Postgres from the backend container (it has the repo and DATABASE_URL).
+# Retried until the backend's `db push` has created the schema; the backend re-resolves the Product's repositories after each sync.
+deadline=$(( $(date +%s) + timeout ))
+until compose exec -T backend pnpm --filter @falkon/backend exec tsx ../../scripts/seed-product.ts fixtures Fixtures 'fixtures.test/*' >/dev/null 2>&1; do
+    [ "$(date +%s)" -lt "$deadline" ] || fail "seed: the fixtures Product was not written within ${timeout}s"
+    sleep 2
+done
+pass "$step"
 
-# The fixtures Product (config context "fixtures") searched through the api's Product-scoped route on the admin listener.
+# The fixtures Product (seeded above) searched through the api's Product-scoped route on the admin listener.
 search_path=/ui/products/fixtures/search
 search() {
     curl --silent --show-error --fail --max-time 10 --get --header "@$temp/admin.header" --data-urlencode "q=$1" --data-urlencode 'limit=1000' "$admin_base$search_path" -o "$temp/search.json" 2>/dev/null
@@ -109,29 +118,15 @@ until [ "$(mcp_post fixtures)" = 200 ]; do
 done
 [ "$(mcp_post no-such-product)" = 404 ] || fail 'api: unknown Product is not 404'
 pass "$step"
-step=registry
-# An api Product created on the admin port (with the token) is served at /mcp/<slug> at once, and is gone once deleted.
-# The admin routes do not exist on the product port, and the admin port refuses a missing or wrong token.
+step=admin-auth
+# The admin routes do not exist on the product port, the admin port refuses a missing or wrong token, and /products is gone even with the token.
 status() { curl --silent --show-error --max-time 10 --output /dev/null --write-out '%{http_code}' "$@" 2>/dev/null || :; }
 auth="@$temp/admin.header"
-product_json='{"slug":"smoke-registry","name":"Smoke registry","definition":{"include":["fixtures.test/*"]}}'
-[ "$(status "$api_base/products")" = 404 ] || fail 'registry: admin routes answer on the product port'
-[ "$(status "$admin_base/products")" = 401 ] || fail 'registry: a tokenless admin call is not 401'
-[ "$(status --header 'authorization: Bearer wrong-token' "$admin_base/products")" = 401 ] || fail 'registry: a wrong-token admin call is not 401'
-[ "$(status --request POST --header 'content-type: application/json' --data "$product_json" "$admin_base/products")" = 401 ] || fail 'registry: a tokenless create is not 401'
-[ "$(status --request POST --header "$auth" --header 'content-type: application/json' --data "$product_json" "$admin_base/products")" = 201 ] ||
-    fail 'registry: create on the admin port failed'
-[ "$(status --request POST --header 'content-type: application/json' --header 'accept: application/json, text/event-stream' --dump-header "$temp/registry.headers" \
-    --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"smoke","version":"1"}}}' \
-    "$api_base/mcp/smoke-registry")" = 200 ] || fail 'registry: initialize on the new Product failed'
-session=$(sed -n 's/^[Mm]cp-[Ss]ession-[Ii]d: *//p' "$temp/registry.headers" | tr -d '\r')
-[ -n "$session" ] || fail 'registry: no session id'
-curl --silent --show-error --max-time 10 --request POST --header 'content-type: application/json' --header 'accept: application/json, text/event-stream' \
-    --header "mcp-session-id: $session" --header 'mcp-protocol-version: 2025-03-26' \
-    --data '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' --output "$temp/registry.tools" "$api_base/mcp/smoke-registry" 2>/dev/null || :
-grep -q '"read_file"' "$temp/registry.tools" || fail 'registry: tools/list on the new Product failed'
-[ "$(status --request DELETE --header "$auth" "$admin_base/products/smoke-registry")" = 204 ] || fail 'registry: delete on the admin port failed'
-[ "$(mcp_post smoke-registry)" = 404 ] || fail 'registry: a deleted Product is still served'
+[ "$(status "$api_base/connections")" = 404 ] || fail 'admin-auth: admin routes answer on the product port'
+[ "$(status "$admin_base/connections")" = 401 ] || fail 'admin-auth: a tokenless admin call is not 401'
+[ "$(status --header 'authorization: Bearer wrong-token' "$admin_base/connections")" = 401 ] || fail 'admin-auth: a wrong-token admin call is not 401'
+[ "$(status --header "$auth" "$admin_base/connections")" = 200 ] || fail 'admin-auth: an admin call with the token failed'
+[ "$(status --header "$auth" "$admin_base/products")" = 404 ] || fail 'admin-auth: /products still answers with the token'
 pass "$step"
 step=oversized-file
 wait_for 'oversized_only_marker' absent fixtures.test/atlas

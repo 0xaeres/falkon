@@ -230,10 +230,6 @@
     ]
   },
   {
-    "id": "context",
-    "query": "context:fixtures fixture_marker"
-  },
-  {
     "id": "empty-result",
     "query": "absent_unique_marker",
     "grep": {

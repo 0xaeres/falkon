@@ -34,6 +34,7 @@ if (command === 'date') {
   fs.writeFileSync(tick, String(next));
   console.log(next);
 } else if (command === 'docker') {
+  if (args.includes('exec')) process.exit(scenario === 'seed-fail' ? 1 : 0);
   if (args[0] === 'stats') {
     const names = ['backend', 'zoekt', 'postgres', 'redis', 'api'].slice(0, scenario === 'memory-four' ? 4 : 5);
     for (const [i, name] of names.entries()) {
@@ -53,20 +54,12 @@ if (command === 'date') {
 } else if (command === 'curl' && args.includes('--write-out')) {
   const url = args.at(-1);
   const method = args.includes('--request') ? args[args.indexOf('--request') + 1] : 'GET';
-  const registry = process.env.SMOKE_EVENTS + '.registry';
   let code = scenario === 'api-down' ? '000' : '200';
   const authed = scenario === 'admin-open' || /^authorization: Bearer [0-9a-f]{48}$/.test(auth || '');
   if (url.includes(':3302/') && !authed) code = '401';
   else if (url.endsWith('/mcp/no-such-product')) code = '404';
-  else if (url.endsWith('/products')) code = method === 'POST' ? (fs.writeFileSync(registry, '1'), '201') : scenario === 'admin-exposed' ? '200' : '404';
-  else if (url.endsWith('/products/smoke-registry')) code = (fs.rmSync(registry, { force: true }), '204');
-  else if (url.endsWith('/mcp/smoke-registry')) {
-    code = fs.existsSync(registry) || scenario === 'registry-kept' ? '200' : '404';
-    if (args.includes('--dump-header')) fs.writeFileSync(args[args.indexOf('--dump-header') + 1], 'HTTP/1.1 200 OK\\r\\nmcp-session-id: smoke-session\\r\\n\\r\\n');
-  }
+  else if (url.endsWith('/products') || url.endsWith('/connections')) code = scenario === 'admin-exposed' || (scenario === 'products-back' && url.endsWith('/products')) ? '200' : url.includes(':3301/') ? '404' : url.endsWith('/products') ? '404' : '200';
   process.stdout.write(code);
-} else if (command === 'curl' && args.at(-1).endsWith('/mcp/smoke-registry')) {
-  fs.writeFileSync(args[args.indexOf('--output') + 1], scenario === 'registry-tools' ? 'data: {"result":{"tools":[]}}' : 'data: {"result":{"tools":[{"name":"read_file"}]}}');
 } else if (command === 'curl') {
   const out = args[args.indexOf('-o') + 1];
   const query = args.find(arg => arg.startsWith('q=')).slice(2);
@@ -172,14 +165,27 @@ test("smoke runs the whole stack as five services in a falkon-eval project and s
   assert.match(down.output, /FAIL api: \/mcp\/fixtures did not answer within 3s/);
 });
 
-test("smoke round-trips an api Product through the admin port and proves the admin routes 404 on the product port", () => {
+test("smoke seeds the fixtures Product from the backend container before it waits on /mcp/fixtures", () => {
   const ok = smoke();
   assert.equal(ok.status, 0, ok.output);
-  assert.match(ok.output, /PASS registry/);
+  assert.match(ok.output, /PASS seed/);
+  const exec = ok.events.findIndex((event) => event.command === "docker" && event.args.includes("exec"));
+  const first = ok.events.findIndex((event) => event.command === "curl" && event.args.at(-1)!.endsWith("/mcp/fixtures"));
+  assert.ok(exec >= 0 && first > exec, "the seed runs before the first /mcp/fixtures call");
+  assert.deepEqual(ok.events[exec]!.args.slice(-4), ["../../scripts/seed-product.ts", "fixtures", "Fixtures", "fixtures.test/*"]);
+  assert.ok(ok.events[exec]!.args.includes("backend"));
+  const seedFail = smoke({ scenario: "seed-fail" });
+  assert.equal(seedFail.status, 1, seedFail.output);
+  assert.match(seedFail.output, /FAIL seed: the fixtures Product was not written within 3s/);
+});
+
+test("smoke checks the admin listener's auth and that /products is gone, with no create or delete round trip", () => {
+  const ok = smoke();
+  assert.equal(ok.status, 0, ok.output);
+  assert.match(ok.output, /PASS admin-auth/);
   const curls = ok.events.filter((event) => event.command === "curl").map((event) => `${event.args.includes("--request") ? event.args[event.args.indexOf("--request") + 1] : "GET"} ${event.args.at(-1)}`);
-  for (const expected of ["GET http://127.0.0.1:3301/products", "POST http://127.0.0.1:3302/products", "POST http://127.0.0.1:3301/mcp/smoke-registry", "DELETE http://127.0.0.1:3302/products/smoke-registry"]) assert.ok(curls.includes(expected), expected);
-  const session = ok.events.find((event) => event.command === "curl" && event.args.includes("mcp-session-id: smoke-session"));
-  assert.ok(session, "tools/list carries the session id from initialize");
+  for (const expected of ["GET http://127.0.0.1:3301/connections", "GET http://127.0.0.1:3302/connections", "GET http://127.0.0.1:3302/products"]) assert.ok(curls.includes(expected), expected);
+  assert.equal(curls.some((c) => c.startsWith("POST http://127.0.0.1:3302") || c.startsWith("DELETE ")), false, "no create or delete on the admin port");
   const admin = ok.events.filter((event) => event.command === "curl" && event.args.at(-1)!.includes(":3302/"));
   const headers = admin.map((event) => event.auth);
   const tokens = new Set(headers.filter((h) => h?.startsWith("authorization: Bearer ") && h !== "authorization: Bearer wrong-token"));
@@ -190,7 +196,7 @@ test("smoke round-trips an api Product through the admin port and proves the adm
   const token = [...tokens][0]!.slice(22);
   assert.equal(JSON.stringify(ok.events.map((event) => event.args)).includes(token), false, "the token never reaches any command line, only a header file");
   assert.ok(admin.some((event) => event.args.some((arg) => /^@.*admin\.header$/.test(arg))), "curl reads the token from a header file");
-  for (const [scenario, message] of [["admin-open", /FAIL registry: a tokenless admin call is not 401/], ["admin-exposed", /FAIL registry: admin routes answer on the product port/], ["registry-tools", /FAIL registry: tools\/list on the new Product failed/], ["registry-kept", /FAIL registry: a deleted Product is still served/]] as const) {
+  for (const [scenario, message] of [["admin-open", /FAIL admin-auth: a tokenless admin call is not 401/], ["admin-exposed", /FAIL admin-auth: admin routes answer on the product port/], ["products-back", /FAIL admin-auth: \/products still answers with the token/]] as const) {
     const result = smoke({ scenario });
     assert.equal(result.status, 1, result.output);
     assert.match(result.output, message);

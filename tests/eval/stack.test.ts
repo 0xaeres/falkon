@@ -78,50 +78,32 @@ test("the api service runs the engine with the admin token by interpolation, nev
   assert.equal(compose.services.api.environment.AUTH_MODE, "none");
 });
 
-const reply = (status: number) => ({ status, ok: status < 300 }) as Response;
-const recorder = (statuses: number[]) => {
-  const calls: { url: string; method: string; headers: Record<string, string>; body: { slug?: string; definition: unknown } }[] = [];
-  const fetchFn = (async (url: string, init: { method: string; headers: Record<string, string>; body: string }) => {
-    calls.push({ url, method: init.method, headers: init.headers, body: JSON.parse(init.body) });
-    const next = statuses.shift()!;
-    if (next === 0) throw new TypeError("fetch failed");
-    return reply(next);
-  }) as unknown as typeof fetch;
-  return { calls, fetchFn };
+const recorder = (failures: string[]) => {
+  const calls: string[][] = [];
+  const seed = (args: string[]) => {
+    calls.push(args);
+    const failure = failures.shift();
+    if (failure) throw new Error(failure);
+  };
+  return { calls, seed };
 };
 
-test("ensureProduct creates o3 over every stack repository with the bearer token", async () => {
-  const { calls, fetchFn } = recorder([201]);
-  await ensureProduct("http://127.0.0.1:3500", "tok", { fetchFn });
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0]!.url, "http://127.0.0.1:3500/products");
-  assert.equal(calls[0]!.headers.authorization, "Bearer tok");
-  assert.deepEqual(calls[0]!.body, { slug: PRODUCT, name: "O3", definition: { include: ["github.com/openmrs/*"] } });
+test("ensureProduct seeds o3 over every stack repository", async () => {
+  const { calls, seed } = recorder([]);
+  await ensureProduct(seed);
+  assert.deepEqual(calls, [[PRODUCT, "O3", "github.com/openmrs/*"]]);
 });
 
 const noSleep = async () => {};
 
-test("ensureProduct on a re-used stack replaces the existing Product instead of failing, and waits for the admin listener", async () => {
-  const { calls, fetchFn } = recorder([0, 409, 200]);
-  await ensureProduct("http://x", "tok", { fetchFn, wait: 60_000, sleep: noSleep });
-  assert.deepEqual(calls.map((c) => `${c.method} ${c.url}`), ["POST http://x/products", "POST http://x/products", "PUT http://x/products/o3"]);
+test("ensureProduct retries while the backend is still pushing its schema", async () => {
+  const { calls, seed } = recorder(["container is not running", "relation \"Product\" does not exist"]);
+  await ensureProduct(seed, { wait: 60_000, sleep: noSleep });
+  assert.equal(calls.length, 3);
 });
 
-test("ensureProduct retries a 500 and a 404 while the backend is still pushing its schema", async () => {
-  const { calls, fetchFn } = recorder([500, 404, 503, 201]);
-  await ensureProduct("http://x", "tok", { fetchFn, wait: 60_000, sleep: noSleep });
-  assert.equal(calls.length, 4);
-});
-
-test("ensureProduct fails at once on 400, 401, 403 and on a read-only config Product, and names a listener that never answers", async () => {
-  for (const status of [400, 401, 403]) {
-    const { calls, fetchFn } = recorder([status]);
-    await assert.rejects(ensureProduct("http://x", "bad", { fetchFn, sleep: noSleep }), new RegExp(`refused the o3 Product \\(HTTP ${status}\\)`));
-    assert.equal(calls.length, 1);
-  }
-  await assert.rejects(ensureProduct("http://x", "tok", { fetchFn: recorder([409, 409]).fetchFn, sleep: noSleep }), /comes from config and is read-only/);
-  await assert.rejects(ensureProduct("http://x", "tok", { fetchFn: recorder([500]).fetchFn, wait: -1, sleep: noSleep }), /did not become ready.*last HTTP 500/);
-  await assert.rejects(ensureProduct("http://x", "tok", { fetchFn: recorder([0]).fetchFn, wait: -1, sleep: noSleep }), /did not become ready/);
+test("ensureProduct names the last error when the schema never appears", async () => {
+  await assert.rejects(ensureProduct(recorder(["relation \"Product\" does not exist"]).seed, { wait: -1, sleep: noSleep }), /did not seed the o3 Product.*does not exist/);
 });
 
 test("the admin token file is mode 600 (also when it already existed) and its value is not in the compose file", () => {

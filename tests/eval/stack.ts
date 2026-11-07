@@ -48,35 +48,22 @@ export function adminToken(stateDir: string): string {
 }
 
 /**
- * Creates the Product holding every stack repository, or replaces its definition when it exists (a re-used stack).
- * Waits for the admin listener: a network error, 404 or 5xx while the backend's `db push` runs is retried until the deadline.
- * 400, 401, 403 and a 409 on the replace (a config Product, read-only) fail at once.
+ * Seeds the Product holding every stack repository (an upsert, so a re-used stack is fine) by running `seed` with the seed script's arguments.
+ * `seed` throws until the backend container runs and its `db push` has created the schema: every failure is retried until the deadline.
  */
-export async function ensureProduct(adminUrl: string, token: string, { fetchFn = fetch, wait = 120_000, sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}): Promise<void> {
-  const headers = { authorization: `Bearer ${token}`, "content-type": "application/json" };
-  const input = { name: "O3", definition: { include: [stackRepos] } };
-  const call = (method: string, path: string, body: unknown) => fetchFn(`${adminUrl}/products${path}`, { method, headers, body: JSON.stringify(body) });
+export async function ensureProduct(seed: (args: string[]) => void, { wait = 120_000, sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}): Promise<void> {
   const deadline = Date.now() + wait;
   for (;;) {
-    let status: number | undefined;
     try {
-      let r = await call("POST", "", { slug: PRODUCT, ...input });
-      if (r.status === 409) {
-        r = await call("PUT", `/${PRODUCT}`, input);
-        if (r.status === 409) throw new Error(`The ${PRODUCT} Product comes from config and is read-only through the admin API; remove it from the config.`);
-      }
-      if (r.ok) return;
-      status = r.status;
+      return seed([PRODUCT, "O3", stackRepos]);
     } catch (e) {
-      if (e instanceof Error && e.message.startsWith(`The ${PRODUCT} Product`)) throw e;
+      if (Date.now() > deadline) throw new Error(`The backend did not seed the ${PRODUCT} Product within ${wait / 1000}s: ${e instanceof Error ? e.message : e}`);
     }
-    if (status !== undefined && status !== 404 && status < 500) throw new Error(`The admin API refused the ${PRODUCT} Product (HTTP ${status}).`);
-    if (Date.now() > deadline) throw new Error(`The admin API at ${adminUrl} did not become ready within ${wait / 1000}s${status ? ` (last HTTP ${status})` : ""}.`);
     await sleep(2000);
   }
 }
 
-/** `up` writes the files under stateDir, starts the stack and creates the Product; `down` stops it (`down -v` also deletes indexes and database). */
+/** `up` writes the files under stateDir, starts the stack and seeds the Product; `down` stops it (`down -v` also deletes indexes and database). */
 export async function stack(action: string, extra: string[], s: Stack & { stateDir: string }): Promise<string> {
   const { config, compose, project } = stackFiles(s);
   mkdirSync(s.stateDir, { recursive: true });
@@ -84,7 +71,9 @@ export async function stack(action: string, extra: string[], s: Stack & { stateD
   writeFileSync(join(s.stateDir, "compose.json"), JSON.stringify(compose));
   const token = adminToken(s.stateDir);
   const docker = (...args: string[]) => execFileSync("docker", ["compose", "-p", project, "-f", join(s.stateDir, "compose.json"), ...args], { stdio: "inherit", env: { ...process.env, ADMIN_TOKEN: token } });
-  if (action === "up") { docker("up", "-d", "--build"); await ensureProduct(`http://127.0.0.1:${s.port + ADMIN_PORT_OFFSET}`, token); }
+  // Runs scripts/seed-product.ts in the backend container, which has the repo and DATABASE_URL; stderr is captured so a retry stays quiet until the deadline.
+  const seed = (args: string[]) => { execFileSync("docker", ["compose", "-p", project, "-f", join(s.stateDir, "compose.json"), "exec", "-T", "backend", "pnpm", "--filter", "@falkon/backend", "exec", "tsx", "../../scripts/seed-product.ts", ...args], { stdio: "pipe", env: { ...process.env, ADMIN_TOKEN: token } }); };
+  if (action === "up") { docker("up", "-d", "--build"); await ensureProduct(seed); }
   else if (action === "down") docker("down", ...extra);
   else throw new Error("Usage: pnpm eval -- stack up|down [-v]");
   return `stack ${action}: project ${project}, http://127.0.0.1:${s.port}/mcp/${PRODUCT}\n`;
