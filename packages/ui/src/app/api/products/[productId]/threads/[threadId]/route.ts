@@ -6,7 +6,8 @@ const path = async (context: ThreadRoute) => {
 export async function GET(_request: Request, context: ThreadRoute) {
   return proxy(await path(context), "GET");
 }
-/** Drops a thread that has no answer (the chat's cleanup after a failed first send); the engine keeps one with answers. */
-export async function DELETE(_request: Request, context: ThreadRoute) {
-  return proxy(await path(context), "DELETE");
+/** Drops a thread that has no answer (the chat's cleanup after a failed first send); the engine keeps one with answers unless `?force=true` (the sidebar's delete). */
+export async function DELETE(request: Request, context: ThreadRoute) {
+  const force = new URL(request.url).searchParams.getAll("force").join() === "true";
+  return proxy(`${await path(context)}${force ? "?force=true" : ""}`, "DELETE");
 }

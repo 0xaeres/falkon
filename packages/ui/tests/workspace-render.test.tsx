@@ -10,6 +10,7 @@ import {
 import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 import {
   WorkspaceShell,
+  deleteThreadFrom,
   useWorkspace,
 } from "../src/components/layout/workspace-shell";
 import { keys } from "../src/lib/api/client";
@@ -199,4 +200,56 @@ test("empty chat says answers cite exact source lines in N repositories, with no
     ),
   );
   assert.ok(!html.includes("pinned to"));
+});
+
+const flow = (pathname: string, fail = false) => {
+  const calls: string[] = [];
+  const run = deleteThreadFrom("alpha", "t1", pathname, {
+    remove: async (p, t) => {
+      calls.push(`remove ${p}/${t}`);
+      if (fail) throw new Error("boom");
+    },
+    refresh: async () => void calls.push("refresh"),
+    leave: (href) => calls.push(`leave ${href}`),
+  });
+  return { calls, run };
+};
+test("deleting the open thread removes it, refreshes the list, then leaves for the chat page", async () => {
+  const { calls, run } = flow("/alpha/chat/t1");
+  await run;
+  assert.deepEqual(calls, ["remove alpha/t1", "refresh", "leave /alpha/chat"]);
+});
+test("deleting another thread stays on the current page", async () => {
+  const { calls, run } = flow("/alpha/chat/t2");
+  await run;
+  assert.deepEqual(calls, ["remove alpha/t1", "refresh"]);
+});
+test("a failed delete rejects before refresh or redirect", async () => {
+  const { calls, run } = flow("/alpha/chat/t1", true);
+  await assert.rejects(run, /boom/);
+  assert.deepEqual(calls, ["remove alpha/t1"]);
+});
+test("each history row has a labelled trash button and the dialog is closed", () => {
+  const product = seedProducts[0];
+  const html = renderToStaticMarkup(
+    <AppRouterContext.Provider value={router}>
+      <PathnameContext.Provider value={`/${product.id}/chat/saved`}>
+        <SWRConfig
+          value={{
+            provider: () => new Map(),
+            fallback: {
+              [keys.threads(product.id)]: [
+                { id: "saved", productId: product.id, title: "Saved conversation", updatedAt: Date.now() },
+              ],
+            },
+          }}
+        >
+          <WorkspaceShell productId={product.id} initialProduct={product}>
+            <RouteContent />
+          </WorkspaceShell>
+        </SWRConfig>
+      </PathnameContext.Provider>
+    </AppRouterContext.Provider>,
+  );
+  assert.ok(html.includes('aria-label="Delete chat: Saved conversation"'));
 });

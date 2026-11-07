@@ -108,6 +108,14 @@ export const api = {
         signal: AbortSignal.timeout(15000),
       }),
     )),
+  /** The user's delete: removes the thread even with answers and stops a turn still being written. */
+  removeThread: async (productId: string, threadId: string) =>
+    void (await check(
+      await fetch(`${keys.thread(productId, threadId)}?force=true`, {
+        method: "DELETE",
+        signal: AbortSignal.timeout(15000),
+      }),
+    )),
   /** Best effort: the engine refuses a thread that has answers. */
   deleteThread: async (productId: string, threadId: string) =>
     void (await check(

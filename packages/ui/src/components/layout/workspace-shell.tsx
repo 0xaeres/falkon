@@ -21,6 +21,7 @@ import {
   Plus,
   Search,
   Settings,
+  Trash2,
   type LucideIcon,
 } from "lucide-react";
 import { api, keys } from "@/lib/api/client";
@@ -40,6 +41,14 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "../ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
 import { Skeleton } from "../ui/skeleton";
 import { Spinner } from "../ui/spinner";
 import { ErrorState, LoadingMark, StateDot, type Tone } from "../ui/primitives";
@@ -111,6 +120,22 @@ function setRailMode(mode: RailMode) {
   window.dispatchEvent(new Event("sidebar-change"));
 }
 
+/** The sidebar's delete: remove (forced), refresh the list, and leave only when the deleted thread is the open one. Errors propagate. */
+export async function deleteThreadFrom(
+  productId: string,
+  threadId: string,
+  pathname: string,
+  deps: {
+    remove: (productId: string, threadId: string) => Promise<void>;
+    refresh: () => Promise<unknown>;
+    leave: (href: string) => void;
+  },
+) {
+  await deps.remove(productId, threadId);
+  await deps.refresh();
+  if (pathname.endsWith(`/${threadId}`)) deps.leave(`/${productId}/chat`);
+}
+
 export function WorkspaceShell({
   productId,
   initialProduct,
@@ -151,6 +176,10 @@ export function WorkspaceShell({
   const [drawer, setDrawer] = useState(false);
   const [creating, setCreating] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [deleting, setDeleting] = useState<ThreadSummary | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false); // `deleting` stays set so the title holds during the close animation
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const active: PageName = pathname.includes("/chat")
     ? "Chat"
     : pathname.endsWith("/search")
@@ -176,6 +205,28 @@ export function WorkspaceShell({
       );
     } finally {
       setCreating(false);
+    }
+  }
+  async function confirmDelete() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setDeleteError("");
+    try {
+      await deleteThreadFrom(productId, deleting.id, pathname, {
+        remove: api.removeThread,
+        refresh: () => mutate(keys.threads(productId)),
+        leave: router.push,
+      });
+      setDrawer(false);
+      setDeleteOpen(false);
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "Couldn’t delete the chat. Try again.",
+      );
+    } finally {
+      setDeleteBusy(false);
     }
   }
   if (error)
@@ -309,18 +360,33 @@ export function WorkspaceShell({
                   {items.map((thread) => {
                     const current = pathname.endsWith(`/${thread.id}`);
                     return (
-                      <Link
-                        key={thread.id}
-                        href={`/${productId}/chat/${thread.id}`}
-                        aria-current={current ? "page" : undefined}
-                        onClick={() => setDrawer(false)}
-                        className={cn(
-                          "block truncate rounded-md px-2 py-1.5 text-[0.8125rem] text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
-                          current && "bg-sidebar-accent text-foreground",
-                        )}
-                      >
-                        {thread.title}
-                      </Link>
+                      <div key={thread.id} className="group relative">
+                        <Link
+                          href={`/${productId}/chat/${thread.id}`}
+                          aria-current={current ? "page" : undefined}
+                          onClick={() => setDrawer(false)}
+                          className={cn(
+                            "block truncate rounded-md py-1.5 pr-8 pl-2 max-md:pr-11 text-[0.8125rem] text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
+                            current && "bg-sidebar-accent text-foreground",
+                          )}
+                        >
+                          {thread.title}
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={`Delete chat: ${thread.title}`}
+                          title="Delete chat"
+                          onClick={() => {
+                            setDeleteError("");
+                            setDeleting(thread);
+                            setDeleteOpen(true);
+                          }}
+                          className="absolute top-1/2 right-1 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-md:size-9 max-md:opacity-100"
+                        >
+                          <Trash2 />
+                        </Button>
+                      </div>
                     );
                   })}
                 </div>
@@ -357,6 +423,41 @@ export function WorkspaceShell({
 
   return (
     <WorkspaceContext.Provider value={context}>
+      <Dialog
+        open={deleteOpen}
+        onOpenChange={(open) => !open && !deleteBusy && setDeleteOpen(false)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete this chat?</DialogTitle>
+            <DialogDescription>
+              “{deleting?.title}” and its answers will be deleted. This can’t be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && (
+            <p className="text-sm text-destructive" role="alert">
+              {deleteError}
+            </p>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deleteBusy}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void confirmDelete()}
+              disabled={deleteBusy}
+            >
+              {deleteBusy && <Spinner />}Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="flex h-dvh flex-col overflow-hidden">
         <header className="flex h-12 shrink-0 items-center gap-1 border-b bg-sidebar pr-3 md:gap-2 md:pr-4">
           <Button
