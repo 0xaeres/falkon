@@ -6,13 +6,12 @@
     "typecheck": "pnpm -r typecheck",
     "db:generate": "pnpm --filter @falkon/db generate",
     "db:push": "pnpm --filter @falkon/db push",
-    "eval": "pnpm --filter @falkon/eval eval",
     "dev:backend": "pnpm --filter @falkon/backend dev",
     "test": "pnpm -r --if-present test",
     "convert-config": "pnpm --filter @falkon/shared exec tsx ../../scripts/convert-config.ts",
     "golden:record": "pnpm --filter @falkon/shared exec tsx ../../tests/golden/run.ts",
     "golden:diff": "pnpm --filter @falkon/shared exec tsx ../../tests/golden/diff.ts",
-    "originality": "pnpm --filter @falkon/eval exec tsx ../originality/originality.ts"
+    "originality": "pnpm --filter @falkon/shared exec tsx ../../tests/originality/originality.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

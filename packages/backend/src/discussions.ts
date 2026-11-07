@@ -26,7 +26,7 @@ const login = (v: unknown) => (typeof v === "string" ? clean(v) : null);
 const int = (v: unknown) => (Number.isInteger(v) && Math.abs(v as number) <= 2_147_483_647 ? (v as number) : null);
 const count = (v: unknown) => Math.max(0, int(v) ?? 0);
 
-/** One pull request file as S47 records it (tests/eval/discussions.ts `shape`), mapped to the source-neutral shape. */
+/** One pull request file as S47 records it (`shape` in `discussions.ts` of the falkon-eval repository), mapped to the source-neutral shape. */
 export function mapSnapshotPull(p: any): Discussion {
   const number = int(p?.number);
   if (number === null || number < 1) throw new Error("snapshot file has no pull request number");

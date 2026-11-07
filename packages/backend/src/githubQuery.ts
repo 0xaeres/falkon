@@ -1,6 +1,6 @@
 /**
  * The pull request GraphQL query and its snapshot shape, shared by the live GitHub source (githubDiscussions.ts) and the S47
- * snapshot fetcher (tests/eval/discussions.ts), so both store the same shape (D124). Pure: no client, no dependency.
+ * snapshot fetcher (`discussions.ts` in the falkon-eval repository), so both store the same shape (D124). Pure: no client, no dependency.
  */
 
 const AUTHOR = "author{login}"; // logins only, never name, email or avatar (D121)

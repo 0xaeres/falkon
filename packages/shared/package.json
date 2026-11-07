@@ -7,7 +7,7 @@
   "types": "src/index.ts",
   "scripts": {
     "typecheck": "tsc -p .",
-    "test": "node --import tsx --test src/*.test.ts",
+    "test": "node --import tsx --test src/*.test.ts ../../tests/originality/*.test.ts",
     "gen:parser": "lezer-generator src/query/query.grammar -o src/query/parser.ts --typeScript --names"
   },
   "dependencies": {

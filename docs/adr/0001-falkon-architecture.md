@@ -272,7 +272,7 @@ Edge vocabulary and derivation follow *earlier ADR* 4.4: `CALLS` (an AST call ex
 
 ### 4.7 Capabilities earn their place (D8)
 
-**Decision.** Every new capability must beat the engine without it on its own question stratum before it is enabled by default. Rule: the lower 95% CI bound of the recall difference is at or above -0.05 and the upper CI bound of the cost difference is below 0, or the lower recall bound is above 0. A capability that fails stays behind a flag. The eval harness and datasets are ported to `tests/eval`.
+**Decision.** Every new capability must beat the engine without it on its own question stratum before it is enabled by default. Rule: the lower 95% CI bound of the recall difference is at or above -0.05 and the upper CI bound of the cost difference is below 0, or the lower recall bound is above 0. A capability that fails stays behind a flag. The eval harness and datasets are ported to the separate `falkon-eval` repository (found through `FALKON_DIR`).
 
 **Why.** The earlier design built relate, impact, and the map before they were shown to help, and none showed a gain on top of lexical access ([2.2](#22-evidence-cycles-17-and-18)). The rule is the one the earlier evaluation pre-agreed (*earlier:* `.scratch/retrieval-eval/clone-migration-plan.md`, principle 3).
 

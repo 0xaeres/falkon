@@ -170,7 +170,7 @@ Explorable HTML versions of the system, search and lifecycle diagrams, with dark
 
 ## Evaluation
 
-Falkon's design choices came from measurements, and this section reports them, including the ones that did not favour Falkon. The full record for the RAG comparison is [ADR 0001, section 2.2](docs/adr/0001-falkon-architecture.md#22-evidence-cycles-17-and-18). The harness, datasets and scoring code are in [`tests/eval`](tests/eval).
+Falkon's design choices came from measurements, and this section reports them, including the ones that did not favour Falkon. The full record for the RAG comparison is [ADR 0001, section 2.2](docs/adr/0001-falkon-architecture.md#22-evidence-cycles-17-and-18). The harness, datasets and scoring code are in the separate `falkon-eval` repository, which finds this checkout through `FALKON_DIR`.
 
 ### What was measured
 
@@ -220,19 +220,19 @@ Falkon minus the semantic stack, with 95% confidence intervals:
 
 ### Reproducing the results
 
-The harness and datasets are in the repository. The raw run files are not, so a rerun gives you new scores, not the recorded ones.
+The harness and datasets are in the separate `falkon-eval` repository (a sibling checkout). Set `FALKON_DIR` to this checkout and run its `pnpm eval ...` commands from there. The raw run files are not, so a rerun gives you new scores, not the recorded ones.
 
 ```bash
-pnpm --filter @falkon/eval eval -- stack up                      # Falkon over the 42 checkouts (needs Docker and EVAL_O3_DIR)
-pnpm --filter @falkon/eval eval -- pilot --model haiku           # 5 dev questions first
-pnpm --filter @falkon/eval eval -- run --split dev --model haiku
-pnpm --filter @falkon/eval eval -- run --split hidden --model haiku
-pnpm --filter @falkon/eval eval -- report --model haiku          # per-split tables from stored runs, no spend
+pnpm eval stack up                      # Falkon over the 42 checkouts (needs Docker and EVAL_O3_DIR)
+pnpm eval pilot --model haiku           # 5 dev questions first
+pnpm eval run --split dev --model haiku
+pnpm eval run --split hidden --model haiku
+pnpm eval report --model haiku          # per-split tables from stored runs, no spend
 ```
 
-`stack up` starts the `api` service on `127.0.0.1:EVAL_PORT` (default 3400) with its admin listener on the port 100 higher, creates a Product `o3` holding all 42 repositories (it replaces the definition when the stack is re-used), and prints the endpoint the eval uses, `http://127.0.0.1:3400/mcp/o3`. The MCP flags for the ablation stacks (`--instructions off`, `--recipe on`, `--prs on`) are set on that service. `pnpm --filter @falkon/eval eval -- preflight` fails with the cause when the Product does not exist (404) or the key is refused (401).
+`stack up` starts the `api` service on `127.0.0.1:EVAL_PORT` (default 3400) with its admin listener on the port 100 higher, creates a Product `o3` holding all 42 repositories (it replaces the definition when the stack is re-used), and prints the endpoint the eval uses, `http://127.0.0.1:3400/mcp/o3`. The MCP flags for the ablation stacks (`--instructions off`, `--recipe on`, `--prs on`) are set on that service. `pnpm eval preflight` fails with the cause when the Product does not exist (404) or the key is refused (401).
 
-The runs call Claude, so they cost money. The Haiku gate at the 0.1.0 release cost $0.59, and `EVAL_SPEND_CAP` limits spend. The header of [`tests/eval/cli.ts`](tests/eval/cli.ts) lists every option and environment variable.
+The runs call Claude, so they cost money. The Haiku gate at the 0.1.0 release cost $0.59, and `EVAL_SPEND_CAP` limits spend. The header of `cli.ts` in `falkon-eval` lists every option and environment variable.
 
 ## Requirements
 
@@ -471,7 +471,7 @@ To report a vulnerability, do not open a public issue. See [CONTRIBUTING.md](CON
 | `packages/ui` | Falkon UI (Next.js) |
 | `docker/` | Image build, including Zoekt |
 | `scripts/` | Admin token helper, config converter, smoke test |
-| `tests/` | Contract, golden, eval and originality checks |
+| `tests/` | Contract, golden and originality checks (the eval harness is in the separate falkon-eval repository) |
 
 ## Upgrading from the web app
 

@@ -53,7 +53,7 @@ gql() {
   record "$1.json" "POST /graphql (repo $2, detail query, see the script)"
 }
 
-# The pull request fragment and page sizes are those of tests/eval/discussions.ts (S47), kept verbatim.
+# The pull request fragment and page sizes are those of discussions.ts in the falkon-eval repository (S47), kept verbatim.
 FRAGMENT='fragment F on PullRequest{number title body state merged mergedAt createdAt updatedAt closedAt author{login} headRefName baseRefName mergeCommit{oid} url labels(first:50){nodes{name}} comments(first:100){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} body createdAt updatedAt}} reviews(first:100){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} state body submittedAt}} reviewThreads(first:30){pageInfo{hasNextPage endCursor} nodes{comments(first:30){pageInfo{hasNextPage} nodes{databaseId author{login} body path line originalLine createdAt updatedAt}}}} files(first:100){pageInfo{hasNextPage endCursor} nodes{path additions deletions}}}'
 
 # detail <stem> <owner/name> <pull request numbers...>: one aliased query per call, as the live adapter batches.
