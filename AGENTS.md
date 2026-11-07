@@ -9,6 +9,7 @@ From the repository root (pnpm workspace):
 - `pnpm install && pnpm db:generate` before the first build.
 - `pnpm typecheck` and `pnpm test` must both pass before a change is reported done.
 - `docker compose up --build` runs the full stack; local dev needs Postgres, Redis, Zoekt, git, and universal-ctags (see `README.md`).
+- After renaming or removing a workspace package, run `pnpm install`, then restore every line of `pnpm-lock.yaml` outside the importer entries from git before committing; `pnpm install --frozen-lockfile` must still pass.
 - A change to dependencies needs its own `pnpm install` in its worktree. Never symlink `node_modules` from the main checkout into it, or the install rewrites the main checkout's dependencies.
 
 ## Domain and architecture
