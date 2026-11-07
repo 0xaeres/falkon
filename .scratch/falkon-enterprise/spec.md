@@ -1023,7 +1023,7 @@ Limits: no dependency, no push; MCP registration snapshots and `tests/contract` 
 
 Order: S93 and S96 in parallel (disjoint files); S94 after S93 (go-ahead); S95 after S94; S97 after S95 and S96 (go-ahead).
 
-## Cycle 23: chat answer style and reading experience (human, 2026-11-06; built directly in the main session, ahead of cycle 22)
+## Cycle 24: chat answer style and reading experience (human, 2026-11-06; built directly in the main session, ahead of cycle 22)
 
 Human request (2026-11-06): answers should read like a senior engineer explaining to a teammate, sized to the question, with real code excerpts, JSON and config examples where they help, syntax highlighted; the chat should use the width it has (like ChatGPT); archify diagrams must sit on the answer's own canvas, be readable, keep their animation, and keep simplified interaction. Human decisions at the start: inline diagrams with simplified interaction and the animation kept; highlight.js (new dependency, approved); short excerpts plus `@file` references; build now, before cycle 22.
 

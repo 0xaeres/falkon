@@ -57,7 +57,7 @@ test("the UI Ask prompt for a non-impact question is unchanged apart from the re
   assert.equal(dynamicPrompt({ repos: [], files: [], query: impact, audience: agent }), `${RENDER_PROMPT}\n\n${REPLY_PROMPT}\n\n${AUDIENCE_PROMPT.agent}\n\n${IMPACT_PROMPT}`);
 });
 
-test("pins: bytes of the static and per-chat prompts (rewritten in cycle 9, snippet rule in cycle 23), the non-impact brief and the client instructions", () => {
+test("pins: bytes of the static and per-chat prompts (rewritten in cycle 9, snippet rule in cycle 24), the non-impact brief and the client instructions", () => {
   const brief = buildResearchBrief({ ...input, query: plain });
   assert.equal(sha(brief), "4ee97b238a01456ffd70b4e77d371c19ef11f980d5f8bb516d0e27897d252d22");
   assert.equal(sha(buildResearchBrief({ ...input, query: plain, repos: [], impactRecipe: true })), "8c3cd554a34b6efc5321426432d1fc2527b6f39fa72d08f9945bf7077e59b783");
