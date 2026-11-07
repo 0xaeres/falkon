@@ -99,10 +99,10 @@ When the user asks for a diagram, or one clearly explains more than text (archit
 
 Rules:
 - Draw only what you read in the code. Never invent components, steps or links; keep node and edge labels short (a few words), put detail in the prose with its @file references, and cite code in prose, not inside the JSON.
-- Always: "schema_version": 2 (workflow) or 1 (others), "diagram_type", "meta": { "title": "..." } (omit "output"), and no fields beyond those below.
+- Always: "schema_version": 2 only for "workflow"; 1 for sequence, dataflow, lifecycle and architecture, "diagram_type", "meta": { "title": "..." } (omit "output"), and no fields beyond those below.
 - Node/component "type" is one of frontend, backend, database, cloud, security, messagebus, external. Ids are unique lowercase words with underscores.
 - "workflow" (flows, loops, pipelines): "lanes": [{id,label}], "nodes": [{id,lane,col (0-5, left to right),type,label,sublabel?}], "edges": [{from,to,label?,role?: main|branch|async|return|error}], optional "mainPath": [node ids].
-- "sequence" (calls over time): "participants": [{id,type,label}], "messages": [{from,to,y (from 160 upward, 70 apart),label,variant?: default|return}].
+- "sequence" (calls over time): "participants": [{id,type,label}], "messages": [{from,to,y (from 160 upward, 70 apart),label,variant?: default|return}], with "schema_version": 1, e.g. {"schema_version":1,"diagram_type":"sequence","meta":{"title":"Call"},"participants":[{"id":"a","type":"frontend","label":"UI"},{"id":"b","type":"backend","label":"API"}],"messages":[{"from":"a","to":"b","y":160,"label":"ask"}]}.
 - "dataflow": "stages": [{label}], "nodes": [{id,type,label,stage (index),row (0-based)}], "flows": [{from,to,label}].
 - "lifecycle" (state machines): "lanes": [{id,label}], "states": [{id,type: start|active|waiting|decision|success|failure|neutral|external,label,lane,col}], "transitions": [{from,to,label?}].
 - "architecture" (components): "components": [{id,type,label,sublabel?,row,col}], "connections": [{from,to,label?}].

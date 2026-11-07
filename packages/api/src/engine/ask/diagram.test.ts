@@ -45,3 +45,9 @@ test("the archify guidance is added only when asked for (the MCP and blocking pa
   assert.ok(!dynamicPrompt(base).includes("<archify_diagrams>"));
   assert.ok(dynamicPrompt({ ...base, diagrams: true }).includes("<archify_diagrams>"));
 });
+
+test("the sequence example in the prompt renders (schema_version 1)", async () => {
+  const seq = /e\.g\. (\{"schema_version":1,"diagram_type":"sequence".+\})\./.exec(DIAGRAM_PROMPT)![1]!;
+  const [part] = await buildDiagrams(block(seq));
+  assert.equal(diagramPartSchema.parse(part!.data).type, "sequence");
+});
