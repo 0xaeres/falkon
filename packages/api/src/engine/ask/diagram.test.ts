@@ -51,3 +51,8 @@ test("the sequence example in the prompt renders (schema_version 1)", async () =
   const [part] = await buildDiagrams(block(seq));
   assert.equal(diagramPartSchema.parse(part!.data).type, "sequence");
 });
+
+test("the prompt states the sequence layout limits the renderer enforces", () => {
+  assert.match(DIAGRAM_PROMPT, /at most 14 characters/);
+  assert.match(DIAGRAM_PROMPT, /must differ/);
+});
