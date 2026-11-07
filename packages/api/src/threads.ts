@@ -1,6 +1,6 @@
 // UI threads and the chat messages route (S21) on the admin listener: /ui/products/:slug/threads...
 // The server is the only authority on history: the messages route takes the new text only and loads the rest from the Chat row.
-import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, Res } from "@nestjs/common";
+import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Query, Req, Res } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { chatMessageRequestSchema, messagesToAnswers, type ChatMessageLike, type Thread, type ThreadSummary } from "@falkon/contracts";
@@ -62,10 +62,17 @@ export class ThreadService {
     return { id: c.id, productId: slug, title: title(c.name), updatedAt: c.updatedAt.getTime(), answers: messagesToAnswers(slug, messagesOf(c.messages)) };
   }
 
-  /** Removes a thread that has no answer (the UI's cleanup after a failed first send); a thread with an answer is refused. */
-  async remove(slug: string, id: string): Promise<void> {
+  /** Removes a thread that has no answer (the UI's cleanup after a failed first send); a thread with an answer is refused unless `force`, which also stops a turn still being written. */
+  async remove(slug: string, id: string, force = false): Promise<void> {
     await this.product(slug);
     const c = await this.thread(slug, id);
+    if (force) {
+      this.live.stop(id);
+      const { count } = await this.db.chat.deleteMany({ where: { id, productId: slug } });
+      if (count === 0) throw threadNotFound();
+      this.signals.changed();
+      return;
+    }
     if (messagesToAnswers(slug, messagesOf(c.messages)).length) throw error(409, "THREAD_HAS_ANSWERS", "This thread has answers and was kept.");
     // Only the row as it was read (same Product, same updatedAt): a turn that stored anything since keeps the thread.
     const { count } = await this.db.chat.deleteMany({ where: { id, productId: slug, updatedAt: c.updatedAt } });
@@ -154,8 +161,9 @@ export class ThreadsController {
 
   @Delete(":slug/threads/:id")
   @HttpCode(204)
-  remove(@Param("slug") slug: string, @Param("id") id: string) {
-    return this.threads.remove(slug, id);
+  remove(@Param("slug") slug: string, @Param("id") id: string, @Query("force") force?: string | string[]) {
+    // Only the single value `true` is force; a repeated param arrives as an array.
+    return this.threads.remove(slug, id, force === "true");
   }
 
   @Post(":slug/threads/:id/messages")

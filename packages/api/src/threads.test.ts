@@ -13,6 +13,7 @@ import { createAdminApp } from "./admin";
 import { ConnectionService } from "./connections";
 import { fakeEngineDb } from "./fakeEngineDb";
 import { PrismaProductRegistry } from "./product";
+import { LiveAnswers } from "./liveAnswers";
 import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
 import { seedContractRepo } from "../../../tests/contract/fixture";
@@ -370,6 +371,55 @@ test("DELETE removes a thread with no answer (never started or failed first send
   const refused = await call("DELETE", `/ui/products/alpha/threads/${answered}`);
   assert.equal(refused.status, 409);
   assert.equal(stored(answered).messages.length, 2, "an answered thread is untouched");
+});
+
+async function answeredThread() {
+  const id = await newThread("alpha");
+  fake.play([{ text: ANSWER }]);
+  assert.equal((await chat("alpha", id, "hello")).status, 200);
+  await until(() => stored(id).messages.length === 2);
+  return id;
+}
+
+test("DELETE ?force=true removes an answered thread; only the exact value true counts as force", async () => {
+  const id = await answeredThread();
+  for (const q of ["force=false", "force=1", "force=TRUE", "force=", "force=true&force=true", "force=true&force=false", "force=false&force=true"]) {
+    assert.equal((await call("DELETE", `/ui/products/alpha/threads/${id}?${q}`)).status, 409, q);
+    assert.equal(stored(id).messages.length, 2, `${q}: kept`);
+  }
+  assert.equal((await call("DELETE", `/ui/products/beta/threads/${id}?force=true`)).status, 404, "another Product's slug is 404 and the row stays");
+  assert.equal(stored(id).messages.length, 2);
+  assert.equal((await call("DELETE", `/ui/products/alpha/threads/${id}?force=true`)).status, 204);
+  assert.equal(engine.chats.some((c) => c.id === id), false);
+  assert.equal((await call("DELETE", `/ui/products/alpha/threads/${id}?force=true`)).status, 404, "repeat is 404");
+  assert.equal((await call("DELETE", `/ui/products/alpha/threads/nope?force=true`)).status, 404);
+  assert.equal((await call("DELETE", `/ui/products/nope/threads/${id}?force=true`)).status, 404);
+});
+
+test("DELETE ?force=true announces the change", async () => {
+  const id = await answeredThread();
+  let changed = 0;
+  const svc = new ThreadService(engine.db, ui, { changed: () => void changed++ } as never);
+  await svc.remove("alpha", id, true);
+  assert.equal(changed, 1);
+});
+
+test("DELETE ?force=true on a thread whose turn is running stops the turn; the late finish does not recreate the row", async () => {
+  const id = await newThread("alpha");
+  let release!: (rest: string) => void;
+  fake.play([{ tool: "read_file", args: { repo: IN, path: "src/hello.ts" } }, { hang: "<!--answer-->\nGreeting is ", rest: new Promise<string>((r) => (release = r)) }]);
+  const first = await fetch(`${base}/ui/products/alpha/threads/${id}/messages`, { method: "POST", headers, body: JSON.stringify({ text: "where?" }) });
+  await until(() => stored(id).messages.length === 1);
+  const stop = mock.method(LiveAnswers.prototype, "stop");
+  try {
+    assert.equal((await call("DELETE", `/ui/products/alpha/threads/${id}?force=true`)).status, 204);
+    assert.deepEqual(stop.mock.calls.map((c) => c.arguments[0]), [id], "the live turn is stopped");
+  } finally { stop.mock.restore(); }
+  release(`defined here ${ref(IN, "src/hello.ts", 1, 1)}.`);
+  await first.text().catch(() => undefined);
+  await new Promise((r) => setTimeout(r, 150));
+  assert.equal(engine.chats.some((c) => c.id === id), false, "the stopped turn stores nothing and recreates nothing");
+  assert.equal((await call("POST", `/ui/products/alpha/threads/${id}/stop`)).status, 404);
 });
 
 test("DELETE is atomic: an answer that lands after the check keeps the thread; a missing row is 404", async () => {
