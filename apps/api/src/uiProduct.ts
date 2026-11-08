@@ -41,6 +41,9 @@ export interface ProductFacts {
 /** The names a Product shows: its exact `include` (visible before the first sync). */
 export const memberNames = (p: Pick<ProductFacts, "definition">) => (p.definition as { include?: string[] } | null)?.include ?? [];
 
+/** The Product's chosen branch per repository id; a repository not listed tracks its default. */
+export const trackedBranches = (p: Pick<ProductFacts, "definition">) => (p.definition as { branches?: Record<string, string> } | null)?.branches ?? {};
+
 /** One RepoFacts per member name; a name with no Repo row yet is PENDING, or SKIPPED when its connection has already synced cleanly (the connector skipped it: not found, no access). */
 export function withPlaceholders(names: string[], rows: RepoFacts[], createdAt: Date, synced = false): RepoFacts[] {
   const byName = new Map(rows.map((r) => [r.name, r]));
@@ -54,10 +57,10 @@ const timeOf = (r: RepoFacts) => (r.pushedAt ?? r.lastIndexedAt ?? r.createdAt).
 
 const STATE = { PENDING: "pending", SYNCING: "indexing", INDEXED: "indexed", FAILED: "failed", SKIPPED: "skipped" } as const;
 
-function repositoryOf(r: RepoFacts): Product["repositories"][number] {
+function repositoryOf(r: RepoFacts, tracked?: string): Product["repositories"][number] {
   const [, organization = "", ...rest] = r.name.split("/"); // host/org/repo
   const name = rest.join("/") || r.name;
-  const branch = r.defaultBranch ?? "main";
+  const branch = tracked ?? r.defaultBranch ?? "main";
   const language = (r.metadata as { codeHostMetadata?: { github?: { language?: unknown } } } | null)?.codeHostMetadata?.github?.language;
   return { id: r.name, name, organization, language: typeof language === "string" ? language : "", revision: r.headCommit?.slice(0, 7) ?? "", updated: timeOf(r), branches: [branch], branch, state: STATE[r.status] };
 }
@@ -76,7 +79,7 @@ export function toUiProduct(row: ProductFacts, repos: RepoFacts[], connection: C
     initials: initialsOf(row.name),
     provider: providerOf(host, connection?.genericGit),
     host,
-    repositories: repos.map(repositoryOf),
+    repositories: repos.map((r) => repositoryOf(r, trackedBranches(row)[r.name])),
     activeGeneration: status.generation,
     scenario: status.scenario,
     queuedAt: queuedAt(repos, connection),
