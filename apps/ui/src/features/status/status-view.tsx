@@ -26,6 +26,7 @@ import {
   StateDot,
   type Tone,
 } from "@/components/ui/primitives";
+import type { Status } from "@falkon/contracts";
 import { api } from "@/lib/api/client";
 import { generationAge } from "@/lib/format";
 import { useMinute } from "./use-minute";
@@ -55,13 +56,20 @@ const SHORTCUTS = [
   },
 ] as const;
 
-export function StatusView() {
-  const { product, status, statusError, refreshStatus, refresh } =
-    useWorkspace();
+/** `initialStatus` is the server's first-HTML answer; the workspace's live status (SWR, then the event stream) wins once it exists. */
+export function StatusView({ initialStatus }: { initialStatus?: Status }) {
+  const {
+    product,
+    status: live,
+    statusError,
+    refreshStatus,
+    refresh,
+  } = useWorkspace();
+  const status = live ?? initialStatus;
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
   useMinute(); // re-renders each minute; the age itself reads the real clock
-  if (statusError)
+  if (statusError && !live)
     return (
       <ErrorState error={statusError} retry={() => void refreshStatus()} />
     );
