@@ -135,3 +135,7 @@ Done when: `env -u FALKON_DIR pnpm test` passes in falkon-eval (129 of 129) and 
 ### Scheduling note (prerequisite probe, 2026-11-08)
 
 The probe found macOS swap nearly full (4.6 of 5.1 GB used, about 1 GB free) and the Docker VM at 4 GB, with an unrelated `falkon-check` stack (six idle containers) running. To avoid the Docker failures seen before, the heavy slices are serialized: S5, S8 and S9 run first; S4 (Docker builds and a compose stack) runs after them and alone with respect to other `next build` work. The loop does not stop or restart the unrelated containers. Slice order for the build: S5, S8, S9, then S4, then S6, then S7.
+
+## Cycle 2 results (2026-11-08)
+
+S8, S5, S4 and S6 kept; S7 reverted (chat first-load JS fell 9.2%, below the 10% rule); S9 dropped by the human: the eval harness needs a Falkon checkout by design, and the baseline data stays in Falkon's `.scratch/`, which the naming rule exempts. Docker image 2.82 GB to 1.04 GB. Open follow-ups: lazy-load `motion` and other chat chunk contributors to reach the 10% target; cover the UI container in the ops smoke.
