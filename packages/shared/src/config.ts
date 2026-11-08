@@ -36,6 +36,8 @@ export interface GithubConnectionConfig extends ConnectionBase {
   users?: string[];
   orgs?: string[];
   repos?: string[];
+  /** `org/repo` to the branch its clone tracks (HEAD, first indexed revision); a repo without an entry follows the remote default. */
+  repoBranches?: Record<string, string>;
   topics?: string[];
   exclude?: {
     forks?: boolean;
