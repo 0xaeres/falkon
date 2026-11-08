@@ -60,6 +60,11 @@ export const repositories: Repository[] = [
   private: repo.id !== "payments-docs",
 }));
 
+/** What GET /connections/:id/repositories/:org/:name/branches returns: default branch first. */
+export const branchList = (repo: Repository) => ({
+  branches: [...new Set(["main", ...repo.branches])],
+  truncated: false,
+});
 export const seedProducts: Product[] = [
   {
     id: "payments-platform",
