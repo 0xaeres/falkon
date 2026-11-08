@@ -63,6 +63,8 @@ const hostRepos = [
   { full_name: "other/tool", default_branch: "main", pushed_at: null },
 ];
 let mode: Mode = "ok";
+let hostBranches = { names: ["dev", "main"], cut: false };
+let branchCalls = 0;
 const seen: { host: string; token: string }[] = [];
 const stubHost: CodeHost = {
   async check(host, token) {
@@ -76,6 +78,15 @@ const stubHost: CodeHost = {
     seen.push({ host, token });
     if (mode === "throws") throw new Error(`provider said: bad credentials for ${token}`);
     return hostRepos;
+  },
+  async branches(host, token, fullName) {
+    seen.push({ host, token });
+    branchCalls++;
+    if (mode === "invalid") throw new CodeHostError("invalid");
+    if (mode === "unavailable") throw new CodeHostError("unavailable");
+    if (mode === "throws") throw new Error(`provider said: bad credentials for ${token}`);
+    void fullName;
+    return hostBranches;
   },
 };
 
@@ -254,7 +265,7 @@ test("route enumeration: the admin listener has exactly the allowlisted routes",
   const routes = router.stack.flatMap((l) => (l.route ? Object.keys(l.route.methods).map((m) => `${m.toUpperCase()} ${l.route!.path}`) : [])).sort();
   assert.deepEqual(routes, [
     "DELETE /connections/:id",
-    "GET /connections", "GET /connections/:id/repositories",
+    "GET /connections", "GET /connections/:id/repositories", "GET /connections/:id/repositories/:org/:name/branches",
     "POST /connections",
     "PUT /connections/:id/token",
   ].sort());
@@ -291,6 +302,43 @@ test("canary: the token appears in no response, thrown error or console output o
     assert.equal(everything.includes(needle), false, needle);
 });
 
+// ---- branches ----------------------------------------------------------------------------------------
+
+test("GET branches: default branch first, no duplicate, cut flag passed through, one branch call per request", async () => {
+  mode = "ok";
+  const { json: c } = await create("ghp_branches");
+  hostBranches = { names: ["dev", "trunk", "feat"], cut: false };
+  const before = branchCalls;
+  let r = await call("GET", `/connections/${c.id}/repositories/acme/Lib/branches`);
+  assert.deepEqual([r.status, r.json], [200, { branches: ["trunk", "dev", "feat"], truncated: false }]);
+  assert.equal(branchCalls - before, 1);
+  hostBranches = { names: Array.from({ length: 300 }, (_, i) => `b${i}`), cut: true };
+  r = await call("GET", `/connections/${c.id}/repositories/acme/app/branches`);
+  assert.equal(r.json.branches.length, 301, "default main is not among the 300 the host returned, so it is prepended");
+  assert.deepEqual([r.json.branches[0], r.json.truncated], ["main", true]);
+  hostBranches = { names: [], cut: false };
+  assert.deepEqual((await call("GET", `/connections/${c.id}/repositories/acme/app/branches`)).json, { branches: ["main"], truncated: false }, "empty repository still offers its default");
+});
+
+test("GET branches: a repository the listing does not contain is 404 and makes no branch call; host 401 and outage map to the connection codes", async () => {
+  mode = "ok";
+  const { json: c } = await create("ghp_branches2");
+  const before = branchCalls;
+  for (const p of ["acme/missing", "acme/lib", "ACME/app", "..%2Fx/y"]) {
+    const r = await call("GET", `/connections/${c.id}/repositories/${p}/branches`);
+    assert.deepEqual([r.status, r.json.errorCode], [404, "NOT_FOUND"], p);
+  }
+  assert.equal((await call("GET", `/connections/zzzzzzzzzzzzzzzzzzzzzz/repositories/acme/app/branches`)).status, 404);
+  assert.equal(branchCalls, before);
+  mode = "invalid";
+  let r = await call("GET", `/connections/${c.id}/repositories/acme/app/branches`);
+  assert.deepEqual([r.status, r.json.errorCode], [422, "INVALID_TOKEN"]);
+  mode = "unavailable";
+  r = await call("GET", `/connections/${c.id}/repositories/acme/app/branches`);
+  assert.deepEqual([r.status, r.json.errorCode], [502, "UPSTREAM_UNAVAILABLE"]);
+  mode = "ok";
+});
+
 // ---- the GitHub client -------------------------------------------------------------------------------
 
 test("githubCodeHost: scopes from x-oauth-scopes, GHE base url, 3-page cap, 401/403 invalid, other failures unavailable", async () => {
@@ -313,6 +361,27 @@ test("githubCodeHost: scopes from x-oauth-scopes, GHE base url, 3-page cap, 401/
   for (const [code, kind] of [[401, "invalid"], [403, "invalid"], [500, "unavailable"], [404, "unavailable"]] as const)
     await assert.rejects(status(code).check("github.com", "tok"), (e: CodeHostError) => e.kind === kind, String(code));
   await assert.rejects(githubCodeHost((async () => { throw new Error("network"); }) as never).check("github.com", "tok"), (e: CodeHostError) => e.kind === "unavailable");
+});
+
+test("githubCodeHost.branches: per_page=100, names in host order, stops at a short page, at most 3 pages, cut only when a 4th page exists", async () => {
+  const calls: string[] = [];
+  const full = (n: number) => Array.from({ length: 100 }, (_, i) => ({ name: `b${n}-${i}` }));
+  const stub = (pages: number, lastShort: boolean) => (async (url: string) => {
+    calls.push(url);
+    const n = Number(new URL(url).searchParams.get("page"));
+    const rows = n === pages && lastShort ? [{ name: "last" }] : full(n);
+    return Response.json(rows, { headers: n < pages ? { link: `<${url}>; rel="next"` } : {} });
+  }) as unknown as typeof fetch;
+  let r = await githubCodeHost(stub(2, true)).branches("github.com", "tok", "acme/app");
+  assert.deepEqual([r.names.length, r.names.at(-1), r.cut], [101, "last", false]);
+  assert.deepEqual(calls, [1, 2].map((n) => `https://api.github.com/repos/acme/app/branches?per_page=100&page=${n}`));
+  calls.length = 0;
+  r = await githubCodeHost(stub(5, false)).branches("github.com", "tok", "acme/app");
+  assert.deepEqual([r.names.length, r.cut, calls.length], [300, true, 3], "more than 3 pages: three calls, cut");
+  calls.length = 0;
+  r = await githubCodeHost(stub(3, false)).branches("github.com", "tok", "acme/app");
+  assert.deepEqual([r.names.length, r.cut, calls.length], [300, false, 3], "exactly 300: not cut");
+  await assert.rejects(githubCodeHost((async () => new Response("x", { status: 401 })) as never).branches("github.com", "t", "a/b"), (e: CodeHostError) => e.kind === "invalid");
 });
 
 // ---- single reader -----------------------------------------------------------------------------------

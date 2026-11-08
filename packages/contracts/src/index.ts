@@ -160,6 +160,8 @@ export const repositoriesQuery = z.strictObject({
   q: z.string().max(200).optional(),
   page: z.coerce.number().int().min(1).max(3).optional(),
 });
+// GET /connections/:id/repositories/:org/:name/branches: the default branch first; `truncated` when the host has more than the 300 listed.
+export const branchListSchema = z.object({ branches: z.array(z.string()), truncated: z.boolean() });
 export const setupRequestSchema = z.object({
   id: productIdSchema,
   name: z.string().trim().min(1).max(80),
@@ -167,7 +169,7 @@ export const setupRequestSchema = z.object({
   host: z.string().min(1).max(200),
   connectionId: z.string().min(1).max(100),
   repositories: z
-    .array(z.object({ id: z.string(), branch: z.string().min(1).max(100) }))
+    .array(z.object({ id: z.string(), branch: z.string().min(1).max(100).regex(/^[^\x00-\x1f\x7f]+$/, "branch has control characters") }))
     .min(1)
     .max(100),
 });

@@ -8,7 +8,7 @@ import { loadContextResolver } from "../../backend/src/productResolve";
 import { ConnectionService } from "./connections";
 import { body, error } from "./request";
 import { isProductName } from "./product";
-import { deriveKnowledge, deriveStatus, memberNames, toUiProduct, withPlaceholders, type ConnectionFacts, type RepoFacts } from "./uiProduct";
+import { deriveKnowledge, deriveStatus, memberNames, trackedBranches, toUiProduct, withPlaceholders, type ConnectionFacts, type RepoFacts } from "./uiProduct";
 
 type Db = Pick<PrismaClient, "product" | "repo" | "connection" | "chat" | "knowledgeScan" | "$transaction">;
 type Tx = Pick<PrismaClient, "product" | "repo" | "connection" | "chat">;
@@ -16,7 +16,10 @@ type Tx = Pick<PrismaClient, "product" | "repo" | "connection" | "chat">;
 const notFound = () => error(404, "NOT_FOUND", "Product not found.");
 const noConnection = () => error(409, "NO_CONNECTION", "Product has no connection to edit its repositories through.");
 const badRepository = () => error(400, "INVALID_REPOSITORY", "A selected repository is not available on this connection.");
+const branchConflict = (repo: string, branch: string) => error(409, "BRANCH_CONFLICT", `${repo} is already tracked on branch "${branch}" by another Product on this connection; Falkon tracks one branch per repository.`);
 const isUniqueViolation = (e: unknown) => (e as { code?: string } | null)?.code === "P2002";
+
+const definitionOf = (include: string[], branches: Record<string, string>) => ({ include, ...(Object.keys(branches).length > 0 && { branches }) });
 
 const KB_TTL_MS = 30_000;
 const KB_LOAD_MS = 2_000;
@@ -115,35 +118,44 @@ export class UiProductService {
     return (await this.uiProducts([await this.find(slug)]))[0]!.status;
   }
 
-  /** The exact Repo.name of each chosen repository, each of which must be in the connection's code-host listing. Default branch only. */
-  private pick(chosen: { id: string }[], listing: Repository[]) {
-    const available = new Set(listing.map((r) => r.id));
+  /** The exact Repo.name of each chosen repository, each of which must be in the connection's code-host listing, and the tracked branch of those not on the listed default (absent means default). */
+  private pick(chosen: { id: string; branch: string }[], listing: Repository[]) {
+    const defaults = new Map(listing.map((r) => [r.id, r.branch]));
     const ids = chosen.map((c) => c.id);
-    if (new Set(ids).size !== ids.length || ids.some((id) => !available.has(id))) throw badRepository();
-    return ids;
+    if (new Set(ids).size !== ids.length || ids.some((id) => !defaults.has(id))) throw badRepository();
+    const branches = Object.fromEntries(chosen.filter((c) => c.branch !== defaults.get(c.id)).map((c) => [c.id, c.branch]));
+    return { names: ids, branches, defaults };
   }
 
   /**
-   * Sets the connection's `repos` to the union of the exact `org/repo` names of every UI Product on it (this one
-   * replaced by `mine`) and asks for a sync. Another Product's repositories are never dropped.
+   * Sets the connection's `repos` and `repoBranches` to the union over every UI Product on it (this one replaced by
+   * `mine`) and asks for a sync. Another Product's repositories are never dropped. One branch per repository: a
+   * repository another Product holds on a different branch (absent means the listed default) is a BRANCH_CONFLICT.
    * ponytail: two concurrent writes on one connection can lose one update; a row lock if that ever matters.
    */
-  private async writeUnion(tx: Tx, connectionId: number, slug: string, mine: string[]) {
+  private async writeUnion(tx: Tx, connectionId: number, slug: string, mine: string[], branches: Record<string, string> = {}, defaults = new Map<string, string>()) {
     const c = await tx.connection.findUniqueOrThrow({ where: { id: connectionId }, include: withCredential });
     const others = await tx.product.findMany({ where: { connectionId, slug: { notIn: [slug] } } });
+    for (const id of mine) {
+      const held = others.find((o) => memberNames(o).includes(id));
+      const theirs = held && (trackedBranches(held)[id] ?? defaults.get(id));
+      if (theirs !== undefined && theirs !== (branches[id] ?? defaults.get(id))) throw branchConflict(id.split("/").slice(1).join("/"), theirs);
+    }
     const prefix = `${c.credential?.host}/`;
     const all = new Set([...others.flatMap(memberNames), ...mine].filter((n) => n.startsWith(prefix)).map((n) => n.slice(prefix.length)));
-    await tx.connection.update({ where: { id: connectionId }, data: { config: { ...(c.config as object), repos: [...all].sort() }, syncRequestedAt: new Date() } });
+    const entries = [...others.flatMap((o) => Object.entries(trackedBranches(o))), ...Object.entries(branches)];
+    const repoBranches = Object.fromEntries(entries.filter(([id]) => id.startsWith(prefix)).map(([id, b]) => [id.slice(prefix.length), b]));
+    await tx.connection.update({ where: { id: connectionId }, data: { config: { ...(c.config as object), repos: [...all].sort(), repoBranches }, syncRequestedAt: new Date() } });
   }
 
   async create(input: SetupRequest) {
     const { connectionId, repos } = await this.connections.listing(input.connectionId);
-    const names = this.pick(input.repositories, repos);
+    const { names, branches, defaults } = this.pick(input.repositories, repos);
     try {
       await this.db.$transaction(async (tx) => {
         const repoNames = (await loadContextResolver(tx))({ include: names });
-        await tx.product.create({ data: { slug: input.id, name: input.name, definition: { include: names }, repoNames, connectionId } });
-        await this.writeUnion(tx, connectionId, input.id, names);
+        await this.writeUnion(tx, connectionId, input.id, names, branches, defaults); // first: a conflict leaves no Product row even on a store without rollback
+        await tx.product.create({ data: { slug: input.id, name: input.name, definition: definitionOf(names, branches), repoNames, connectionId } });
       });
     } catch (e) {
       if (isUniqueViolation(e)) throw error(409, "ALREADY_EXISTS", "A Product with this slug exists.");
@@ -158,11 +170,11 @@ export class UiProductService {
     const conn = row.connectionId === null ? null : await this.db.connection.findUnique({ where: { id: row.connectionId }, include: withCredential });
     if (!conn?.credential) throw noConnection();
     const { repos } = await this.connections.listing(conn.credential.id);
-    const names = this.pick(input.repositories, repos);
+    const { names, branches, defaults } = this.pick(input.repositories, repos);
     await this.db.$transaction(async (tx) => {
       const repoNames = (await loadContextResolver(tx))({ include: names });
-      await tx.product.updateMany({ where: { slug }, data: { name: input.name, definition: { include: names }, repoNames } });
-      await this.writeUnion(tx, conn.id, slug, names);
+      await this.writeUnion(tx, conn.id, slug, names, branches, defaults);
+      await tx.product.updateMany({ where: { slug }, data: { name: input.name, definition: definitionOf(names, branches), repoNames } });
     });
     this.announceRequest();
     return this.get(slug);

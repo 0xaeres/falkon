@@ -15,11 +15,17 @@ import { UiProductService } from "./ui";
 
 process.env.FALKON_SECRET_KEY = Buffer.alloc(32, 3).toString("base64");
 const TOKEN = "t".repeat(40);
+const hostCalls = { repos: 0, branches: 0 };
 const host: CodeHost = {
   async check() {
     return { scopes: ["repo"] };
   },
+  async branches() {
+    hostCalls.branches++;
+    return { names: ["main"], cut: false };
+  },
   async repos() {
+    hostCalls.repos++;
     return [
       { full_name: "acme/app", default_branch: "main", pushed_at: "2026-10-19T10:00:00Z" },
       { full_name: "acme/lib", default_branch: "trunk", pushed_at: "2026-10-18T10:00:00Z" },
@@ -59,7 +65,9 @@ type J = Record<string, any>;
 const APP = "github.com/acme/app";
 const LIB = "github.com/acme/lib";
 const TOOL = "github.com/other/tool";
-const pick = (...ids: string[]) => ids.map((id) => ({ id, branch: "main" }));
+const DEFAULT: Record<string, string> = { [LIB]: "trunk" }; // the listing's default branches; every other repo is main
+const pick = (...ids: string[]) => ids.map((id) => ({ id, branch: DEFAULT[id] ?? "main" }));
+const on = (id: string, branch: string) => ({ id, branch });
 const setup = (connectionId: string, id: string, ids: string[]) => ({ id, name: `${id} team`, provider: "github", host: "github.com", connectionId, repositories: pick(...ids) });
 const connectionRow = (credentialId: string) => engine.connections.find((c) => c.credentialId === credentialId)!;
 const reposOf = (credentialId: string) => connectionRow(credentialId).config.repos as string[];
@@ -185,7 +193,7 @@ test("route enumeration: the admin listener has exactly the S20a routes, the sev
   const routes = router.stack.flatMap((l) => (l.route ? Object.keys(l.route.methods).map((m) => `${m.toUpperCase()} ${l.route!.path}`) : [])).sort();
   assert.deepEqual(routes, [
     "DELETE /connections/:id", "DELETE /ui/products/:slug", "DELETE /ui/products/:slug/threads/:id",
-    "GET /connections", "GET /connections/:id/repositories",
+    "GET /connections", "GET /connections/:id/repositories", "GET /connections/:id/repositories/:org/:name/branches",
     "GET /ui/products", "GET /ui/products/:slug", "GET /ui/products/:slug/events", "GET /ui/products/:slug/status",
     "GET /ui/products/:slug/threads", "GET /ui/products/:slug/threads/:id", "GET /ui/products/:slug/threads/:id/stream",
     "PATCH /ui/products/:slug",
@@ -358,4 +366,68 @@ test("DELETE /ui/products/:slug: a Product with no connection skips the connecti
   assert.equal((await call("DELETE", "/ui/products/nope")).status, 404);
   assert.equal((await call("DELETE", "/ui/products/Bad_Slug")).status, 404);
   assert.equal((await call("DELETE", "/ui/products/del1", undefined, false)).status, 401);
+});
+
+// ---- branches (B2) -----------------------------------------------------------------------------------
+
+test("a chosen branch is stored in the definition and the connection's repoBranches; only non-default entries count; toUiProduct reports it before the first index", async () => {
+  const c = (await call("POST", "/connections", { provider: "github", method: "token", host: "https://github.com", token: "ghp_br" })).json.id;
+  const body = { ...setup(c, "br1", []), repositories: [on(APP, "dev"), on(LIB, "trunk")] };
+  const created = await call("POST", "/ui/products", body);
+  assert.equal(created.status, 201);
+  assert.deepEqual(engine.product.rows.find((p) => p.slug === "br1")!.definition, { include: [APP, LIB], branches: { [APP]: "dev" } }, "lib is on its default, so it is not stored");
+  assert.deepEqual(connectionRow(c).config.repoBranches, { "acme/app": "dev" });
+  assert.deepEqual(created.json.repositories.map((r: J) => [r.id, r.branch, r.branches]).slice(0, 1), [[APP, "dev", ["dev"]]]);
+  assert.deepEqual((await call("GET", "/ui/products/br1")).json.repositories[0].branch, "dev");
+  // a repository indexed on another branch than the one chosen still shows the chosen one
+  index(APP, { defaultBranch: "main" });
+  assert.equal((await call("GET", "/ui/products/br1")).json.repositories[0].branch, "dev");
+  engine.repos.splice(0, engine.repos.length);
+});
+
+test("one tracked branch per repository: a clashing Product is 409 BRANCH_CONFLICT naming the repo and the branch in use; same branch and self re-save succeed; delete drops the branches", async () => {
+  const c = connectionRow((await call("GET", "/connections")).json.at(-1).id).credentialId as string;
+  const rows = () => engine.product.rows.length;
+  const repoBranches = () => connectionRow(c).config.repoBranches;
+  assert.equal((await call("PATCH", "/ui/products/br1", { name: "br1 team", repositories: [on(APP, "dev"), on(LIB, "trunk")] })).status, 200, "self re-save");
+  const n = rows();
+  for (const [slug, repo] of [["br2", on(APP, "main")], ["br2", on(APP, "other")], ["br2", on(LIB, "feat")]] as const) {
+    const r = await call("POST", "/ui/products", { ...setup(c, slug, []), repositories: [repo] });
+    assert.equal(r.status, 409, `${repo.id} ${repo.branch}`);
+    assert.equal(r.json.errorCode, "BRANCH_CONFLICT");
+    const [org, name] = repo.id.split("/").slice(1);
+    assert.match(r.json.message, new RegExp(`${org}/${name}.*"${repo.id === APP ? "dev" : "trunk"}"`));
+  }
+  assert.deepEqual([rows(), repoBranches()], [n, { "acme/app": "dev" }], "refused creates leave no row and no config change");
+  assert.equal((await call("POST", "/ui/products", { ...setup(c, "br2", []), repositories: [on(APP, "dev"), on(TOOL, "wip")] })).status, 201, "same branch as the other Product");
+  assert.deepEqual(repoBranches(), { "acme/app": "dev", "other/tool": "wip" });
+  assert.equal((await call("PATCH", "/ui/products/br1", { name: "br1 team", repositories: [on(APP, "main")] })).status, 409, "edit that clashes with br2");
+  assert.deepEqual(engine.product.rows.find((p) => p.slug === "br1")!.definition, { include: [APP, LIB], branches: { [APP]: "dev" } });
+  assert.equal((await call("PATCH", "/ui/products/br2", { name: "br2 team", repositories: [on(APP, "dev"), on(TOOL, "wip2")] })).status, 200, "br2 alone holds tool");
+  assert.deepEqual(repoBranches(), { "acme/app": "dev", "other/tool": "wip2" });
+  assert.equal((await call("DELETE", "/ui/products/br2")).status, 204);
+  assert.deepEqual(repoBranches(), { "acme/app": "dev" }, "br2's branches leave the union");
+  assert.equal((await call("PATCH", "/ui/products/br1", { name: "br1 team", repositories: [on(APP, "main")] })).status, 200, "nobody else holds app now");
+  assert.deepEqual([repoBranches(), engine.product.rows.find((p) => p.slug === "br1")!.definition], [{}, { include: [APP] }]);
+});
+
+test("branch strings with control characters, over 100 characters or empty are 400 and store nothing; a repo outside the listing is 400 whatever its branch", async () => {
+  const c = (await call("GET", "/connections")).json.at(-1).id as string;
+  const n = engine.product.rows.length;
+  for (const branch of ["a\nb", "a\u0000b", "tab\there", "x".repeat(101), ""]) {
+    const r = await call("POST", "/ui/products", { ...setup(c, "bad1", []), repositories: [on(APP, branch)] });
+    assert.equal(r.status, 400, JSON.stringify(branch));
+  }
+  assert.equal((await call("POST", "/ui/products", { ...setup(c, "bad1", []), repositories: [on("github.com/acme/missing", "dev")] })).status, 400);
+  assert.equal((await call("POST", "/ui/products", { ...setup(c, "bad1", []), repositories: [on(TOOL, "x".repeat(100))] })).status, 201, "100 characters is allowed");
+  assert.equal(engine.product.rows.length, n + 1);
+  await call("DELETE", "/ui/products/bad1");
+});
+
+test("the products list and status routes make no code host call", async () => {
+  const before = { ...hostCalls };
+  await call("GET", "/ui/products");
+  await call("GET", "/ui/products/alpha");
+  await call("GET", "/ui/products/alpha/status");
+  assert.deepEqual(hostCalls, before);
 });
