@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 
 /** Highlighted HTML for a known language (highlight.js escapes the code), else undefined and the code shows plain. */
 export const highlight = (code: string, lang?: string) =>
-  lang && hljs.getLanguage(lang) ? hljs.highlight(code, { language: lang, ignoreIllegals: true }).value : undefined;
+  lang && hljs.getLanguage(lang)
+    ? hljs.highlight(code, { language: lang, ignoreIllegals: true }).value
+    : undefined;
 
 export function CodeBlock({ lang, code }: { lang?: string; code: string }) {
   const [copied, setCopied] = useState(false);
@@ -37,7 +39,11 @@ export function CodeBlock({ lang, code }: { lang?: string; code: string }) {
         </Button>
       </div>
       <pre className="overflow-x-auto px-4 py-3 text-[0.8125rem] leading-relaxed">
-        {html ? <code className="hljs" dangerouslySetInnerHTML={{ __html: html }} /> : <code>{code}</code>}
+        {html ? (
+          <code className="hljs" dangerouslySetInnerHTML={{ __html: html }} />
+        ) : (
+          <code>{code}</code>
+        )}
       </pre>
     </div>
   );

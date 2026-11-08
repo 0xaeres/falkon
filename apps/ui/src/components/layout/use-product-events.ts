@@ -10,10 +10,17 @@ type Source = {
   readyState: number;
   onopen: (() => void) | null;
   onerror: (() => void) | null;
-  addEventListener(name: string, listener: (event: { data: string }) => void): void;
+  addEventListener(
+    name: string,
+    listener: (event: { data: string }) => void,
+  ): void;
   close(): void;
 };
-type Deps = { EventSource: new (url: string) => Source; setTimeout: typeof setTimeout; clearTimeout: typeof clearTimeout };
+type Deps = {
+  EventSource: new (url: string) => Source;
+  setTimeout: typeof setTimeout;
+  clearTimeout: typeof clearTimeout;
+};
 
 /**
  * One Product event stream. The browser's EventSource reconnects by itself after a dropped connection, and every connection
@@ -24,7 +31,10 @@ type Deps = { EventSource: new (url: string) => Source; setTimeout: typeof setTi
  */
 export function connectProductEvents(
   url: string,
-  onEvent: <K extends ProductEventName>(name: K, data: ReturnType<(typeof productEventSchemas)[K]["parse"]>) => void,
+  onEvent: <K extends ProductEventName>(
+    name: K,
+    data: ReturnType<(typeof productEventSchemas)[K]["parse"]>,
+  ) => void,
   onState: (connected: boolean) => void,
   deps: Deps = { EventSource: EventSource as never, setTimeout, clearTimeout },
 ) {
@@ -37,7 +47,9 @@ export function connectProductEvents(
     for (const name of Object.keys(productEventSchemas) as ProductEventName[])
       s.addEventListener(name, (event) => {
         // An event that does not parse is dropped; the next one carries the state anyway.
-        const parsed = productEventSchemas[name].safeParse(safeJson(event.data));
+        const parsed = productEventSchemas[name].safeParse(
+          safeJson(event.data),
+        );
         if (parsed.success) onEvent(name, parsed.data as never);
       });
     s.onopen = () => {
@@ -48,7 +60,10 @@ export function connectProductEvents(
       onState(false);
       if (s.readyState !== CLOSED || stopped) return;
       s.close();
-      timer = deps.setTimeout(open, RETRY_MS[Math.min(attempt++, RETRY_MS.length - 1)]);
+      timer = deps.setTimeout(
+        open,
+        RETRY_MS[Math.min(attempt++, RETRY_MS.length - 1)],
+      );
     };
   };
   open();
@@ -75,12 +90,22 @@ export function useProductEvents(productId: string) {
     if (typeof EventSource === "undefined") return;
     return connectProductEvents(
       keys.events(productId),
-      (name, data) => void mutate(name === "status" ? keys.status(productId) : keys.threads(productId), data, { revalidate: false }),
-      (connected) => setState((was) => ({ connected, failed: was.failed || !connected })),
+      (name, data) =>
+        void mutate(
+          name === "status" ? keys.status(productId) : keys.threads(productId),
+          data,
+          { revalidate: false },
+        ),
+      (connected) =>
+        setState((was) => ({ connected, failed: was.failed || !connected })),
     );
   }, [productId, mutate]);
-  return { connected: state.connected, reconnecting: state.failed && !state.connected };
+  return {
+    connected: state.connected,
+    reconnecting: state.failed && !state.connected,
+  };
 }
 
 /** A lost status connection is an error only for a page that never loaded a status (D151). */
-export const visibleStatusError = (status: unknown, error: unknown) => (status ? undefined : error);
+export const visibleStatusError = (status: unknown, error: unknown) =>
+  status ? undefined : error;

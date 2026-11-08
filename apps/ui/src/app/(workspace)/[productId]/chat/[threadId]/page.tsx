@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { ChatSkeleton, ChatView } from "@/features/chat/chat-view";
+import { ChatView } from "@/features/chat/chat-view";
+import { ChatSkeleton } from "@/features/chat/components/chat-skeleton";
 export const metadata: Metadata = { title: "Chat" };
 async function Thread({ params }: { params: Promise<{ threadId: string }> }) {
   const { threadId } = await params;

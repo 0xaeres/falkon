@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { test, mock, afterEach } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ReconnectingNotice } from "../src/components/layout/reconnecting-notice";
-import { connectProductEvents, visibleStatusError } from "../src/lib/use-product-events";
+import { connectProductEvents, visibleStatusError } from "../src/components/layout/use-product-events";
 import { keys } from "../src/lib/api/client";
 import { makeStatus, seedProducts } from "./mock-fixtures";
 
@@ -143,5 +143,5 @@ test("no polling remains in apps/ui/src: no refreshInterval, and the one setInte
   walk(join(import.meta.dirname, "../src"));
   const hits = (re: RegExp) => files.filter((f) => re.test(readFileSync(f, "utf8"))).map((f) => f.split("/src/")[1]);
   assert.deepEqual(hits(/refreshInterval/), []);
-  assert.deepEqual(hits(/setInterval/), ["lib/use-minute.ts"]);
+  assert.deepEqual(hits(/setInterval/), ["features/status/use-minute.ts"]);
 });

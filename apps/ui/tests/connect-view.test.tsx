@@ -10,7 +10,7 @@ import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.share
 import { WorkspaceShell } from "../src/components/layout/workspace-shell";
 import { ConnectView } from "../src/features/connect/connect-view";
 import { tryCopy } from "../src/features/connect/copy";
-import { connectSnippets } from "../src/lib/connect";
+import { connectSnippets } from "../src/features/connect/connect";
 import { seedProducts } from "./mock-fixtures";
 
 const router: AppRouterInstance = {

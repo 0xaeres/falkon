@@ -3,13 +3,8 @@ import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { UIMessage } from "ai";
 import type { Answer } from "@falkon/contracts";
-import {
-  ReplyBody,
-  answerLabel,
-  answerText,
-  discardable,
-  isCapNote,
-} from "../src/features/chat/chat-view";
+import { ReplyBody } from "../src/features/chat/components/reply-body";
+import { answerLabel, answerText, discardable, isCapNote } from "../src/features/chat/lib/answer";
 
 const reply: Answer = {
   id: "a1",

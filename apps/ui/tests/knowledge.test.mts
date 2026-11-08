@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { knowledgeLine } from "../src/lib/knowledge";
+import { knowledgeLine } from "../src/features/status/knowledge";
 
 test("knowledgeLine: one plain line per state, nothing when off or absent", () => {
   assert.equal(knowledgeLine(undefined), null);

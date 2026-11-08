@@ -2,12 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Markdown, componentsFor } from "../src/features/chat/markdown";
-import {
-  MERMAID_MAX_CHARS,
-  viewBoxOf,
-  MermaidView,
-  drawMermaid,
-} from "../src/features/chat/mermaid-block";
+import { MermaidView } from "../src/features/chat/mermaid-block";
+import { MERMAID_MAX_CHARS, drawMermaid } from "../src/features/chat/lib/mermaid";
+import { viewBoxOf } from "../src/features/chat/components/mermaid-canvas";
 
 const cite = (id: number) => <button className="citation">{id}</button>;
 const render = (text: string, final = true) =>

@@ -11,7 +11,7 @@ import type { Status } from "@falkon/contracts";
 import { WorkspaceShell } from "../src/components/layout/workspace-shell";
 import { press, SettingsView } from "../src/features/status/settings-view";
 import { keys } from "../src/lib/api/client";
-import { currentMinute } from "../src/lib/use-minute";
+import { currentMinute } from "../src/features/status/use-minute";
 import { seedProducts } from "./mock-fixtures";
 
 const router: AppRouterInstance = {
