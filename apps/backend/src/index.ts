@@ -131,7 +131,7 @@ const worker = new Worker<{ repoId: number }>(
       const { path, isReadOnly } = repoPath(repo);
       if (!isReadOnly) {
         const creds = await credentialsFor(repo.external_codeHostType, repo.connections.map((c) => c.connection));
-        await cloneOrFetch(path, repo.cloneUrl, creds, signal);
+        await cloneOrFetch(path, repo.cloneUrl, creds, signal, meta.trackedBranch);
         if (meta.gitConfig) await upsertGitConfig(path, meta.gitConfig);
       }
       const dir = gitDirOf(path);

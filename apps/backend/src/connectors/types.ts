@@ -7,6 +7,8 @@ export interface RepoMetadata {
   /** Branch / tag globs (from `revisions`) indexed besides the default branch. */
   branches?: string[];
   tags?: string[];
+  /** Branch the clone's HEAD follows (from `repoBranches`); absent = the remote default. */
+  trackedBranch?: string;
   /** Refs the last index covered; written by the index job. */
   indexedRevisions?: string[];
   codeHostMetadata?: {
