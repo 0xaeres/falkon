@@ -1,19 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import hljs from "highlight.js/lib/common";
+import { useEffect, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-/** Highlighted HTML for a known language (highlight.js escapes the code), else undefined and the code shows plain. */
-export const highlight = (code: string, lang?: string) =>
-  lang && hljs.getLanguage(lang)
-    ? hljs.highlight(code, { language: lang, ignoreIllegals: true }).value
+type Hljs = typeof import("highlight.js/lib/common").default;
+let loaded: Hljs | undefined;
+const load = () => import("highlight.js/lib/common").then((m) => (loaded = m.default));
+const highlight = (h: Hljs, code: string, lang?: string) =>
+  lang && h.getLanguage(lang)
+    ? h.highlight(code, { language: lang, ignoreIllegals: true }).value
     : undefined;
 
 export function CodeBlock({ lang, code }: { lang?: string; code: string }) {
   const [copied, setCopied] = useState(false);
-  const html = useMemo(() => highlight(code, lang), [code, lang]);
+  const [hl, setHl] = useState(loaded);
+  useEffect(() => {
+    if (!hl) void load().then(setHl);
+  }, [hl]);
+  const html = hl && highlight(hl, code, lang);
   return (
     <div className="code-block max-w-full overflow-hidden rounded-lg border bg-card">
       <div className="flex items-center justify-between border-b py-1 pr-1 pl-3">
