@@ -49,10 +49,12 @@ export const privateOnly = (repositories: Repository[], only: boolean) =>
   only ? repositories.filter((repo) => repo.private) : repositories;
 
 export default function RepositoryPicker({
+  connectionId,
   repositories,
   selected,
   onChange,
 }: {
+  connectionId: string;
   repositories: Repository[];
   selected: Record<string, string>;
   onChange: (value: Record<string, string>) => void;
@@ -240,6 +242,7 @@ export default function RepositoryPicker({
                     </TableCell>
                     <TableCell>
                       <BranchSelect
+                        connectionId={connectionId}
                         repo={repo}
                         value={selected[repo.id] ?? repo.branch}
                         disabled={!on}
@@ -296,6 +299,7 @@ export default function RepositoryPicker({
       </div>
 
       <SelectedRepositories
+        connectionId={connectionId}
         repositories={selectedRepos}
         selected={selected}
         onBranch={(repo, branch) =>

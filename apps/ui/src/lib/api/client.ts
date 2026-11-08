@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   answerSchema,
+  branchListSchema,
   connectionSchema,
   productSchema,
   repositorySchema,
@@ -19,6 +20,9 @@ export const keys = {
   products: `${base}/products`,
   repositories: (connectionId: string, q = "") =>
     `${base}/repositories?connection=${encodeURIComponent(connectionId)}&q=${encodeURIComponent(q)}`,
+  /** One repository's branches on the code host; only requested when its dropdown opens. */
+  branches: (connectionId: string, org: string, name: string) =>
+    `${base}/connections/${encodeURIComponent(connectionId)}/repositories/${encodeURIComponent(org)}/${encodeURIComponent(name)}/branches`,
   product: (id: string) => `${base}/products/${encodeURIComponent(id)}`,
   status: (id: string) => `${base}/products/${encodeURIComponent(id)}/status`,
   events: (id: string) => `${base}/products/${encodeURIComponent(id)}/events`,
@@ -85,6 +89,7 @@ export const api = {
     }
     return all;
   },
+  branches: (url: string) => request(url, branchListSchema),
   status: (url: string) => request(url, statusSchema),
   search: (url: string) => request(url, searchResponseSchema),
   threads: (url: string) => request(url, z.array(threadSummarySchema)),
