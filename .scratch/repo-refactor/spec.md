@@ -111,3 +111,27 @@ Approved by the human on 2026-11-07 (all seven slices, limits and budget as writ
 - Left in the main checkout, not deleted: `tests/eval/.local/` (three eval stack state directories with their tokens; regenerable with the harness's `stack up`, which now lives in `falkon-eval`).
 - Cycle 2 plan: S4 (multi-stage Dockerfile) and S5 (UI split) in parallel, then S6, then S7.
 
+
+## Cycle 2 plan (started 2026-11-08, human said "Start cycle 2" with the digest's recommendations as defaults)
+
+Slices S4 to S7 stand as written above. Two follow-ups from cycle 1's open items are added as slices, because the human started the cycle without changing the recommendations:
+
+### S8 Falkon-side naming check (tier standard, agent claude, blocked by none)
+
+Goal: the naming rule in `AGENTS.md` (the predecessor product's name in any case or spelling, and the k-to-c misspelling of Falkon, stay out of every tracked file outside `.scratch/`) is enforced by a test inside Falkon again.
+
+Scope: one new test file, `packages/shared/src/naming.test.ts` (shared runs under `pnpm test`). Read how the former harness test did it in `/Users/aeres/Desktop/projects/falkon-eval/scrub.test.ts` and reuse its patterns. The test file must not contain the forbidden names as literals (build each pattern from fragments) and must not match itself.
+
+Done when: the test passes on the tip; it scans `git ls-files` outside `.scratch/` for both file contents and file names, skipping binary files; and a mutation check shows it works: add a forbidden string to one tracked file in the worktree, see the test fail naming that file, then revert. Adversarial: binary files, large files, case and spelling variants, a forbidden name only in a file name, the test file itself.
+
+### S9 Baseline data into falkon-eval (tier standard, agent claude, blocked by none; works in the sibling repository only)
+
+Goal: `falkon-eval`'s tests run without `FALKON_DIR`.
+
+Scope: `/Users/aeres/Desktop/projects/falkon-eval` only. Copy the recorded floor (`.scratch/falkon-mvp/eval-floor` in Falkon, 84 files, about 3.2 MB, all tracked in Falkon) into `falkon-eval/floor/`; `floorDir()` defaults to that folder, with `FALKON_DIR` still needed only for the stack, deny paths and similar Falkon-checkout reads.
+
+Done when: `env -u FALKON_DIR pnpm test` passes in falkon-eval (129 of 129) and so does the run with `FALKON_DIR` set; `git ls-files floor | wc -l` is 84; nothing else changes.
+
+### Scheduling note (prerequisite probe, 2026-11-08)
+
+The probe found macOS swap nearly full (4.6 of 5.1 GB used, about 1 GB free) and the Docker VM at 4 GB, with an unrelated `falkon-check` stack (six idle containers) running. To avoid the Docker failures seen before, the heavy slices are serialized: S5, S8 and S9 run first; S4 (Docker builds and a compose stack) runs after them and alone with respect to other `next build` work. The loop does not stop or restart the unrelated containers. Slice order for the build: S5, S8, S9, then S4, then S6, then S7.
