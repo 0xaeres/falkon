@@ -1,9 +1,17 @@
 node_modules
 **/node_modules
-.next
+**/.next
+**/dist
 data
-.env
+**/.env
+**/.env.*
 .git
 **/.scratch
 **/.loop
 **/.claude
+# Tests and docs: not built into any stage, so they stay out of the context and the image.
+tests
+docs
+**/*.test.ts
+**/*.test.tsx
+**/*.test.mts
