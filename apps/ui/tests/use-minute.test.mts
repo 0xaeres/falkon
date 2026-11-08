@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
-import { currentMinute, subscribeMinute } from "../src/lib/use-minute";
+import { currentMinute, subscribeMinute } from "../src/features/status/use-minute";
 
 test("the minute tick fires once a minute, locally, and stops when unsubscribed", () => {
   mock.timers.enable({ apis: ["setInterval", "Date"], now: Date.parse("2026-10-20T23:59:30Z") });

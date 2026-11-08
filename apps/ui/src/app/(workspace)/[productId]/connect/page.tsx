@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import type { Metadata } from "next";
 import { ConnectSkeleton, ConnectView } from "@/features/connect/connect-view";
-import { connectSnippets, mcpUrl, type AuthMode } from "@/lib/connect";
+import { connectSnippets, mcpUrl, type AuthMode } from "@/features/connect/connect";
 export const metadata: Metadata = { title: "Connect" };
 
 // FALKON_MCP_URL and AUTH_MODE are runtime config of the UI server: read per request, never at build time.

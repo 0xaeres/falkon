@@ -25,8 +25,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Page, PageHeader } from "@/components/ui/primitives";
-import type { Snippets } from "@/lib/connect";
-import { TOOLS } from "@/lib/tools";
+import type { Snippets } from "./connect";
+import { TOOLS } from "./tools";
 import { tryCopy } from "./copy";
 
 const CLIENTS = [

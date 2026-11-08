@@ -12,7 +12,7 @@ import { WorkspaceShell } from "../src/components/layout/workspace-shell";
 import { StatusView } from "../src/features/status/status-view";
 import { repoState } from "../src/features/status/repo-state";
 import { keys } from "../src/lib/api/client";
-import { currentMinute } from "../src/lib/use-minute";
+import { currentMinute } from "../src/features/status/use-minute";
 import { seedProducts } from "./mock-fixtures";
 
 const router: AppRouterInstance = {

@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/table";
 import { Notice, Page, PageHeader } from "@/components/ui/primitives";
 import { api, keys } from "@/lib/api/client";
-import { knowledgeLine } from "@/lib/knowledge";
+import { knowledgeLine } from "./knowledge";
 
 const ACTIONS = [
   ["scan", "Scan"],

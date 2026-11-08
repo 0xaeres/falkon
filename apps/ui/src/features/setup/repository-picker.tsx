@@ -1,13 +1,7 @@
 "use client";
 import { useState } from "react";
-import { GitBranch, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import type { Repository } from "@falkon/contracts";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -33,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -44,7 +37,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { relativeTime } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { BranchSelect } from "./components/branch-select";
+import { SelectedRepositories } from "./components/selected-repositories";
 
 export const countLine = (
   repositories: Repository[],
@@ -53,49 +47,6 @@ export const countLine = (
   `${repositories.length} ${repositories.length === 1 ? "repository" : "repositories"} visible to this token${privateShown === null ? "" : ` · ${privateShown} private`}`;
 export const privateOnly = (repositories: Repository[], only: boolean) =>
   only ? repositories.filter((repo) => repo.private) : repositories;
-
-function BranchSelect({
-  repo,
-  value,
-  disabled,
-  onChange,
-}: {
-  repo: Repository;
-  value: string;
-  disabled?: boolean;
-  onChange: (branch: string) => void;
-}) {
-  return (
-    <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger
-        size="sm"
-        aria-label={`Branch for ${repo.name}`}
-        className="w-full max-w-[200px] justify-start font-mono text-xs *:data-[slot=select-value]:flex-1"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <GitBranch className="text-muted-foreground" aria-hidden="true" />
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent
-        position="popper"
-        align="start"
-        aria-label={`Branches for ${repo.name}`}
-      >
-        <SelectGroup>
-          {repo.branches.map((branch) => (
-            <SelectItem
-              key={branch}
-              value={branch}
-              className="font-mono text-xs"
-            >
-              {branch}
-            </SelectItem>
-          ))}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
-  );
-}
 
 export default function RepositoryPicker({
   repositories,
@@ -343,113 +294,15 @@ export default function RepositoryPicker({
           </span>
         </div>
       </div>
-      <Accordion
-        type="single"
-        collapsible
-        defaultValue="selected"
-        className="rounded-lg border bg-card"
-      >
-        <AccordionItem value="selected" className="border-0">
-          <AccordionTrigger
-            disabled={!selectedRepos.length}
-            className="px-4 py-3 text-[0.8125rem] hover:no-underline disabled:opacity-60"
-          >
-            <span className="flex items-center gap-2">
-              Selected repositories
-              <Badge
-                variant={selectedRepos.length ? "info" : "muted"}
-                className="font-mono"
-              >
-                {selectedRepos.length}
-              </Badge>
-            </span>
-          </AccordionTrigger>
-          <AccordionContent className="pb-0">
-            <ul
-              aria-label="Selected repositories"
-              className="divide-y border-t"
-            >
-              {selectedRepos.map((repo) => (
-                <li
-                  key={repo.id}
-                  className="flex items-center gap-3 px-4 py-2.5"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[0.8125rem] font-medium">
-                      {repo.name}
-                    </div>
-                    <div className="truncate font-mono text-[0.6875rem] text-faint">
-                      {repo.organization}
-                    </div>
-                  </div>
-                  <BranchSelect
-                    repo={repo}
-                    value={selected[repo.id]}
-                    onChange={(branch) =>
-                      onChange({ ...selected, [repo.id]: branch })
-                    }
-                  />
-                  <span className="hidden w-16 text-right font-mono text-xs text-muted-foreground sm:block">
-                    {repo.revision}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={`Remove ${repo.name}`}
-                    onClick={() => toggle(repo, false)}
-                  >
-                    <X />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </div>
-  );
-}
 
-/** Table-shaped placeholder while the code host lists repositories. */
-export function RepositoryPickerSkeleton() {
-  return (
-    <div
-      role="status"
-      aria-label="Loading repositories"
-      className="flex flex-col gap-4"
-    >
-      <div className="flex justify-between">
-        <Skeleton className="h-4 w-60" />
-        <Skeleton className="h-4 w-28" />
-      </div>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[220px_1fr]">
-        <Skeleton className="h-9" />
-        <Skeleton className="h-9" />
-      </div>
-      <div className="overflow-hidden rounded-lg border">
-        <div className="flex gap-6 border-b bg-card px-3 py-3">
-          <Skeleton className="size-4" />
-          <Skeleton className="h-3.5 w-24" />
-        </div>
-        {[72, 56, 64, 48, 60, 52].map((width, index) => (
-          <div
-            key={index}
-            className={cn(
-              "flex items-center gap-4 px-3 py-3",
-              index < 5 && "border-b",
-            )}
-          >
-            <Skeleton className="size-4" />
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Skeleton className="h-3.5" style={{ width: `${width * 3}px` }} />
-              <Skeleton className="h-3 w-24" />
-            </div>
-            <Skeleton className="hidden h-3.5 w-16 md:block" />
-            <Skeleton className="h-8 w-32" />
-            <Skeleton className="hidden h-3.5 w-14 sm:block" />
-          </div>
-        ))}
-      </div>
+      <SelectedRepositories
+        repositories={selectedRepos}
+        selected={selected}
+        onBranch={(repo, branch) =>
+          onChange({ ...selected, [repo.id]: branch })
+        }
+        onRemove={(repo) => toggle(repo, false)}
+      />
     </div>
   );
 }

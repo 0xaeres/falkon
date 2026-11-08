@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { connectSnippets, mcpUrl } from "../src/lib/connect";
-import { TOOLS } from "../src/lib/tools";
+import { connectSnippets, mcpUrl } from "../src/features/connect/connect";
+import { TOOLS } from "../src/features/connect/tools";
 
 test("mcpUrl: default base, trailing slash tolerated, Product slug with dashes kept", () => {
   assert.equal(mcpUrl(undefined, "core"), "http://127.0.0.1:3001/mcp/core");
