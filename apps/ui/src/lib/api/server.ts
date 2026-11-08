@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { statusSchema, type Status } from "@falkon/contracts";
 import { forward } from "./engine";
 
 /** A request the UI refuses before it reaches the engine (bad JSON, too large). */
@@ -79,3 +80,41 @@ export type ProductRoute = { params: Promise<{ productId: string }> };
 export type ThreadRoute = {
   params: Promise<{ productId: string; threadId: string }>;
 };
+
+/**
+ * A page's first-HTML status. Per-request path: one engine call under a short timeout (which also covers the body read)
+ * and a byte cap on the body. Undefined on any failure; the page then renders its skeleton and the client's SWR and event
+ * stream take over, exactly as before.
+ */
+export async function engineStatus(
+  productId: string,
+  timeoutMs = 2_000,
+  maxBytes = 256 * 1024,
+): Promise<Status | undefined> {
+  try {
+    // `stream` is forward()'s own-signal option: here it carries the timeout instead of the default 15 s.
+    const res = await forward(
+      `/ui/products/${encodeURIComponent(productId)}/status`,
+      { stream: AbortSignal.timeout(timeoutMs) },
+    );
+    if (!res.ok || !res.body) return undefined;
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let text = "";
+    let bytes = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > maxBytes) {
+        await reader.cancel();
+        return undefined;
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    const parsed = statusSchema.safeParse(JSON.parse(text + decoder.decode()));
+    return parsed.success ? parsed.data : undefined;
+  } catch {
+    return undefined;
+  }
+}

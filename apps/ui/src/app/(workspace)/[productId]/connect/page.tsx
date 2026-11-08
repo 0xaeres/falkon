@@ -1,13 +1,13 @@
 import { Suspense } from "react";
-import { connection } from "next/server";
 import type { Metadata } from "next";
 import { ConnectSkeleton, ConnectView } from "@/features/connect/connect-view";
+import { atRequestTime } from "@/lib/api/engine";
 import { connectSnippets, mcpUrl, type AuthMode } from "@/features/connect/connect";
 export const metadata: Metadata = { title: "Connect" };
 
 // FALKON_MCP_URL and AUTH_MODE are runtime config of the UI server: read per request, never at build time.
 async function Connect({ params }: { params: Promise<{ productId: string }> }) {
-  await connection();
+  await atRequestTime();
   const { productId } = await params;
   const mode: AuthMode = process.env.AUTH_MODE === "apiKey" ? "apiKey" : "none";
   const url = mcpUrl(process.env.FALKON_MCP_URL, productId);
