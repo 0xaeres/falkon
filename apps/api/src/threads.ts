@@ -175,7 +175,7 @@ export class ThreadsController {
       response = await this.threads.message(slug, id, input);
     } catch (e) {
       // Ask errors (no model configured, unknown model) keep the shape the web Ask routes use.
-      if (e instanceof AskError) return sendJson(res, e.statusCode, { statusCode: e.statusCode, errorCode: e.errorCode, message: e.message });
+      if (e instanceof AskError) return sendJson(res, e.statusCode, { statusCode: e.statusCode, errorCode: e.errorCode, message: e.message }, e.retryAfter === undefined ? {} : { "retry-after": String(e.retryAfter) });
       throw e;
     }
     await sendWebResponse(res, response);

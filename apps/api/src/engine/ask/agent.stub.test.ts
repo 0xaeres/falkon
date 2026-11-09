@@ -8,6 +8,7 @@ import type { ModelMessage } from "ai";
 import { scopeFor } from "@falkon/shared";
 import { toolDeps } from "../tools";
 import { createMessageStream, stubOldSearchResults } from "./agent";
+import { breaker } from "./breaker";
 import { fakeOpenAi, type Turn } from "./fakeOpenAi";
 
 // S101 (D193): results of grep, glob and list_tree older than the last three steps are stubbed in the model's copy only.
@@ -80,7 +81,7 @@ async function run(turns: Turn[]) {
   const log = mock.method(console, "log", () => {});
   try {
     let stored: unknown;
-    const stream = await createMessageStream({ audience: "human", messages: [user], selectedRepos: [REPO], scope: scopeFor(["*"]), model: { provider: "openai-compatible", model: "m", baseUrl: fake.url } as never, onFinish: (m) => void (stored = m) });
+    const stream = await createMessageStream({ audience: "human", messages: [user], selectedRepos: [REPO], scope: scopeFor(["*"]), model: { provider: "openai-compatible", model: "m", baseUrl: fake.url } as never, permit: breaker.admit({ provider: "openai-compatible", model: "m" }), onFinish: (m) => void (stored = m) });
     const r = stream.getReader();
     while (!(await r.read()).done);
     const seen = fake.requests.map((q) => q.messages.filter((m) => m.role === "tool").map((m) => String(m.content)));

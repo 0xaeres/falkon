@@ -3,14 +3,15 @@
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 
-/** One model response: text, a tool call, or text that starts and waits: for `rest` to end it, or forever (for abort tests); or text and then an error event (a model failure mid-answer). */
-export type Turn = ({ text: string } | { tool: string; args: unknown }) & { usage?: { in: number; cached?: number; out: number } } | { hang: string; rest?: Promise<string> } | { fail: string };
+/** One model response: text, a tool call, or text that starts and waits: for `rest` to end it, or forever (for abort tests); or text and then an error event (a model failure mid-answer); or an HTTP error status (the SDK retries a 5xx, with the wait cut to 1 ms). */
+export type Turn = ({ text: string } | { tool: string; args: unknown }) & { usage?: { in: number; cached?: number; out: number } } | { hang: string; rest?: Promise<string> } | { fail: string } | { status: number };
 
 export async function fakeOpenAi(initial: Turn[] = [], title: string | null = "A title") {
   let turns = initial;
   let chatTitle = title;
   const requests: { messages: { role: string; content?: unknown }[]; stream?: boolean; tools?: unknown[] }[] = [];
   let next = 0;
+  let nameRequests = 0;
   const open = new Set<http.ServerResponse>();
   const server = http.createServer(async (req, res) => {
     const chunks: Buffer[] = [];
@@ -19,12 +20,14 @@ export async function fakeOpenAi(initial: Turn[] = [], title: string | null = "A
     const base = { id: "c", object: "chat.completion.chunk", created: 1, model: "m" };
     if (!body.stream) {
       // generateText: the chat name (a null title is a client error, which the SDK does not retry).
+      nameRequests++;
       if (chatTitle === null) return void res.writeHead(400).end("no title");
       res.setHeader("content-type", "application/json");
       return void res.end(JSON.stringify({ ...base, object: "chat.completion", choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: chatTitle } }], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } }));
     }
     requests.push(body);
     const turn = turns[Math.min(next++, turns.length - 1)]!;
+    if ("status" in turn) return void res.writeHead(turn.status, { "content-type": "application/json", "retry-after-ms": "1" }).end(JSON.stringify({ error: { message: `status ${turn.status}`, type: "server_error" } }));
     res.writeHead(200, { "content-type": "text/event-stream" });
     open.add(res);
     res.on("close", () => open.delete(res));
@@ -52,6 +55,10 @@ export async function fakeOpenAi(initial: Turn[] = [], title: string | null = "A
   return {
     url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
     requests,
+    /** Chat-name (non-streaming) requests served. */
+    get nameRequests() {
+      return nameRequests;
+    },
     /** Starts a new script: the next stream request gets its first turn. */
     play: (t: Turn[]) => {
       turns = t;
