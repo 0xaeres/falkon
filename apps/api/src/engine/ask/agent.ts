@@ -1,8 +1,9 @@
-import { createUIMessageStream, jsonSchema, NoSuchToolError, streamText, tool, type ModelMessage, type StepResult, type ToolSet, type UIMessage } from "ai";
+import { createUIMessageStream, jsonSchema, NoSuchToolError, streamText, tool, type ModelMessage, type StepResult, type UIMessageChunk, type ToolSet, type UIMessage } from "ai";
 import { gitRead, gitToolDefinitions, gitToolNames, historyToolDefinitions, historyToolNames, toolDefinitions, toolJsonSchema, toolNames, type AnyToolDefinition, type Scope, type ToolSource } from "@falkon/shared";
 import { toolDeps } from "../tools";
 import { familyOn } from "../toolFamily";
 import { answerPart } from "./answer";
+import { countsAsFailure, type Permit } from "./breaker";
 import { aiModel, type LanguageModelConfig } from "./models";
 import { isHistoryQuery } from "./recipes";
 import { dynamicPrompt, STATIC_PROMPT, type Audience } from "./prompt";
@@ -146,7 +147,16 @@ async function mentionedFiles(messages: UIMessage[], scope: Scope) {
  * One chat turn: one streamText run over the shared tools, at most FALKON_CHAT_MAX_STEP_COUNT
  * steps, as an AI SDK UI message stream (text, reasoning, tool calls, data-source parts, metadata).
  */
-export async function createMessageStream(o: {
+export async function createMessageStream(o: Turn) {
+  try {
+    return await streamFor(o, o.permit);
+  } catch (e) {
+    o.permit.release();
+    throw e;
+  }
+}
+
+interface Turn {
   messages: UIMessage[];
   selectedRepos: string[];
   scope: Scope;
@@ -156,73 +166,102 @@ export async function createMessageStream(o: {
   abortSignal?: AbortSignal;
   /** The UI chat renders ```archify blocks: adds the diagram guidance to the prompt. The MCP and blocking paths leave it off. */
   diagrams?: boolean;
+  /** The slot the caller took with `breaker.admit` before it stored anything (R2). Released on every way the turn ends. */
+  permit: Permit;
   /** Who reads the answer: the UI chat is a person, ask_codebase over MCP is another agent. Set at every call site. */
   audience: Audience;
   /** Extra data parts written (and persisted) once the model stream has ended, before the finish chunk. */
   postProcess?: (ctx: { text: string; sources: ToolSource[]; stepCapHit: boolean; toolCalls: number }) => Promise<{ type: `data-${string}`; data: unknown }[]>;
-}) {
+}
+
+async function streamFor(o: Turn, permit: Permit) {
   const { model, temperature } = await aiModel(o.model);
   const repos = [...o.selectedRepos].sort((a, b) => a.localeCompare(b));
   const query = o.messages.findLast((m) => m.role === "user")?.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ");
   // History tools and recipes go with the whole conversation's user text (not only the last message), so a follow-up in a history chat keeps them.
   const history = isHistoryQuery(o.messages.filter((m) => m.role === "user").flatMap((m) => m.parts.map((p) => (p.type === "text" ? p.text : ""))).join("\n"));
   const dyn = dynamicPrompt({ repos, files: await mentionedFiles(o.messages, o.scope), query, diagrams: o.diagrams, audience: o.audience, history });
-  return createUIMessageStream({
+  // A reader that cancels the stream stops the model run, so the slot frees.
+  const stop = new AbortController();
+  const signal = o.abortSignal ? AbortSignal.any([o.abortSignal, stop.signal]) : stop.signal;
+  const stream = createUIMessageStream({
     originalMessages: o.messages,
     onFinish: async ({ messages }) => o.onFinish?.(messages),
     execute: async ({ writer }) => {
-      writer.write({ type: "start" });
-      const started = Date.now();
-      const sources: ToolSource[] = [];
-      const steps: StepRecord[] = [];
-      const result = streamText({
-        model,
-        system: [{ role: "system", content: STATIC_PROMPT }, ...(dyn ? [{ role: "system" as const, content: dyn }] : [])],
-        messages: modelMessages(o.messages),
-        tools: agentTools(o.scope, repos, (data) => (sources.push(data), writer.write({ type: "data-source", data })), history),
-        temperature,
-        abortSignal: o.abortSignal,
-        stopWhen: [({ steps }) => steps.length >= MAX_STEPS()],
-        toolChoice: "auto",
-        // The last allowed step may not call a tool, so a capped run still ends with an answer (D192); old search results shrink to stubs in the model's copy (D193).
-        prepareStep: ({ stepNumber, messages }) => ({ messages: stubOldSearchResults(messages), ...(stepNumber === MAX_STEPS() - 1 ? { toolChoice: "none" as const } : {}) }),
-        // A model that capitalises a tool name gets the lowercase tool.
-        experimental_repairToolCall: async ({ toolCall, tools, error }) => {
-          if (NoSuchToolError.isInstance(error)) {
-            const lower = toolCall.toolName.toLowerCase();
-            if (lower !== toolCall.toolName && lower in tools) return { ...toolCall, toolName: lower };
-          }
-          return null;
-        },
-        onStepFinish: (step) => {
-          const r = stepRecord(step);
-          steps.push(r);
-          console.log(`[ask] step ${steps.length} in=${r.in} cached=${r.cached} out=${r.out} tools=${r.toolBytes.map((t) => `${t.tool}:${t.bytes}`).join(",")}`);
-        },
-        onError: ({ error }) => console.error("[ask]", error),
-      });
-      await new Promise<void>((resolve) =>
-        writer.merge(result.toUIMessageStream({ originalMessages: o.messages, sendReasoning: true, sendStart: false, sendFinish: false, onFinish: () => resolve() })),
-      );
-      if (o.postProcess) {
-        // A failed model run already put an error chunk in the stream: it gets no answer parts.
-        const done = await Promise.all([result.text, result.steps]).catch(() => undefined);
-        if (done) for (const part of await o.postProcess({ text: done[0], sources, stepCapHit: done[1].length >= MAX_STEPS(), toolCalls: done[1].reduce((n, s) => n + s.toolCalls.length, 0) })) writer.write(part);
+      try {
+        writer.write({ type: "start" });
+        const started = Date.now();
+        const sources: ToolSource[] = [];
+        const steps: StepRecord[] = [];
+        let errored = false;
+        const result = streamText({
+          model,
+          system: [{ role: "system", content: STATIC_PROMPT }, ...(dyn ? [{ role: "system" as const, content: dyn }] : [])],
+          messages: modelMessages(o.messages),
+          tools: agentTools(o.scope, repos, (data) => (sources.push(data), writer.write({ type: "data-source", data })), history),
+          temperature,
+          abortSignal: signal,
+          stopWhen: [({ steps }) => steps.length >= MAX_STEPS()],
+          toolChoice: "auto",
+          // The last allowed step may not call a tool, so a capped run still ends with an answer (D192); old search results shrink to stubs in the model's copy (D193).
+          prepareStep: ({ stepNumber, messages }) => ({ messages: stubOldSearchResults(messages), ...(stepNumber === MAX_STEPS() - 1 ? { toolChoice: "none" as const } : {}) }),
+          // A model that capitalises a tool name gets the lowercase tool.
+          experimental_repairToolCall: async ({ toolCall, tools, error }) => {
+            if (NoSuchToolError.isInstance(error)) {
+              const lower = toolCall.toolName.toLowerCase();
+              if (lower !== toolCall.toolName && lower in tools) return { ...toolCall, toolName: lower };
+            }
+            return null;
+          },
+          onStepFinish: (step) => {
+            const r = stepRecord(step);
+            steps.push(r);
+            console.log(`[ask] step ${steps.length} in=${r.in} cached=${r.cached} out=${r.out} tools=${r.toolBytes.map((t) => `${t.tool}:${t.bytes}`).join(",")}`);
+          },
+          onError: ({ error }) => {
+            console.error("[ask]", error);
+            errored = true;
+            // A user Stop is neither; a client error (bad key, bad request) is not the model's failure.
+            if (!signal.aborted && countsAsFailure(error)) permit.failure();
+            else permit.release();
+          },
+        });
+        await new Promise<void>((resolve) =>
+          writer.merge(result.toUIMessageStream({ originalMessages: o.messages, sendReasoning: true, sendStart: false, sendFinish: false, onFinish: () => resolve() })),
+        );
+        // The model run is over: a clean end is a success (it frees the slot); a Stop or an error was settled already.
+        if (!errored && !signal.aborted) permit.success();
+        if (o.postProcess) {
+          // A failed model run already put an error chunk in the stream: it gets no answer parts.
+          const done = await Promise.all([result.text, result.steps]).catch(() => undefined);
+          if (done) for (const part of await o.postProcess({ text: done[0], sources, stepCapHit: done[1].length >= MAX_STEPS(), toolCalls: done[1].reduce((n, s) => n + s.toolCalls.length, 0) })) writer.write(part);
+        }
+        const usage = await result.totalUsage;
+        writer.write({
+          type: "message-metadata",
+          messageMetadata: {
+            totalTokens: usage.totalTokens ?? 0,
+            totalInputTokens: usage.inputTokens ?? 0,
+            totalOutputTokens: usage.outputTokens ?? 0,
+            totalResponseTimeMs: Date.now() - started,
+            modelName: o.model.displayName ?? o.model.model,
+            steps,
+            totalCachedInputTokens: steps.reduce((n, s) => n + s.cached, 0),
+          },
+        });
+        writer.write({ type: "finish" });
+      } finally {
+        permit.release();
       }
-      const usage = await result.totalUsage;
-      writer.write({
-        type: "message-metadata",
-        messageMetadata: {
-          totalTokens: usage.totalTokens ?? 0,
-          totalInputTokens: usage.inputTokens ?? 0,
-          totalOutputTokens: usage.outputTokens ?? 0,
-          totalResponseTimeMs: Date.now() - started,
-          modelName: o.model.displayName ?? o.model.model,
-          steps,
-          totalCachedInputTokens: steps.reduce((n, s) => n + s.cached, 0),
-        },
-      });
-      writer.write({ type: "finish" });
     },
+  });
+  const reader = stream.getReader();
+  return new ReadableStream<UIMessageChunk>({
+    pull: async (c) => {
+      const r = await reader.read();
+      if (r.done) c.close();
+      else c.enqueue(r.value);
+    },
+    cancel: (reason) => (stop.abort(), reader.cancel(reason)),
   });
 }

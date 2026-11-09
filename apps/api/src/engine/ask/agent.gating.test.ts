@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import type { UIMessage } from "ai";
 import { scopeFor } from "@falkon/shared";
 import { agentTools, chatToolDefinitions, createMessageStream } from "./agent";
+import { breaker } from "./breaker";
 import { fakeOpenAi } from "./fakeOpenAi";
 import { isHistoryQuery, GIT_BRIEF_RECIPES, HISTORY_RECIPE } from "./recipes";
 import { dynamicPrompt, STATIC_PROMPT } from "./prompt";
@@ -23,7 +24,7 @@ const model = (url: string) => ({ provider: "openai-compatible", model: "m", bas
 async function sent(messages: UIMessage[]) {
   const fake = await fakeOpenAi([{ text: "<!--answer-->\nok" }]);
   try {
-    const r = (await createMessageStream({ audience: "human", messages, selectedRepos: [], scope: scopeFor(["*"]), model: model(fake.url) })).getReader();
+    const r = (await createMessageStream({ audience: "human", messages, selectedRepos: [], scope: scopeFor(["*"]), model: model(fake.url), permit: breaker.admit(model(fake.url)) })).getReader();
     while (!(await r.read()).done);
     const req = fake.requests[0]!;
     return { tools: (req.tools as { function: { name: string } }[]).map((t) => t.function.name), system: req.messages.filter((m) => m.role === "system").map((m) => String(m.content)).join("\n") };

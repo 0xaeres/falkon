@@ -6,6 +6,7 @@ import path from "node:path";
 import { scopeFor } from "@falkon/shared";
 import { toolDeps } from "../tools";
 import { createMessageStream, modelText, MODEL_TOOL_OUTPUT_MAX_BYTES as CAP, type StepRecord } from "./agent";
+import { breaker } from "./breaker";
 import { fakeOpenAi, type Turn } from "./fakeOpenAi";
 
 // S100 (D191, D192): the model sees at most CAP bytes of any tool result; the step guard ends a capped run with an answer.
@@ -75,7 +76,7 @@ async function run(turns: Turn[]) {
   try {
     let ctx: { text: string; stepCapHit: boolean } | undefined;
     const stream = await createMessageStream({
-      audience: "human", messages: [user], selectedRepos: [REPO], scope: scopeFor(["*"]), model: { provider: "openai-compatible", model: "m", baseUrl: fake.url } as never,
+      audience: "human", messages: [user], selectedRepos: [REPO], scope: scopeFor(["*"]), model: { provider: "openai-compatible", model: "m", baseUrl: fake.url } as never, permit: breaker.admit({ provider: "openai-compatible", model: "m" }),
       postProcess: async (c) => ((ctx = c), []),
     });
     const out: { type: string; messageMetadata?: { steps: StepRecord[] } }[] = [];

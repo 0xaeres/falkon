@@ -16,6 +16,7 @@ import { LiveAnswers } from "./liveAnswers";
 import { ThreadService } from "./threads";
 import { UiProductService } from "./ui";
 import { seedContractRepo } from "../../../tests/contract/fixture";
+import { breaker, OPEN_MS } from "./engine/ask/breaker";
 import { fakeOpenAi } from "./engine/ask/fakeOpenAi";
 
 const fixture = seedContractRepo();
@@ -478,4 +479,129 @@ test("a model that fails mid-answer ends the turn once: the reader gets the end,
   assert.deepEqual((await call("GET", `/ui/products/alpha/threads/${id}`)).json.answers.map((a: J) => a.kind), ["abstention"]);
   fake.play([{ text: ANSWER }]);
   assert.equal((await chat("alpha", id, "q2")).status, 200);
+});
+
+// R2/R4: the model breaker refuses before the question is stored; the model is the LLM_* one set up in `before`.
+const MODEL = { provider: "openai-compatible", model: "fixture-model" };
+const slotsFree = () => {
+  const held: { release(): void }[] = [];
+  try { for (let i = 0; i < 8; i++) held.push(breaker.admit(MODEL)); return true; } catch { return false; } finally { held.forEach((h) => h.release()); }
+};
+
+test("an open breaker answers 503 MODEL_UNAVAILABLE with retry-after before the question is stored; no model call; a recovering model lets one probe through", async () => {
+  breaker.reset();
+  let clock = 1_000;
+  const now = mock.method(performance, "now", () => clock);
+  try {
+    for (let i = 0; i < 5; i++) breaker.admit(MODEL).failure();
+    const id = await newThread("alpha");
+    fake.play([{ text: ANSWER }]);
+    const r = await chat("alpha", id, "hi");
+    assert.deepEqual([r.status, r.json.statusCode, r.json.errorCode], [503, 503, "MODEL_UNAVAILABLE"]);
+    const wait = Number(r.res.headers.get("retry-after"));
+    assert(wait >= 24 && wait <= 36, `retry-after ${wait}`);
+    assert.equal(r.json.message, `The model is temporarily unavailable. Try again in ${wait} seconds.`);
+    assert.deepEqual([stored(id).messages, fake.requests.length], [[], 0], "nothing stored, nothing asked");
+
+    clock += OPEN_MS * 1.2 + 1;
+    const ok = await chat("alpha", id, "hi again");
+    assert.equal(ok.status, 200);
+    assert.equal(fake.requests.length, 1, "the probe reached the model");
+    assert.equal((await chat("alpha", id, "and again")).status, 200, "the probe's success closed the breaker");
+  } finally { now.mock.restore(); breaker.reset(); }
+});
+
+test("a model at its concurrency cap answers 503 with retry-after 5 and stores nothing; an unknown model is still the 400 and leaves no breaker state", async () => {
+  breaker.reset();
+  const held = Array.from({ length: 8 }, () => breaker.admit(MODEL));
+  try {
+    const id = await newThread("alpha");
+    const r = await chat("alpha", id, "hi");
+    assert.deepEqual([r.status, r.json.errorCode, r.res.headers.get("retry-after")], [503, "MODEL_UNAVAILABLE", "5"]);
+    assert.deepEqual(stored(id).messages, []);
+  } finally { held.forEach((h) => h.release()); }
+  breaker.reset();
+  const id = await newThread("alpha");
+  const unknown = await call("POST", `/ui/products/alpha/threads/${id}/messages`, { text: "hi", languageModel: { provider: "anthropic", model: "nope" } });
+  assert.equal(unknown.status, 400);
+  assert.equal(breaker.size, 0);
+});
+
+test("a thread deleted while its turn runs frees the model's slot", async () => {
+  breaker.reset();
+  const id = await newThread("alpha");
+  fake.play([{ hang: "<!--answer-->\nslow" }]);
+  const first = await fetch(`${base}/ui/products/alpha/threads/${id}/messages`, { method: "POST", headers, body: JSON.stringify({ text: "where?" }) });
+  await until(() => stored(id).messages.length === 1);
+  assert.equal(slotsFree(), false, "the running turn holds a slot");
+  assert.equal((await call("DELETE", `/ui/products/alpha/threads/${id}?force=true`)).status, 204);
+  await first.text().catch(() => undefined);
+  await until(slotsFree);
+});
+
+// R2 on the blocking ask (also MCP ask_codebase) and the UI chat: refused or failed before the model runs, no slot is kept and no chat row is left.
+async function askSetup() {
+  const { prisma } = await import("@falkon/db");
+  for (const model of ["chat", "product", "repo", "connection", "knowledgeScan"] as const) Object.defineProperty(prisma, model, { value: (engine.db as never)[model], configurable: true });
+  after(() => { for (const model of ["chat", "product", "repo", "connection", "knowledgeScan"]) delete (prisma as never)[model]; });
+  const { productDeps } = await import("./engine/tools");
+  productDeps.generation = async (slug) => (await ui.status(slug)).generation ?? "";
+  const shared = await import("@falkon/shared");
+  return { scope: { ...shared.scopeFor([IN]), principal: "key:x" }, productDeps };
+}
+
+test("askCodebase: a refusal comes before the chat row is created; a failure in resolveRepos, create or evidenceFor frees the slot", async () => {
+  const { scope, productDeps } = await askSetup();
+  const { askCodebase } = await import("./engine/ask/chat");
+  const { AskError } = await import("./engine/ask/errors");
+  breaker.reset();
+  fake.play([{ text: ANSWER }]);
+  for (let i = 0; i < 5; i++) breaker.admit(MODEL).failure();
+  const rows = engine.chats.length;
+  await assert.rejects(askCodebase({ query: "q", scope, product: "alpha" }), (e) => e instanceof AskError && e.statusCode === 503 && e.errorCode === "MODEL_UNAVAILABLE" && e.retryAfter! >= 24);
+  assert.equal(engine.chats.length, rows, "no chat row left behind");
+  assert.equal(fake.requests.length, 0);
+
+  breaker.reset();
+  await assert.rejects(askCodebase({ query: "q", repos: ["fixtures.test/missing"], scope, product: "alpha" }), /not found/);
+  assert.equal(slotsFree(), true, "resolveRepos threw");
+
+  const create = mock.method(engine.db.chat, "create", async () => { throw new Error("db down"); });
+  try { await assert.rejects(askCodebase({ query: "q", scope, product: "alpha" }), /db down/); } finally { create.mock.restore(); }
+  assert.equal(slotsFree(), true, "create threw");
+
+  const was = productDeps.generation;
+  productDeps.generation = async () => { throw new Error("no generation"); };
+  try { await assert.rejects(askCodebase({ query: "q", scope, product: "alpha" }), /no generation/); } finally { productDeps.generation = was; }
+  assert.equal(slotsFree(), true, "evidenceFor threw");
+});
+
+test("MCP ask_codebase over an open breaker returns the plain unavailable message", async () => {
+  const { scope } = await askSetup();
+  const { createMcpServer } = await import("./engine/mcp");
+  const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
+  const { InMemoryTransport } = await import("@modelcontextprotocol/sdk/inMemory.js");
+  breaker.reset();
+  for (let i = 0; i < 5; i++) breaker.admit(MODEL).failure();
+  const server = await createMcpServer(scope, "alpha");
+  const client = new Client({ name: "t", version: "1" });
+  const [a, b] = InMemoryTransport.createLinkedPair();
+  await server.connect(a); await client.connect(b);
+  try {
+    const r = await client.callTool({ name: "ask_codebase", arguments: { query: "q" } });
+    assert.match(JSON.stringify(r.content), /The model is temporarily unavailable\. Try again in \d+ seconds\./);
+  } finally { await client.close(); await server.close(); breaker.reset(); }
+});
+
+test("uiChatResponse: the slot is released when onAccepted throws, and the model is not asked", async () => {
+  const { scope } = await askSetup();
+  const { uiChatResponse } = await import("./engine/ask/uiChat");
+  breaker.reset();
+  const before = fake.requests.length;
+  await assert.rejects(uiChatResponse({
+    messages: [{ id: "u", role: "user", parts: [{ type: "text", text: "q" }] }], selectedRepos: [], scope, productId: "alpha", generation: "g",
+    onAccepted: async () => { throw new Error("store failed"); }, onFinish: async () => undefined,
+  }), /store failed/);
+  assert.equal(slotsFree(), true);
+  assert.equal(fake.requests.length, before);
 });

@@ -5,6 +5,7 @@ import { gitRead, type Scope } from "@falkon/shared";
 import { AskError } from "./errors";
 import { answerPart, sourcesOf, toPortableMarkdown } from "./answer";
 import { createMessageStream } from "./agent";
+import { breaker, countsAsFailure } from "./breaker";
 import { aiModel, configuredLanguageModels, describeModel, modelKey, toInfo, type LanguageModelConfig, type LanguageModelInfo } from "./models";
 import { CHAT_NAME_PROMPT } from "./prompt";
 import { productDeps } from "../tools";
@@ -41,9 +42,18 @@ export async function resolveRepos(names: string[], scope: Scope) {
   return names;
 }
 
+/** The chat's name from its first question; undefined (the chat keeps its fallback name) while the model's breaker is open or the model is at its cap. Never takes a slot. */
 export async function chatName(question: string, m: LanguageModelConfig) {
+  if (!breaker.allowsNaming(m)) return undefined;
   const { model } = await aiModel(m);
-  return (await generateText({ model, prompt: CHAT_NAME_PROMPT(question) })).text;
+  try {
+    const { text } = await generateText({ model, prompt: CHAT_NAME_PROMPT(question) });
+    breaker.noted(m, true);
+    return text;
+  } catch (e) {
+    if (countsAsFailure(e)) breaker.noted(m, false);
+    throw e;
+  }
 }
 
 /**
@@ -71,13 +81,21 @@ async function evidenceFor(product: string, scope: Scope) {
  */
 export async function askCodebase(o: { query: string; repos?: string[]; languageModel?: LanguageModelInfo; visibility?: ChatVisibility; scope: Scope; product?: string }) {
   const model = await pickModel(o.languageModel);
-  const repos = await resolveRepos(o.repos ?? [], o.scope);
-  const chat = await prisma.chat.create({ data: newChatData(o.scope, o.visibility, o.product) });
-  const user: UIMessage = { id: randomUUID(), role: "user", parts: [{ type: "text", text: o.query }] };
+  // Before the chat row is created: a refused ask leaves nothing behind.
+  const permit = breaker.admit(model);
+  let repos: string[], chat: { id: string }, user: UIMessage, postProcess: Awaited<ReturnType<typeof evidenceFor>> | undefined, stream: Awaited<ReturnType<typeof createMessageStream>>;
   let final: UIMessage[] = [];
-  // A thread of a Product stores what the UI chat stores (answer and evidence parts), so its page renders the answer.
-  const postProcess = o.product ? await evidenceFor(o.product, o.scope) : undefined;
-  const stream = await createMessageStream({ messages: [user], selectedRepos: repos, scope: o.scope, model, onFinish: (m) => void (final = m), postProcess, audience: "agent" });
+  try {
+    repos = await resolveRepos(o.repos ?? [], o.scope);
+    chat = await prisma.chat.create({ data: newChatData(o.scope, o.visibility, o.product) });
+    user = { id: randomUUID(), role: "user", parts: [{ type: "text", text: o.query }] };
+    // A thread of a Product stores what the UI chat stores (answer and evidence parts), so its page renders the answer.
+    postProcess = o.product ? await evidenceFor(o.product, o.scope) : undefined;
+    stream = await createMessageStream({ messages: [user], selectedRepos: repos, scope: o.scope, model, permit, onFinish: (m) => void (final = m), postProcess, audience: "agent" });
+  } catch (e) {
+    permit.release();
+    throw e;
+  }
   const [, name] = await Promise.all([drain(stream), chatName(o.query, model)]);
   // The chat may have been deleted while the agent ran: the answer still returns, without a link.
   const saved = await prisma.chat.update({ where: { id: chat.id }, data: { messages: final as object[], name } }).then(() => true, (e: { code?: string }) => {
