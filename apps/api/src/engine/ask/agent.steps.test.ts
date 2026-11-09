@@ -6,6 +6,7 @@ import path from "node:path";
 import { scopeFor } from "@falkon/shared";
 import { toolDeps } from "../tools";
 import { createMessageStream, type StepRecord } from "./agent";
+import { breaker } from "./breaker";
 import { fakeOpenAi, type Turn } from "./fakeOpenAi";
 
 // S98 (D190): per-step usage and tool result bytes, logged and stored on the message metadata.
@@ -28,7 +29,7 @@ async function run(turns: Turn[]) {
   const fake = await fakeOpenAi(turns);
   const log = mock.method(console, "log", () => {});
   try {
-    const stream = await createMessageStream({ audience: "human", messages: [user], selectedRepos: [REPO], scope: scopeFor(["*"]), model: { provider: "openai-compatible", model: "m", baseUrl: fake.url } });
+    const stream = await createMessageStream({ audience: "human", messages: [user], selectedRepos: [REPO], scope: scopeFor(["*"]), model: { provider: "openai-compatible", model: "m", baseUrl: fake.url }, permit: breaker.admit({ provider: "openai-compatible", model: "m" }) });
     const out: { type: string; messageMetadata?: Record<string, unknown> }[] = [];
     const r = stream.getReader();
     for (let c = await r.read(); !c.done; c = await r.read()) out.push(c.value as never);

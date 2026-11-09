@@ -1,6 +1,7 @@
 import { createUIMessageStreamResponse, type UIMessage } from "ai";
 import { gitRead, type Scope } from "@falkon/shared";
 import { createMessageStream } from "./agent";
+import { breaker } from "./breaker";
 import { chatName, pickModel } from "./chat";
 import { buildDiagrams } from "./diagram";
 import { buildEvidence } from "./evidence";
@@ -26,10 +27,18 @@ export async function uiChatResponse(o: {
   onFinish: (messages: UIMessage[], name: string | undefined) => Promise<void>;
 }): Promise<Response> {
   const model = await pickModel(o.languageModel);
-  await o.onAccepted?.();
+  // The breaker refuses here, before onAccepted stores the question; the slot is held until the turn ends.
+  const permit = breaker.admit(model);
+  try {
+    await o.onAccepted?.();
+  } catch (e) {
+    permit.release();
+    throw e;
+  }
   // Started now so the stream does not wait for it; a failure only leaves the chat unnamed.
   const name = o.nameFrom === undefined ? undefined : chatName(o.nameFrom, model).catch(() => undefined);
   const stream = await createMessageStream({
+    permit,
     messages: o.messages,
     selectedRepos: o.selectedRepos,
     scope: o.scope,

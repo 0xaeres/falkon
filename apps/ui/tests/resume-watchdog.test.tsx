@@ -27,7 +27,7 @@ const sse = (list: object[]) =>
   list.map((c) => `data: ${JSON.stringify(c)}\n\n`).join("") + "data: [DONE]\n\n";
 
 // What the fake engine does next: `post` (the first send) and `resume` (GET .../stream).
-let post: "drop" | "refuse";
+let post: "drop" | "refuse" | "unavailable";
 let resume: "full" | "204" | "down";
 let seen: { method?: string; url?: string }[];
 const engine = http.createServer((req, res) => {
@@ -36,6 +36,8 @@ const engine = http.createServer((req, res) => {
   const sseHead = { "content-type": "text/event-stream", "x-vercel-ai-ui-message-stream": "v1" };
   if (req.method === "POST" && req.url?.endsWith("/stop")) return void res.writeHead(204).end();
   if (req.method === "POST") {
+    if (post === "unavailable")
+      return void res.writeHead(503, { "content-type": "application/json", "retry-after": "12" }).end(JSON.stringify({ statusCode: 503, errorCode: "MODEL_UNAVAILABLE", message: "The model is temporarily unavailable. Try again in 12 seconds." }));
     if (post === "refuse")
       return void res.writeHead(409, { "content-type": "application/json" }).end(JSON.stringify({ error: "An answer is still being written in this thread." }));
     res.writeHead(200, sseHead);
@@ -49,12 +51,13 @@ const engine = http.createServer((req, res) => {
 
 let chatTransport: typeof import("../src/lib/api/chat-transport").chatTransport;
 let api: typeof import("../src/lib/api/client").api;
+let ApiError: typeof import("../src/lib/api/client").ApiError;
 let wd: typeof import("../src/features/chat/resume-watchdog");
 before(async () => {
   await new Promise<void>((r) => engine.listen(0, "127.0.0.1", r));
   process.env.NEXT_PUBLIC_API_BASE_URL = `http://127.0.0.1:${(engine.address() as AddressInfo).port}/api`;
   ({ chatTransport } = await import("../src/lib/api/chat-transport"));
-  ({ api } = await import("../src/lib/api/client"));
+  ({ api, ApiError } = await import("../src/lib/api/client"));
   wd = await import("../src/features/chat/resume-watchdog");
 });
 after(() => {
@@ -183,6 +186,15 @@ test("a refusal from the server (ApiError) is not retried", async () => {
   assert.equal(seen.filter((c) => c.method === "GET").length, 0);
 });
 
+test("a 503 MODEL_UNAVAILABLE refusal shows its message and starts no watchdog", async () => {
+  post = "unavailable";
+  const { chat, dog, log } = session();
+  await chat.sendMessage({ text: "Where is it?" }, { body: { threadId: "t1" } });
+  assert.ok(chat.error instanceof ApiError);
+  assert.equal(chat.error.message, "The model is temporarily unavailable. Try again in 12 seconds.");
+  assert.deepEqual([log.changes, dog.active(), seen.filter((c) => c.method === "GET").length], [[], false, 0]);
+});
+
 test("without an online event the attempts follow the backoff, with no limit", async () => {
   mock.timers.enable({ apis: ["setTimeout"] });
   try {
@@ -196,6 +208,7 @@ test("without an online event the attempts follow the backoff, with no limit", a
       settle: async () => true,
       giveUp() {},
       onChange() {},
+      random: () => 0.5,
     });
     dog.error(new TypeError("network error"));
     const waits = [1000, 2000, 4000, 8000, 15000, 30000, 30000];
@@ -226,3 +239,203 @@ test("a resume names its thread: the chat id on a page opened on a thread, the b
     { method: "POST", url: "/api/products/p1/threads/t5/stop" },
   ]);
 });
+
+// Loop tests: fake deps on mock timers. `resume` reports through `dog.error` like the chat does.
+const flush = () => new Promise((r) => setImmediate(r));
+const tick = async (ms: number) => (mock.timers.tick(ms), await flush());
+async function withTimers(fn: () => Promise<void>) {
+  mock.timers.enable({ apis: ["setTimeout"] });
+  try {
+    await fn();
+  } finally {
+    mock.timers.reset();
+  }
+}
+const net = () => new TypeError("network error");
+function rig(o: { resume?: (dog: ReturnType<typeof wd.createWatchdog>) => Promise<void>; settle?: () => Promise<boolean>; random?: () => number } = {}) {
+  const events = new EventTarget();
+  const log = { resumes: 0, changes: [] as boolean[], gaveUp: 0 };
+  const dog: ReturnType<typeof wd.createWatchdog> = wd.createWatchdog({
+    events,
+    resume: async () => {
+      log.resumes++;
+      await (o.resume ? o.resume(dog) : Promise.resolve(dog.error(net())));
+    },
+    drop() {},
+    answers: () => 0,
+    settle: o.settle ?? (async () => true),
+    giveUp: () => void log.gaveUp++,
+    onChange: (r) => void log.changes.push(r),
+    random: o.random ?? (() => 0.5),
+  });
+  return { dog, events, log };
+}
+const apiErr = (status: number) => new ApiError("x", status);
+
+for (const status of [404, 401]) {
+  test(`a ${status} from a resume inside the loop ends it after that attempt: give-up once, no further timers`, () =>
+    withTimers(async () => {
+      const { dog, log } = rig({ resume: async (d) => d.error(apiErr(status)) });
+      dog.error(net());
+      await tick(1000);
+      assert.deepEqual([log.resumes, log.gaveUp, log.changes, dog.active()], [1, 1, [true, false], false]);
+      await tick(120_000);
+      assert.deepEqual([log.resumes, log.gaveUp], [1, 1]);
+    }));
+
+  test(`a ${status} thrown by the thread reload after a 204 ends it: give-up once (a thread deleted in another tab)`, () =>
+    withTimers(async () => {
+      const { dog, log } = rig({ resume: async () => {}, settle: async () => Promise.reject(apiErr(status)) });
+      dog.error(net());
+      await tick(1000);
+      assert.deepEqual([log.resumes, log.gaveUp, log.changes], [1, 1, [true, false]]);
+      await tick(120_000);
+      assert.deepEqual([log.resumes, log.gaveUp], [1, 1]);
+    }));
+}
+
+for (const [name, make] of [["500", () => apiErr(500)], ["408", () => apiErr(408)], ["429", () => apiErr(429)], ["network error", net]] as const) {
+  test(`a ${name} from a resume keeps retrying`, () =>
+    withTimers(async () => {
+      const { dog, log } = rig({ resume: async (d) => d.error(make()) });
+      dog.error(net());
+      await tick(1000);
+      await tick(2000);
+      assert.deepEqual([log.resumes, log.gaveUp, dog.active()], [2, 0, true]);
+      dog.cancel();
+    }));
+}
+
+test("a 500 thrown by the thread reload keeps retrying", () =>
+  withTimers(async () => {
+    const { dog, log } = rig({ resume: async () => {}, settle: async () => Promise.reject(apiErr(500)) });
+    dog.error(net());
+    await tick(1000);
+    await tick(2000);
+    assert.deepEqual([log.resumes, log.gaveUp], [2, 0]);
+    dog.cancel();
+  }));
+
+for (const [random, factor] of [[0, 0.5], [1, 1.5]] as const) {
+  test(`with the random source at ${random} each delay is its base times ${factor}`, () =>
+    withTimers(async () => {
+      const { dog, log } = rig({ random: () => random });
+      dog.error(net());
+      for (const [i, base] of [1, 2, 4, 8, 15, 30, 30].entries()) {
+        const ms = base * 1000 * factor;
+        await tick(ms - 1);
+        assert.equal(log.resumes, i, `not yet at ${ms}`);
+        await tick(1);
+        assert.equal(log.resumes, i + 1);
+      }
+      dog.cancel();
+    }));
+}
+
+/** 500 clients dropped at the same instant, each with its own random source; returns how many have resumed after each tick. */
+async function crowd(trigger: (c: ReturnType<typeof rig>) => void, marks: number[]) {
+  const clients = Array.from({ length: 500 }, (_, i) => rig({ random: () => i / 500 }));
+  for (const c of clients) {
+    c.dog.error(net());
+    trigger(c);
+  }
+  const counts: number[] = [];
+  let at = 0;
+  for (const m of marks) {
+    await tick(m - at);
+    at = m;
+    counts.push(clients.filter((c) => c.log.resumes > 0).length);
+  }
+  for (const c of clients) c.dog.cancel();
+  return counts;
+}
+
+test("500 clients dropped together no longer all resume in the same second", () =>
+  withTimers(async () => {
+    const [before, mid, after] = await crowd(() => {}, [499, 999, 1500]);
+    assert.equal(before, 0, "none before 0.5 s");
+    assert.ok(mid > 100 && mid < 400, `spread inside the first second, got ${mid}`);
+    assert.equal(after, 500);
+  }));
+
+test("an online resume waits 0 to 1 s and is not at the same instant for all clients", () =>
+  withTimers(async () => {
+    const [early, mid, late] = await crowd((c) => c.events.dispatchEvent(new Event("online")), [1, 500, 1000]);
+    assert.ok(early < 10, `almost none at once, got ${early}`);
+    assert.ok(mid > 200 && mid < 300, `about half by 0.5 s, got ${mid}`);
+    assert.equal(late, 500);
+  }));
+
+test("an online resume waits the random 0 to 1 s: 0.5 resumes at 500 ms, not before", () =>
+  withTimers(async () => {
+    const { dog, events, log } = rig();
+    dog.error(net());
+    events.dispatchEvent(new Event("online"));
+    await tick(499);
+    assert.equal(log.resumes, 0);
+    await tick(1);
+    assert.equal(log.resumes, 1);
+    dog.cancel();
+  }));
+
+test("online during a jittered wait does not double-fire: one attempt, the old timer is gone", () =>
+  withTimers(async () => {
+    const { dog, events, log } = rig();
+    dog.error(net());
+    await tick(200);
+    events.dispatchEvent(new Event("online"));
+    await tick(500);
+    assert.equal(log.resumes, 1);
+    await tick(1000);
+    assert.equal(log.resumes, 1, "the first timer (1 s) did not fire as well");
+    await tick(1000);
+    assert.equal(log.resumes, 2, "the next attempt follows the backoff");
+    dog.cancel();
+  }));
+
+test("Stop during a jittered wait leaves no timer, for the retry wait and the online wait", () =>
+  withTimers(async () => {
+    const { dog, log } = rig();
+    dog.error(net());
+    dog.cancel();
+    await tick(60_000);
+    const b = rig();
+    b.dog.error(net());
+    b.events.dispatchEvent(new Event("online"));
+    b.dog.cancel();
+    await tick(60_000);
+    assert.deepEqual([log.resumes, b.log.resumes, log.gaveUp, b.log.gaveUp], [0, 0, 0, 0]);
+  }));
+
+test("a 4xx arriving while an attempt is busy ends the watchdog once the attempt returns; online meanwhile adds no second timer", () =>
+  withTimers(async () => {
+    let release!: () => void;
+    const { dog, events, log } = rig({ resume: () => new Promise<void>((r) => (release = r)) });
+    dog.error(net());
+    await tick(1000);
+    assert.equal(log.resumes, 1);
+    dog.error(apiErr(404));
+    events.dispatchEvent(new Event("online"));
+    release();
+    await flush();
+    assert.deepEqual([log.gaveUp, log.changes, dog.active()], [1, [true, false], false]);
+    await tick(120_000);
+    assert.deepEqual([log.resumes, log.gaveUp], [1, 1]);
+  }));
+
+test("online while an attempt is busy: the attempt's own retry replaces the online timer", () =>
+  withTimers(async () => {
+    let release!: () => void;
+    const { dog, events, log } = rig({ resume: () => new Promise<void>((r) => (release = r)) });
+    dog.error(net());
+    await tick(1000);
+    events.dispatchEvent(new Event("online"));
+    dog.error(net());
+    release();
+    await flush();
+    await tick(1999);
+    assert.equal(log.resumes, 1);
+    await tick(1);
+    assert.equal(log.resumes, 2);
+    dog.cancel();
+  }));

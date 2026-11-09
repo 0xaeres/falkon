@@ -21,8 +21,14 @@ export type WatchdogDeps = {
   /** Nothing was stored: today's failure path. */
   giveUp: () => void;
   onChange: (reconnecting: boolean) => void;
+  /** Random source in [0, 1) for the retry spread; tests inject it. */
+  random?: () => number;
   events?: Pick<EventTarget, "addEventListener" | "removeEventListener">;
 };
+
+/** A refusal that will not change on retry: a 4xx other than 408 and 429. */
+const permanent = (e: unknown) =>
+  e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429;
 
 /** After a 204: reloads the thread and shows it when it holds more answers than before (the answer finished while the page was away). */
 export async function settleThread(
@@ -38,13 +44,16 @@ export async function settleThread(
 
 /**
  * Keeps an answer alive across a lost connection (D148). `error` starts it on any stream error that is not a refusal from
- * the server; it resumes at once on `online`, else after `retryDelay`, with no limit, and stops on success, on a 204 that
- * settles, or on `cancel`. An attempt is told apart by what the chat reported meanwhile: `finish` is a success, `error` a
- * failure, neither a 204 (nothing running).
+ * the server; it resumes within 1 s of `online` (a random wait, so clients do not arrive together), else after `retryDelay`
+ * spread by 50 percent, with no limit, and stops on success, on a 204 that settles, or on `cancel`; inside the loop a
+ * permanent 4xx ends it too (give-up). An attempt is told apart by what the chat reported meanwhile: `finish` is a
+ * success, `error` a failure, neither a 204 (nothing running).
  */
 export function createWatchdog(d: WatchdogDeps) {
   let errors = 0;
   let finishes = 0;
+  let refused = false;
+  const random = d.random ?? Math.random;
   let stop: (() => void) | undefined;
 
   function start() {
@@ -62,32 +71,40 @@ export function createWatchdog(d: WatchdogDeps) {
       stop = undefined;
       d.onChange(false);
     };
-    const later = () => void (timer = setTimeout(run, retryDelay(attempt++)));
+    const later = () => {
+      clearTimeout(timer);
+      timer = setTimeout(run, retryDelay(attempt++) * (0.5 + random()));
+    };
     const now = () => {
       clearTimeout(timer);
-      void run();
+      timer = setTimeout(run, random() * 1000);
     };
     async function run() {
       if (done || busy) return;
       busy = true;
       d.drop();
       const [e, f] = [errors, finishes];
+      refused = false;
       try {
         await d.resume();
-      } catch {
+      } catch (x) {
         errors++;
+        refused ||= permanent(x);
       }
       let settled: boolean | undefined;
       if (!done && errors === e && finishes === f) {
         try {
           settled = await d.settle(before);
-        } catch {
-          /* offline: try again */
+        } catch (x) {
+          refused ||= permanent(x); // else offline: try again
         }
       }
       busy = false;
       if (done) return;
-      if (errors === e && (finishes > f || settled !== undefined)) {
+      if (refused) {
+        end();
+        d.giveUp();
+      } else if (errors === e && (finishes > f || settled !== undefined)) {
         end();
         if (settled === false) d.giveUp();
       } else later();
@@ -101,7 +118,8 @@ export function createWatchdog(d: WatchdogDeps) {
   return {
     error(e: unknown) {
       errors++;
-      if (!stop && !(e instanceof ApiError)) start();
+      if (stop) refused ||= permanent(e);
+      else if (!(e instanceof ApiError)) start();
     },
     finish: () => void finishes++,
     /** True while the watchdog owns the turn: the caller's failure path stays off. */

@@ -42,6 +42,8 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    /** Set when the api named the refusal: `MODEL_UNAVAILABLE`. */
+    public code?: string,
   ) {
     super(message);
   }
@@ -50,9 +52,21 @@ export async function check(response: Response): Promise<Response> {
   if (!response.ok) {
     const value: unknown = await response.json().catch(() => null);
     const parsed = z.object({ error: z.string() }).safeParse(value);
+    // The api's refusal while the model is down carries its seconds in `message`.
+    const down = z
+      .object({
+        errorCode: z.literal("MODEL_UNAVAILABLE"),
+        message: z.string(),
+      })
+      .safeParse(value);
     throw new ApiError(
-      parsed.success ? parsed.data.error : "Falkon is unavailable. Try again.",
+      parsed.success
+        ? parsed.data.error
+        : down.success
+          ? down.data.message
+          : "Falkon is unavailable. Try again.",
       response.status,
+      down.success ? down.data.errorCode : undefined,
     );
   }
   return response;
