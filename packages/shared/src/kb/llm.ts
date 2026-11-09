@@ -82,14 +82,22 @@ export const estimateTokens = (files: { size: number }[], cap: number): number =
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** OpenAI-compatible chat completions. Retries rate limits and 5xx with backoff. */
-export function openAiClient(cfg: LlmConfig, opts: { retries?: number; timeoutMs?: number } = {}): LlmClient {
+/** OpenAI-compatible chat completions. Retries rate limits and 5xx with jittered backoff (0.5x to 1.5x). */
+export function openAiClient(
+  cfg: LlmConfig,
+  opts: { retries?: number; timeoutMs?: number; random?: () => number; sleep?: (ms: number) => Promise<void> } = {},
+): LlmClient {
   const retries = opts.retries ?? 4;
+  const random = opts.random ?? Math.random;
+  const wait = opts.sleep ?? sleep;
   return {
     async chat(req, signal) {
       let lastErr: unknown;
       for (let attempt = 0; attempt <= retries; attempt++) {
-        if (attempt > 0) await sleep(Math.min(30_000, 1000 * 2 ** attempt));
+        if (attempt > 0) {
+          await wait(Math.min(30_000, 1000 * 2 ** attempt) * (0.5 + random()));
+          signal?.throwIfAborted();
+        }
         try {
           const timeout = AbortSignal.timeout(opts.timeoutMs ?? 10 * 60_000);
           const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
