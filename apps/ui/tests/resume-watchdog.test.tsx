@@ -27,7 +27,7 @@ const sse = (list: object[]) =>
   list.map((c) => `data: ${JSON.stringify(c)}\n\n`).join("") + "data: [DONE]\n\n";
 
 // What the fake engine does next: `post` (the first send) and `resume` (GET .../stream).
-let post: "drop" | "refuse";
+let post: "drop" | "refuse" | "unavailable";
 let resume: "full" | "204" | "down";
 let seen: { method?: string; url?: string }[];
 const engine = http.createServer((req, res) => {
@@ -36,6 +36,8 @@ const engine = http.createServer((req, res) => {
   const sseHead = { "content-type": "text/event-stream", "x-vercel-ai-ui-message-stream": "v1" };
   if (req.method === "POST" && req.url?.endsWith("/stop")) return void res.writeHead(204).end();
   if (req.method === "POST") {
+    if (post === "unavailable")
+      return void res.writeHead(503, { "content-type": "application/json", "retry-after": "12" }).end(JSON.stringify({ statusCode: 503, errorCode: "MODEL_UNAVAILABLE", message: "The model is temporarily unavailable. Try again in 12 seconds." }));
     if (post === "refuse")
       return void res.writeHead(409, { "content-type": "application/json" }).end(JSON.stringify({ error: "An answer is still being written in this thread." }));
     res.writeHead(200, sseHead);
@@ -182,6 +184,15 @@ test("a refusal from the server (ApiError) is not retried", async () => {
   assert.equal(chat.status, "error");
   assert.deepEqual(log.changes, []);
   assert.equal(seen.filter((c) => c.method === "GET").length, 0);
+});
+
+test("a 503 MODEL_UNAVAILABLE refusal shows its message and starts no watchdog", async () => {
+  post = "unavailable";
+  const { chat, dog, log } = session();
+  await chat.sendMessage({ text: "Where is it?" }, { body: { threadId: "t1" } });
+  assert.ok(chat.error instanceof ApiError);
+  assert.equal(chat.error.message, "The model is temporarily unavailable. Try again in 12 seconds.");
+  assert.deepEqual([log.changes, dog.active(), seen.filter((c) => c.method === "GET").length], [[], false, 0]);
 });
 
 test("without an online event the attempts follow the backoff, with no limit", async () => {

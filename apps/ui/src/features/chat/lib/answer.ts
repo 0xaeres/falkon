@@ -1,6 +1,6 @@
 import type { UIMessage } from "ai";
 import { rewriteFileRefs, type Answer } from "@falkon/contracts";
-import { api } from "@/lib/api/client";
+import { ApiError, api } from "@/lib/api/client";
 
 const ANSWER_TAG = "<!--answer-->";
 export const hasAnswer = (message?: UIMessage) =>
@@ -23,6 +23,19 @@ export const preview = (message?: UIMessage) => {
 /** A first message that failed leaves a thread nobody can use: discard it unless this session did not create it or the server already took the question (an assistant message exists). */
 export const discardable = (createdHere: boolean, messages: UIMessage[]) =>
   createdHere && !messages.some((message) => message.role === "assistant");
+/** The composer text after an error: the typed text stays; else the sent text returns when this send was refused (model unavailable) and no watchdog owns the turn. */
+export const restoreText = (
+  error: unknown,
+  watchActive: boolean,
+  current: string,
+  sent: string,
+) =>
+  current ||
+  (error instanceof ApiError &&
+  error.code === "MODEL_UNAVAILABLE" &&
+  !watchActive
+    ? sent
+    : current);
 const WIDE = "(min-width: 1280px)";
 export const isWide = () => window.matchMedia(WIDE).matches;
 export const subscribeWide = (listener: () => void) => {
