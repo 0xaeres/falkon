@@ -40,6 +40,7 @@ import {
   hasAnswer,
   isWide,
   preview,
+  restoreText,
   stopOnServer,
   subscribeWide,
 } from "./lib/answer";
@@ -109,6 +110,7 @@ function ChatSession({
   const [closed, setClosed] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [copied, setCopied] = useState("");
+  const sent = useRef("");
   const target = useRef(threadId);
   const created = useRef(false);
   const finished = useRef<(done: Finished) => void>(undefined);
@@ -154,9 +156,17 @@ function ChatSession({
       }),
   });
   useEffect(() => {
-    onError.current = watch.error;
+    onError.current = (error) => {
+      // A refused send (model unavailable) stored nothing: the text goes back to the composer.
+      const active = watch.active();
+      setQuestion((q) => restoreText(error, active, q, sent.current));
+      watch.error(error);
+    };
     finished.current = ({ messages, isAbort, isError }) => {
-      if (!isError && !isAbort) watch.finish();
+      if (!isError && !isAbort) {
+        watch.finish();
+        sent.current = "";
+      }
       if (isError && !isAbort && watch.active()) return;
       // A stopped turn keeps its question on the server: this thread is no longer disposable.
       if (isAbort) created.current = false;
@@ -245,6 +255,7 @@ function ChatSession({
     setNotice("");
     setStopped(false);
     setPendingQuestion(text);
+    sent.current = text;
     setQuestion("");
     setSelection(null);
     setClosed(false);
