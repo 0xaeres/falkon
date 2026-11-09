@@ -110,7 +110,7 @@ export function excludeGithubRepo(repo: GithubRepo, config: Pick<GithubConnectio
   return false;
 }
 
-export function githubRecord(repo: GithubRepo, hostUrl: string, config: Pick<GithubConnectionConfig, "revisions">): RepoRecord {
+export function githubRecord(repo: GithubRepo, hostUrl: string, config: Pick<GithubConnectionConfig, "revisions" | "repoBranches">): RepoRecord {
   const name = joinName(repoNameRoot(hostUrl), repo.full_name);
   const isPublic = repo.private === false;
   return {
@@ -142,6 +142,7 @@ export function githubRecord(repo: GithubRepo, hostUrl: string, config: Pick<Git
       },
       branches: config.revisions?.branches,
       tags: config.revisions?.tags,
+      trackedBranch: config.repoBranches?.[repo.full_name],
       codeHostMetadata: { github: { topics: repo.topics ?? [] } },
     },
   };

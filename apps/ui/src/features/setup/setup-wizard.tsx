@@ -250,6 +250,7 @@ function Wizard({ edit }: { edit?: Product }) {
                     />
                   ) : catalog ? (
                     <RepositoryPicker
+                      connectionId={connection!.id}
                       repositories={repositories}
                       selected={selected}
                       onChange={setSelected}

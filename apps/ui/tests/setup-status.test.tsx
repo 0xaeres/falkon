@@ -20,7 +20,12 @@ const many = (
   }));
 const render = (repos: Repository[]) =>
   renderToStaticMarkup(
-    <RepositoryPicker repositories={repos} selected={{}} onChange={() => {}} />,
+    <RepositoryPicker
+      connectionId="c1"
+      repositories={repos}
+      selected={{}}
+      onChange={() => {}}
+    />,
   );
 
 test("fixtures and payloads without `private` still parse; with it they keep it", () => {

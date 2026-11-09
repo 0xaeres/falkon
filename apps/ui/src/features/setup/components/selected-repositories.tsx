@@ -12,11 +12,13 @@ import { BranchSelect } from "./branch-select";
 
 /** The chosen repositories with their branches, each removable. */
 export function SelectedRepositories({
+  connectionId,
   repositories,
   selected,
   onBranch,
   onRemove,
 }: {
+  connectionId: string;
   repositories: Repository[];
   selected: Record<string, string>;
   onBranch: (repo: Repository, branch: string) => void;
@@ -57,6 +59,7 @@ export function SelectedRepositories({
                   </div>
                 </div>
                 <BranchSelect
+                  connectionId={connectionId}
                   repo={repo}
                   value={selected[repo.id]}
                   onChange={(branch) => onBranch(repo, branch)}

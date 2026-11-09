@@ -1,6 +1,6 @@
 import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Put, Query, Req } from "@nestjs/common";
 import type { IncomingMessage } from "node:http";
-import { connectionDtoSchema, connectionRequestSchema, repositoriesQuery, type Repository } from "@falkon/contracts";
+import { branchListSchema, connectionDtoSchema, connectionRequestSchema, repositoriesQuery, type Repository } from "@falkon/contracts";
 import type { PrismaClient } from "@falkon/db";
 import { newCredentialId, openCredential, seal } from "@falkon/shared";
 import { z } from "zod";
@@ -21,6 +21,8 @@ export interface CodeHost {
   check(host: string, token: string): Promise<{ scopes: string[] }>;
   /** `GET /user/repos?per_page=100&sort=pushed`, at most 3 pages (300 repositories). */
   repos(host: string, token: string): Promise<HostRepo[]>;
+  /** `GET /repos/{fullName}/branches?per_page=100`, at most 3 pages; `cut` when the host has more than the 300 returned. */
+  branches(host: string, token: string, fullName: string): Promise<{ names: string[]; cut: boolean }>;
 }
 
 export class CodeHostError extends Error {
@@ -64,6 +66,20 @@ export function githubCodeHost(fetchImpl: typeof fetch = fetch): CodeHost {
         if (rows.length < PAGE_SIZE) break;
       }
       return out;
+    },
+    async branches(host, token, fullName) {
+      const names: string[] = [];
+      let cut = false;
+      for (let page = 1; page <= MAX_PAGES; page++) {
+        const res = await get(host, token, `/repos/${fullName}/branches?per_page=${PAGE_SIZE}&page=${page}`);
+        const rows = (await res.json().catch(() => {
+          throw new CodeHostError("unavailable");
+        })) as { name: string }[];
+        names.push(...rows.map((r) => r.name));
+        if (rows.length < PAGE_SIZE) break;
+        cut = page === MAX_PAGES && /rel="next"/.test(res.headers.get("link") ?? "");
+      }
+      return { names, cut };
     },
   };
 }
@@ -161,7 +177,7 @@ export class ConnectionService {
   }
 
   /** Every repository the connection's token can list (at most 300), with the connection row's id. */
-  async listing(id: string): Promise<{ connectionId: number; repos: Repository[] }> {
+  async listing(id: string): Promise<{ connectionId: number; repos: Repository[]; host: string; token: string }> {
     const { connectionId, credential } = await this.find(id);
     let token: string;
     try {
@@ -172,6 +188,8 @@ export class ConnectionService {
     const repos = await upstream(() => this.host.repos(credential.host, token));
     return {
       connectionId,
+      host: credential.host,
+      token,
       repos: repos.map((r) => {
         const [organization = "", name = ""] = r.full_name.split("/");
         return {
@@ -187,6 +205,15 @@ export class ConnectionService {
         };
       }),
     };
+  }
+
+  /** The repository's branches, its default first. 404 when the connection's listing does not contain it. One extra host call. */
+  async branches(id: string, org: string, name: string) {
+    const { repos, host, token } = await this.listing(id);
+    const repo = repos.find((r) => r.organization === org && r.name === name);
+    if (!repo) throw error(404, "NOT_FOUND", "Repository not found on this connection.");
+    const { names, cut } = await upstream(() => this.host.branches(host, token, `${org}/${name}`));
+    return branchListSchema.parse({ branches: [repo.branch, ...names.filter((n) => n !== repo.branch)], truncated: cut });
   }
 
   async repositories(id: string, query: z.infer<typeof repositoriesQuery>): Promise<Repository[]> {
@@ -225,6 +252,11 @@ export class ConnectionsController {
   @Put(":id/token")
   async rotate(@Param("id") id: string, @Req() req: IncomingMessage) {
     return this.connections.rotate(id, (await body(req, tokenBody)).token);
+  }
+
+  @Get(":id/repositories/:org/:name/branches")
+  branches(@Param("id") id: string, @Param("org") org: string, @Param("name") name: string) {
+    return this.connections.branches(id, org, name);
   }
 
   @Get(":id/repositories")
